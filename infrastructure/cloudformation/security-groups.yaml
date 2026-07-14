@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood per-environment security groups. Strict chain:
+  internet -> ALB (443) -> app containers (web/api ports) -> database (5432).
+  Deployed once per environment (dev, prod) into the shared VPC.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment these security groups belong to
+
+  NetworkStackName:
+    Type: String
+    Default: rescufood-core-network
+    Description: Name of the network stack whose VPC exports to import
+
+  WebPort:
+    Type: Number
+    Default: 3000
+    Description: Container port for the Next.js SSR frontend
+
+  ApiPort:
+    Type: Number
+    Default: 3001
+    Description: Container port for the NestJS API
+
+Resources:
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${EnvironmentName} ALB - accepts HTTPS from the internet
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS from anywhere
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP (redirected to HTTPS at the ALB)
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-alb-sg
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${EnvironmentName} app containers - traffic from ALB only
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref WebPort
+          ToPort: !Ref WebPort
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: Next.js web from ALB
+        - IpProtocol: tcp
+          FromPort: !Ref ApiPort
+          ToPort: !Ref ApiPort
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: NestJS API from ALB
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-app-sg
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${EnvironmentName} database - PostgreSQL from app tier only
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref AppSecurityGroup
+          Description: PostgreSQL from app containers
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-db-sg
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  AlbSecurityGroupId:
+    Value: !Ref AlbSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbSgId
+
+  AppSecurityGroupId:
+    Value: !Ref AppSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-AppSgId
+
+  DbSecurityGroupId:
+    Value: !Ref DbSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-DbSgId
