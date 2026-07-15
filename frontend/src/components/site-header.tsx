@@ -27,7 +27,8 @@ export function SiteHeader() {
           href={GITHUB_URL}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-9 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          aria-label="View RescuFood on GitHub"
+          className="inline-flex size-9 items-center justify-center rounded-full text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto sm:gap-2 sm:px-4"
         >
           <GithubIcon className="size-4" />
           <span className="hidden sm:inline">GitHub</span>

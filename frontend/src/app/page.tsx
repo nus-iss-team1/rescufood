@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
 import {
   BarChart3,
   Bell,
@@ -104,6 +105,20 @@ export default function Home() {
           start: "top 80%",
         },
       });
+
+      // Banners settle in slowly for a calm feel.
+      gsap.utils.toArray<HTMLElement>("[data-animate=banner]").forEach((el) => {
+        gsap.from(el, {
+          y: 20,
+          autoAlpha: 0,
+          duration: 1.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+          },
+        });
+      });
     },
     { scope: container }
   );
@@ -113,7 +128,7 @@ export default function Home() {
       <main className="flex-1">
         <section
           data-animate="hero"
-          className="flex flex-col items-center gap-6 px-6 py-20 text-center sm:py-28"
+          className="flex flex-col items-center gap-6 px-6 pt-20 pb-12 text-center sm:pt-28 sm:pb-16"
         >
           <Badge variant="secondary">Fighting food waste together</Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -140,6 +155,20 @@ export default function Home() {
             <p className="text-xs text-muted-foreground">
               Sign-in opens once the platform launches.
             </p>
+          </div>
+        </section>
+
+        <section data-animate="banner" className="px-6 pb-16 sm:pb-24">
+          <div className="relative mx-auto aspect-[16/9] w-full max-w-5xl overflow-hidden rounded-3xl ring-1 ring-border sm:aspect-[21/9]">
+            <Image
+              src="/images/volunteer-loading-food.jpg"
+              alt="A volunteer loading boxes of donated food into a delivery van"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="object-cover saturate-[0.92]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/25 to-transparent" />
           </div>
         </section>
 
@@ -186,6 +215,47 @@ export default function Home() {
                   </Card>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        <section
+          data-animate="banner"
+          className="border-t border-border px-6 py-20 sm:py-28"
+        >
+          <div className="mx-auto grid w-full max-w-5xl items-center gap-10 lg:grid-cols-2">
+            <div className="flex flex-col gap-4 text-center lg:text-left">
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Built by people who care about their community
+              </h2>
+              <p className="text-muted-foreground">
+                Behind every listing is a donor with food to spare and a rescue
+                partner ready to collect it. RescuFood exists to make that
+                hand-off simple, dependable, and kind — so good food reaches
+                people instead of landfills.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl ring-1 ring-border">
+                <Image
+                  src="/images/volunteers-with-donations.jpg"
+                  alt="Two smiling volunteers holding boxes of food and aid donations"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 320px"
+                  className="object-cover saturate-[0.92]"
+                />
+                <div className="absolute inset-0 bg-background/5" />
+              </div>
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl ring-1 ring-border">
+                <Image
+                  src="/images/packed-food-supplies.jpg"
+                  alt="Neatly packed food supplies including pasta, canned goods, and water"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 320px"
+                  className="object-cover saturate-[0.92]"
+                />
+                <div className="absolute inset-0 bg-background/5" />
+              </div>
             </div>
           </div>
         </section>
