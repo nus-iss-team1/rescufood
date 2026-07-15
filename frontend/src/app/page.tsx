@@ -19,12 +19,10 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -111,11 +109,11 @@ export default function Home() {
   );
 
   return (
-    <div ref={container} className="flex min-h-screen flex-col items-center">
-      <main className="flex w-full max-w-5xl flex-1 flex-col items-center gap-16 px-6 py-24">
+    <div ref={container} className="flex min-h-screen flex-col">
+      <main className="flex-1">
         <section
           data-animate="hero"
-          className="flex flex-col items-center gap-6 text-center"
+          className="flex flex-col items-center gap-6 px-6 py-20 text-center sm:py-28"
         >
           <Badge variant="secondary">Fighting food waste together</Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -126,11 +124,16 @@ export default function Home() {
             need it — before it goes to waste.
           </p>
           <div className="flex flex-col items-center gap-3">
-            <div className="flex gap-4">
-              <Button size="lg" disabled>
+            <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:gap-4">
+              <Button size="lg" disabled className="w-full sm:w-auto">
                 Donate food
               </Button>
-              <Button size="lg" variant="outline" disabled>
+              <Button
+                size="lg"
+                variant="outline"
+                disabled
+                className="w-full sm:w-auto"
+              >
                 Find food near you
               </Button>
             </div>
@@ -140,55 +143,55 @@ export default function Home() {
           </div>
         </section>
 
-        <Separator />
+        <section className="border-t border-border bg-secondary/40 px-6 py-20 sm:py-28">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                What RescuFood will do
+              </h2>
+              <p className="max-w-2xl text-muted-foreground">
+                The full donor-to-rescue-partner workflow, built one step at a
+                time. Everything below is on the roadmap and not yet live.
+              </p>
+            </div>
 
-        <section className="flex w-full flex-col gap-8">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              What RescuFood will do
-            </h2>
-            <p className="max-w-2xl text-muted-foreground">
-              The full donor-to-rescue-partner workflow, built one step at a
-              time. Everything below is on the roadmap and not yet live.
-            </p>
-          </div>
-
-          <div
-            data-animate="cards"
-            className="grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              const isAvailable = feature.status === "available";
-              return (
-                <Card
-                  key={feature.title}
-                  data-animate="card"
-                  aria-disabled={!isAvailable}
-                  className={isAvailable ? undefined : "opacity-60"}
-                >
-                  <CardHeader>
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-foreground">
-                      <Icon className="size-5" aria-hidden />
-                    </div>
-                    <CardAction>
-                      {isAvailable ? (
-                        <Badge>Live</Badge>
-                      ) : (
-                        <Badge variant="secondary">Coming soon</Badge>
-                      )}
-                    </CardAction>
-                    <CardTitle className="mt-3">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              );
-            })}
+            <div
+              data-animate="cards"
+              className="grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {features.map((feature) => {
+                const Icon = feature.icon;
+                const isAvailable = feature.status === "available";
+                return (
+                  <Card
+                    key={feature.title}
+                    data-animate="card"
+                    aria-disabled={!isAvailable}
+                    className={isAvailable ? undefined : "opacity-60"}
+                  >
+                    <CardHeader>
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                        <Icon className="size-5" aria-hidden />
+                      </div>
+                      <CardAction>
+                        {isAvailable ? (
+                          <Badge>Live</Badge>
+                        ) : (
+                          <Badge variant="secondary">Coming soon</Badge>
+                        )}
+                      </CardAction>
+                      <CardTitle className="mt-3">{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="w-full border-t py-6">
+      <footer className="w-full border-t border-border py-6">
         <p className="text-center text-sm text-muted-foreground">
           RescuFood — a NUS-ISS Team 1 project
         </p>

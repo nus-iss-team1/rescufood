@@ -18,7 +18,10 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
 
   return (
     <div id="smooth-wrapper">
-      <div id="smooth-content">{children}</div>
+      {/* pt-16 clears the fixed SiteHeader (h-16) */}
+      <div id="smooth-content" className="pt-16">
+        {children}
+      </div>
     </div>
   );
 }
