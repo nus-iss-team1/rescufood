@@ -24,7 +24,7 @@ type MenuUser = {
 
 export function HeaderMenu({ user }: { user: MenuUser | null }) {
   return (
-    <Drawer swipeDirection="right">
+    <Drawer swipeDirection="up">
       <DrawerTrigger
         render={
           <Button size="icon" variant="ghost" aria-label="Open menu">
@@ -32,7 +32,8 @@ export function HeaderMenu({ user }: { user: MenuUser | null }) {
           </Button>
         }
       />
-      <DrawerContent className="flex flex-col gap-6 p-6">
+      <DrawerContent className="p-6">
+        <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         {user ? (
           <>
             <DrawerHeader className="p-0">
@@ -114,6 +115,7 @@ export function HeaderMenu({ user }: { user: MenuUser | null }) {
             </div>
           </>
         )}
+        </div>
       </DrawerContent>
     </Drawer>
   );
