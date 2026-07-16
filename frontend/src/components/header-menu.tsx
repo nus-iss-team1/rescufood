@@ -1,10 +1,10 @@
 "use client";
 
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { LogIn, LogOut, Menu, Settings, User, UserPlus } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -14,7 +14,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { cn } from "@/lib/utils";
 
 type MenuUser = {
   name?: string | null;
@@ -97,22 +96,35 @@ export function HeaderMenu({ user }: { user: MenuUser | null }) {
         ) : (
           <>
             <DrawerHeader className="p-0">
-              <DrawerTitle className="text-base">Welcome</DrawerTitle>
+              <DrawerTitle className="text-base">Menu</DrawerTitle>
               <DrawerDescription>
                 Sign in or create an organisation account to get started.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="flex flex-col gap-3">
-              <a href="/login" className={cn(buttonVariants({ size: "lg" }))}>
-                Sign in
-              </a>
-              <a
-                href="/signup"
-                className={cn(buttonVariants({ size: "lg", variant: "outline" }))}
-              >
-                Create account
-              </a>
-            </div>
+            <nav className="flex flex-col gap-1">
+              <DrawerClose
+                render={
+                  <a
+                    href="/login"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                  >
+                    <LogIn className="size-4" aria-hidden />
+                    Sign in
+                  </a>
+                }
+              />
+              <DrawerClose
+                render={
+                  <a
+                    href="/signup"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                  >
+                    <UserPlus className="size-4" aria-hidden />
+                    Create account
+                  </a>
+                }
+              />
+            </nav>
           </>
         )}
         </div>
