@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { signInWithCognito } from "@/app/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -140,20 +141,24 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center gap-3">
             <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:gap-4">
-              <Button size="lg" disabled className="w-full sm:w-auto">
-                Donate food
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                disabled
-                className="w-full sm:w-auto"
-              >
-                Find food near you
-              </Button>
+              <form action={signInWithCognito} className="contents">
+                <Button size="lg" type="submit" className="w-full sm:w-auto">
+                  Donate food
+                </Button>
+              </form>
+              <form action={signInWithCognito} className="contents">
+                <Button
+                  size="lg"
+                  type="submit"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  Find food near you
+                </Button>
+              </form>
             </div>
             <p className="text-xs text-muted-foreground">
-              Sign-in opens once the platform launches.
+              Sign in with your organisation account to get started.
             </p>
           </div>
         </section>
