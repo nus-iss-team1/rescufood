@@ -1,0 +1,7 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=dev",
+  "NetworkStackName=rescufood-core-network",
+  "WebPort=3000",
+  "ApiPort=3001"
+]

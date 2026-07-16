@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood per-environment identity (IAM) service: Cognito User Pool with
+  hosted UI domain, web app client (OAuth code flow), and the three platform
+  role groups (donor, rescue-partner, admin). Deployed once per environment.
+  No VPC dependency - independent of the network stack.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment this user pool belongs to
+
+  CallbackUrls:
+    Type: CommaDelimitedList
+    Default: http://localhost:3000/api/auth/callback/cognito
+    Description: >-
+      Allowed OAuth redirect URIs (Auth.js Cognito callback). Add the
+      deployed frontend URL alongside localhost once the ALB/domain exists.
+
+  LogoutUrls:
+    Type: CommaDelimitedList
+    Default: http://localhost:3000
+    Description: Allowed post-logout redirect URIs
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${ProjectName}-${EnvironmentName}-users
+      # FR1: users register themselves; admins approve organisations at the
+      # application level, so self-signup stays enabled.
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      UsernameConfiguration:
+        CaseSensitive: false
+      DeletionProtection: INACTIVE
+      MfaConfiguration: "OFF"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      UserPoolTags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      # Cognito-hosted domain prefix; must be unique per region.
+      Domain: !Sub ${ProjectName}-${EnvironmentName}
+      UserPoolId: !Ref UserPool
+
+  WebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-${EnvironmentName}-web
+      UserPoolId: !Ref UserPool
+      # Confidential client: Auth.js runs the code exchange server-side.
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: !Ref CallbackUrls
+      LogoutURLs: !Ref LogoutUrls
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  DonorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: donor
+      Description: Donor organisation users - publish and manage surplus listings
+      UserPoolId: !Ref UserPool
+
+  RescuePartnerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: rescue-partner
+      Description: Rescue partner users - discover and claim listings
+      UserPoolId: !Ref UserPool
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Platform administrators - approve and manage organisations
+      UserPoolId: !Ref UserPool
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolId
+
+  WebClientId:
+    Value: !Ref WebClient
+    Export:
+      Name: !Sub ${AWS::StackName}-WebClientId
+
+  Issuer:
+    Description: OIDC issuer URL - AUTH_COGNITO_ISSUER for the frontend
+    Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+
+  HostedUiBaseUrl:
+    Description: Cognito hosted UI base URL for this environment
+    Value: !Sub https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com
