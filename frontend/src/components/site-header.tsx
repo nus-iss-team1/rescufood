@@ -39,22 +39,33 @@ export async function SiteHeader() {
             <GithubIcon className="size-4" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
-          {session ? (
-            <form
-              action={async () => {
-                "use server";
-                await signOut();
-              }}
-            >
-              <Button size="sm" variant="outline">
-                Sign out
-              </Button>
-            </form>
+          {session?.user ? (
+            <>
+              <a
+                href="/dashboard"
+                className="inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Dashboard
+              </a>
+              <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:inline">
+                {session.user.email}
+              </span>
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+              >
+                <Button size="sm" variant="outline">
+                  Sign out
+                </Button>
+              </form>
+            </>
           ) : (
             <form
               action={async () => {
                 "use server";
-                await signIn("cognito");
+                await signIn("cognito", { redirectTo: "/dashboard" });
               }}
             >
               <Button size="sm" disabled={!authConfigured}>

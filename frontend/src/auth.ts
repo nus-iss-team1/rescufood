@@ -1,5 +1,14 @@
-import NextAuth from "next-auth";
+import NextAuth, { type DefaultSession } from "next-auth";
 import Cognito from "next-auth/providers/cognito";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      /** Cognito role groups: donor, rescue-partner, admin */
+      groups?: string[];
+    } & DefaultSession["user"];
+  }
+}
 
 /**
  * True once the Cognito environment is present (see .env.example).
@@ -18,4 +27,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Self-hosted (Docker/ALB), not Vercel: the Host header is set by our
   // own infrastructure, so it is safe to trust.
   trustHost: true,
+  callbacks: {
+    jwt({ token, profile }) {
+      const groups = profile?.["cognito:groups"];
+      if (Array.isArray(groups)) token.groups = groups;
+      return token;
+    },
+    session({ session, token }) {
+      if (Array.isArray(token.groups)) {
+        session.user.groups = token.groups as string[];
+      }
+      return session;
+    },
+  },
 });
