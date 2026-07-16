@@ -76,26 +76,34 @@ with `CallbackUrls`/`LogoutUrls` parameter overrides.
 
 ## Deploying (not yet executed)
 
+All deploy commands are idempotent: `aws cloudformation deploy` creates the
+stack on first run and updates it on later runs, and
+`--no-fail-on-empty-changeset` makes a no-change re-run exit 0 instead of
+erroring — safe to run repeatedly, locally or in CI.
+
 ```sh
 # 1. Shared network foundation
 aws cloudformation deploy \
   --region ap-southeast-1 \
   --stack-name rescufood-core-network \
-  --template-file cloudformation/network.yaml
+  --template-file cloudformation/network.yaml \
+  --no-fail-on-empty-changeset
 
 # 2. Dev environment security groups
 aws cloudformation deploy \
   --region ap-southeast-1 \
   --stack-name rescufood-dev-security \
   --template-file cloudformation/security-groups.yaml \
-  --parameter-overrides file://cloudformation/parameters/dev.json
+  --parameter-overrides file://cloudformation/parameters/dev.json \
+  --no-fail-on-empty-changeset
 
 # 3. Dev environment identity service (independent of 1 and 2)
 aws cloudformation deploy \
   --region ap-southeast-1 \
   --stack-name rescufood-dev-iam \
   --template-file cloudformation/iam.yaml \
-  --parameter-overrides file://cloudformation/parameters/iam-dev.json
+  --parameter-overrides file://cloudformation/parameters/iam-dev.json \
+  --no-fail-on-empty-changeset
 ```
 
 For prod later: copy `parameters/dev.json` to `parameters/prod.json`, set

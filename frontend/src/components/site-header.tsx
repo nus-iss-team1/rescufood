@@ -1,3 +1,6 @@
+import { auth, authConfigured, signIn, signOut } from "@/auth";
+import { Button } from "@/components/ui/button";
+
 const GITHUB_URL = "https://github.com/nus-iss-team1/rescufood";
 
 function GithubIcon({ className }: { className?: string }) {
@@ -13,7 +16,9 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const session = authConfigured ? await auth() : null;
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between px-6">
@@ -23,16 +28,41 @@ export function SiteHeader() {
         >
           RescuFood
         </a>
-        <a
-          href={GITHUB_URL}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="View RescuFood on GitHub"
-          className="inline-flex size-9 items-center justify-center rounded-full text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto sm:gap-2 sm:px-4"
-        >
-          <GithubIcon className="size-4" />
-          <span className="hidden sm:inline">GitHub</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View RescuFood on GitHub"
+            className="inline-flex size-9 items-center justify-center rounded-full text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto sm:gap-2 sm:px-4"
+          >
+            <GithubIcon className="size-4" />
+            <span className="hidden sm:inline">GitHub</span>
+          </a>
+          {session ? (
+            <form
+              action={async () => {
+                "use server";
+                await signOut();
+              }}
+            >
+              <Button size="sm" variant="outline">
+                Sign out
+              </Button>
+            </form>
+          ) : (
+            <form
+              action={async () => {
+                "use server";
+                await signIn("cognito");
+              }}
+            >
+              <Button size="sm" disabled={!authConfigured}>
+                Sign in
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
     </header>
   );
