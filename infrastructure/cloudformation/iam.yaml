@@ -85,6 +85,8 @@ Resources:
       EnableTokenRevocation: true
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
+        # Server-side email/password login from the app's own form
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       AccessTokenValidity: 1
       IdTokenValidity: 1

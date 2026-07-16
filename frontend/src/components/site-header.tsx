@@ -1,5 +1,6 @@
-import { auth, authConfigured, signIn, signOut } from "@/auth";
-import { Button } from "@/components/ui/button";
+import { auth, authConfigured, signOut } from "@/auth";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const GITHUB_URL = "https://github.com/nus-iss-team1/rescufood";
 
@@ -61,17 +62,14 @@ export async function SiteHeader() {
                 </Button>
               </form>
             </>
+          ) : authConfigured ? (
+            <a href="/login" className={cn(buttonVariants({ size: "sm" }))}>
+              Sign in
+            </a>
           ) : (
-            <form
-              action={async () => {
-                "use server";
-                await signIn("cognito", { redirectTo: "/dashboard" });
-              }}
-            >
-              <Button size="sm" disabled={!authConfigured}>
-                Sign in
-              </Button>
-            </form>
+            <Button size="sm" disabled>
+              Sign in
+            </Button>
           )}
         </div>
       </div>
