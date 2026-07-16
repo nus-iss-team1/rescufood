@@ -1,6 +1,5 @@
-import { auth, authConfigured, signOut } from "@/auth";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { auth, authConfigured } from "@/auth";
+import { HeaderMenu } from "@/components/header-menu";
 
 const GITHUB_URL = "https://github.com/nus-iss-team1/rescufood";
 
@@ -40,37 +39,7 @@ export async function SiteHeader() {
             <GithubIcon className="size-4" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
-          {session?.user ? (
-            <>
-              <a
-                href="/dashboard"
-                className="inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                Dashboard
-              </a>
-              <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:inline">
-                {session.user.email}
-              </span>
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/" });
-                }}
-              >
-                <Button size="sm" variant="outline">
-                  Sign out
-                </Button>
-              </form>
-            </>
-          ) : authConfigured ? (
-            <a href="/login" className={cn(buttonVariants({ size: "sm" }))}>
-              Sign in
-            </a>
-          ) : (
-            <Button size="sm" disabled>
-              Sign in
-            </Button>
-          )}
+          <HeaderMenu user={session?.user ?? null} />
         </div>
       </div>
     </header>

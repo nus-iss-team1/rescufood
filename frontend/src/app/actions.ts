@@ -3,7 +3,7 @@
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import {
   addUserToGroup,
   confirmSignUpUser,
@@ -13,6 +13,10 @@ import {
 
 export async function signInWithCognito() {
   await signIn("cognito", { redirectTo: "/dashboard" });
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
 }
 
 export type FormState = {
