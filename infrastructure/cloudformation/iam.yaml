@@ -1,10 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: >-
-  RescuFood per-environment identity (IAM) service: Cognito User Pool with
-  hosted UI domain, web app client (OAuth code flow), and the three platform
-  role groups (donor, rescue-partner, admin). Deployed once per environment.
-  No VPC dependency - independent of the network stack.
-
+Description: RescuFood per-environment identity service - Cognito user pool and role groups.
 Parameters:
   ProjectName:
     Type: String
