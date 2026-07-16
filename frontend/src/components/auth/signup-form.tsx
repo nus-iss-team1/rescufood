@@ -25,11 +25,11 @@ function DetailsStep({
 }) {
   return (
     <form action={action} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="name">Full name</Label>
         <Input id="name" name="name" autoComplete="name" required />
       </div>
-      <div className="flex flex-col gap-2">
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -40,7 +40,7 @@ function DetailsStep({
           required
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
@@ -56,7 +56,7 @@ function DetailsStep({
           number.
         </p>
       </div>
-      <fieldset className="flex flex-col gap-2">
+      <fieldset data-animate="field" className="flex flex-col gap-2">
         <legend className="text-sm font-medium">I&apos;m joining as</legend>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium transition-colors has-checked:border-foreground has-checked:bg-muted">
@@ -114,7 +114,7 @@ function ConfirmStep({
       <form action={confirmAction} className="flex flex-col gap-5">
         <input type="hidden" name="email" value={state.email ?? ""} />
         <input type="hidden" name="password" value={password} />
-        <div className="flex flex-col gap-2">
+        <div data-animate="field" className="flex flex-col gap-2">
           <Label htmlFor="code">Verification code</Label>
           <Input
             id="code"

@@ -15,7 +15,7 @@ export function LoginForm() {
 
   return (
     <form action={action} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -26,7 +26,7 @@ export function LoginForm() {
           required
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
