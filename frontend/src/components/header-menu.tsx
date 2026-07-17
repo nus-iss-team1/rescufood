@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -11,11 +11,13 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { GITHUB_URL, GithubIcon } from "@/components/github-icon";
+import { GITHUB_URL } from "@/components/github-icon";
+import { cn } from "@/lib/utils";
 
-const itemClass =
-  "flex items-center gap-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground";
-const arrowClass = "size-4 shrink-0 text-muted-foreground";
+const itemClass = cn(
+  buttonVariants({ variant: "ghost", size: "lg" }),
+  "w-full justify-start text-base font-semibold"
+);
 
 /**
  * Compact navigation for signed-in users on small screens. Desktop renders
@@ -33,12 +35,10 @@ export function HeaderMenu() {
       />
       <DrawerContent className="px-6 pt-20 pb-10">
         <DrawerTitle className="sr-only">Menu</DrawerTitle>
-        <nav className="mx-auto flex w-full max-w-md flex-col">
-          <p className="pb-2 text-sm text-muted-foreground">Menu</p>
+        <nav className="mx-auto flex w-full max-w-md flex-col gap-1">
           <DrawerClose
             render={
               <a href="/dashboard" className={itemClass}>
-                <ArrowRight className={arrowClass} aria-hidden />
                 Home
               </a>
             }
@@ -51,26 +51,27 @@ export function HeaderMenu() {
                 rel="noreferrer"
                 className={itemClass}
               >
-                <ArrowRight className={arrowClass} aria-hidden />
                 GitHub
               </a>
             }
           />
-          <span
-            aria-disabled
-            className="flex items-center gap-3 py-2.5 text-sm font-medium text-muted-foreground/60"
+          <Button
+            variant="ghost"
+            size="lg"
+            disabled
+            className="w-full justify-start text-base font-semibold"
           >
-            <ArrowRight className={arrowClass} aria-hidden />
             Settings
-          </span>
+          </Button>
           <form action={signOutAction}>
-            <button
+            <Button
               type="submit"
-              className="flex w-full items-center gap-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:text-destructive"
+              variant="ghost"
+              size="lg"
+              className="w-full justify-start text-base font-semibold"
             >
-              <ArrowRight className={arrowClass} aria-hidden />
               Sign out
-            </button>
+            </Button>
           </form>
         </nav>
       </DrawerContent>

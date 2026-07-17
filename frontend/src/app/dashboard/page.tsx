@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { BarChart3, PackagePlus, Search } from "lucide-react";
 
 import { auth } from "@/auth";
+import { AnimateIn } from "@/components/animate-in";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -47,8 +48,8 @@ export default async function DashboardPage() {
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
         <section className="px-6 py-16 sm:py-20">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
+          <AnimateIn className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+            <div data-animate="field" className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Welcome{name ? `, ${name}` : ""}
               </h1>
@@ -62,21 +63,26 @@ export default async function DashboardPage() {
                 <Badge variant="secondary">No role assigned yet</Badge>
               )}
             </div>
-            <p className="text-muted-foreground">
+            <p data-animate="field" className="text-muted-foreground">
               Signed in as {username ?? email}
               {email && username ? ` (${email})` : ""}. Your
               organisation&apos;s workspace will live here as the platform is
               built out.
             </p>
-          </div>
+          </AnimateIn>
         </section>
 
         <section className="border-t border-border bg-secondary/40 px-6 py-16 sm:py-20">
-          <div className="mx-auto grid w-full max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimateIn className="mx-auto grid w-full max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
-                <Card key={action.title} aria-disabled className="opacity-60">
+                <Card
+                  key={action.title}
+                  aria-disabled
+                  data-animate="field"
+                  className="opacity-60"
+                >
                   <CardHeader>
                     <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-foreground">
                       <Icon className="size-5" aria-hidden />
@@ -90,7 +96,7 @@ export default async function DashboardPage() {
                 </Card>
               );
             })}
-          </div>
+          </AnimateIn>
         </section>
       </main>
 
