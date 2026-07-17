@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardAction,
@@ -140,20 +141,34 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center gap-3">
             <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:gap-4">
-              <Button size="lg" disabled className="w-full sm:w-auto">
+              <a
+                href="/signup"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "w-full sm:w-auto"
+                )}
+              >
                 Donate food
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                disabled
-                className="w-full sm:w-auto"
+              </a>
+              <a
+                href="/signup"
+                className={cn(
+                  buttonVariants({ size: "lg", variant: "outline" }),
+                  "w-full sm:w-auto"
+                )}
               >
                 Find food near you
-              </Button>
+              </a>
             </div>
             <p className="text-xs text-muted-foreground">
-              Sign-in opens once the platform launches.
+              Create an organisation account or{" "}
+              <a
+                href="/login"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                sign in
+              </a>{" "}
+              to get started.
             </p>
           </div>
         </section>

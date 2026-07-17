@@ -1,10 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: >-
-  RescuFood per-environment identity (IAM) service: Cognito User Pool with
-  hosted UI domain, web app client (OAuth code flow), and the three platform
-  role groups (donor, rescue-partner, admin). Deployed once per environment.
-  No VPC dependency - independent of the network stack.
-
+Description: RescuFood per-environment identity service - Cognito user pool and role groups.
 Parameters:
   ProjectName:
     Type: String
@@ -27,6 +22,16 @@ Parameters:
     Default: http://localhost:3000
     Description: Allowed post-logout redirect URIs
 
+  SuperAdminUsername:
+    Type: String
+    Default: admin
+    Description: Username of the bootstrap superadmin account
+
+  SuperAdminPassword:
+    Type: String
+    NoEcho: true
+    Description: Password of the bootstrap superadmin account
+
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -36,7 +41,11 @@ Resources:
       # application level, so self-signup stays enabled.
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
-      UsernameAttributes: [email]
+      # Plain usernames (no UsernameAttributes): users sign in with a
+      # username; email is a verified attribute used for codes/recovery.
+      # Email alias: a verified email is unique across the pool and can
+      # also be used in place of the username at sign-in.
+      AliasAttributes: [email]
       AutoVerifiedAttributes: [email]
       UsernameConfiguration:
         CaseSensitive: false
@@ -44,7 +53,7 @@ Resources:
       MfaConfiguration: "OFF"
       Policies:
         PasswordPolicy:
-          MinimumLength: 12
+          MinimumLength: 8
           RequireLowercase: true
           RequireUppercase: true
           RequireNumbers: true
@@ -56,11 +65,11 @@ Resources:
       Schema:
         - Name: email
           AttributeDataType: String
-          Required: true
+          Required: false
           Mutable: true
         - Name: name
           AttributeDataType: String
-          Required: true
+          Required: false
           Mutable: true
       UserPoolTags:
         Project: !Ref ProjectName
@@ -90,6 +99,8 @@ Resources:
       EnableTokenRevocation: true
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
+        # Server-side email/password login from the app's own form
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       AccessTokenValidity: 1
       IdTokenValidity: 1
@@ -119,6 +130,94 @@ Resources:
       GroupName: admin
       Description: Platform administrators - approve and manage organisations
       UserPoolId: !Ref UserPool
+
+  # ------------------------------------------- Superadmin bootstrap
+  SuperAdminFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: cognito-superadmin-bootstrap
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminDeleteUser
+                Resource: !GetAtt UserPool.Arn
+
+  SuperAdminFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Creates the bootstrap superadmin user on stack deploy
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt SuperAdminFunctionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def handler(event, context):
+              props = event["ResourceProperties"]
+              client = boto3.client("cognito-idp")
+              try:
+                  if event["RequestType"] == "Create":
+                      client.admin_create_user(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          UserAttributes=[{"Name": "name", "Value": "Super Admin"}],
+                          MessageAction="SUPPRESS",
+                      )
+                      client.admin_set_user_password(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          Password=props["Password"],
+                          Permanent=True,
+                      )
+                      client.admin_add_user_to_group(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          GroupName=props["Group"],
+                      )
+                  elif event["RequestType"] == "Delete":
+                      try:
+                          client.admin_delete_user(
+                              UserPoolId=props["UserPoolId"],
+                              Username=props["Username"],
+                          )
+                      except client.exceptions.UserNotFoundException:
+                          pass
+                  # Update: nothing to do - the account already exists.
+                  cfnresponse.send(
+                      event, context, cfnresponse.SUCCESS, {}, props["Username"]
+                  )
+              except Exception as exc:
+                  cfnresponse.send(
+                      event, context, cfnresponse.FAILED, {"Error": str(exc)}
+                  )
+
+  SuperAdmin:
+    Type: Custom::SuperAdmin
+    DependsOn: AdminGroup
+    Properties:
+      ServiceToken: !GetAtt SuperAdminFunction.Arn
+      UserPoolId: !Ref UserPool
+      Username: !Ref SuperAdminUsername
+      Password: !Ref SuperAdminPassword
+      Group: admin
 
 Outputs:
   UserPoolId:
