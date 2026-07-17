@@ -21,7 +21,3 @@ npm run dev
 ```
 
 See [`frontend/README.md`](frontend/README.md) for environment setup and sign-in configuration.
-
-## Branching
-
-Feature branches (`feat/...`) merge into `develop`. Pushes to `develop` that touch `frontend/**` build and publish a Docker image via GitHub Actions.
