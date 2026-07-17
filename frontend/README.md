@@ -121,7 +121,7 @@ that touches `frontend/**` — see `.github/workflows/frontend-build.yml`.
 
 ## Project structure
 
-```
+```text
 src/
 ├── app/
 │   ├── page.tsx              # Landing page
