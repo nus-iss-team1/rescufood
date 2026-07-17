@@ -1,20 +1,10 @@
 import { auth, authConfigured } from "@/auth";
+import { signOutAction } from "@/app/actions";
 import { HeaderMenu } from "@/components/header-menu";
+import { GITHUB_URL, GithubIcon } from "@/components/github-icon";
 
-const GITHUB_URL = "https://github.com/nus-iss-team1/rescufood";
-
-function GithubIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-      className={className}
-    >
-      <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.96 0-1.32.47-2.39 1.24-3.23-.12-.31-.54-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.23 0 4.63-2.81 5.65-5.49 5.95.43.37.82 1.1.82 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5Z" />
-    </svg>
-  );
-}
+const navItemClass =
+  "inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted";
 
 export async function SiteHeader() {
   const session = authConfigured ? await auth() : null;
@@ -28,7 +18,45 @@ export async function SiteHeader() {
         >
           RescuFood
         </a>
-        <div className="flex items-center gap-2">
+
+        {session?.user ? (
+          <>
+            {/* Desktop: navigation rendered directly in the bar */}
+            <nav className="hidden items-center gap-1 md:flex">
+              <a href="/dashboard" className={navItemClass}>
+                Home
+              </a>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={navItemClass}
+              >
+                <GithubIcon className="size-4" />
+                GitHub
+              </a>
+              <span
+                aria-disabled
+                className="inline-flex h-9 items-center px-3 text-sm font-medium text-muted-foreground/60"
+                title="Coming soon"
+              >
+                Settings
+              </span>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  Sign out
+                </button>
+              </form>
+            </nav>
+            {/* Small screens: hamburger opens the drawer */}
+            <div className="md:hidden">
+              <HeaderMenu />
+            </div>
+          </>
+        ) : (
           <a
             href={GITHUB_URL}
             target="_blank"
@@ -39,8 +67,7 @@ export async function SiteHeader() {
             <GithubIcon className="size-4" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
-          <HeaderMenu user={session?.user ?? null} />
-        </div>
+        )}
       </div>
     </header>
   );

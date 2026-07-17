@@ -1,27 +1,27 @@
 "use client";
 
-import { LogIn, LogOut, Menu, Settings, User, UserPlus } from "lucide-react";
+import { ArrowRight, Menu } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { GITHUB_URL, GithubIcon } from "@/components/github-icon";
 
-type MenuUser = {
-  name?: string | null;
-  email?: string | null;
-  groups?: string[];
-};
+const itemClass =
+  "flex items-center gap-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground";
+const arrowClass = "size-4 shrink-0 text-muted-foreground";
 
-export function HeaderMenu({ user }: { user: MenuUser | null }) {
+/**
+ * Compact navigation for signed-in users on small screens. Desktop renders
+ * the nav inline in the header instead (see SiteHeader).
+ */
+export function HeaderMenu() {
   return (
     <Drawer swipeDirection="up">
       <DrawerTrigger
@@ -31,103 +31,48 @@ export function HeaderMenu({ user }: { user: MenuUser | null }) {
           </Button>
         }
       />
-      <DrawerContent className="p-6">
-        <div className="mx-auto flex w-full max-w-md flex-col gap-6">
-        {user ? (
-          <>
-            <DrawerHeader className="p-0">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  {(user.name ?? user.email ?? "?").charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <DrawerTitle className="truncate text-base">
-                    {user.name ?? "Your account"}
-                  </DrawerTitle>
-                  <DrawerDescription className="truncate">
-                    {user.email}
-                  </DrawerDescription>
-                </div>
-              </div>
-              {user.groups?.length ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {user.groups.map((group) => (
-                    <Badge key={group} variant="secondary">
-                      {group}
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
-            </DrawerHeader>
-
-            <nav className="flex flex-col gap-1">
-              <DrawerClose
-                render={
-                  <a
-                    href="/dashboard"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    <User className="size-4" aria-hidden />
-                    Profile
-                  </a>
-                }
-              />
-              <span
-                aria-disabled
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground opacity-60"
+      <DrawerContent className="px-6 pt-20 pb-10">
+        <DrawerTitle className="sr-only">Menu</DrawerTitle>
+        <nav className="mx-auto flex w-full max-w-md flex-col">
+          <p className="pb-2 text-sm text-muted-foreground">Menu</p>
+          <DrawerClose
+            render={
+              <a href="/dashboard" className={itemClass}>
+                <ArrowRight className={arrowClass} aria-hidden />
+                Home
+              </a>
+            }
+          />
+          <DrawerClose
+            render={
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={itemClass}
               >
-                <Settings className="size-4" aria-hidden />
-                Settings
-                <Badge variant="secondary" className="ml-auto">
-                  Coming soon
-                </Badge>
-              </span>
-              <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-                >
-                  <LogOut className="size-4" aria-hidden />
-                  Sign out
-                </button>
-              </form>
-            </nav>
-          </>
-        ) : (
-          <>
-            <DrawerHeader className="p-0">
-              <DrawerTitle className="text-base">Menu</DrawerTitle>
-              <DrawerDescription>
-                Sign in or create an organisation account to get started.
-              </DrawerDescription>
-            </DrawerHeader>
-            <nav className="flex flex-col gap-1">
-              <DrawerClose
-                render={
-                  <a
-                    href="/login"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    <LogIn className="size-4" aria-hidden />
-                    Sign in
-                  </a>
-                }
-              />
-              <DrawerClose
-                render={
-                  <a
-                    href="/signup"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    <UserPlus className="size-4" aria-hidden />
-                    Create account
-                  </a>
-                }
-              />
-            </nav>
-          </>
-        )}
-        </div>
+                <ArrowRight className={arrowClass} aria-hidden />
+                GitHub
+              </a>
+            }
+          />
+          <span
+            aria-disabled
+            className="flex items-center gap-3 py-2.5 text-sm font-medium text-muted-foreground/60"
+          >
+            <ArrowRight className={arrowClass} aria-hidden />
+            Settings
+          </span>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:text-destructive"
+            >
+              <ArrowRight className={arrowClass} aria-hidden />
+              Sign out
+            </button>
+          </form>
+        </nav>
       </DrawerContent>
     </Drawer>
   );
