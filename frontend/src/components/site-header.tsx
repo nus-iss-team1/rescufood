@@ -43,10 +43,7 @@ export async function SiteHeader() {
                 Settings
               </span>
               <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
+                <button type="submit" className={navItemClass}>
                   Sign out
                 </button>
               </form>
