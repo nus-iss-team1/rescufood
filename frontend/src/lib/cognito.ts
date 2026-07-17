@@ -6,6 +6,7 @@ import {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
   InitiateAuthCommand,
+  ListUsersCommand,
   ResendConfirmationCodeCommand,
   SignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
@@ -27,22 +28,39 @@ function secretHash(username: string) {
     .digest("base64");
 }
 
-export async function passwordAuth(email: string, password: string) {
+export async function passwordAuth(username: string, password: string) {
   const res = await client.send(
     new InitiateAuthCommand({
       ClientId: clientId,
       AuthFlow: "USER_PASSWORD_AUTH",
       AuthParameters: {
-        USERNAME: email,
+        USERNAME: username,
         PASSWORD: password,
-        SECRET_HASH: secretHash(email),
+        SECRET_HASH: secretHash(username),
       },
     })
   );
   return res.AuthenticationResult; // contains IdToken / AccessToken / RefreshToken
 }
 
+/**
+ * True when any account (verified or not) already holds this email.
+ * The pool's email alias enforces uniqueness for verified emails; this
+ * pre-check catches clashes earlier for a friendlier signup error.
+ */
+export async function emailInUse(email: string) {
+  const res = await client.send(
+    new ListUsersCommand({
+      UserPoolId: userPoolId,
+      Filter: `email = "${email.replace(/"/g, "")}"`,
+      Limit: 1,
+    })
+  );
+  return (res.Users ?? []).length > 0;
+}
+
 export async function signUpUser(
+  username: string,
   email: string,
   password: string,
   name: string
@@ -50,8 +68,8 @@ export async function signUpUser(
   await client.send(
     new SignUpCommand({
       ClientId: clientId,
-      SecretHash: secretHash(email),
-      Username: email,
+      SecretHash: secretHash(username),
+      Username: username,
       Password: password,
       UserAttributes: [
         { Name: "email", Value: email },
@@ -61,23 +79,23 @@ export async function signUpUser(
   );
 }
 
-export async function confirmSignUpUser(email: string, code: string) {
+export async function confirmSignUpUser(username: string, code: string) {
   await client.send(
     new ConfirmSignUpCommand({
       ClientId: clientId,
-      SecretHash: secretHash(email),
-      Username: email,
+      SecretHash: secretHash(username),
+      Username: username,
       ConfirmationCode: code,
     })
   );
 }
 
-export async function resendConfirmationCode(email: string) {
+export async function resendConfirmationCode(username: string) {
   await client.send(
     new ResendConfirmationCodeCommand({
       ClientId: clientId,
-      SecretHash: secretHash(email),
-      Username: email,
+      SecretHash: secretHash(username),
+      Username: username,
     })
   );
 }
@@ -88,13 +106,13 @@ export async function resendConfirmationCode(email: string) {
  * non-fatal — an admin can assign the group afterwards.
  */
 export async function addUserToGroup(
-  email: string,
+  username: string,
   group: "donor" | "rescue-partner"
 ) {
   await client.send(
     new AdminAddUserToGroupCommand({
       UserPoolId: userPoolId,
-      Username: email,
+      Username: username,
       GroupName: group,
     })
   );

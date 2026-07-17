@@ -16,13 +16,12 @@ export function LoginForm() {
   return (
     <form action={action} className="flex flex-col gap-5">
       <div data-animate="field" className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="username">Username</Label>
         <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@organisation.org"
+          id="username"
+          name="username"
+          autoComplete="username"
+          placeholder="yourusername"
           required
         />
       </div>

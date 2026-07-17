@@ -26,6 +26,22 @@ function DetailsStep({
   return (
     <form action={action} className="flex flex-col gap-5">
       <div data-animate="field" className="flex flex-col gap-2">
+        <Label htmlFor="username">Username</Label>
+        <Input
+          id="username"
+          name="username"
+          autoComplete="username"
+          placeholder="yourusername"
+          minLength={3}
+          maxLength={32}
+          pattern="[a-zA-Z0-9._\-]+"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          3-32 characters: letters, numbers, dots, dashes, underscores.
+        </p>
+      </div>
+      <div data-animate="field" className="flex flex-col gap-2">
         <Label htmlFor="name">Full name</Label>
         <Input id="name" name="name" autoComplete="name" required />
       </div>
@@ -48,11 +64,11 @@ function DetailsStep({
           type="password"
           autoComplete="new-password"
           required
-          minLength={12}
+          minLength={8}
           ref={passwordRef}
         />
         <p className="text-xs text-muted-foreground">
-          At least 12 characters with upper- and lowercase letters and a
+          At least 8 characters with upper- and lowercase letters and a
           number.
         </p>
       </div>
@@ -109,10 +125,11 @@ function ConfirmStep({
       <p className="text-sm text-muted-foreground">
         We emailed a verification code to{" "}
         <span className="font-medium text-foreground">{state.email}</span>.
-        Enter it below to activate your account.
+        Enter it below to verify and activate{" "}
+        <span className="font-medium text-foreground">{state.username}</span>.
       </p>
       <form action={confirmAction} className="flex flex-col gap-5">
-        <input type="hidden" name="email" value={state.email ?? ""} />
+        <input type="hidden" name="username" value={state.username ?? ""} />
         <input type="hidden" name="password" value={password} />
         <div data-animate="field" className="flex flex-col gap-2">
           <Label htmlFor="code">Verification code</Label>
@@ -135,7 +152,7 @@ function ConfirmStep({
         </Button>
       </form>
       <form action={resendAction} className="text-center">
-        <input type="hidden" name="email" value={state.email ?? ""} />
+        <input type="hidden" name="username" value={state.username ?? ""} />
         <Button type="submit" variant="ghost" size="sm" disabled={resendPending}>
           Resend code
         </Button>

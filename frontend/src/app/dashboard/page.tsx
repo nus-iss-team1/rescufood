@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const { name, email, groups } = session.user;
+  const { name, email, username, groups } = session.user;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -63,8 +63,10 @@ export default async function DashboardPage() {
               )}
             </div>
             <p className="text-muted-foreground">
-              Signed in as {email}. Your organisation&apos;s workspace will
-              live here as the platform is built out.
+              Signed in as {username ?? email}
+              {email && username ? ` (${email})` : ""}. Your
+              organisation&apos;s workspace will live here as the platform is
+              built out.
             </p>
           </div>
         </section>

@@ -7,6 +7,7 @@ import { signIn, signOut } from "@/auth";
 import {
   addUserToGroup,
   confirmSignUpUser,
+  emailInUse,
   resendConfirmationCode,
   signUpUser,
 } from "@/lib/cognito";
@@ -23,6 +24,7 @@ export type FormState = {
   error?: string;
   /** signup flow: which step to render */
   step?: "details" | "confirm";
+  username?: string;
   email?: string;
 };
 
@@ -30,41 +32,53 @@ export async function loginAction(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!email || !password) {
-    return { error: "Please enter your email and password." };
+  if (!username || !password) {
+    return { error: "Please enter your username and password." };
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
+    await signIn("credentials", {
+      username,
+      password,
+      redirectTo: "/dashboard",
+    });
     return {};
   } catch (err) {
     if (isRedirectError(err)) throw err; // successful sign-in redirects
     if (err instanceof AuthError) {
       return {
         error:
-          "Sign-in failed. Check your email and password, and make sure your account is verified.",
+          "Sign-in failed. Check your username and password, and make sure your account is verified.",
       };
     }
     throw err;
   }
 }
 
-const PASSWORD_RULE =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/;
+const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const USERNAME_RULE = /^[a-zA-Z0-9._-]{3,32}$/;
 
 export async function signUpAction(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const username = String(formData.get("username") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "");
 
-  if (!name || !email || !password) {
+  if (!username || !name || !email || !password) {
     return { step: "details", error: "Please fill in every field." };
+  }
+  if (!USERNAME_RULE.test(username)) {
+    return {
+      step: "details",
+      error:
+        "Username must be 3-32 characters: letters, numbers, dots, dashes, or underscores.",
+    };
   }
   if (role !== "donor" && role !== "rescue-partner") {
     return { step: "details", error: "Please choose a role." };
@@ -73,18 +87,31 @@ export async function signUpAction(
     return {
       step: "details",
       error:
-        "Password must be at least 12 characters with upper- and lowercase letters and a number.",
+        "Password must be at least 8 characters with upper- and lowercase letters and a number.",
     };
   }
 
   try {
-    await signUpUser(email, password, name);
+    if (await emailInUse(email)) {
+      return {
+        step: "details",
+        error:
+          "An account with this email already exists. Try signing in instead.",
+      };
+    }
+  } catch {
+    // Pre-check unavailable - the pool's email alias still enforces
+    // uniqueness at verification time.
+  }
+
+  try {
+    await signUpUser(username, email, password, name);
   } catch (err) {
     const code = (err as { name?: string }).name;
     if (code === "UsernameExistsException") {
       return {
         step: "details",
-        error: "An account with this email already exists. Try signing in.",
+        error: "That username is taken. Try another one.",
       };
     }
     return {
@@ -94,32 +121,32 @@ export async function signUpAction(
   }
 
   try {
-    await addUserToGroup(email, role);
+    await addUserToGroup(username, role);
   } catch {
     // Non-fatal: an admin can assign the role later.
   }
 
-  return { step: "confirm", email };
+  return { step: "confirm", username, email };
 }
 
 export async function confirmSignUpAction(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const username = String(formData.get("username") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!email || !code) {
-    return { step: "confirm", email, error: "Please enter the code." };
+  if (!username || !code) {
+    return { step: "confirm", username, error: "Please enter the code." };
   }
 
   try {
-    await confirmSignUpUser(email, code);
+    await confirmSignUpUser(username, code);
   } catch {
     return {
       step: "confirm",
-      email,
+      username,
       error: "That code didn't work. Check the digits or resend a new one.",
     };
   }
@@ -129,7 +156,7 @@ export async function confirmSignUpAction(
   if (password) {
     try {
       await signIn("credentials", {
-        email,
+        username,
         password,
         redirectTo: "/dashboard",
       });
@@ -137,20 +164,24 @@ export async function confirmSignUpAction(
       if (isRedirectError(err)) throw err;
     }
   }
-  return { step: "confirm", email, error: "Verified! You can sign in now." };
+  return {
+    step: "confirm",
+    username,
+    error: "Verified! You can sign in now.",
+  };
 }
 
 export async function resendCodeAction(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const email = String(formData.get("email") ?? "").trim();
-  if (email) {
+  const username = String(formData.get("username") ?? "").trim();
+  if (username) {
     try {
-      await resendConfirmationCode(email);
+      await resendConfirmationCode(username);
     } catch {
       // Rate-limited or unknown user; keep quiet either way.
     }
   }
-  return { step: "confirm", email, error: "A new code has been sent." };
+  return { step: "confirm", username, error: "A new code has been sent." };
 }
