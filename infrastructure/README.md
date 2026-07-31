@@ -40,13 +40,15 @@ then cluster by scope.
 | `rescufood-core-network` | `cloudformation/network.yaml` | Core (deploy once) |
 | `rescufood-dev-security` | `cloudformation/security-groups.yaml` | Per environment |
 | `rescufood-dev-iam` | `cloudformation/iam.yaml` | Per environment |
+| `rescufood-dev-ecs` | `cloudformation/ecs.yaml` | Per environment |
 
 Planned future stacks follow the same pattern: `rescufood-core-dns`,
-`rescufood-dev-data`, `rescufood-dev-ecs`, `rescufood-prod-security`, ...
+`rescufood-dev-data`, `rescufood-prod-security`, ...
 
 Deploy order: network first — the security groups stack imports the VPC id
-from the network stack's exports. The IAM stack (Cognito) has no VPC
-dependency and can be deployed independently at any time.
+from the network stack's exports, and the ECS stack imports both. The IAM
+stack (Cognito) has no VPC dependency and can be deployed independently at
+any time.
 
 ## Identity (IAM) stack
 
@@ -73,6 +75,56 @@ The frontend consumes the stack via environment variables (see
 
 After deploying, register any non-localhost frontend URL by re-deploying
 with `CallbackUrls`/`LogoutUrls` parameter overrides.
+
+## Compute (ECS) stack
+
+`cloudformation/ecs.yaml` provisions the per-environment compute tier:
+
+- **ECS cluster** (`rescufood-<env>`) and a Fargate **frontend service**
+  in the private app subnets (no public IP, image pulls via the NAT).
+- **Internet-facing ALB** in the public subnets, forwarding to the
+  container on port 3000. HTTP-only until `CertificateArn` is set, at
+  which point 443 is served and 80 redirects to it.
+- **Deployment circuit breaker** — a rollout whose tasks fail health
+  checks rolls back automatically instead of looping.
+- **ECS Exec** enabled — `aws ecs execute-command` opens a shell in a
+  running task for debugging.
+
+The service runs without a backend or database; the only runtime
+dependency is Cognito, injected through the optional secrets below.
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `Image` | `ghcr.io/nus-iss-team1/rescufood/frontend:develop` | Pushed by `frontend-build.yml` |
+| `CertificateArn` | empty | ACM cert; empty = plain HTTP on 80 |
+| `GhcrPullSecretArn` | empty | Only needed while the GHCR image is private |
+| `AppSecretsArn` | empty | Empty = sign-in renders disabled |
+
+Two optional Secrets Manager secrets, passed by ARN:
+
+- **GHCR pull secret** (`GhcrPullSecretArn`) — needed only if the GHCR
+  package is private. JSON: `{"username": "<github-username>",
+  "password": "<PAT with read:packages>"}`. Making the package public
+  (GitHub → Packages → frontend → settings) avoids this entirely.
+- **App secrets** (`AppSecretsArn`) — one secret holding the four auth
+  variables from `frontend/.env.example` as JSON keys: `AUTH_SECRET`,
+  `AUTH_COGNITO_ID`, `AUTH_COGNITO_SECRET`, `AUTH_COGNITO_ISSUER`.
+
+Caveat while the ALB is HTTP-only: Cognito rejects non-HTTPS callback
+URLs (localhost excepted), so the hosted-UI OAuth flow cannot be
+registered against `http://<alb-dns>`. The username/password form does
+not use a callback and works fine over HTTP.
+
+The `Image` tag `develop` is mutable — CloudFormation sees no change
+when a new image is pushed. To roll the service onto the newest image:
+
+```sh
+aws ecs update-service \
+  --region ap-southeast-1 \
+  --cluster rescufood-dev \
+  --service frontend \
+  --force-new-deployment
+```
 
 ## Deploying (not yet executed)
 
@@ -104,10 +156,32 @@ aws cloudformation deploy \
   --template-file cloudformation/iam.yaml \
   --parameter-overrides file://cloudformation/parameters/iam-dev.json \
   --no-fail-on-empty-changeset
+
+# 4. Dev environment compute (needs 1, 2, and a published frontend image)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-ecs \
+  --template-file cloudformation/ecs.yaml \
+  --parameter-overrides file://cloudformation/parameters/ecs-dev.json \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --no-fail-on-empty-changeset
 ```
 
-For prod later: copy `parameters/dev.json` to `parameters/prod.json`, set
-`EnvironmentName=prod`, and deploy a `rescufood-prod-security` stack.
+`CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
+ECS stack creates. The site URL is the stack's `FrontendUrl` output:
+
+```sh
+aws cloudformation describe-stacks \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-ecs \
+  --query "Stacks[0].Outputs[?OutputKey=='FrontendUrl'].OutputValue" \
+  --output text
+```
+
+For prod later: copy each `parameters/*-dev.json` to a `*-prod.json`, set
+`EnvironmentName=prod` (and a `:latest` or pinned image tag for ECS), then
+deploy `rescufood-prod-security`, `rescufood-prod-iam` and
+`rescufood-prod-ecs` the same way.
 
 ## Teardown
 
@@ -115,6 +189,7 @@ Delete in reverse order (security stacks before network — exports cannot be
 deleted while imported):
 
 ```sh
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-ecs
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-iam
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
@@ -124,5 +199,6 @@ Deleting the IAM stack deletes the user pool and all registered users —
 fine for dev, deliberate decision required for prod (`DeletionProtection`
 should be set to `ACTIVE` in the prod parameters when that time comes).
 
-Remember the NAT Gateway and its Elastic IP bill hourly — tear down the
-network stack when not in use for extended periods.
+Remember the NAT Gateway, its Elastic IP, the ALB, and running Fargate
+tasks all bill hourly — tear down the ECS and network stacks when not in
+use for extended periods.

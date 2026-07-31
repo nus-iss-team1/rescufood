@@ -9,7 +9,7 @@ A NUS-ISS Team 1 project.
 | Folder | What's in it |
 |---|---|
 | [`frontend/`](frontend/README.md) | Next.js web client (setup guide inside) |
-| [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity) |
+| [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity, ECS) |
 | `backend/` | NestJS API — coming in a later sprint |
 
 ## Quick start

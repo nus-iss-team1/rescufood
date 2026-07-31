@@ -1,0 +1,324 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood per-environment compute: ECS Fargate cluster and frontend
+  service in the private app subnets, behind an internet-facing ALB in
+  the public subnets. HTTP-only until a certificate ARN is supplied.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment this cluster and service belong to
+
+  NetworkStackName:
+    Type: String
+    Default: rescufood-core-network
+    Description: Name of the network stack whose VPC/subnet exports to import
+
+  SecurityStackName:
+    Type: String
+    Description: Name of the security groups stack for this environment
+
+  Image:
+    Type: String
+    Default: ghcr.io/nus-iss-team1/rescufood/frontend:develop
+    Description: Frontend container image (GHCR reference incl. tag)
+
+  ContainerPort:
+    Type: Number
+    Default: 3000
+    Description: Port the frontend container listens on
+
+  HealthCheckPath:
+    Type: String
+    Default: /
+    Description: Path the ALB polls for target health
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+    Description: Number of frontend tasks to run
+
+  Cpu:
+    Type: String
+    Default: "256"
+    AllowedValues: ["256", "512", "1024"]
+    Description: Fargate task CPU units
+
+  Memory:
+    Type: String
+    Default: "512"
+    AllowedValues: ["512", "1024", "2048"]
+    Description: Fargate task memory (MiB)
+
+  CertificateArn:
+    Type: String
+    Default: ""
+    Description: >-
+      ACM certificate ARN. When set, the ALB serves HTTPS on 443 and
+      redirects HTTP to it; when empty, the ALB serves plain HTTP on 80.
+
+  GhcrPullSecretArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Secrets Manager secret ARN with GHCR pull credentials
+      ({"username":"...","password":"<PAT with read:packages>"}).
+      Leave empty if the image is public.
+
+  AppSecretsArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Secrets Manager secret ARN holding AUTH_SECRET, AUTH_COGNITO_ID,
+      AUTH_COGNITO_SECRET and AUTH_COGNITO_ISSUER as JSON keys. Leave
+      empty to run with sign-in disabled.
+
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch log retention for container logs
+
+Conditions:
+  HasCertificate: !Not [!Equals [!Ref CertificateArn, ""]]
+  HasPullSecret: !Not [!Equals [!Ref GhcrPullSecretArn, ""]]
+  HasAppSecrets: !Not [!Equals [!Ref AppSecretsArn, ""]]
+  HasAnySecret: !Or [!Condition HasPullSecret, !Condition HasAppSecrets]
+
+Resources:
+  # ------------------------------------------------------- Load balancer
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-alb
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Split
+        - ","
+        - Fn::ImportValue: !Sub ${NetworkStackName}-PublicSubnetIds
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${SecurityStackName}-AlbSgId
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-web
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref ContainerPort
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions: !If
+        - HasCertificate
+        - - Type: redirect
+            RedirectConfig:
+              Protocol: HTTPS
+              Port: "443"
+              StatusCode: HTTP_301
+        - - Type: forward
+            TargetGroupArn: !Ref TargetGroup
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: HasCertificate
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTPS
+      Port: 443
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # ------------------------------------------------------------- Cluster
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${ProjectName}-${EnvironmentName}
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/frontend
+      RetentionInDays: !Ref LogRetentionDays
+
+  # ----------------------------------------------------------- IAM roles
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-frontend-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies: !If
+        - HasAnySecret
+        - - PolicyName: read-secrets
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                    - !If [HasAppSecrets, !Ref AppSecretsArn, !Ref AWS::NoValue]
+        - !Ref AWS::NoValue
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-frontend-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+
+  # ------------------------------------------------------------- Service
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-frontend
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Ref Image
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Secrets: !If
+            - HasAppSecrets
+            - - Name: AUTH_SECRET
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_SECRET::"
+              - Name: AUTH_COGNITO_ID
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_ID::"
+              - Name: AUTH_COGNITO_SECRET
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_SECRET::"
+              - Name: AUTH_COGNITO_ISSUER
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_ISSUER::"
+            - !Ref AWS::NoValue
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: frontend
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: frontend
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the listener carrying the target group
+        - Key: attached-listener
+          Value: !If [HasCertificate, !Ref HttpsListener, !Ref HttpListener]
+
+Outputs:
+  ClusterName:
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub ${AWS::StackName}-ClusterName
+
+  AlbDnsName:
+    Value: !GetAtt LoadBalancer.DNSName
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbDnsName
+
+  FrontendUrl:
+    Description: Public URL of the frontend
+    Value: !If
+      - HasCertificate
+      - !Sub https://${LoadBalancer.DNSName}
+      - !Sub http://${LoadBalancer.DNSName}

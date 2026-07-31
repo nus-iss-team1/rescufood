@@ -1,0 +1,8 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=dev",
+  "NetworkStackName=rescufood-core-network",
+  "SecurityStackName=rescufood-dev-security",
+  "Image=ghcr.io/nus-iss-team1/rescufood/frontend:develop",
+  "DesiredCount=1"
+]
