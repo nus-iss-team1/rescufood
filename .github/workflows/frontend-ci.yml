@@ -1,0 +1,84 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/reusable-sast.yml"
+      - ".github/workflows/reusable-dast.yml"
+      - ".github/zap/**"
+  schedule:
+    # Mondays 02:00 SGT - runs the active (full) ZAP scan.
+    - cron: "0 18 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint & type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: frontend
+      working-directory: frontend
+      codeql-languages: '["javascript-typescript"]'
+      # Flip to true once the existing dependency findings are triaged.
+      fail-on-findings: false
+
+  dast:
+    name: DAST
+    uses: ./.github/workflows/reusable-dast.yml
+    permissions:
+      contents: read
+    with:
+      component: frontend
+      build-context: frontend
+      port: 3000
+      health-path: /
+      scan-path: /
+      scan-type: ${{ github.event_name == 'schedule' && 'full' || 'baseline' }}
+      fail-on-findings: false
+      # Cognito variables are left unset, so the app renders sign-in as disabled.
+      runtime-env: |
+        AUTH_SECRET=dast-throwaway-secret-not-used-outside-ci
+        AUTH_URL=http://localhost:3000
+        AUTH_TRUST_HOST=true
+        NEXT_TELEMETRY_DISABLED=1

@@ -1,0 +1,225 @@
+name: Reusable DAST
+
+# OWASP ZAP scan against a component. By default the component is built from its
+# Dockerfile and run on the runner; set target-url to scan a deployed environment
+# instead.
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: Component being scanned (frontend, backend, ...). Used in job and artifact names.
+        required: true
+        type: string
+      target-url:
+        description: Base URL of an already running deployment. When set, nothing is built or started.
+        required: false
+        default: ""
+        type: string
+      build-context:
+        description: Docker build context for the ephemeral target.
+        required: false
+        default: ""
+        type: string
+      dockerfile:
+        description: Dockerfile path. Defaults to <build-context>/Dockerfile.
+        required: false
+        default: ""
+        type: string
+      image:
+        description: Existing image to run instead of building from build-context.
+        required: false
+        default: ""
+        type: string
+      port:
+        description: Port the container listens on and publishes. Passed to the container as PORT.
+        required: false
+        default: 3000
+        type: number
+      health-path:
+        description: Path polled until the target answers with 2xx.
+        required: false
+        default: /
+        type: string
+      scan-path:
+        description: Path ZAP starts from, appended to the base URL.
+        required: false
+        default: /
+        type: string
+      scan-type:
+        description: baseline (passive), full (active attacks), or api (needs an OpenAPI/GraphQL/SOAP definition).
+        required: false
+        default: baseline
+        type: string
+      api-format:
+        description: Definition format for scan-type api - openapi, graphql or soap.
+        required: false
+        default: openapi
+        type: string
+      api-definition-path:
+        description: Path to the API definition for scan-type api, e.g. /api-json.
+        required: false
+        default: /openapi.json
+        type: string
+      rules-file:
+        description: ZAP rule configuration, relative to the repository root. Ignored when the file is absent.
+        required: false
+        default: .github/zap/rules.tsv
+        type: string
+      cmd-options:
+        description: Extra ZAP options. -I keeps warnings from failing the scan. Add -j for the AJAX spider, which needs a working browser in the ZAP image.
+        required: false
+        default: -I
+        type: string
+      runtime-env:
+        description: Non-secret container environment, one KEY=VALUE per line.
+        required: false
+        default: ""
+        type: string
+      fail-on-findings:
+        description: Fail the job when ZAP reports an alert mapped to FAIL in rules-file.
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      runtime-env-secrets:
+        description: Secret container environment, one KEY=VALUE per line.
+        required: false
+
+jobs:
+  zap:
+    name: ZAP ${{ inputs.scan-type }} (${{ inputs.component }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build target image
+        if: inputs.target-url == '' && inputs.image == ''
+        env:
+          CONTEXT: ${{ inputs.build-context }}
+          DOCKERFILE: ${{ inputs.dockerfile }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CONTEXT" ]; then
+            echo "::error::build-context is required unless target-url or image is set"
+            exit 1
+          fi
+          docker build \
+            -f "${DOCKERFILE:-$CONTEXT/Dockerfile}" \
+            -t "dast-target:${{ github.sha }}" \
+            "$CONTEXT"
+
+      - name: Start target container
+        if: inputs.target-url == ''
+        env:
+          IMAGE: ${{ inputs.image != '' && inputs.image || format('dast-target:{0}', github.sha) }}
+          PULL_IMAGE: ${{ inputs.image }}
+          PORT: ${{ inputs.port }}
+          RUNTIME_ENV: ${{ inputs.runtime-env }}
+          RUNTIME_ENV_SECRETS: ${{ secrets.runtime-env-secrets }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PULL_IMAGE" ]; then
+            docker pull "$IMAGE"
+          fi
+          printf 'PORT=%s\n' "$PORT" > dast.env
+          printf '%s\n' "$RUNTIME_ENV" >> dast.env
+          printf '%s\n' "$RUNTIME_ENV_SECRETS" >> dast.env
+          docker run -d --name dast-target -p "$PORT:$PORT" --env-file dast.env "$IMAGE"
+          rm -f dast.env
+
+      - name: Wait for target
+        if: inputs.target-url == ''
+        env:
+          URL: http://localhost:${{ inputs.port }}${{ inputs.health-path }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            if curl -fsS -o /dev/null "$URL"; then
+              echo "$URL is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::$URL did not respond within 120s"
+          docker logs dast-target
+          exit 1
+
+      - name: Resolve scan target
+        id: target
+        env:
+          BASE: ${{ inputs.target-url != '' && inputs.target-url || format('http://localhost:{0}', inputs.port) }}
+          SCAN_PATH: ${{ inputs.scan-type == 'api' && inputs.api-definition-path || inputs.scan-path }}
+          RULES: ${{ inputs.rules-file }}
+        run: |
+          set -euo pipefail
+          echo "url=${BASE%/}$SCAN_PATH" >> "$GITHUB_OUTPUT"
+          if [ -f "$RULES" ]; then
+            echo "rules=$RULES" >> "$GITHUB_OUTPUT"
+          else
+            echo "rules=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ZAP baseline scan
+        if: inputs.scan-type == 'baseline'
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          rules_file_name: ${{ steps.target.outputs.rules }}
+          cmd_options: ${{ inputs.cmd-options }}
+          fail_action: ${{ inputs.fail-on-findings }}
+          allow_issue_writing: false
+          artifact_name: zap-${{ inputs.component }}-baseline
+
+      - name: ZAP full scan
+        if: inputs.scan-type == 'full'
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          rules_file_name: ${{ steps.target.outputs.rules }}
+          cmd_options: ${{ inputs.cmd-options }}
+          fail_action: ${{ inputs.fail-on-findings }}
+          allow_issue_writing: false
+          artifact_name: zap-${{ inputs.component }}-full
+
+      - name: ZAP API scan
+        if: inputs.scan-type == 'api'
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          format: ${{ inputs.api-format }}
+          rules_file_name: ${{ steps.target.outputs.rules }}
+          cmd_options: ${{ inputs.cmd-options }}
+          fail_action: ${{ inputs.fail-on-findings }}
+          allow_issue_writing: false
+          artifact_name: zap-${{ inputs.component }}-api
+
+      - name: Publish report summary
+        if: always()
+        env:
+          SCAN_TYPE: ${{ inputs.scan-type }}
+          COMPONENT: ${{ inputs.component }}
+          TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          set -euo pipefail
+          if [ -f report_md.md ]; then
+            {
+              echo "## ZAP $SCAN_TYPE scan - $COMPONENT"
+              echo "Target: $TARGET_URL"
+              echo
+              cat report_md.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No ZAP report produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Target logs and teardown
+        if: always() && inputs.target-url == ''
+        run: |
+          docker logs dast-target || true
+          docker rm -f dast-target || true

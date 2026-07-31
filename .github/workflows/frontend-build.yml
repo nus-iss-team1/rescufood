@@ -12,7 +12,22 @@ env:
   IMAGE_NAME: ${{ github.repository }}/frontend
 
 jobs:
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: frontend
+      working-directory: frontend
+      codeql-languages: '["javascript-typescript"]'
+      # Flip to true to stop publishing images that have open findings.
+      fail-on-findings: false
+
   build-and-push:
+    needs: sast
     runs-on: ubuntu-latest
     permissions:
       contents: read

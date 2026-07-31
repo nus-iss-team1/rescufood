@@ -1,0 +1,190 @@
+name: Reusable SAST
+
+# Static analysis for one component: CodeQL, Semgrep, and Trivy (dependencies,
+# secrets, IaC/Dockerfile misconfiguration). Results go to GitHub code scanning.
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: Component being scanned (frontend, backend, ...). Used in job, artifact and SARIF names.
+        required: true
+        type: string
+      working-directory:
+        description: Component root, relative to the repository root.
+        required: false
+        default: "."
+        type: string
+      run-codeql:
+        description: Run the CodeQL job.
+        required: false
+        default: true
+        type: boolean
+      codeql-languages:
+        description: JSON array of CodeQL languages, e.g. '["javascript-typescript"]'.
+        required: false
+        default: '["javascript-typescript"]'
+        type: string
+      codeql-build-mode:
+        description: CodeQL build mode - "none" for JS/TS/Python, "autobuild" or "manual" for compiled languages.
+        required: false
+        default: none
+        type: string
+      codeql-queries:
+        description: CodeQL query suite.
+        required: false
+        default: security-extended
+        type: string
+      run-semgrep:
+        description: Run the Semgrep job.
+        required: false
+        default: true
+        type: boolean
+      semgrep-configs:
+        description: Space-separated Semgrep rulesets, e.g. "p/default p/secrets p/nodejs".
+        required: false
+        default: p/default p/secrets
+        type: string
+      semgrep-version:
+        description: Tag of the semgrep/semgrep image.
+        required: false
+        default: "1.171.0"
+        type: string
+      run-trivy:
+        description: Run the Trivy job.
+        required: false
+        default: true
+        type: boolean
+      trivy-severity:
+        description: Severities Trivy reports on.
+        required: false
+        default: CRITICAL,HIGH
+        type: string
+      fail-on-findings:
+        description: Fail the job when Semgrep or Trivy report findings. Findings are always uploaded either way.
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  codeql:
+    name: CodeQL (${{ inputs.component }})
+    if: inputs.run-codeql
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.codeql-languages) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ inputs.codeql-build-mode }}
+          queries: ${{ inputs.codeql-queries }}
+          config: |
+            paths:
+              - ${{ inputs.working-directory }}
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}/component:${{ inputs.component }}
+
+  semgrep:
+    name: Semgrep (${{ inputs.component }})
+    if: inputs.run-semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        env:
+          CONFIGS: ${{ inputs.semgrep-configs }}
+          TARGET: ${{ inputs.working-directory }}
+          IMAGE: semgrep/semgrep:${{ inputs.semgrep-version }}
+          FAIL_ON_FINDINGS: ${{ inputs.fail-on-findings }}
+          SARIF: semgrep-${{ inputs.component }}.sarif
+        run: |
+          set -euo pipefail
+          read -ra configs <<< "$CONFIGS"
+          args=()
+          for config in "${configs[@]}"; do
+            args+=("--config=$config")
+          done
+          if [ "$FAIL_ON_FINDINGS" = "true" ]; then
+            args+=(--error)
+          fi
+          # Mount the repository root so SARIF paths stay repository-relative.
+          docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src "$IMAGE" \
+            semgrep scan "${args[@]}" \
+              --sarif --sarif-output="/src/$SARIF" \
+              --metrics=off \
+              "$TARGET"
+
+      - name: Upload Semgrep results
+        if: always() && hashFiles(format('semgrep-{0}.sarif', inputs.component)) != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-${{ inputs.component }}.sarif
+          category: semgrep-${{ inputs.component }}
+
+  trivy:
+    name: Trivy (${{ inputs.component }})
+    if: inputs.run-trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan dependencies, secrets and misconfiguration
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.working-directory }}
+          scanners: vuln,secret,misconfig
+          severity: ${{ inputs.trivy-severity }}
+          limit-severities-for-sarif: true
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-${{ inputs.component }}.sarif
+          exit-code: ${{ inputs.fail-on-findings && '1' || '0' }}
+
+      - name: Rewrite Trivy paths as repository-relative
+        if: always() && inputs.working-directory != '.' && hashFiles(format('trivy-{0}.sarif', inputs.component)) != ''
+        env:
+          SARIF: trivy-${{ inputs.component }}.sarif
+          PREFIX: ${{ inputs.working-directory }}
+        run: |
+          set -euo pipefail
+          jq --arg prefix "${PREFIX%/}/" '
+            (.runs[]?.results[]?.locations[]?.physicalLocation.artifactLocation.uri) |= $prefix + .
+          ' "$SARIF" > "$SARIF.tmp"
+          mv "$SARIF.tmp" "$SARIF"
+
+      - name: Upload Trivy results
+        if: always() && hashFiles(format('trivy-{0}.sarif', inputs.component)) != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-${{ inputs.component }}.sarif
+          category: trivy-${{ inputs.component }}
