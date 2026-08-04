@@ -4,5 +4,7 @@
   "NetworkStackName=rescufood-core-network",
   "SecurityStackName=rescufood-dev-security",
   "Image=ghcr.io/nus-iss-team1/rescufood/frontend:develop",
-  "DesiredCount=1"
+  "DesiredCount=1",
+  "GhcrPullSecretArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/dev/ghcr-pull-AyC3X5",
+  "AppSecretsArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/dev/app-secrets-VhcQMx"
 ]
