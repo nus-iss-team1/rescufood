@@ -41,14 +41,15 @@ then cluster by scope.
 | `rescufood-dev-security` | `cloudformation/security-groups.yaml` | Per environment |
 | `rescufood-dev-iam` | `cloudformation/iam.yaml` | Per environment |
 | `rescufood-dev-ecs` | `cloudformation/ecs.yaml` | Per environment |
+| `rescufood-dev-data` | `cloudformation/data.yaml` | Per environment |
 
 Planned future stacks follow the same pattern: `rescufood-core-dns`,
-`rescufood-dev-data`, `rescufood-prod-security`, ...
+`rescufood-prod-security`, ...
 
 Deploy order: network first — the security groups stack imports the VPC id
-from the network stack's exports, and the ECS stack imports both. The IAM
-stack (Cognito) has no VPC dependency and can be deployed independently at
-any time.
+from the network stack's exports, and the ECS and data stacks import both.
+The IAM stack (Cognito) has no VPC dependency and can be deployed
+independently at any time.
 
 ## Identity (IAM) stack
 
@@ -116,7 +117,12 @@ registered against `http://<alb-dns>`. The username/password form does
 not use a callback and works fine over HTTP.
 
 The `Image` tag `develop` is mutable — CloudFormation sees no change
-when a new image is pushed. To roll the service onto the newest image:
+when a new image is pushed. The `deploy` job in
+`.github/workflows/frontend-build.yml` rolls the service onto each
+newly pushed image and fails the run if the deployment circuit breaker
+rolls it back. It authenticates with an access key stored in the repo
+secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. To roll the
+service manually instead:
 
 ```sh
 aws ecs update-service \
@@ -125,6 +131,34 @@ aws ecs update-service \
   --service frontend \
   --force-new-deployment
 ```
+
+## Database (data) stack
+
+`cloudformation/data.yaml` provisions the per-environment data tier:
+
+- **RDS PostgreSQL** (`rescufood-<env>-db`) in the isolated data
+  subnets — no public access, port 5432 reachable only from the app
+  security group.
+- **Managed master credentials** — RDS creates and rotates the master
+  password in Secrets Manager; it never appears in a template or
+  parameter file. The secret ARN is the `DbSecretArn` output (JSON
+  keys `username`, `password`).
+- **Encrypted gp3 storage**, 20 GiB autoscaling up to 100 GiB.
+- **Backups** — 7 days of automated backups; deleting or replacing
+  the instance takes a final snapshot (`DeletionPolicy: Snapshot`).
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `EngineVersion` | `17` | Major version; set `major.minor` to pin |
+| `InstanceClass` | `db.t4g.micro` | ~US$13/month, ~US$15 with storage |
+| `MultiAz` | `false` | Standby replica in the second AZ |
+| `DeletionProtection` | `false` | Set `true` for prod |
+
+The backend consumes the stack through the `DbEndpoint`, `DbPort`,
+`DbName` and `DbSecretArn` exports, composing the connection string as
+`postgresql://<username>:<password>@<endpoint>:<port>/<name>`. For prod,
+override `MultiAz=true`, `DeletionProtection=true` and a larger instance
+class in `parameters/data-prod.json`.
 
 ## Deploying (not yet executed)
 
@@ -165,6 +199,14 @@ aws cloudformation deploy \
   --parameter-overrides file://cloudformation/parameters/ecs-dev.json \
   --capabilities CAPABILITY_NAMED_IAM \
   --no-fail-on-empty-changeset
+
+# 5. Dev environment database (needs 1 and 2; takes ~10 minutes)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-data \
+  --template-file cloudformation/data.yaml \
+  --parameter-overrides file://cloudformation/parameters/data-dev.json \
+  --no-fail-on-empty-changeset
 ```
 
 `CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
@@ -190,6 +232,7 @@ deleted while imported):
 
 ```sh
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-ecs
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-data
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-iam
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
@@ -199,6 +242,9 @@ Deleting the IAM stack deletes the user pool and all registered users —
 fine for dev, deliberate decision required for prod (`DeletionProtection`
 should be set to `ACTIVE` in the prod parameters when that time comes).
 
-Remember the NAT Gateway, its Elastic IP, the ALB, and running Fargate
-tasks all bill hourly — tear down the ECS and network stacks when not in
-use for extended periods.
+Deleting the data stack leaves a final snapshot behind (billed per GiB);
+delete it from the RDS console once it is no longer needed.
+
+Remember the NAT Gateway, its Elastic IP, the ALB, running Fargate tasks
+and the RDS instance all bill hourly — tear down the ECS, data and
+network stacks when not in use for extended periods.
