@@ -7,6 +7,11 @@ on:
       - "frontend/**"
       - ".github/workflows/frontend-build.yml"
 
+# One run at a time; the newest queued run supersedes older pending ones.
+concurrency:
+  group: frontend-build-develop
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/frontend
@@ -66,3 +71,63 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      AWS_REGION: ap-southeast-1
+      CLUSTER: rescufood-dev
+      SERVICE: frontend
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The develop tag is mutable; a forced deployment re-pulls it.
+      - name: Roll service onto the new image
+        id: roll
+        run: |
+          set -euo pipefail
+          id=$(aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$SERVICE" \
+            --force-new-deployment \
+            --query "service.deployments[?status=='PRIMARY']|[0].id" \
+            --output text)
+          echo "Started deployment $id"
+          echo "deployment-id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for rollout
+        env:
+          DEPLOYMENT_ID: ${{ steps.roll.outputs.deployment-id }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            state=$(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query "services[0].deployments[?id=='$DEPLOYMENT_ID']|[0].rolloutState" \
+              --output text)
+            case "$state" in
+              COMPLETED)
+                echo "Rollout completed"
+                exit 0
+                ;;
+              FAILED|None)
+                echo "::error::Rollout failed - the circuit breaker rolled the service back"
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Rollout did not finish within 15 minutes"
+          exit 1
