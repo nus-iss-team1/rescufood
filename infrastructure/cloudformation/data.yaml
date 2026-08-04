@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood per-environment data tier: RDS PostgreSQL instance in the
+  isolated data subnets, reachable only from the app security group.
+  Master credentials live in an RDS-managed Secrets Manager secret.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment this database belongs to
+
+  NetworkStackName:
+    Type: String
+    Default: rescufood-core-network
+    Description: Name of the network stack whose subnet exports to import
+
+  SecurityStackName:
+    Type: String
+    Description: Name of the security groups stack for this environment
+
+  EngineVersion:
+    Type: String
+    Default: "17"
+    Description: PostgreSQL version - a major version tracks its latest minor
+
+  InstanceClass:
+    Type: String
+    Default: db.t4g.micro
+    Description: Database instance class
+
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+    Description: Initial storage size (GiB)
+
+  MaxAllocatedStorage:
+    Type: Number
+    Default: 100
+    Description: Storage autoscaling ceiling (GiB)
+
+  DatabaseName:
+    Type: String
+    Default: rescufood
+    AllowedPattern: ^[a-zA-Z][a-zA-Z0-9_]*$
+    Description: Name of the initial database created in the instance
+
+  MasterUsername:
+    Type: String
+    Default: rescufood_admin
+    AllowedPattern: ^[a-zA-Z][a-zA-Z0-9_]*$
+    Description: Master user name
+
+  MultiAz:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Run a standby replica in the second AZ
+
+  BackupRetentionDays:
+    Type: Number
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+    Description: Days automated backups are kept
+
+  DeletionProtection:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Block deletion of the instance
+
+Resources:
+  # -------------------------------------------------------- Subnet group
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${ProjectName}-${EnvironmentName}-db-subnets
+      DBSubnetGroupDescription: !Sub ${EnvironmentName} database - isolated data subnets
+      SubnetIds: !Split
+        - ","
+        - Fn::ImportValue: !Sub ${NetworkStackName}-DataSubnetIds
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  # ------------------------------------------------------------ Instance
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub ${ProjectName}-${EnvironmentName}-db
+      Engine: postgres
+      EngineVersion: !Ref EngineVersion
+      DBInstanceClass: !Ref InstanceClass
+      DBName: !Ref DatabaseName
+      MasterUsername: !Ref MasterUsername
+      ManageMasterUserPassword: true
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub ${SecurityStackName}-DbSgId
+      PubliclyAccessible: false
+      MultiAZ: !Ref MultiAz
+      StorageType: gp3
+      AllocatedStorage: !Ref AllocatedStorage
+      MaxAllocatedStorage: !Ref MaxAllocatedStorage
+      StorageEncrypted: true
+      BackupRetentionPeriod: !Ref BackupRetentionDays
+      PreferredBackupWindow: "18:30-19:30" # UTC; 02:30-03:30 SGT
+      PreferredMaintenanceWindow: "sun:19:30-sun:20:30" # UTC; Mon 03:30-04:30 SGT
+      AutoMinorVersionUpgrade: true
+      DeletionProtection: !Ref DeletionProtection
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  DbEndpoint:
+    Description: Hostname of the database instance
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-DbEndpoint
+
+  DbPort:
+    Value: !GetAtt Database.Endpoint.Port
+    Export:
+      Name: !Sub ${AWS::StackName}-DbPort
+
+  DbName:
+    Value: !Ref DatabaseName
+    Export:
+      Name: !Sub ${AWS::StackName}-DbName
+
+  DbSecretArn:
+    Description: RDS-managed secret with username and password as JSON keys
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+    Export:
+      Name: !Sub ${AWS::StackName}-DbSecretArn
