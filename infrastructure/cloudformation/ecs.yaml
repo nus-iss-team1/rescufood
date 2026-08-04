@@ -245,6 +245,13 @@ Resources:
           PortMappings:
             - ContainerPort: !Ref ContainerPort
               Protocol: tcp
+          Environment:
+            # Canonical base URL Auth.js uses for redirects and callbacks.
+            - Name: AUTH_URL
+              Value: !If
+                - HasCertificate
+                - !Sub https://${LoadBalancer.DNSName}
+                - !Sub http://${LoadBalancer.DNSName}
           RepositoryCredentials: !If
             - HasPullSecret
             - CredentialsParameter: !Ref GhcrPullSecretArn
