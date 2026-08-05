@@ -20,7 +20,9 @@ import { OrgDetailSheet } from "./OrgDetailSheet";
 import { ReasonDialog } from "./ReasonDialog";
 import { timeAgo } from "./lib/time";
 
-const tabs: OrgStatus[] = ["pending", "approved", "suspended", "rejected"];
+type QueueTab = OrgStatus | "all";
+
+const tabs: QueueTab[] = ["pending", "approved", "suspended", "rejected", "all"];
 
 const actionsByStatus: Record<
   OrgStatus,
@@ -35,6 +37,13 @@ const actionsByStatus: Record<
   rejected: [],
 };
 
+const statusBadge: Record<OrgStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  pending: "secondary",
+  approved: "default",
+  suspended: "destructive",
+  rejected: "outline",
+};
+
 interface PendingAction {
   org: Org;
   label: string;
@@ -42,7 +51,7 @@ interface PendingAction {
 }
 
 export function OrgQueue() {
-  const [tab, setTab] = useState<OrgStatus>("pending");
+  const [tab, setTab] = useState<QueueTab>("pending");
   const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [counts, setCounts] = useState<OrgCounts | null>(null);
   const [error, setError] = useState("");
@@ -50,7 +59,7 @@ export function OrgQueue() {
   const [detail, setDetail] = useState<Org | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async (status: OrgStatus) => {
+  const load = useCallback(async (status: QueueTab) => {
     setOrgs(null);
     setError("");
     try {
@@ -88,18 +97,26 @@ export function OrgQueue() {
 
   return (
     <section className="grid gap-4">
-      <Tabs value={tab} onValueChange={(v) => setTab(v as OrgStatus)}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as QueueTab)}>
         <TabsList>
-          {tabs.map((t) => (
-            <TabsTrigger key={t} value={t} className="capitalize">
-              {t}
-              {counts && counts[t] > 0 && (
-                <Badge variant="secondary" className="ml-1.5">
-                  {counts[t]}
-                </Badge>
-              )}
-            </TabsTrigger>
-          ))}
+          {tabs.map((t) => {
+            const count =
+              counts === null
+                ? 0
+                : t === "all"
+                  ? Object.values(counts).reduce((a, b) => a + b, 0)
+                  : counts[t];
+            return (
+              <TabsTrigger key={t} value={t} className="capitalize">
+                {t}
+                {count > 0 && (
+                  <Badge variant="secondary" className="ml-1.5">
+                    {count}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
 
@@ -128,6 +145,7 @@ export function OrgQueue() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
+                {tab === "all" && <TableHead>Status</TableHead>}
                 <TableHead>Domain</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Registered</TableHead>
@@ -154,6 +172,13 @@ export function OrgQueue() {
                       {org.type === "donor" ? "Donor" : "Rescue partner"}
                     </Badge>
                   </TableCell>
+                  {tab === "all" && (
+                    <TableCell>
+                      <Badge variant={statusBadge[org.status]} className="capitalize">
+                        {org.status}
+                      </Badge>
+                    </TableCell>
+                  )}
                   <TableCell>{org.domain || "—"}</TableCell>
                   <TableCell>
                     {org.contact_email}
@@ -170,7 +195,7 @@ export function OrgQueue() {
                     className="whitespace-nowrap text-right"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {actionsByStatus[tab].map(({ label, run }) => (
+                    {actionsByStatus[org.status].map(({ label, run }) => (
                       <Button
                         key={label}
                         variant="outline"

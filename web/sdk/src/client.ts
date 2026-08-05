@@ -78,7 +78,7 @@ export class ProfileClient {
 
   // ------------------------------------------------------------- admin
 
-  listOrgs(status: OrgStatus): Promise<Org[]> {
+  listOrgs(status: OrgStatus | "all"): Promise<Org[]> {
     return this.request(`/admin/orgs/?status=${status}`);
   }
 
