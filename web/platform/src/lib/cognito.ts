@@ -59,13 +59,16 @@ export async function emailInUse(email: string) {
   return (res.Users ?? []).length > 0;
 }
 
+// signUpUser registers the account and reports whether the pool
+// confirmed it immediately (dev pools auto-confirm via a pre-sign-up
+// trigger; other pools require the emailed code).
 export async function signUpUser(
   username: string,
   email: string,
   password: string,
   name: string
-) {
-  await client.send(
+): Promise<{ confirmed: boolean }> {
+  const res = await client.send(
     new SignUpCommand({
       ClientId: clientId,
       SecretHash: secretHash(username),
@@ -77,6 +80,7 @@ export async function signUpUser(
       ],
     })
   );
+  return { confirmed: res.UserConfirmed ?? false };
 }
 
 export async function confirmSignUpUser(username: string, code: string) {

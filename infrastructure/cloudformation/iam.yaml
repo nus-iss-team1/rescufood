@@ -32,6 +32,18 @@ Parameters:
     NoEcho: true
     Description: Password of the bootstrap superadmin account
 
+  AutoConfirmSignups:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >-
+      Auto-confirm new signups and mark their email verified via a
+      pre-sign-up trigger. Dev only: synthetic organisation emails
+      cannot receive verification codes.
+
+Conditions:
+  AutoConfirm: !Equals [!Ref AutoConfirmSignups, "true"]
+
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
@@ -71,6 +83,10 @@ Resources:
           AttributeDataType: String
           Required: false
           Mutable: true
+      LambdaConfig: !If
+        - AutoConfirm
+        - PreSignUp: !GetAtt AutoConfirmFunction.Arn
+        - !Ref AWS::NoValue
       UserPoolTags:
         Project: !Ref ProjectName
         Environment: !Ref EnvironmentName
@@ -151,6 +167,47 @@ Resources:
       GroupName: admin
       Description: Platform administrators - approve and manage organisations
       UserPoolId: !Ref UserPool
+
+  # -------------------------------------- Dev signup auto-confirmation
+  AutoConfirmFunctionRole:
+    Type: AWS::IAM::Role
+    Condition: AutoConfirm
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AutoConfirmFunction:
+    Type: AWS::Lambda::Function
+    Condition: AutoConfirm
+    Properties:
+      Description: Pre-sign-up trigger - confirms users and verifies email
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 5
+      Role: !GetAtt AutoConfirmFunctionRole.Arn
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              event["response"]["autoConfirmUser"] = True
+              if event["request"]["userAttributes"].get("email"):
+                  event["response"]["autoVerifyEmail"] = True
+              return event
+
+  AutoConfirmPermission:
+    Type: AWS::Lambda::Permission
+    Condition: AutoConfirm
+    Properties:
+      FunctionName: !GetAtt AutoConfirmFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
 
   # ------------------------------------------- Superadmin bootstrap
   SuperAdminFunctionRole:

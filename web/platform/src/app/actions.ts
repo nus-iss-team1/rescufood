@@ -129,8 +129,9 @@ export async function signUpAction(
     // uniqueness at verification time.
   }
 
+  let confirmed = false;
   try {
-    await signUpUser(username, email, password, name);
+    ({ confirmed } = await signUpUser(username, email, password, name));
   } catch (err) {
     const code = (err as { name?: string }).name;
     if (code === "UsernameExistsException") {
@@ -143,6 +144,20 @@ export async function signUpAction(
       step: "details",
       error: "Sign-up failed. Please check your details and try again.",
     };
+  }
+
+  // Dev pools auto-confirm via a pre-sign-up trigger; sign in directly.
+  if (confirmed) {
+    try {
+      await signIn("credentials", {
+        username,
+        password,
+        redirectTo: "/dashboard",
+      });
+    } catch (err) {
+      if (isRedirectError(err)) throw err;
+    }
+    return { step: "details", error: "Account created. Please sign in." };
   }
 
   return { step: "confirm", username, email };
