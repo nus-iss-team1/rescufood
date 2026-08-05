@@ -66,7 +66,7 @@ independently at any time.
   is included in tokens (`cognito:groups` claim) for role checks.
 
 The frontend consumes the stack via environment variables (see
-`frontend/.env.example`):
+`web/platform/.env.example`):
 
 | Frontend env var | Source |
 |---|---|
@@ -96,7 +96,7 @@ dependency is Cognito, injected through the optional secrets below.
 
 | Parameter | Default | Notes |
 |---|---|---|
-| `Image` | `ghcr.io/nus-iss-team1/rescufood/frontend:develop` | Pushed by `frontend-build.yml` |
+| `Image` | `ghcr.io/nus-iss-team1/rescufood/frontend:develop` | Pushed by `platform-build.yml` |
 | `CertificateArn` | empty | ACM cert; empty = plain HTTP on 80 |
 | `GhcrPullSecretArn` | empty | Only needed while the GHCR image is private |
 | `AppSecretsArn` | empty | Empty = sign-in renders disabled |
@@ -108,7 +108,7 @@ Two optional Secrets Manager secrets, passed by ARN:
   "password": "<PAT with read:packages>"}`. Making the package public
   (GitHub → Packages → frontend → settings) avoids this entirely.
 - **App secrets** (`AppSecretsArn`) — one secret holding the four auth
-  variables from `frontend/.env.example` as JSON keys: `AUTH_SECRET`,
+  variables from `web/platform/.env.example` as JSON keys: `AUTH_SECRET`,
   `AUTH_COGNITO_ID`, `AUTH_COGNITO_SECRET`, `AUTH_COGNITO_ISSUER`.
 
 Caveat while the ALB is HTTP-only: Cognito rejects non-HTTPS callback
@@ -118,7 +118,7 @@ not use a callback and works fine over HTTP.
 
 The `Image` tag `develop` is mutable — CloudFormation sees no change
 when a new image is pushed. The `deploy` job in
-`.github/workflows/frontend-build.yml` rolls the service onto each
+`.github/workflows/platform-build.yml` rolls the service onto each
 newly pushed image and fails the run if the deployment circuit breaker
 rolls it back. It authenticates with an access key stored in the repo
 secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. To roll the

@@ -1,19 +1,20 @@
-name: Build & Push Frontend Image
+name: Build & Push Platform Image
 
 on:
   push:
     branches: [develop]
     paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-build.yml"
+      - "web/platform/**"
+      - ".github/workflows/platform-build.yml"
 
 # One run at a time; the newest queued run supersedes older pending ones.
 concurrency:
-  group: frontend-build-develop
+  group: platform-build-develop
   cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
+  # Image name predates the web/platform move; the ECS service pulls it.
   IMAGE_NAME: ${{ github.repository }}/frontend
 
 jobs:
@@ -25,8 +26,8 @@ jobs:
       security-events: write
       actions: read
     with:
-      component: frontend
-      working-directory: frontend
+      component: platform
+      working-directory: web/platform
       codeql-languages: '["javascript-typescript"]'
       # Flip to true to stop publishing images that have open findings.
       fail-on-findings: false
@@ -65,7 +66,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: frontend
+          context: web/platform
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

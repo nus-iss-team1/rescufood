@@ -1,11 +1,11 @@
-name: Frontend CI
+name: Platform CI
 
 on:
   pull_request:
     branches: [develop]
     paths:
-      - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
+      - "web/platform/**"
+      - ".github/workflows/platform-ci.yml"
       - ".github/workflows/reusable-sast.yml"
       - ".github/workflows/reusable-dast.yml"
       - ".github/zap/**"
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: frontend-ci-${{ github.ref }}
+  group: platform-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       contents: read
     defaults:
       run:
-        working-directory: frontend
+        working-directory: web/platform
 
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: web/platform/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -57,8 +57,8 @@ jobs:
       security-events: write
       actions: read
     with:
-      component: frontend
-      working-directory: frontend
+      component: platform
+      working-directory: web/platform
       codeql-languages: '["javascript-typescript"]'
       # Flip to true once the existing dependency findings are triaged.
       fail-on-findings: false
@@ -69,8 +69,8 @@ jobs:
     permissions:
       contents: read
     with:
-      component: frontend
-      build-context: frontend
+      component: platform
+      build-context: web/platform
       port: 3000
       health-path: /
       scan-path: /

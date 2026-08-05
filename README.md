@@ -8,16 +8,17 @@ A NUS-ISS Team 1 project.
 
 | Folder | What's in it |
 |---|---|
-| [`frontend/`](frontend/README.md) | Next.js web client (setup guide inside) |
-| [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity, ECS) |
-| `backend/` | NestJS API — coming in a later sprint |
+| [`web/platform/`](web/platform/README.md) | Next.js web client for donors and rescue partners (setup guide inside) |
+| `web/admin-console/` | React SPA for platform administrators |
+| [`service/profile/`](service/profile) | Go profile service — users, organisations, approval |
+| [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity, ECS, data) |
 
 ## Quick start
 
 ```sh
-cd frontend
+cd web/platform
 npm install
 npm run dev
 ```
 
-See [`frontend/README.md`](frontend/README.md) for environment setup and sign-in configuration.
+See [`web/platform/README.md`](web/platform/README.md) for environment setup and sign-in configuration.
