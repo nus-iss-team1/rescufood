@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { Org, OrgCounts, OrgStatus } from "@rescufood/profile-sdk";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Badge } from "@rescufood/ui/components/badge";
+import { Button } from "@rescufood/ui/components/button";
+import { Skeleton } from "@rescufood/ui/components/skeleton";
 import {
   Table,
   TableBody,
@@ -17,48 +12,57 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+} from "@rescufood/ui/components/table";
+import { Tabs, TabsList, TabsTrigger } from "@rescufood/ui/components/tabs";
 
-import { api, ApiError } from "./api";
-import type { Org, OrgStatus } from "./types";
+import { client, ApiError } from "./api";
+import { OrgDetailSheet } from "./OrgDetailSheet";
+import { ReasonDialog } from "./ReasonDialog";
+import { timeAgo } from "./lib/time";
 
 const tabs: OrgStatus[] = ["pending", "approved", "suspended", "rejected"];
 
-const actionsByStatus: Record<OrgStatus, { label: string; action: string }[]> = {
+const actionsByStatus: Record<
+  OrgStatus,
+  { label: string; run: (id: string, reason: string) => Promise<Org> }[]
+> = {
   pending: [
-    { label: "Approve", action: "approve" },
-    { label: "Reject", action: "reject" },
+    { label: "Approve", run: (id, r) => client.approveOrg(id, r) },
+    { label: "Reject", run: (id, r) => client.rejectOrg(id, r) },
   ],
-  approved: [{ label: "Suspend", action: "suspend" }],
-  suspended: [{ label: "Reactivate", action: "approve" }],
+  approved: [{ label: "Suspend", run: (id, r) => client.suspendOrg(id, r) }],
+  suspended: [{ label: "Reactivate", run: (id, r) => client.approveOrg(id, r) }],
   rejected: [],
 };
 
 interface PendingAction {
   org: Org;
-  action: string;
   label: string;
+  run: (id: string, reason: string) => Promise<Org>;
 }
 
 export function OrgQueue() {
   const [tab, setTab] = useState<OrgStatus>("pending");
-  const [orgs, setOrgs] = useState<Org[]>([]);
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [counts, setCounts] = useState<OrgCounts | null>(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
-  const [reason, setReason] = useState("");
+  const [detail, setDetail] = useState<Org | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async (status: OrgStatus) => {
-    setBusy(true);
+    setOrgs(null);
     setError("");
     try {
-      setOrgs(await api<Org[]>(`/admin/orgs/?status=${status}`));
+      const [list, allCounts] = await Promise.all([
+        client.listOrgs(status),
+        client.countOrgs(),
+      ]);
+      setOrgs(list);
+      setCounts(allCounts);
     } catch (err) {
+      setOrgs([]);
       setError(err instanceof ApiError ? err.message : "failed to load organisations");
-    } finally {
-      setBusy(false);
     }
   }, []);
 
@@ -66,23 +70,19 @@ export function OrgQueue() {
     void load(tab);
   }, [tab, load]);
 
-  function open(org: Org, action: string, label: string) {
-    setReason("");
-    setPending({ org, action, label });
-  }
-
-  async function confirm() {
-    if (!pending || !reason.trim()) return;
+  async function confirm(reason: string) {
+    if (!pending) return;
+    setBusy(true);
     try {
-      await api(`/admin/orgs/${pending.org.id}/${pending.action}`, {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-      });
+      await pending.run(pending.org.id, reason);
+      toast.success(`${pending.org.name} ${pending.label.toLowerCase()}d`);
       setPending(null);
       await load(tab);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : `failed to ${pending.action}`);
+      toast.error(err instanceof ApiError ? err.message : "action failed");
       setPending(null);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -93,18 +93,35 @@ export function OrgQueue() {
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="capitalize">
               {t}
+              {counts && counts[t] > 0 && (
+                <Badge variant="secondary" className="ml-1.5">
+                  {counts[t]}
+                </Badge>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {busy && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {!busy && orgs.length === 0 && (
-        <p className="text-sm text-muted-foreground">No {tab} organisations.</p>
+
+      {orgs === null && (
+        <div className="grid gap-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       )}
 
-      {orgs.length > 0 && (
+      {orgs?.length === 0 && !error && (
+        <div className="rounded-lg border border-dashed py-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            No {tab} organisations.
+          </p>
+        </div>
+      )}
+
+      {orgs && orgs.length > 0 && (
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
@@ -113,17 +130,23 @@ export function OrgQueue() {
                 <TableHead>Type</TableHead>
                 <TableHead>Domain</TableHead>
                 <TableHead>Contact</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>Registered</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {orgs.map((org) => (
-                <TableRow key={org.id}>
+                <TableRow
+                  key={org.id}
+                  className="cursor-pointer"
+                  onClick={() => setDetail(org)}
+                >
                   <TableCell>
                     <div className="font-medium">{org.name}</div>
                     {org.description && (
-                      <div className="text-xs text-muted-foreground">{org.description}</div>
+                      <div className="max-w-56 truncate text-xs text-muted-foreground">
+                        {org.description}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>
@@ -135,18 +158,25 @@ export function OrgQueue() {
                   <TableCell>
                     {org.contact_email}
                     {org.contact_phone && (
-                      <div className="text-xs text-muted-foreground">{org.contact_phone}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {org.contact_phone}
+                      </div>
                     )}
                   </TableCell>
-                  <TableCell>{new Date(org.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    {actionsByStatus[tab].map(({ label, action }) => (
+                  <TableCell title={new Date(org.created_at).toLocaleString()}>
+                    {timeAgo(org.created_at)}
+                  </TableCell>
+                  <TableCell
+                    className="whitespace-nowrap text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {actionsByStatus[tab].map(({ label, run }) => (
                       <Button
-                        key={action}
+                        key={label}
                         variant="outline"
                         size="sm"
                         className="ml-2"
-                        onClick={() => open(org, action, label)}
+                        onClick={() => setPending({ org, label, run })}
                       >
                         {label}
                       </Button>
@@ -159,32 +189,15 @@ export function OrgQueue() {
         </div>
       )}
 
-      <Dialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {pending?.label} {pending?.org.name}
-            </DialogTitle>
-            <DialogDescription>
-              A reason is required and kept on record.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason"
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPending(null)}>
-              Cancel
-            </Button>
-            <Button disabled={!reason.trim()} onClick={() => void confirm()}>
-              {pending?.label}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ReasonDialog
+        title={pending ? `${pending.label} ${pending.org.name}` : ""}
+        open={pending !== null}
+        busy={busy}
+        onCancel={() => setPending(null)}
+        onConfirm={(reason) => void confirm(reason)}
+      />
+
+      <OrgDetailSheet org={detail} onClose={() => setDetail(null)} />
     </section>
   );
 }

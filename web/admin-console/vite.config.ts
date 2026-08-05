@@ -11,5 +11,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    // The linked workspace packages must share this app's react copy.
+    dedupe: ['react', 'react-dom'],
   },
 })

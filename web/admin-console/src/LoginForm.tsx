@@ -1,19 +1,25 @@
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@rescufood/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@rescufood/ui/components/card";
+import { Input } from "@rescufood/ui/components/input";
+import { Label } from "@rescufood/ui/components/label";
 
 import { signIn } from "./auth";
 
-export function LoginForm({ onSignedIn }: { onSignedIn: () => void }) {
+export function LoginForm({
+  onSignedIn,
+  notice,
+}: {
+  onSignedIn: () => void;
+  notice?: string;
+}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,6 +45,7 @@ export function LoginForm({ onSignedIn }: { onSignedIn: () => void }) {
         <CardHeader>
           <CardTitle>RescuFood Admin</CardTitle>
           <CardDescription>Sign in with your administrator account</CardDescription>
+          {notice && <p className="text-sm text-amber-600">{notice}</p>}
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="grid gap-4">

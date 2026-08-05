@@ -1,28 +1,37 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Me } from "@rescufood/profile-sdk";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@rescufood/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@rescufood/ui/components/card";
 
-import { api, ApiError } from "./api";
+import { client, ApiError } from "./api";
 import { getToken, signOut } from "./auth";
 import { LoginForm } from "./LoginForm";
 import { OrgQueue } from "./OrgQueue";
-import type { Me } from "./types";
 
 export default function App() {
   const [authed, setAuthed] = useState(() => getToken() !== null);
+  const [notice, setNotice] = useState("");
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const onExpired = () => {
+      setMe(null);
+      setAuthed(false);
+      setNotice("Your session has expired. Please sign in again.");
+    };
+    window.addEventListener("admin:session-expired", onExpired);
+    return () => window.removeEventListener("admin:session-expired", onExpired);
+  }, []);
 
   const loadMe = useCallback(async () => {
     setError("");
     try {
-      setMe(await api<Me>("/me"));
+      setMe(await client.getMe());
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        signOut();
-        setAuthed(false);
-        return;
+        return; // onUnauthorized already signed us out
       }
       setError(err instanceof Error ? err.message : "failed to load profile");
     }
@@ -35,11 +44,20 @@ export default function App() {
   function logout() {
     signOut();
     setMe(null);
+    setNotice("");
     setAuthed(false);
   }
 
   if (!authed) {
-    return <LoginForm onSignedIn={() => setAuthed(true)} />;
+    return (
+      <LoginForm
+        notice={notice}
+        onSignedIn={() => {
+          setNotice("");
+          setAuthed(true);
+        }}
+      />
+    );
   }
 
   if (error || (me && !me.is_admin)) {
