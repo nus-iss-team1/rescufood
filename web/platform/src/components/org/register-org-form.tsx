@@ -2,22 +2,31 @@
 
 import { useActionState } from "react";
 
-import { createOrgAction, type OrgFormState } from "@/app/actions";
+import { registerOrgAction, type OrgFormState } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function OrgRegistrationForm({
-  defaultType,
-  defaultEmail,
-}: {
-  defaultType: "donor" | "rescue_partner";
-  defaultEmail: string;
-}) {
+export function RegisterOrgForm() {
   const [state, action, pending] = useActionState<OrgFormState, FormData>(
-    createOrgAction,
+    registerOrgAction,
     {}
   );
+
+  if (state.domain) {
+    return (
+      <div className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">Registration submitted</h2>
+        <p className="text-sm text-muted-foreground">
+          An administrator will review your organisation. Once it is
+          approved, anyone with an{" "}
+          <span className="font-medium text-foreground">@{state.domain}</span>{" "}
+          email address can create an account and will join your
+          organisation automatically.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -42,7 +51,7 @@ export function OrgRegistrationForm({
               name="type"
               value="donor"
               className="sr-only"
-              defaultChecked={defaultType === "donor"}
+              defaultChecked
             />
             Food donor
           </label>
@@ -52,7 +61,6 @@ export function OrgRegistrationForm({
               name="type"
               value="rescue_partner"
               className="sr-only"
-              defaultChecked={defaultType === "rescue_partner"}
             />
             Rescue partner
           </label>
@@ -60,23 +68,23 @@ export function OrgRegistrationForm({
       </fieldset>
 
       <div className="flex flex-col gap-2">
+        <Label htmlFor="org-domain">Email domain</Label>
+        <Input id="org-domain" name="domain" placeholder="freshmart.sg" required />
+        <p className="text-xs text-muted-foreground">
+          Your team signs up with email addresses on this domain once the
+          organisation is approved.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
         <Label htmlFor="org-email">Contact email</Label>
         <Input
           id="org-email"
           name="contact_email"
           type="email"
-          defaultValue={defaultEmail}
+          placeholder="ops@freshmart.sg"
           required
         />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="org-domain">Email domain (optional)</Label>
-        <Input id="org-domain" name="domain" placeholder="freshmart.sg" />
-        <p className="text-xs text-muted-foreground">
-          Colleagues signing up with an email on this domain join your
-          organisation automatically.
-        </p>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -109,7 +117,8 @@ export function OrgRegistrationForm({
         {pending ? "Submitting..." : "Register organisation"}
       </Button>
       <p className="text-center text-xs text-muted-foreground">
-        An administrator reviews every registration before it goes live.
+        An administrator reviews every registration before accounts can be
+        created.
       </p>
     </form>
   );

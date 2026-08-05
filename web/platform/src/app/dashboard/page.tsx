@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { BarChart3, PackagePlus, Search } from "lucide-react";
 
+import Link from "next/link";
+
 import { auth } from "@/auth";
 import { signOutAction } from "@/app/actions";
 import { getMe, ProfileApiError, type Me, type Org } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
-import { OrgRegistrationForm } from "@/components/org/registration-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -17,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Dashboard — RescuFood",
@@ -115,31 +117,26 @@ function ApprovedDashboard() {
   );
 }
 
-function RegistrationSection({ me, groups }: { me: Me; groups: string[] }) {
-  const defaultType = groups.includes("rescue-partner")
-    ? "rescue_partner"
-    : "donor";
+function NoOrganisation({ me }: { me: Me }) {
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-10 lg:grid-cols-2">
-      <div className="flex flex-col gap-3">
-        <h2 className="text-2xl font-semibold tracking-tight">
+    <Card className="mx-auto w-full max-w-md">
+      <CardHeader>
+        <CardTitle>No organisation found</CardTitle>
+        <CardDescription>
+          Your email ({me.email}) doesn&apos;t match any registered
+          organisation&apos;s domain. If your organisation isn&apos;t on
+          RescuFood yet, register it first.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Link
+          href="/register-organisation"
+          className={cn(buttonVariants(), "w-full")}
+        >
           Register your organisation
-        </h2>
-        <p className="text-muted-foreground">
-          RescuFood works between approved organisations. Tell us who you
-          are — an administrator reviews every registration, and once
-          approved your whole team can work under one roof.
-        </p>
-      </div>
-      <Card>
-        <CardContent className="pt-6">
-          <OrgRegistrationForm
-            defaultType={defaultType}
-            defaultEmail={me.email}
-          />
-        </CardContent>
-      </Card>
-    </div>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -220,7 +217,7 @@ export default async function DashboardPage() {
               </CardHeader>
             </Card>
           ) : me && me.org === null ? (
-            <RegistrationSection me={me} groups={groups ?? []} />
+            <NoOrganisation me={me} />
           ) : me?.org && me.org.status !== "approved" ? (
             <OrgStatusNotice org={me.org} />
           ) : (

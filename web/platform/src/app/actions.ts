@@ -1,19 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
 
-import { auth, signIn, signOut } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import {
-  addUserToGroup,
   confirmSignUpUser,
   emailInUse,
   resendConfirmationCode,
   signUpUser,
 } from "@/lib/cognito";
-import { createOrganisation, ProfileApiError } from "@/lib/profile";
+import {
+  lookupOrganisation,
+  registerOrganisation,
+  ProfileApiError,
+} from "@/lib/profile";
 
 export async function signInWithCognito() {
   await signIn("cognito", { redirectTo: "/dashboard" });
@@ -71,7 +72,6 @@ export async function signUpAction(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const role = String(formData.get("role") ?? "");
 
   if (!username || !name || !email || !password) {
     return { step: "details", error: "Please fill in every field." };
@@ -83,14 +83,36 @@ export async function signUpAction(
         "Username must be 3-32 characters: letters, numbers, dots, dashes, or underscores.",
     };
   }
-  if (role !== "donor" && role !== "rescue-partner") {
-    return { step: "details", error: "Please choose a role." };
-  }
   if (!PASSWORD_RULE.test(password)) {
     return {
       step: "details",
       error:
         "Password must be at least 8 characters with upper- and lowercase letters and a number.",
+    };
+  }
+
+  // Signup gate: accounts exist only under approved organisations.
+  const emailDomain = email.split("@").pop()?.toLowerCase() ?? "";
+  try {
+    const org = await lookupOrganisation(emailDomain);
+    if (!org.registered) {
+      return {
+        step: "details",
+        error:
+          "No registered organisation matches your email domain. Register your organisation first.",
+      };
+    }
+    if (!org.approved) {
+      return {
+        step: "details",
+        error:
+          "Your organisation's registration is still under review. Try again once it has been approved.",
+      };
+    }
+  } catch {
+    return {
+      step: "details",
+      error: "We couldn't verify your organisation right now. Please try again shortly.",
     };
   }
 
@@ -121,12 +143,6 @@ export async function signUpAction(
       step: "details",
       error: "Sign-up failed. Please check your details and try again.",
     };
-  }
-
-  try {
-    await addUserToGroup(username, role);
-  } catch {
-    // Non-fatal: an admin can assign the role later.
   }
 
   return { step: "confirm", username, email };
@@ -191,44 +207,42 @@ export async function resendCodeAction(
 
 export type OrgFormState = {
   error?: string;
+  /** set when the registration was submitted successfully */
+  domain?: string;
 };
 
-export async function createOrgAction(
+export async function registerOrgAction(
   _prev: OrgFormState,
   formData: FormData
 ): Promise<OrgFormState> {
-  const session = await auth();
-  if (!session?.idToken) {
-    return { error: "Your session has expired. Please sign in again." };
-  }
-
   const name = String(formData.get("name") ?? "").trim();
   const type = String(formData.get("type") ?? "");
+  const domain = String(formData.get("domain") ?? "").trim();
   const contactEmail = String(formData.get("contact_email") ?? "").trim();
-  if (!name || !contactEmail) {
-    return { error: "Please fill in the organisation name and contact email." };
+  if (!name || !contactEmail || !domain) {
+    return {
+      error: "Please fill in the organisation name, email domain and contact email.",
+    };
   }
   if (type !== "donor" && type !== "rescue_partner") {
     return { error: "Please choose an organisation type." };
   }
 
   try {
-    await createOrganisation(session.idToken, {
+    const org = await registerOrganisation({
       name,
       type,
-      domain: String(formData.get("domain") ?? "").trim(),
+      domain,
       description: String(formData.get("description") ?? "").trim(),
       contact_email: contactEmail,
       contact_phone: String(formData.get("contact_phone") ?? "").trim(),
       address: String(formData.get("address") ?? "").trim(),
     });
+    return { domain: org.domain };
   } catch (err) {
     if (err instanceof ProfileApiError) {
       return { error: err.message };
     }
     return { error: "Registration failed. Please try again shortly." };
   }
-
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
 }

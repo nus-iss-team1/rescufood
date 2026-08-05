@@ -33,12 +33,12 @@ export class ProfileApiError extends Error {
   }
 }
 
-async function request<T>(idToken: string, path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(idToken: string | null, path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${base}/api/profile${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
       ...init.headers,
     },
     cache: "no-store",
@@ -64,9 +64,17 @@ export interface NewOrganisation {
   address: string;
 }
 
-export function createOrganisation(idToken: string, org: NewOrganisation): Promise<Org> {
-  return request<Org>(idToken, "/orgs", {
+/** Public endpoint: organisations register before their users sign up. */
+export function registerOrganisation(org: NewOrganisation): Promise<Org> {
+  return request<Org>(null, "/orgs/register", {
     method: "POST",
     body: JSON.stringify(org),
   });
+}
+
+/** Public endpoint backing the signup gate. */
+export function lookupOrganisation(
+  domain: string
+): Promise<{ registered: boolean; approved: boolean }> {
+  return request(null, `/orgs/lookup?domain=${encodeURIComponent(domain)}`);
 }

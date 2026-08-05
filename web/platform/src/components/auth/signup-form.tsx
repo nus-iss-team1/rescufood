@@ -69,19 +69,6 @@ function DetailsStep({
           number.
         </p>
       </div>
-      <fieldset data-animate="field" className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">I&apos;m joining as</legend>
-        <div className="mt-2 grid grid-cols-2 gap-3">
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium transition-colors has-checked:border-foreground has-checked:bg-muted">
-            <input type="radio" name="role" value="donor" className="sr-only" defaultChecked />
-            Food donor
-          </label>
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium transition-colors has-checked:border-foreground has-checked:bg-muted">
-            <input type="radio" name="role" value="rescue-partner" className="sr-only" />
-            Rescue partner
-          </label>
-        </div>
-      </fieldset>
       {state.error ? (
         <p role="alert" className="text-sm text-destructive">
           {state.error}
@@ -95,6 +82,16 @@ function DetailsStep({
         <a href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
           Sign in
         </a>
+      </p>
+      <p className="text-center text-sm text-muted-foreground">
+        Signing up requires an approved organisation.{" "}
+        <a
+          href="/register-organisation"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Register yours first
+        </a>
+        .
       </p>
     </form>
   );
