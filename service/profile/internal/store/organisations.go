@@ -16,41 +16,50 @@ type Organisations struct {
 	db pgxDB
 }
 
+const orgColumns = `id, name, type, status, domain, description, contact_email,
+	contact_phone, address, created_at, updated_at`
+
 func (r *Organisations) Create(ctx context.Context, o *domain.Organisation) error {
 	_, err := r.db.Exec(ctx, `
-		INSERT INTO organisations
-			(id, name, type, status, description, contact_email,
-			 contact_phone, address, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-		o.ID, o.Name, string(o.Type), string(o.Status), o.Description,
+		INSERT INTO organisations (`+orgColumns+`)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		o.ID, o.Name, string(o.Type), string(o.Status), o.Domain, o.Description,
 		o.ContactEmail, o.ContactPhone, o.Address, o.CreatedAt, o.UpdatedAt)
+
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		if pgErr.ConstraintName == "organisations_domain_uq" {
+			return domain.ErrDomainTaken
+		}
 		return domain.ErrNameTaken
 	}
 	return err
 }
 
 func (r *Organisations) GetByID(ctx context.Context, id uuid.UUID) (*domain.Organisation, error) {
-	row := r.db.QueryRow(ctx, `
-		SELECT id, name, type, status, description, contact_email,
-		       contact_phone, address, created_at, updated_at
-		FROM organisations WHERE id = $1`, id)
+	return scanOrg(r.db.QueryRow(ctx,
+		`SELECT `+orgColumns+` FROM organisations WHERE id = $1`, id))
+}
 
-	var o domain.Organisation
-	var typ, status string
-	err := row.Scan(&o.ID, &o.Name, &typ, &status, &o.Description,
-		&o.ContactEmail, &o.ContactPhone, &o.Address,
-		&o.CreatedAt, &o.UpdatedAt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, domain.ErrNotFound
-	}
+// List returns up to 100 organisations in the given status, oldest first.
+func (r *Organisations) List(ctx context.Context, status domain.OrgStatus) ([]domain.Organisation, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT `+orgColumns+` FROM organisations
+		WHERE status = $1 ORDER BY created_at LIMIT 100`, string(status))
 	if err != nil {
 		return nil, err
 	}
-	o.Type = domain.OrgType(typ)
-	o.Status = domain.OrgStatus(status)
-	return &o, nil
+	defer rows.Close()
+
+	orgs := []domain.Organisation{}
+	for rows.Next() {
+		o, err := scanOrg(rows)
+		if err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, *o)
+	}
+	return orgs, rows.Err()
 }
 
 // UpdateStatus persists o's status and updated_at.
@@ -65,4 +74,20 @@ func (r *Organisations) UpdateStatus(ctx context.Context, o *domain.Organisation
 		return domain.ErrNotFound
 	}
 	return nil
+}
+
+func scanOrg(row pgx.Row) (*domain.Organisation, error) {
+	var o domain.Organisation
+	var typ, status string
+	err := row.Scan(&o.ID, &o.Name, &typ, &status, &o.Domain, &o.Description,
+		&o.ContactEmail, &o.ContactPhone, &o.Address, &o.CreatedAt, &o.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	o.Type = domain.OrgType(typ)
+	o.Status = domain.OrgStatus(status)
+	return &o, nil
 }

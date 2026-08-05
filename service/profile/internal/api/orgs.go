@@ -23,6 +23,7 @@ type OrgCreator interface {
 type createOrgRequest struct {
 	Name         string `json:"name"`
 	Type         string `json:"type"`
+	Domain       string `json:"domain"`
 	Description  string `json:"description"`
 	ContactEmail string `json:"contact_email"`
 	ContactPhone string `json:"contact_phone"`
@@ -34,11 +35,27 @@ type orgResponse struct {
 	Name         string    `json:"name"`
 	Type         string    `json:"type"`
 	Status       string    `json:"status"`
+	Domain       string    `json:"domain"`
 	Description  string    `json:"description"`
 	ContactEmail string    `json:"contact_email"`
 	ContactPhone string    `json:"contact_phone"`
 	Address      string    `json:"address"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+func toOrgResponse(o *domain.Organisation) orgResponse {
+	return orgResponse{
+		ID:           o.ID,
+		Name:         o.Name,
+		Type:         string(o.Type),
+		Status:       string(o.Status),
+		Domain:       o.Domain,
+		Description:  o.Description,
+		ContactEmail: o.ContactEmail,
+		ContactPhone: o.ContactPhone,
+		Address:      o.Address,
+		CreatedAt:    o.CreatedAt,
+	}
 }
 
 func createOrg(orgs OrgCreator) http.HandlerFunc {
@@ -62,6 +79,7 @@ func createOrg(orgs OrgCreator) http.HandlerFunc {
 		org, err := domain.NewOrganisation(domain.NewOrganisationParams{
 			Name:         req.Name,
 			Type:         domain.OrgType(req.Type),
+			Domain:       req.Domain,
 			Description:  req.Description,
 			ContactEmail: req.ContactEmail,
 			ContactPhone: req.ContactPhone,
@@ -73,10 +91,9 @@ func createOrg(orgs OrgCreator) http.HandlerFunc {
 		}
 
 		switch err := orgs.CreateOrganisationWithOwner(r.Context(), org, user.ID); {
-		case errors.Is(err, domain.ErrNameTaken):
-			writeProblem(w, http.StatusConflict, "conflict", err.Error())
-			return
-		case errors.Is(err, domain.ErrAlreadyInOrg):
+		case errors.Is(err, domain.ErrNameTaken),
+			errors.Is(err, domain.ErrDomainTaken),
+			errors.Is(err, domain.ErrAlreadyInOrg):
 			writeProblem(w, http.StatusConflict, "conflict", err.Error())
 			return
 		case err != nil:
@@ -85,16 +102,6 @@ func createOrg(orgs OrgCreator) http.HandlerFunc {
 			return
 		}
 
-		writeJSON(w, http.StatusCreated, orgResponse{
-			ID:           org.ID,
-			Name:         org.Name,
-			Type:         string(org.Type),
-			Status:       string(org.Status),
-			Description:  org.Description,
-			ContactEmail: org.ContactEmail,
-			ContactPhone: org.ContactPhone,
-			Address:      org.Address,
-			CreatedAt:    org.CreatedAt,
-		})
+		writeJSON(w, http.StatusCreated, toOrgResponse(org))
 	}
 }

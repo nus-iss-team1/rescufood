@@ -24,6 +24,10 @@ func TestNewOrganisation(t *testing.T) {
 		{"name only spaces", func(p *NewOrganisationParams) { p.Name = "   " }, true},
 		{"unknown type", func(p *NewOrganisationParams) { p.Type = "supplier" }, true},
 		{"bad email", func(p *NewOrganisationParams) { p.ContactEmail = "not-an-email" }, true},
+		{"valid domain", func(p *NewOrganisationParams) { p.Domain = "FreshMart.SG" }, false},
+		{"domain with @", func(p *NewOrganisationParams) { p.Domain = "ops@freshmart.sg" }, true},
+		{"domain without dot", func(p *NewOrganisationParams) { p.Domain = "freshmart" }, true},
+		{"public email domain", func(p *NewOrganisationParams) { p.Domain = "gmail.com" }, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

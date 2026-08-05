@@ -8,4 +8,5 @@ var (
 	ErrNotFound          = errors.New("not found")
 	ErrAlreadyInOrg      = errors.New("user already belongs to an organisation")
 	ErrNameTaken         = errors.New("organisation name already taken")
+	ErrDomainTaken       = errors.New("organisation domain already claimed")
 )

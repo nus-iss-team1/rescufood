@@ -27,15 +27,19 @@ func (r *Users) GetBySub(ctx context.Context, sub string) (*domain.User, error) 
 }
 
 // UpsertBySub creates the user on first sight and refreshes email on
-// later logins.
+// later logins. Users without an organisation are attached to the one
+// whose domain matches their email domain.
 func (r *Users) UpsertBySub(ctx context.Context, sub, email, name string) (*domain.User, error) {
 	return scanUser(r.db.QueryRow(ctx, `
-		INSERT INTO users (cognito_sub, email, name)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (cognito_sub) DO UPDATE
-			SET email = CASE WHEN EXCLUDED.email <> '' THEN EXCLUDED.email ELSE users.email END
+		INSERT INTO users (cognito_sub, email, name, org_id)
+		VALUES ($1, $2, $3,
+			(SELECT id FROM organisations
+			 WHERE domain = $4 AND domain <> '' AND status <> 'rejected'))
+		ON CONFLICT (cognito_sub) DO UPDATE SET
+			email  = CASE WHEN EXCLUDED.email <> '' THEN EXCLUDED.email ELSE users.email END,
+			org_id = COALESCE(users.org_id, EXCLUDED.org_id)
 		RETURNING id, cognito_sub, email, name, org_id, is_admin, status, created_at`,
-		sub, email, name))
+		sub, email, name, domain.EmailDomain(email)))
 }
 
 func scanUser(row pgx.Row) (*domain.User, error) {

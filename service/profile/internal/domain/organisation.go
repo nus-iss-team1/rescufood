@@ -28,6 +28,7 @@ type Organisation struct {
 	Name         string
 	Type         OrgType
 	Status       OrgStatus
+	Domain       string
 	Description  string
 	ContactEmail string
 	ContactPhone string
@@ -39,10 +40,29 @@ type Organisation struct {
 type NewOrganisationParams struct {
 	Name         string
 	Type         OrgType
+	Domain       string
 	Description  string
 	ContactEmail string
 	ContactPhone string
 	Address      string
+}
+
+// publicEmailDomains cannot be claimed as an organisation domain.
+var publicEmailDomains = map[string]bool{
+	"gmail.com":   true,
+	"yahoo.com":   true,
+	"hotmail.com": true,
+	"outlook.com": true,
+	"icloud.com":  true,
+}
+
+// EmailDomain returns the lowercased domain part of email, or "".
+func EmailDomain(email string) string {
+	i := strings.LastIndex(email, "@")
+	if i < 0 || i == len(email)-1 {
+		return ""
+	}
+	return strings.ToLower(email[i+1:])
 }
 
 // NewOrganisation validates p and returns a pending organisation.
@@ -57,12 +77,22 @@ func NewOrganisation(p NewOrganisationParams) (*Organisation, error) {
 	if _, err := mail.ParseAddress(p.ContactEmail); err != nil {
 		return nil, fmt.Errorf("%w: invalid contact email", ErrValidation)
 	}
+	dom := strings.ToLower(strings.TrimSpace(p.Domain))
+	if dom != "" {
+		if strings.ContainsAny(dom, "@ /") || !strings.Contains(dom, ".") {
+			return nil, fmt.Errorf("%w: domain must look like example.org", ErrValidation)
+		}
+		if publicEmailDomains[dom] {
+			return nil, fmt.Errorf("%w: public email domains cannot be claimed", ErrValidation)
+		}
+	}
 	now := time.Now().UTC()
 	return &Organisation{
 		ID:           uuid.New(),
 		Name:         name,
 		Type:         p.Type,
 		Status:       OrgPending,
+		Domain:       dom,
 		Description:  strings.TrimSpace(p.Description),
 		ContactEmail: p.ContactEmail,
 		ContactPhone: strings.TrimSpace(p.ContactPhone),
