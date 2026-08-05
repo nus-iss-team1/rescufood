@@ -41,6 +41,11 @@ func (r *Organisations) GetByID(ctx context.Context, id uuid.UUID) (*domain.Orga
 		`SELECT `+orgColumns+` FROM organisations WHERE id = $1`, id))
 }
 
+func (r *Organisations) GetByDomain(ctx context.Context, dom string) (*domain.Organisation, error) {
+	return scanOrg(r.db.QueryRow(ctx,
+		`SELECT `+orgColumns+` FROM organisations WHERE domain = $1`, dom))
+}
+
 // List returns up to 100 organisations in the given status, oldest first.
 func (r *Organisations) List(ctx context.Context, status domain.OrgStatus) ([]domain.Organisation, error) {
 	rows, err := r.db.Query(ctx, `

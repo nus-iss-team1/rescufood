@@ -78,13 +78,14 @@ func NewOrganisation(p NewOrganisationParams) (*Organisation, error) {
 		return nil, fmt.Errorf("%w: invalid contact email", ErrValidation)
 	}
 	dom := strings.ToLower(strings.TrimSpace(p.Domain))
-	if dom != "" {
-		if strings.ContainsAny(dom, "@ /") || !strings.Contains(dom, ".") {
-			return nil, fmt.Errorf("%w: domain must look like example.org", ErrValidation)
-		}
-		if publicEmailDomains[dom] {
-			return nil, fmt.Errorf("%w: public email domains cannot be claimed", ErrValidation)
-		}
+	if dom == "" {
+		return nil, fmt.Errorf("%w: email domain is required", ErrValidation)
+	}
+	if strings.ContainsAny(dom, "@ /") || !strings.Contains(dom, ".") {
+		return nil, fmt.Errorf("%w: domain must look like example.org", ErrValidation)
+	}
+	if publicEmailDomains[dom] {
+		return nil, fmt.Errorf("%w: public email domains cannot be claimed", ErrValidation)
 	}
 	now := time.Now().UTC()
 	return &Organisation{

@@ -39,10 +39,14 @@ func NewRouter(d Deps) http.Handler {
 
 	r.Route("/api/profile", func(r chi.Router) {
 		r.Use(apiVersion)
+
+		// Public: organisation registration precedes user signup.
+		r.Post("/orgs/register", registerOrg(d.Store.Organisations))
+		r.Get("/orgs/lookup", lookupOrg(d.Store.Organisations))
+
 		r.Group(func(r chi.Router) {
 			r.Use(d.Auth)
 			r.Get("/me", getMe(d.Store.Organisations))
-			r.Post("/orgs", createOrg(d.Store))
 
 			r.Route("/admin/orgs", func(r chi.Router) {
 				r.Use(requireAdmin)
