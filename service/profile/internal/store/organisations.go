@@ -67,6 +67,27 @@ func (r *Organisations) List(ctx context.Context, status domain.OrgStatus) ([]do
 	return orgs, rows.Err()
 }
 
+// CountByStatus returns how many organisations are in each status.
+func (r *Organisations) CountByStatus(ctx context.Context) (map[string]int, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT status, count(*) FROM organisations GROUP BY status`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := map[string]int{}
+	for rows.Next() {
+		var status string
+		var n int
+		if err := rows.Scan(&status, &n); err != nil {
+			return nil, err
+		}
+		counts[status] = n
+	}
+	return counts, rows.Err()
+}
+
 // UpdateStatus persists o's status and updated_at.
 func (r *Organisations) UpdateStatus(ctx context.Context, o *domain.Organisation) error {
 	tag, err := r.db.Exec(ctx,

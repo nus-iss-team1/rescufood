@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -38,6 +39,38 @@ func (f *fakeOrgAdmin) List(_ context.Context, status domain.OrgStatus) ([]domai
 		return []domain.Organisation{*f.org}, nil
 	}
 	return []domain.Organisation{}, nil
+}
+
+func (f *fakeOrgAdmin) CountByStatus(_ context.Context) (map[string]int, error) {
+	if f.org == nil {
+		return map[string]int{}, nil
+	}
+	return map[string]int{string(f.org.Status): 1}, nil
+}
+
+type fakeUserAdmin struct {
+	user    *domain.User
+	updated *domain.UserStatus
+}
+
+func (f *fakeUserAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.User, error) {
+	if f.user == nil || f.user.ID != id {
+		return nil, domain.ErrNotFound
+	}
+	copy := *f.user
+	return &copy, nil
+}
+
+func (f *fakeUserAdmin) ListByOrg(_ context.Context, orgID uuid.UUID) ([]domain.User, error) {
+	if f.user != nil && f.user.OrgID != nil && *f.user.OrgID == orgID {
+		return []domain.User{*f.user}, nil
+	}
+	return []domain.User{}, nil
+}
+
+func (f *fakeUserAdmin) UpdateStatus(_ context.Context, _ uuid.UUID, status domain.UserStatus) error {
+	f.updated = &status
+	return nil
 }
 
 func adminRouter(orgs OrgAdmin) http.Handler {
@@ -130,6 +163,116 @@ func TestTransitionOrg(t *testing.T) {
 			t.Fatalf("status = %d, want 400", rec.Code)
 		}
 	})
+}
+
+func userRouter(users UserAdmin) http.Handler {
+	r := chi.NewRouter()
+	r.Get("/", listUsers(users))
+	r.Post("/{id}/suspend", transitionUser(users, "suspend", domain.UserSuspended))
+	r.Post("/{id}/reactivate", transitionUser(users, "reactivate", domain.UserActive))
+	return r
+}
+
+func TestTransitionUser(t *testing.T) {
+	admin := &domain.User{ID: uuid.New(), IsAdmin: true}
+	member := func() *domain.User {
+		orgID := uuid.New()
+		return &domain.User{ID: uuid.New(), OrgID: &orgID, Status: domain.UserActive}
+	}
+
+	t.Run("suspend active member", func(t *testing.T) {
+		fake := &fakeUserAdmin{user: member()}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/suspend", `{"reason":"abuse"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if fake.updated == nil || *fake.updated != domain.UserSuspended {
+			t.Fatalf("status not persisted: %v", fake.updated)
+		}
+	})
+
+	t.Run("cannot suspend yourself", func(t *testing.T) {
+		fake := &fakeUserAdmin{user: admin}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+admin.ID.String()+"/suspend", `{"reason":"oops"}`)
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("status = %d, want 409", rec.Code)
+		}
+	})
+
+	t.Run("cannot suspend an admin", func(t *testing.T) {
+		other := &domain.User{ID: uuid.New(), IsAdmin: true, Status: domain.UserActive}
+		fake := &fakeUserAdmin{user: other}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+other.ID.String()+"/suspend", `{"reason":"no"}`)
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("status = %d, want 409", rec.Code)
+		}
+	})
+
+	t.Run("already suspended", func(t *testing.T) {
+		u := member()
+		u.Status = domain.UserSuspended
+		fake := &fakeUserAdmin{user: u}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+u.ID.String()+"/suspend", `{"reason":"again"}`)
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("status = %d, want 409", rec.Code)
+		}
+	})
+
+	t.Run("reactivate suspended member", func(t *testing.T) {
+		u := member()
+		u.Status = domain.UserSuspended
+		fake := &fakeUserAdmin{user: u}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+u.ID.String()+"/reactivate", `{"reason":"resolved"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200", rec.Code)
+		}
+	})
+
+	t.Run("missing reason", func(t *testing.T) {
+		fake := &fakeUserAdmin{user: member()}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/suspend", `{}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+	})
+}
+
+func TestListUsers(t *testing.T) {
+	orgID := uuid.New()
+	user := &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "member@freshmart.sg"}
+	fake := &fakeUserAdmin{user: user}
+
+	rec := doAdmin(t, userRouter(fake), nil, http.MethodGet, "/?org_id="+orgID.String(), "")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "member@freshmart.sg") {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body)
+	}
+
+	rec = doAdmin(t, userRouter(fake), nil, http.MethodGet, "/?org_id=not-a-uuid", "")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("bad org_id: status = %d, want 400", rec.Code)
+	}
+}
+
+func TestCountOrgs(t *testing.T) {
+	org := &domain.Organisation{ID: uuid.New(), Status: domain.OrgPending}
+	rec := httptest.NewRecorder()
+	countOrgs(&fakeOrgAdmin{org: org})(rec, httptest.NewRequest(http.MethodGet, "/counts", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var out map[string]int
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out["pending"] != 1 || out["approved"] != 0 || len(out) != 4 {
+		t.Fatalf("counts = %v, want pending 1 and zero-filled others", out)
+	}
 }
 
 func TestListOrgs(t *testing.T) {

@@ -48,13 +48,24 @@ func NewRouter(d Deps) http.Handler {
 			r.Use(d.Auth)
 			r.Get("/me", getMe(d.Store.Organisations))
 
-			r.Route("/admin/orgs", func(r chi.Router) {
+			r.Route("/admin", func(r chi.Router) {
 				r.Use(requireAdmin)
 				orgs := d.Store.Organisations
-				r.Get("/", listOrgs(orgs))
-				r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve))
-				r.Post("/{id}/reject", transitionOrg(orgs, "reject", (*domain.Organisation).Reject))
-				r.Post("/{id}/suspend", transitionOrg(orgs, "suspend", (*domain.Organisation).Suspend))
+				users := d.Store.Users
+
+				r.Route("/orgs", func(r chi.Router) {
+					r.Get("/", listOrgs(orgs))
+					r.Get("/counts", countOrgs(orgs))
+					r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve))
+					r.Post("/{id}/reject", transitionOrg(orgs, "reject", (*domain.Organisation).Reject))
+					r.Post("/{id}/suspend", transitionOrg(orgs, "suspend", (*domain.Organisation).Suspend))
+				})
+
+				r.Route("/users", func(r chi.Router) {
+					r.Get("/", listUsers(users))
+					r.Post("/{id}/suspend", transitionUser(users, "suspend", domain.UserSuspended))
+					r.Post("/{id}/reactivate", transitionUser(users, "reactivate", domain.UserActive))
+				})
 			})
 		})
 	})

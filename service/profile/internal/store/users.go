@@ -26,6 +26,37 @@ func (r *Users) GetBySub(ctx context.Context, sub string) (*domain.User, error) 
 	return scanUser(r.db.QueryRow(ctx, userSelect+` WHERE cognito_sub = $1`, sub))
 }
 
+func (r *Users) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error) {
+	rows, err := r.db.Query(ctx, userSelect+` WHERE org_id = $1 ORDER BY created_at`, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []domain.User{}
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, *u)
+	}
+	return users, rows.Err()
+}
+
+// UpdateStatus persists a user's status.
+func (r *Users) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus) error {
+	tag, err := r.db.Exec(ctx,
+		`UPDATE users SET status = $1 WHERE id = $2`, string(status), id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 // UpsertBySub creates the user on first sight and refreshes email and
 // admin standing on later logins. Users without an organisation are
 // attached to the one whose domain matches their email domain.
