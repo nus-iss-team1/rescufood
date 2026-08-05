@@ -68,6 +68,7 @@ func (r *Users) UpsertBySub(ctx context.Context, sub, email, name string, isAdmi
 			 WHERE domain = $5 AND domain <> '' AND status <> 'rejected'))
 		ON CONFLICT (cognito_sub) DO UPDATE SET
 			email    = CASE WHEN EXCLUDED.email <> '' THEN EXCLUDED.email ELSE users.email END,
+			name     = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE users.name END,
 			is_admin = EXCLUDED.is_admin,
 			org_id   = COALESCE(users.org_id, EXCLUDED.org_id)
 		RETURNING id, cognito_sub, email, name, org_id, is_admin, status, created_at`,

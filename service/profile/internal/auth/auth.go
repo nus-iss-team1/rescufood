@@ -18,8 +18,17 @@ import (
 type Claims struct {
 	Sub      string
 	Email    string
+	Name     string
 	Username string
 	Groups   []string
+}
+
+// DisplayName prefers the token's name claim over the login username.
+func (c *Claims) DisplayName() string {
+	if c.Name != "" {
+		return c.Name
+	}
+	return c.Username
 }
 
 type Verifier struct {
@@ -47,6 +56,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (*Claims, error) {
 	}
 	var extra struct {
 		Email       string   `json:"email"`
+		Name        string   `json:"name"`
 		Username    string   `json:"cognito:username"`
 		UsernameAlt string   `json:"username"`
 		Groups      []string `json:"cognito:groups"`
@@ -61,6 +71,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (*Claims, error) {
 	return &Claims{
 		Sub:      token.Subject,
 		Email:    extra.Email,
+		Name:     extra.Name,
 		Username: username,
 		Groups:   extra.Groups,
 	}, nil
@@ -90,7 +101,7 @@ func Middleware(v *Verifier, users UserStore) func(http.Handler) http.Handler {
 				unauthorized(w, "invalid token")
 				return
 			}
-			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.Username,
+			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.DisplayName(),
 				slices.Contains(claims.Groups, adminGroup))
 			if err != nil {
 				slog.ErrorContext(r.Context(), "user provisioning failed", "error", err)
