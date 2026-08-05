@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -33,6 +34,42 @@ func doGetMe(t *testing.T, user *domain.User, orgs OrgGetter) *httptest.Response
 	rec := httptest.NewRecorder()
 	getMe(orgs)(rec, req)
 	return rec
+}
+
+func TestListMyOrgMembers(t *testing.T) {
+	orgID := uuid.New()
+	users := &fakeUserAdmin{
+		user: &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "mate@freshmart.sg"},
+	}
+
+	call := func(user *domain.User) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/me/org/members", nil)
+		if user != nil {
+			req = req.WithContext(auth.WithUser(req.Context(), user))
+		}
+		rec := httptest.NewRecorder()
+		listMyOrgMembers(users)(rec, req)
+		return rec
+	}
+
+	t.Run("member sees teammates", func(t *testing.T) {
+		rec := call(&domain.User{ID: uuid.New(), OrgID: &orgID})
+		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "mate@freshmart.sg") {
+			t.Fatalf("code=%d body=%s", rec.Code, rec.Body)
+		}
+	})
+
+	t.Run("user without an org", func(t *testing.T) {
+		if rec := call(&domain.User{ID: uuid.New()}); rec.Code != http.StatusNotFound {
+			t.Fatalf("status = %d, want 404", rec.Code)
+		}
+	})
+
+	t.Run("unauthenticated", func(t *testing.T) {
+		if rec := call(nil); rec.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want 401", rec.Code)
+		}
+	})
 }
 
 func TestGetMe(t *testing.T) {

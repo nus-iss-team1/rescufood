@@ -47,6 +47,7 @@ func NewRouter(d Deps) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(d.Auth)
 			r.Get("/me", getMe(d.Store.Organisations))
+			r.Get("/me/org/members", listMyOrgMembers(d.Store.Users))
 
 			r.Route("/admin", func(r chi.Router) {
 				r.Use(requireAdmin)

@@ -17,6 +17,11 @@ type OrgGetter interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Organisation, error)
 }
 
+// MemberLister lists the users belonging to one organisation.
+type MemberLister interface {
+	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error)
+}
+
 type meResponse struct {
 	ID      uuid.UUID    `json:"id"`
 	Email   string       `json:"email"`
@@ -56,5 +61,34 @@ func getMe(orgs OrgGetter) http.HandlerFunc {
 			}
 		}
 		writeJSON(w, http.StatusOK, resp)
+	}
+}
+
+// listMyOrgMembers returns the caller's own organisation members.
+func listMyOrgMembers(users MemberLister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.UserFromContext(r.Context())
+		if !ok {
+			writeProblem(w, http.StatusUnauthorized, "unauthorized", "no authenticated user")
+			return
+		}
+		if user.OrgID == nil {
+			writeProblem(w, http.StatusNotFound, "not found",
+				"you do not belong to an organisation")
+			return
+		}
+
+		list, err := users.ListByOrg(r.Context(), *user.OrgID)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "list org members failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
+		out := make([]userResponse, 0, len(list))
+		for i := range list {
+			out = append(out, toUserResponse(&list[i]))
+		}
+		writeJSON(w, http.StatusOK, out)
 	}
 }
