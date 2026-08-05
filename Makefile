@@ -45,13 +45,13 @@ migrate: db ## apply pending database migrations locally
 	cd service/profile && go run ./cmd/migrate up
 
 run-profile:
-	@cd service/profile && go run ./cmd/server 2>&1 | sed -e $$'s/^/\033[32m[profile]\033[0m /'
+	@cd service/profile && go run ./cmd/server 2>&1 | awk '{ printf "\033[32m[profile]\033[0m %s\n", $$0; fflush() }'
 
 run-platform:
-	@cd web/platform && npm run dev 2>&1 | sed -e $$'s/^/\033[34m[platform]\033[0m /'
+	@cd web/platform && npm run dev 2>&1 | awk '{ printf "\033[34m[platform]\033[0m %s\n", $$0; fflush() }'
 
 run-admin:
-	@cd web/admin-console && npm run dev 2>&1 | sed -e $$'s/^/\033[35m[admin]\033[0m /'
+	@cd web/admin-console && npm run dev 2>&1 | awk '{ printf "\033[35m[admin]\033[0m %s\n", $$0; fflush() }'
 
 test: ## backend tests plus frontend type-checks and lint
 	cd service/profile && go vet ./... && go test ./...
