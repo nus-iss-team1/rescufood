@@ -5,7 +5,9 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
@@ -22,6 +24,10 @@ func (r *Organisations) Create(ctx context.Context, o *domain.Organisation) erro
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		o.ID, o.Name, string(o.Type), string(o.Status), o.Description,
 		o.ContactEmail, o.ContactPhone, o.Address, o.CreatedAt, o.UpdatedAt)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		return domain.ErrNameTaken
+	}
 	return err
 }
 

@@ -7,11 +7,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
+
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
 )
 
 func newLogger(env string) *slog.Logger {
@@ -21,25 +23,6 @@ func newLogger(env string) *slog.Logger {
 		}))
 	}
 	return slog.New(slog.NewJSONHandler(os.Stdout, nil))
-}
-
-func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-			next.ServeHTTP(ww, r)
-			logger.Info(
-				"request",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"status", ww.Status(),
-				"bytes", ww.BytesWritten(),
-				"duration", time.Since(start),
-				"request_id", middleware.GetReqID(r.Context()),
-			)
-		})
-	}
 }
 
 func main() {
@@ -61,20 +44,27 @@ func main() {
 	defer pool.Close()
 	logger.Info("successfully connected to database")
 
+	verifier, err := auth.NewVerifier(ctx, os.Getenv("AUTH_COGNITO_ISSUER"))
+	if err != nil {
+		logger.Error("unable to configure token verifier", "error", err)
+		os.Exit(1)
+	}
+
+	st := store.New(pool)
+	router := api.NewRouter(api.Deps{
+		Logger: logger,
+		Store:  st,
+		Auth:   auth.Middleware(verifier, st.Users),
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3001"
 	}
 
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID, requestLogger(logger), middleware.Recoverer)
-	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           r,
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	logger.Info("profile service listening", "port", port)
