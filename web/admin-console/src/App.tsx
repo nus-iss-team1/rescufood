@@ -111,11 +111,15 @@ export default function App() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Organisation approvals</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{me.name || me.email}</span>
+    <main className="mx-auto max-w-5xl p-4 sm:p-6">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold sm:text-xl">
+          Organisation approvals
+        </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="truncate text-sm text-muted-foreground">
+            {me.name || me.email}
+          </span>
           <Button variant="outline" size="sm" onClick={logout}>
             Sign out
           </Button>
