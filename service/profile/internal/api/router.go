@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
@@ -17,11 +18,20 @@ type Deps struct {
 	Logger *slog.Logger
 	Store  *store.Store
 	Auth   func(http.Handler) http.Handler
+	// Browser origins allowed to call the API cross-origin.
+	AllowedOrigins []string
 }
 
 func NewRouter(d Deps) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, requestLogger(d.Logger), middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: d.AllowedOrigins,
+		AllowedMethods: []string{"GET", "POST", "PATCH", "OPTIONS"},
+		AllowedHeaders: []string{"Authorization", "Content-Type", "Api-Version"},
+		ExposedHeaders: []string{"Api-Version"},
+		MaxAge:         300,
+	}))
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

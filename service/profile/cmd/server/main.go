@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,11 +51,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	origins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if origins == "" {
+		origins = "http://localhost:5173"
+	}
+
 	st := store.New(pool)
 	router := api.NewRouter(api.Deps{
-		Logger: logger,
-		Store:  st,
-		Auth:   auth.Middleware(verifier, st.Users),
+		Logger:         logger,
+		Store:          st,
+		Auth:           auth.Middleware(verifier, st.Users),
+		AllowedOrigins: strings.Split(origins, ","),
 	})
 
 	port := os.Getenv("PORT")
