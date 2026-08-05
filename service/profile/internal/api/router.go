@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
 )
 
@@ -31,6 +32,15 @@ func NewRouter(d Deps) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(d.Auth)
 			r.Post("/orgs", createOrg(d.Store))
+
+			r.Route("/admin/orgs", func(r chi.Router) {
+				r.Use(requireAdmin)
+				orgs := d.Store.Organisations
+				r.Get("/", listOrgs(orgs))
+				r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve))
+				r.Post("/{id}/reject", transitionOrg(orgs, "reject", (*domain.Organisation).Reject))
+				r.Post("/{id}/suspend", transitionOrg(orgs, "suspend", (*domain.Organisation).Suspend))
+			})
 		})
 	})
 
