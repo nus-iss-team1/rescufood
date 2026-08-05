@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 )
@@ -44,6 +46,20 @@ func main() {
 	_ = godotenv.Load()
 	logger := newLogger(os.Getenv("ENV"))
 	slog.SetDefault(logger)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// connect to database.
+	pool, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	if err == nil {
+		err = pool.Ping(ctx)
+	}
+	if err != nil {
+		logger.Error("unable to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+	logger.Info("successfully connected to database")
 
 	port := os.Getenv("PORT")
 	if port == "" {

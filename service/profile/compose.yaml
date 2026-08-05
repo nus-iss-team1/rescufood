@@ -1,19 +1,20 @@
-version: "3"
 volumes:
   pgdata:
 
 services:
   profile-db:
-    image: postgres
-    restart: always
+    image: postgres:17-alpine
+    restart: unless-stopped
     environment:
-      - POSTGRES_PASSWORD=P@ssw0rd
+      POSTGRES_USER: profile
+      POSTGRES_PASSWORD: profile
+      POSTGRES_DB: profile
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "${SQL_PORT}:5432"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 1s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U profile -d profile"]
+      interval: 5s
+      timeout: 3s
       retries: 10
