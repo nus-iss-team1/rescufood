@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { auth, authConfigured } from "@/auth";
 import { signOutAction } from "@/app/actions";
 import { HeaderMenu } from "@/components/header-menu";
@@ -12,12 +14,12 @@ export async function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between px-6">
-        <a
+        <Link
           href="/"
           className="text-base font-bold tracking-tight text-foreground"
         >
           RescuFood
-        </a>
+        </Link>
 
         {session?.user ? (
           <>
