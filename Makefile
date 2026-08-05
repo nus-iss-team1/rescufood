@@ -55,5 +55,7 @@ run-admin:
 
 test: ## backend tests plus frontend type-checks and lint
 	cd service/profile && go vet ./... && go test ./...
+	cd web/sdk && npm run check
+	cd web/ui && npm run check
 	cd web/platform && npx tsc --noEmit && npm run lint
 	cd web/admin-console && npm run build

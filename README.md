@@ -10,6 +10,8 @@ A NUS-ISS Team 1 project.
 |---|---|
 | [`web/platform/`](web/platform/README.md) | Next.js web client for donors and rescue partners (setup guide inside) |
 | `web/admin-console/` | React SPA for platform administrators |
+| `web/sdk/` | Shared TypeScript client for the profile service |
+| `web/ui/` | Shared shadcn/ui components used by both web apps |
 | [`service/profile/`](service/profile) | Go profile service — users, organisations, approval |
 | [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity, ECS, data) |
 
