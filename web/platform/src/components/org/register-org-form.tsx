@@ -15,8 +15,7 @@ export function RegisterOrgForm() {
 
   if (state.domain) {
     return (
-      <div className="flex flex-col gap-3">
-        <h2 className="text-xl font-semibold">Registration submitted</h2>
+      <div className="flex flex-col">
         <p className="text-sm text-muted-foreground">
           An administrator will review your organisation. Once it is
           approved, anyone with an{" "}
