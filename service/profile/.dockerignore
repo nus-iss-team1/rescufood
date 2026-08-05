@@ -1,0 +1,8 @@
+.env*
+!.env.example
+compose.yaml
+Dockerfile
+.dockerignore
+README.md
+/bin/
+/server
