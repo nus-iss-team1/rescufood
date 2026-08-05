@@ -48,9 +48,19 @@ func (r *Organisations) GetByDomain(ctx context.Context, dom string) (*domain.Or
 
 // List returns up to 100 organisations in the given status, oldest first.
 func (r *Organisations) List(ctx context.Context, status domain.OrgStatus) ([]domain.Organisation, error) {
-	rows, err := r.db.Query(ctx, `
+	return r.collect(ctx, `
 		SELECT `+orgColumns+` FROM organisations
 		WHERE status = $1 ORDER BY created_at LIMIT 100`, string(status))
+}
+
+// ListAll returns up to 100 organisations of any status, oldest first.
+func (r *Organisations) ListAll(ctx context.Context) ([]domain.Organisation, error) {
+	return r.collect(ctx, `
+		SELECT `+orgColumns+` FROM organisations ORDER BY created_at LIMIT 100`)
+}
+
+func (r *Organisations) collect(ctx context.Context, sql string, args ...any) ([]domain.Organisation, error) {
+	rows, err := r.db.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}

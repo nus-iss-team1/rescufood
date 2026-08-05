@@ -22,6 +22,7 @@ type OrgAdmin interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Organisation, error)
 	UpdateStatus(ctx context.Context, o *domain.Organisation) error
 	List(ctx context.Context, status domain.OrgStatus) ([]domain.Organisation, error)
+	ListAll(ctx context.Context) ([]domain.Organisation, error)
 	CountByStatus(ctx context.Context) (map[string]int, error)
 }
 
@@ -57,14 +58,20 @@ func listOrgs(orgs OrgAdmin) http.HandlerFunc {
 		if q == "" {
 			q = "pending"
 		}
-		status, ok := orgStatuses[q]
-		if !ok {
-			writeProblem(w, http.StatusBadRequest, "invalid request",
-				"status must be pending, approved, rejected or suspended")
-			return
-		}
 
-		list, err := orgs.List(r.Context(), status)
+		var list []domain.Organisation
+		var err error
+		if q == "all" {
+			list, err = orgs.ListAll(r.Context())
+		} else {
+			status, ok := orgStatuses[q]
+			if !ok {
+				writeProblem(w, http.StatusBadRequest, "invalid request",
+					"status must be all, pending, approved, rejected or suspended")
+				return
+			}
+			list, err = orgs.List(r.Context(), status)
+		}
 		if err != nil {
 			slog.ErrorContext(r.Context(), "list organisations failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")

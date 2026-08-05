@@ -41,6 +41,13 @@ func (f *fakeOrgAdmin) List(_ context.Context, status domain.OrgStatus) ([]domai
 	return []domain.Organisation{}, nil
 }
 
+func (f *fakeOrgAdmin) ListAll(_ context.Context) ([]domain.Organisation, error) {
+	if f.org == nil {
+		return []domain.Organisation{}, nil
+	}
+	return []domain.Organisation{*f.org}, nil
+}
+
 func (f *fakeOrgAdmin) CountByStatus(_ context.Context) (map[string]int, error) {
 	if f.org == nil {
 		return map[string]int{}, nil
@@ -285,6 +292,12 @@ func TestListOrgs(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "Fresh Mart") {
 		t.Fatalf("pending org missing from list: %s", rec.Body)
+	}
+
+	fake.org.Status = domain.OrgApproved
+	rec = doAdmin(t, adminRouter(fake), nil, http.MethodGet, "/?status=all", "")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Fresh Mart") {
+		t.Fatalf("all: code=%d body=%s", rec.Code, rec.Body)
 	}
 
 	rec = doAdmin(t, adminRouter(fake), nil, http.MethodGet, "/?status=bogus", "")
