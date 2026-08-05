@@ -110,6 +110,27 @@ Resources:
         IdToken: hours
         RefreshToken: days
 
+  AdminConsoleClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-${EnvironmentName}-admin-console
+      UserPoolId: !Ref UserPool
+      # Public client: the admin console SPA signs in from the browser,
+      # so no secret is generated.
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
   DonorGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
@@ -229,6 +250,12 @@ Outputs:
     Value: !Ref WebClient
     Export:
       Name: !Sub ${AWS::StackName}-WebClientId
+
+  AdminConsoleClientId:
+    Description: Public app client for the admin console SPA
+    Value: !Ref AdminConsoleClient
+    Export:
+      Name: !Sub ${AWS::StackName}-AdminConsoleClientId
 
   Issuer:
     Description: OIDC issuer URL - AUTH_COGNITO_ISSUER for the frontend
