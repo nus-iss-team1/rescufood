@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -65,9 +66,12 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (*Claims, error) {
 	}, nil
 }
 
+// adminGroup is the Cognito group whose members are platform admins.
+const adminGroup = "admin"
+
 // UserStore resolves verified claims to a profile user row.
 type UserStore interface {
-	UpsertBySub(ctx context.Context, sub, email, name string) (*domain.User, error)
+	UpsertBySub(ctx context.Context, sub, email, name string, isAdmin bool) (*domain.User, error)
 }
 
 // Middleware rejects requests without a valid bearer token, provisions
@@ -86,7 +90,8 @@ func Middleware(v *Verifier, users UserStore) func(http.Handler) http.Handler {
 				unauthorized(w, "invalid token")
 				return
 			}
-			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.Username)
+			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.Username,
+				slices.Contains(claims.Groups, adminGroup))
 			if err != nil {
 				slog.ErrorContext(r.Context(), "user provisioning failed", "error", err)
 				http.Error(w, "internal error", http.StatusInternalServerError)
