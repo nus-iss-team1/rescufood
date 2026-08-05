@@ -5,6 +5,8 @@ on:
     branches: [develop]
     paths:
       - "web/platform/**"
+      - "web/sdk/**"
+      - "web/ui/**"
       - ".github/workflows/platform-build.yml"
 
 # One run at a time; the newest queued run supersedes older pending ones.
@@ -27,7 +29,8 @@ jobs:
       actions: read
     with:
       component: platform
-      working-directory: web/platform
+      # All web packages: the app plus the shared sdk and ui packages.
+      working-directory: web
       codeql-languages: '["javascript-typescript"]'
       # Flip to true to stop publishing images that have open findings.
       fail-on-findings: false
@@ -66,7 +69,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: web/platform
+          context: web
+          file: web/platform/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

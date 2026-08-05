@@ -8,8 +8,8 @@ import { auth } from "@/auth";
 import { signOutAction } from "@/app/actions";
 import { getMe, ProfileApiError, type Me, type Org } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@rescufood/ui/components/badge";
+import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
   CardAction,
@@ -17,7 +17,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@rescufood/ui/components/card";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {

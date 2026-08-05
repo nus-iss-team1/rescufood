@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { AnimateIn } from "@/components/animate-in";
 import { RegisterOrgForm } from "@/components/org/register-org-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@rescufood/ui/components/card";
 
 export const metadata: Metadata = {
   title: "Register your organisation — RescuFood",

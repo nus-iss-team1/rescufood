@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AnimateIn } from "@/components/animate-in";
 import { SignupForm } from "@/components/auth/signup-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rescufood/ui/components/card";
 
 export const metadata: Metadata = {
   title: "Create account — RescuFood",

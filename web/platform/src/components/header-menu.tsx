@@ -3,14 +3,14 @@
 import { Menu } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
+} from "@rescufood/ui/components/drawer";
 import { GITHUB_URL } from "@/components/github-icon";
 import { cn } from "@/lib/utils";
 

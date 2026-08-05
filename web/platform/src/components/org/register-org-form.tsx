@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 
 import { registerOrgAction, type OrgFormState } from "@/app/actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@rescufood/ui/components/button";
+import { Input } from "@rescufood/ui/components/input";
+import { Label } from "@rescufood/ui/components/label";
 
 export function RegisterOrgForm() {
   const [state, action, pending] = useActionState<OrgFormState, FormData>(

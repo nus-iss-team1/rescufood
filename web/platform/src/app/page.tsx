@@ -15,8 +15,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Badge } from "@rescufood/ui/components/badge";
+import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -24,7 +24,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@rescufood/ui/components/card";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 

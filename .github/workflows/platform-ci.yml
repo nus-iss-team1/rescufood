@@ -5,6 +5,8 @@ on:
     branches: [develop]
     paths:
       - "web/platform/**"
+      - "web/sdk/**"
+      - "web/ui/**"
       - ".github/workflows/platform-ci.yml"
       - ".github/workflows/reusable-sast.yml"
       - ".github/workflows/reusable-dast.yml"
@@ -58,7 +60,8 @@ jobs:
       actions: read
     with:
       component: platform
-      working-directory: web/platform
+      # All web packages: the app plus the shared sdk and ui packages.
+      working-directory: web
       codeql-languages: '["javascript-typescript"]'
       # Flip to true once the existing dependency findings are triaged.
       fail-on-findings: false
@@ -70,7 +73,8 @@ jobs:
       contents: read
     with:
       component: platform
-      build-context: web/platform
+      build-context: web
+      dockerfile: web/platform/Dockerfile
       port: 3000
       health-path: /
       scan-path: /
