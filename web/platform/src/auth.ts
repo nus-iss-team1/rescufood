@@ -7,6 +7,8 @@ import { passwordAuth } from "@/lib/cognito";
 
 declare module "next-auth" {
   interface Session {
+    /** Cognito ID token, used server-side to call backend services */
+    idToken?: string;
     user: {
       /** Cognito username used to sign in */
       username?: string;
@@ -56,6 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             groups: Array.isArray(claims["cognito:groups"])
               ? (claims["cognito:groups"] as string[])
               : [],
+            idToken: result.IdToken,
           };
         } catch {
           // Wrong password, unconfirmed account, unknown user, ...
@@ -68,17 +71,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // own infrastructure, so it is safe to trust.
   trustHost: true,
   callbacks: {
-    jwt({ token, profile, user }) {
+    jwt({ token, profile, user, account }) {
       // OAuth (hosted UI) sign-in: claims live on the OIDC profile.
       const profileGroups = profile?.["cognito:groups"];
       if (Array.isArray(profileGroups)) token.groups = profileGroups;
       if (typeof profile?.["cognito:username"] === "string") {
         token.username = profile["cognito:username"];
       }
+      if (account?.id_token) token.idToken = account.id_token;
       // Credentials sign-in: claims were decoded from the Cognito ID token.
-      const u = user as { groups?: string[]; username?: string } | undefined;
+      const u = user as
+        | { groups?: string[]; username?: string; idToken?: string }
+        | undefined;
       if (Array.isArray(u?.groups)) token.groups = u.groups;
       if (u?.username) token.username = u.username;
+      if (u?.idToken) token.idToken = u.idToken;
       return token;
     },
     session({ session, token }) {
@@ -87,6 +94,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       if (typeof token.username === "string") {
         session.user.username = token.username;
+      }
+      if (typeof token.idToken === "string") {
+        session.idToken = token.idToken;
       }
       return session;
     },

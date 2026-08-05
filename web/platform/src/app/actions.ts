@@ -1,9 +1,11 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
 
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import {
   addUserToGroup,
   confirmSignUpUser,
@@ -11,6 +13,7 @@ import {
   resendConfirmationCode,
   signUpUser,
 } from "@/lib/cognito";
+import { createOrganisation, ProfileApiError } from "@/lib/profile";
 
 export async function signInWithCognito() {
   await signIn("cognito", { redirectTo: "/dashboard" });
@@ -184,4 +187,48 @@ export async function resendCodeAction(
     }
   }
   return { step: "confirm", username, error: "A new code has been sent." };
+}
+
+export type OrgFormState = {
+  error?: string;
+};
+
+export async function createOrgAction(
+  _prev: OrgFormState,
+  formData: FormData
+): Promise<OrgFormState> {
+  const session = await auth();
+  if (!session?.idToken) {
+    return { error: "Your session has expired. Please sign in again." };
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const type = String(formData.get("type") ?? "");
+  const contactEmail = String(formData.get("contact_email") ?? "").trim();
+  if (!name || !contactEmail) {
+    return { error: "Please fill in the organisation name and contact email." };
+  }
+  if (type !== "donor" && type !== "rescue_partner") {
+    return { error: "Please choose an organisation type." };
+  }
+
+  try {
+    await createOrganisation(session.idToken, {
+      name,
+      type,
+      domain: String(formData.get("domain") ?? "").trim(),
+      description: String(formData.get("description") ?? "").trim(),
+      contact_email: contactEmail,
+      contact_phone: String(formData.get("contact_phone") ?? "").trim(),
+      address: String(formData.get("address") ?? "").trim(),
+    });
+  } catch (err) {
+    if (err instanceof ProfileApiError) {
+      return { error: err.message };
+    }
+    return { error: "Registration failed. Please try again shortly." };
+  }
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }
