@@ -76,6 +76,11 @@ export class ProfileClient {
     return this.request("/me");
   }
 
+  /** Members of the caller's own organisation. */
+  listMyOrgMembers(): Promise<User[]> {
+    return this.request("/me/org/members");
+  }
+
   // ------------------------------------------------------------- admin
 
   listOrgs(status: OrgStatus | "all"): Promise<Org[]> {

@@ -7,6 +7,7 @@ import {
   type Me,
   type NewOrganisation,
   type Org,
+  type User,
 } from "@rescufood/profile-sdk";
 
 const base = process.env.PROFILE_API_URL ?? "http://localhost:3001";
@@ -16,10 +17,14 @@ function client(idToken?: string) {
 }
 
 export { ApiError as ProfileApiError };
-export type { Me, NewOrganisation, Org };
+export type { Me, NewOrganisation, Org, User };
 
 export function getMe(idToken: string): Promise<Me> {
   return client(idToken).getMe();
+}
+
+export function getMyOrgMembers(idToken: string): Promise<User[]> {
+  return client(idToken).listMyOrgMembers();
 }
 
 export function registerOrganisation(org: NewOrganisation): Promise<Org> {

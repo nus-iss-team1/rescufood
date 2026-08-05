@@ -22,7 +22,7 @@ export default async function SignupPage() {
             <CardHeader>
               <CardTitle className="text-2xl">Create your account</CardTitle>
               <CardDescription>
-                Join as a food donor or a rescue partner — it takes a minute.
+                Join as a food donor or a rescue partner
               </CardDescription>
             </CardHeader>
             <CardContent>
