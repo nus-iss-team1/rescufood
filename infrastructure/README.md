@@ -83,6 +83,8 @@ with `CallbackUrls`/`LogoutUrls` parameter overrides.
 
 - **ECS cluster** (`rescufood-<env>`) and a Fargate **frontend service**
   in the private app subnets (no public IP, image pulls via the NAT).
+  The optional **profile service** shares the cluster and ALB — see
+  below.
 - **Internet-facing ALB** in the public subnets, forwarding to the
   container on port 3000. HTTP-only until `CertificateArn` is set, at
   which point 443 is served and 80 redirects to it.
@@ -131,6 +133,63 @@ aws ecs update-service \
   --service frontend \
   --force-new-deployment
 ```
+
+## Profile service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the Go profile service, gated on
+`ProfileImage`: leave it empty and no profile resources are created.
+When set it adds a Fargate service on port 3001, its own target group
+and log group, and an ALB rule routing `/api/profile/*` to it.
+
+| Parameter | Notes |
+|---|---|
+| `ProfileImage` | `ghcr.io/nus-iss-team1/rescufood/profile:develop` |
+| `ProfileDbSecretArn` | Secret holding the full `DATABASE_URL` as plain text |
+| `AuthCognitoIssuer` | `Issuer` output of the IAM stack |
+
+The service pings its database at startup and exits when it cannot
+connect, and it never migrates schema itself. So the database, its
+migrations and the secret must exist **before** the first deploy:
+
+```sh
+# 1. Tunnel to RDS through a running ECS task (needs the ssm plugin:
+#    brew install --cask session-manager-plugin, plus libpq for psql)
+task=$(aws ecs list-tasks --region ap-southeast-1 --cluster rescufood-dev \
+  --service-name frontend --query 'taskArns[0]' --output text)
+rt=$(aws ecs describe-tasks --region ap-southeast-1 --cluster rescufood-dev \
+  --tasks "$task" --query 'tasks[0].containers[0].runtimeId' --output text)
+aws ssm start-session --region ap-southeast-1 \
+  --target "ecs:rescufood-dev_${task##*/}_${rt}" \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters \
+  '{"host":["<DbEndpoint>"],"portNumber":["5432"],"localPortNumber":["5432"]}'
+
+# 2. In a second shell: create the database and its role. The master
+#    password comes from the data stack's DbSecretArn.
+psql "postgres://rescufood_admin:<master>@localhost:5432/rescufood" <<'SQL'
+CREATE ROLE profile LOGIN PASSWORD '<pw>';
+CREATE DATABASE profile OWNER profile;
+SQL
+
+# 3. Apply migrations to it
+cd service/profile
+local_url="postgres://profile:<pw>@localhost:5432/profile?sslmode=disable"
+DATABASE_URL="$local_url" go run ./cmd/migrate up
+
+# 4. Store the in-VPC connection string for the task to read
+aws secretsmanager create-secret --region ap-southeast-1 \
+  --name rescufood/dev/profile-db-url \
+  --secret-string \
+  "postgres://profile:<pw>@<DbEndpoint>:5432/profile?sslmode=require"
+```
+
+Then add `ProfileImage`, `ProfileDbSecretArn` and `AuthCognitoIssuer` to
+`parameters/ecs-dev.json` and redeploy the ECS stack. Until the service
+exists, `profile-build.yml` still builds and pushes the image but warns
+instead of rolling a deployment.
+
+Later migrations are deliberately manual: run step 3 against the tunnel
+**before** deploying code that needs the new schema.
 
 ## Database (data) stack
 
