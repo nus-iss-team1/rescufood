@@ -1,0 +1,69 @@
+name: Profile CI
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "service/profile/**"
+      - ".github/workflows/profile-ci.yml"
+      - ".github/workflows/reusable-sast.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: profile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Vet & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: service/profile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: service/profile/go.mod
+          cache-dependency-path: service/profile/go.sum
+
+      - name: Verify formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt needed for: $unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: profile
+      working-directory: service/profile
+      codeql-languages: '["go"]'
+      # Go is compiled: CodeQL builds the module to analyse it.
+      codeql-build-mode: autobuild
+      semgrep-configs: p/default p/secrets p/golang
+      # Flip to true once the existing findings are triaged.
+      fail-on-findings: false
