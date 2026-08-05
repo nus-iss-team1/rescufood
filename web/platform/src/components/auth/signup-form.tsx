@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useState } from "react";
 
 import {
   confirmSignUpAction,
@@ -16,12 +16,10 @@ function DetailsStep({
   state,
   action,
   pending,
-  passwordRef,
 }: {
   state: FormState;
   action: (formData: FormData) => void;
   pending: boolean;
-  passwordRef: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -65,7 +63,6 @@ function DetailsStep({
           autoComplete="new-password"
           required
           minLength={8}
-          ref={passwordRef}
         />
         <p className="text-xs text-muted-foreground">
           At least 8 characters with upper- and lowercase letters and a
@@ -162,27 +159,22 @@ function ConfirmStep({
 }
 
 export function SignupForm() {
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const [password, setPassword] = useState("");
   const [state, action, pending] = useActionState<FormState, FormData>(
     signUpAction,
     { step: "details" }
   );
 
-  if (state.step === "confirm") {
-    return (
-      <ConfirmStep
-        state={state}
-        password={passwordRef.current?.value ?? ""}
-      />
-    );
+  // Captures the password at submit time; ConfirmStep reuses it to sign
+  // in right after verification.
+  function submit(formData: FormData) {
+    setPassword(String(formData.get("password") ?? ""));
+    action(formData);
   }
 
-  return (
-    <DetailsStep
-      state={state}
-      action={action}
-      pending={pending}
-      passwordRef={passwordRef}
-    />
-  );
+  if (state.step === "confirm") {
+    return <ConfirmStep state={state} password={password} />;
+  }
+
+  return <DetailsStep state={state} action={submit} pending={pending} />;
 }
