@@ -60,7 +60,29 @@ export default function App() {
     );
   }
 
-  if (error || (me && !me.is_admin)) {
+  if (error) {
+    return (
+      <main className="grid min-h-svh place-items-center bg-muted/40 p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Can&apos;t reach the profile service</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-muted-foreground">
+              Make sure the profile service is running (make dev), then retry.
+            </p>
+            <Button onClick={() => void loadMe()}>Retry</Button>
+            <Button variant="outline" onClick={logout}>
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (me && !me.is_admin) {
     return (
       <main className="grid min-h-svh place-items-center bg-muted/40 p-4">
         <Card className="w-full max-w-sm">
@@ -69,7 +91,7 @@ export default function App() {
           </CardHeader>
           <CardContent className="grid gap-4">
             <p className="text-sm text-destructive">
-              {error || `${me?.name || me?.email} is not a platform administrator.`}
+              {me.name || me.email} is not a platform administrator.
             </p>
             <Button variant="outline" onClick={logout}>
               Sign out
