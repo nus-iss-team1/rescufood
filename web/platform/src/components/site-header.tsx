@@ -3,7 +3,6 @@ import Link from "next/link";
 import { auth, authConfigured } from "@/auth";
 import { signOutAction } from "@/app/actions";
 import { HeaderMenu } from "@/components/header-menu";
-import { GITHUB_URL, GithubIcon } from "@/components/github-icon";
 
 const navItemClass =
   "inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted";
@@ -28,15 +27,6 @@ export async function SiteHeader() {
               <a href="/dashboard" className={navItemClass}>
                 Home
               </a>
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={navItemClass}
-              >
-                <GithubIcon className="size-4" />
-                GitHub
-              </a>
               <span
                 aria-disabled
                 className="inline-flex h-9 items-center px-3 text-sm font-medium text-muted-foreground/60"
@@ -56,16 +46,9 @@ export async function SiteHeader() {
             </div>
           </>
         ) : (
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="View RescuFood on GitHub"
-            className="inline-flex size-9 items-center justify-center rounded-full text-sm font-medium text-foreground transition-colors hover:bg-muted sm:w-auto sm:gap-2 sm:px-4"
-          >
-            <GithubIcon className="size-4" />
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
+          <Link href="/login" className={navItemClass}>
+            Sign in
+          </Link>
         )}
       </div>
     </header>

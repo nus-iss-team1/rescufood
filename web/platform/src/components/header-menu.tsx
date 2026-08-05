@@ -11,7 +11,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@rescufood/ui/components/drawer";
-import { GITHUB_URL } from "@/components/github-icon";
 import { cn } from "@/lib/utils";
 
 const itemClass = cn(
@@ -40,18 +39,6 @@ export function HeaderMenu() {
             render={
               <a href="/dashboard" className={itemClass}>
                 Home
-              </a>
-            }
-          />
-          <DrawerClose
-            render={
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={itemClass}
-              >
-                GitHub
               </a>
             }
           />
