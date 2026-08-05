@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@rescufood/ui/componen
 
 import { client, ApiError } from "./api";
 import { getToken, signOut } from "./auth";
+import { HeaderBar } from "./HeaderBar";
 import { LoginForm } from "./LoginForm";
 import { OrgQueue } from "./OrgQueue";
 
@@ -62,70 +63,67 @@ export default function App() {
 
   if (error) {
     return (
-      <main className="grid min-h-svh place-items-center bg-muted/40 p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Can&apos;t reach the profile service</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <p className="text-sm text-destructive">{error}</p>
-            <p className="text-sm text-muted-foreground">
-              Make sure the profile service is running (make dev), then retry.
-            </p>
-            <Button onClick={() => void loadMe()}>Retry</Button>
-            <Button variant="outline" onClick={logout}>
-              Sign out
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
+      <>
+        <HeaderBar onSignOut={logout} />
+        <main className="grid place-items-center p-4 pt-16">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle>Can&apos;t reach the profile service</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-muted-foreground">
+                Make sure the profile service is running (make dev), then
+                retry.
+              </p>
+              <Button onClick={() => void loadMe()}>Retry</Button>
+            </CardContent>
+          </Card>
+        </main>
+      </>
     );
   }
 
   if (me && !me.is_admin) {
     return (
-      <main className="grid min-h-svh place-items-center bg-muted/40 p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Access denied</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <p className="text-sm text-destructive">
-              {me.name || me.email} is not a platform administrator.
-            </p>
-            <Button variant="outline" onClick={logout}>
-              Sign out
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
+      <>
+        <HeaderBar user={me.name || me.email} onSignOut={logout} />
+        <main className="grid place-items-center p-4 pt-16">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle>Access denied</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-destructive">
+                {me.name || me.email} is not a platform administrator.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </>
     );
   }
 
   if (!me) {
     return (
-      <main className="grid min-h-svh place-items-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      </main>
+      <>
+        <HeaderBar onSignOut={logout} />
+        <main className="grid place-items-center p-4 pt-16">
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="mx-auto max-w-5xl p-4 sm:p-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold sm:text-xl">
+    <>
+      <HeaderBar user={me.name || me.email} onSignOut={logout} />
+      <main className="mx-auto max-w-5xl p-4 sm:p-6">
+        <h1 className="mb-6 text-lg font-semibold sm:text-xl">
           Organisation approvals
         </h1>
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="truncate text-sm text-muted-foreground">
-            {me.name || me.email}
-          </span>
-          <Button variant="outline" size="sm" onClick={logout}>
-            Sign out
-          </Button>
-        </div>
-      </header>
-      <OrgQueue />
-    </main>
+        <OrgQueue />
+      </main>
+    </>
   );
 }
