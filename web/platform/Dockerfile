@@ -2,7 +2,7 @@
 #   docker build -f platform/Dockerfile web
 
 # ---- Dependencies ----
-FROM node:24-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app/platform
 COPY sdk /app/sdk
 COPY ui /app/ui
@@ -12,7 +12,7 @@ COPY platform/package.json platform/package-lock.json ./
 RUN npm ci
 
 # ---- Build ----
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app/platform
 COPY --from=deps /app/sdk /app/sdk
 COPY --from=deps /app/ui /app/ui
@@ -22,7 +22,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ---- Runtime ----
-FROM node:24-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
