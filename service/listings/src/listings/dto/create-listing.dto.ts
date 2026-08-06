@@ -1,3 +1,4 @@
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsIn,
@@ -9,6 +10,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { listingCategory } from '../../db/schema';
+import { parseMultipartJsonArray } from './multipart-json-array.transform';
 
 export class CreateListingDto {
   @IsIn(listingCategory.enumValues)
@@ -18,6 +20,10 @@ export class CreateListingDto {
   @MinLength(1)
   description!: string;
 
+  // Sent as a JSON body (real number) or as a multipart form field (string,
+  // when images are attached in the same request) - @Type coerces either
+  // into a number before validation.
+  @Type(() => Number)
   @IsNumber()
   @IsPositive()
   remainingQuantity!: number;
@@ -27,6 +33,7 @@ export class CreateListingDto {
   unit!: string;
 
   @IsOptional()
+  @Transform(parseMultipartJsonArray)
   @IsArray()
   @IsString({ each: true })
   allergens?: string[];

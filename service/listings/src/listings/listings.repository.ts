@@ -54,13 +54,16 @@ export class ListingsRepository {
 
   // Optimistic concurrency: only the row still at `expectedVersion` gets
   // updated. Returns undefined if it moved on since (or never existed) -
-  // the caller decides what that means (404 vs 409).
+  // the caller decides what that means (404 vs 409). Accepts an optional
+  // transaction so ListingsService.update can apply this atomically
+  // alongside listing_images changes (see listing-images.repository.ts).
   async updateWithVersion(
     id: string,
     expectedVersion: number,
     values: ListingUpdate,
+    executor: Database = this.db,
   ): Promise<Listing | undefined> {
-    const [updated] = await this.db
+    const [updated] = await executor
       .update(listings)
       .set(values)
       .where(and(eq(listings.id, id), eq(listings.version, expectedVersion)))
