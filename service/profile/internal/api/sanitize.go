@@ -6,8 +6,12 @@ import "strings"
 // entries, and caps the length.
 func logSafe(s string) string {
 	const max = 500
+	// Line breaks first and by name: this is the form codeql
+	// recognises as a log-injection barrier.
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", " ")
 	s = strings.Map(func(r rune) rune {
-		if r == '\n' || r == '\r' || r < 0x20 {
+		if r < 0x20 {
 			return ' '
 		}
 		return r
