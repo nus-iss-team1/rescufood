@@ -21,4 +21,5 @@ USER nonroot:nonroot
 EXPOSE 3001
 ENV PORT=3001
 
-ENTRYPOINT ["/server"]
+# CMD, not ENTRYPOINT: an ECS command override runs /migrate instead.
+CMD ["/server"]

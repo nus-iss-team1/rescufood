@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/nus-iss-team1/rescufood/service/profile/db"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/config"
 )
 
 func main() {
@@ -30,8 +31,13 @@ func main() {
 		fail(err)
 	}
 
+	dsn, err := config.DatabaseURL()
+	if err != nil {
+		fail(err)
+	}
+
 	// The migrate pgx/v5 driver registers the pgx5 URL scheme.
-	url := strings.Replace(os.Getenv("DATABASE_URL"), "postgres://", "pgx5://", 1)
+	url := strings.Replace(dsn, "postgres://", "pgx5://", 1)
 	m, err := migrate.NewWithSourceInstance("iofs", src, url)
 	if err != nil {
 		fail(err)

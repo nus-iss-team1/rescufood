@@ -14,6 +14,7 @@ import (
 
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/config"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
 )
 
@@ -33,8 +34,14 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	dsn, err := config.DatabaseURL()
+	if err != nil {
+		logger.Error("database is not configured", "error", err)
+		os.Exit(1)
+	}
+
 	// connect to database.
-	pool, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	pool, err := pgxpool.New(ctx, dsn)
 	if err == nil {
 		err = pool.Ping(ctx)
 	}
