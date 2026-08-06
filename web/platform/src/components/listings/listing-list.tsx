@@ -3,6 +3,8 @@ import { CalendarClock, TriangleAlert } from "lucide-react";
 import type { Listing, ListingStatus } from "@/lib/mock-listings";
 import { Badge } from "@rescufood/ui/components/badge";
 
+import { cn } from "@/lib/utils";
+
 const statusVariant: Record<
   ListingStatus,
   "success" | "info" | "outline" | "destructive"
@@ -64,12 +66,19 @@ export function ListingList({ listings }: { listings: Listing[] }) {
               Pickup {pickupWindow(listing)}
             </p>
 
-            {listing.allergens.length > 0 && (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <TriangleAlert className="size-3.5 shrink-0" aria-hidden />
-                {listing.allergens.join(", ")}
-              </p>
-            )}
+            {/* Always rendered so cards with and without allergens line up. */}
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <TriangleAlert
+                className={cn(
+                  "size-3.5 shrink-0",
+                  listing.allergens.length === 0 && "opacity-40",
+                )}
+                aria-hidden
+              />
+              {listing.allergens.length > 0
+                ? listing.allergens.join(", ")
+                : "No allergens declared"}
+            </p>
 
             <p className="text-xs text-muted-foreground">{listing.handling}</p>
           </div>
