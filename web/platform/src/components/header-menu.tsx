@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { SignOutConfirm } from "@/components/auth/sign-out-dialog";
-import { Button, buttonVariants } from "@rescufood/ui/components/button";
+
 import {
   Drawer,
   DrawerClose,
@@ -13,10 +13,10 @@ import {
 } from "@rescufood/ui/components/drawer";
 import { cn } from "@/lib/utils";
 
-const itemClass = cn(
-  buttonVariants({ variant: "ghost", size: "lg" }),
-  "w-full justify-start text-base font-semibold",
-);
+// Quiet rows separated by hairlines, no fills: the weight comes from
+// spacing rather than type.
+const itemClass =
+  "flex h-11 w-full items-center text-[15px] font-normal text-foreground/80 outline-none transition-colors hover:text-foreground focus-visible:text-foreground";
 
 /**
  * Two hairlines that cross into a close mark, the way apple's mobile
@@ -61,7 +61,7 @@ export function HeaderMenu() {
         />
         <DrawerContent className="px-6 pt-20 pb-10">
           <DrawerTitle className="sr-only">Menu</DrawerTitle>
-          <nav className="mx-auto flex w-full max-w-md flex-col gap-1">
+          <nav className="mx-auto flex w-full max-w-md flex-col divide-y divide-border">
             <DrawerClose
               render={
                 <a href="/dashboard" className={itemClass}>
@@ -77,17 +77,16 @@ export function HeaderMenu() {
               }
             />
             {/* Closes the drawer first: the dialog lives outside it. */}
-            <Button
-              variant="ghost"
-              size="lg"
-              className="w-full justify-start text-base font-semibold"
+            <button
+              type="button"
+              className={itemClass}
               onClick={() => {
                 setMenuOpen(false);
                 setConfirmOpen(true);
               }}
             >
               Sign out
-            </Button>
+            </button>
           </nav>
         </DrawerContent>
       </Drawer>
