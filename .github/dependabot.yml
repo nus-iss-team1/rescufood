@@ -1,0 +1,79 @@
+version: 2
+
+# Grouped so a week's updates arrive as one pull request per ecosystem
+# instead of one per package. Major bumps stay separate: they need
+# reading. Security fixes are grouped too, but arrive as soon as an
+# advisory lands rather than waiting for monday.
+updates:
+  - package-ecosystem: npm
+    directories:
+      - /web/platform
+      - /web/admin-console
+      - /web/sdk
+      - /web/ui
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Singapore
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      npm:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /service/profile
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Singapore
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      go:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      go-security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Singapore
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci(deps)
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories:
+      - /web/platform
+      - /service/profile
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Singapore
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+    groups:
+      base-images:
+        patterns: ["*"]
