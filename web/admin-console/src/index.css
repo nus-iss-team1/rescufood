@@ -67,10 +67,10 @@
     --muted-foreground: oklch(0.556 0 0);
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
-    --destructive: #b43127;
+    --destructive: #a92e25;
     --success: #2e6b4a;
-    --warning: #875a08;
-    --info: #1f6c78;
+    --warning: #7f5508;
+    --info: #1d6671;
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
