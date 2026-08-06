@@ -107,29 +107,27 @@ export default async function SettingsPage() {
           ]}
         />
 
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Card data-animate="field">
-            <CardHeader>
-              <CardTitle>Your profile</CardTitle>
-              <CardDescription>
-                Organisation details are managed by the platform administrators.
-              </CardDescription>
-            </CardHeader>
-            <Profile me={me} username={session.user.username} />
-          </Card>
+        <Card data-animate="field">
+          <CardHeader>
+            <CardTitle>Your profile</CardTitle>
+            <CardDescription>
+              Organisation details are managed by the platform administrators.
+            </CardDescription>
+          </CardHeader>
+          <Profile me={me} username={session.user.username} />
+        </Card>
 
-          <Card data-animate="field">
-            <CardHeader>
-              <CardTitle>Change password</CardTitle>
-              <CardDescription>
-                You will stay signed in on this device.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PasswordForm />
-            </CardContent>
-          </Card>
-        </div>
+        <Card data-animate="field">
+          <CardHeader>
+            <CardTitle>Change password</CardTitle>
+            <CardDescription>
+              You will stay signed in on this device.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasswordForm />
+          </CardContent>
+        </Card>
       </AnimateIn>
     </PageShell>
   );
