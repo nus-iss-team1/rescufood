@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { ListingsModule } from './listings/listings.module';
+import { RequestsModule } from './requests/requests.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ListingsModule } from './listings/listings.module';
       }),
     }),
     ListingsModule,
+    RequestsModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
