@@ -30,6 +30,13 @@ on:
         required: false
         default: none
         type: string
+      codeql-paths:
+        description: >-
+          Paths CodeQL analyses, defaulting to working-directory. Narrow
+          this when a wider tree makes the analysis time out.
+        required: false
+        default: ""
+        type: string
       codeql-queries:
         description: CodeQL query suite.
         required: false
@@ -93,7 +100,7 @@ jobs:
           queries: ${{ inputs.codeql-queries }}
           config: |
             paths:
-              - ${{ inputs.working-directory }}
+              - ${{ inputs.codeql-paths || inputs.working-directory }}
 
       - name: Analyze
         uses: github/codeql-action/analyze@v4

@@ -204,7 +204,7 @@ func transitionUser(users UserAdmin, action string, target domain.UserStatus) ht
 			"user_id", user.ID,
 			"action", action,
 			"actor_id", admin.ID,
-			"reason", req.Reason,
+			"reason", logSafe(req.Reason),
 		)
 		user.Status = target
 		writeJSON(w, http.StatusOK, toUserResponse(user))
@@ -267,7 +267,7 @@ func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation
 			"org_id", org.ID,
 			"action", action,
 			"actor_id", admin.ID,
-			"reason", req.Reason,
+			"reason", logSafe(req.Reason),
 		)
 		writeJSON(w, http.StatusOK, toOrgResponse(org))
 	}
