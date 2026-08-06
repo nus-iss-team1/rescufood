@@ -60,8 +60,10 @@ jobs:
       actions: read
     with:
       component: platform
-      # All web packages: the app plus the shared sdk and ui packages.
+      # Semgrep and trivy cover every web package; codeql analyses the
+      # app alone because the wider tree makes one query hang.
       working-directory: web
+      codeql-paths: web/platform
       codeql-languages: '["javascript-typescript"]'
       # Flip to true once the existing dependency findings are triaged.
       fail-on-findings: false
