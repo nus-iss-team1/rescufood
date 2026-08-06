@@ -21,6 +21,7 @@ import {
   assertCanModify,
   isListingVisible,
 } from './common/listing-access.util';
+import { assertValidStatusTransition } from './common/listing-status.util';
 import {
   ListingImageResponse,
   toListingImageResponses,
@@ -132,6 +133,10 @@ export class ListingsService {
   ): Promise<ListingWithImages> {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
+
+    if (dto.status !== undefined) {
+      assertValidStatusTransition(existing.status, dto.status);
+    }
 
     const start =
       dto.pickupWindowStart ?? existing.pickupWindowStart.toISOString();

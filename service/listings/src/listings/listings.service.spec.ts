@@ -657,4 +657,56 @@ describe('ListingsService', () => {
       expect(imagesRepository.findByListingIds).not.toHaveBeenCalled();
     });
   });
+
+  describe('update - status transitions', () => {
+    it('rejects setting a status not reachable from the current one', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing); // status: draft
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'collected' },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('allows a status transition reachable from the current one', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing); // status: draft
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      const result = await service.update(
+        'listing-1',
+        { version: 1, status: 'available' },
+        [],
+        owner,
+      );
+
+      expect(result.status).toBe('available');
+    });
+
+    it('allows leaving the status unchanged', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing); // status: draft
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update('listing-1', { version: 1, status: 'draft' }, [], owner),
+      ).resolves.toMatchObject({ status: 'draft' });
+    });
+  });
 });
