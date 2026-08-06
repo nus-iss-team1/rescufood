@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { getMe, type Me } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { PasswordForm } from "@/components/settings/password-form";
 import { Badge } from "@rescufood/ui/components/badge";
 import {
@@ -95,32 +96,34 @@ export default async function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 pt-24 pb-16">
+    <PageShell>
       <AnimateIn className="flex flex-col gap-6">
         <PageHeader title="Settings" subtitle={describeOrg(me)} />
 
-        <Card data-animate="field">
-          <CardHeader>
-            <CardTitle>Your profile</CardTitle>
-            <CardDescription>
-              Organisation details are managed by the platform administrators.
-            </CardDescription>
-          </CardHeader>
-          <Profile me={me} username={session.user.username} />
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <Card data-animate="field">
+            <CardHeader>
+              <CardTitle>Your profile</CardTitle>
+              <CardDescription>
+                Organisation details are managed by the platform administrators.
+              </CardDescription>
+            </CardHeader>
+            <Profile me={me} username={session.user.username} />
+          </Card>
 
-        <Card data-animate="field">
-          <CardHeader>
-            <CardTitle>Change password</CardTitle>
-            <CardDescription>
-              You will stay signed in on this device.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PasswordForm />
-          </CardContent>
-        </Card>
+          <Card data-animate="field">
+            <CardHeader>
+              <CardTitle>Change password</CardTitle>
+              <CardDescription>
+                You will stay signed in on this device.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PasswordForm />
+            </CardContent>
+          </Card>
+        </div>
       </AnimateIn>
-    </main>
+    </PageShell>
   );
 }

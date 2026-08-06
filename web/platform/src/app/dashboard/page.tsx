@@ -22,6 +22,7 @@ import {
 } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { OrgCard } from "@/components/dashboard/org-card";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
@@ -58,14 +59,6 @@ const upcoming = [
   { icon: Bell, label: "Claim, reminder and expiry notifications" },
   { icon: BarChart3, label: "Rescued quantity and activity reporting" },
 ];
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-16">
-      {children}
-    </main>
-  );
-}
 
 function Notice({
   title,
@@ -171,7 +164,7 @@ export default async function DashboardPage() {
 
   if (staleSession) {
     return (
-      <Shell>
+      <PageShell>
         <AnimateIn>
           <Notice
             title="Please sign in again"
@@ -186,27 +179,27 @@ export default async function DashboardPage() {
             Your session has expired, so we can&apos;t reach your profile.
           </Notice>
         </AnimateIn>
-      </Shell>
+      </PageShell>
     );
   }
 
   if (apiDown || !me) {
     return (
-      <Shell>
+      <PageShell>
         <AnimateIn>
           <Notice title="Profile service unavailable">
             We couldn&apos;t load your organisation right now. Please try again
             shortly.
           </Notice>
         </AnimateIn>
-      </Shell>
+      </PageShell>
     );
   }
 
   const firstName = me.name?.split(" ")[0] ?? me.email;
 
   return (
-    <Shell>
+    <PageShell>
       <AnimateIn className="mb-8">
         <PageHeader
           title={`Welcome${firstName ? `, ${firstName}` : ""}`}
@@ -279,6 +272,6 @@ export default async function DashboardPage() {
           </Notice>
         </AnimateIn>
       )}
-    </Shell>
+    </PageShell>
   );
 }
