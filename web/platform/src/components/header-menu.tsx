@@ -32,8 +32,13 @@ export function HeaderMenu() {
       <Drawer open={menuOpen} onOpenChange={setMenuOpen} swipeDirection="up">
         <DrawerTrigger
           render={
-            <Button size="icon" variant="ghost" aria-label="Open menu">
-              <Menu className="size-5" />
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Open menu"
+              className="rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <Menu className="size-[18px]" strokeWidth={1.5} />
             </Button>
           }
         />
