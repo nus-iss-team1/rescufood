@@ -17,7 +17,7 @@ import { S3Service } from '../storage/s3.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { QueryListingsDto } from './dto/query-listings.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { assertCanModify } from './listing-access.util';
+import { assertCanModify, isListingVisible } from './listing-access.util';
 import {
   ListingImageResponse,
   toListingImageResponses,
@@ -89,13 +89,25 @@ export class ListingsService {
     }
   }
 
-  async findAll(query: QueryListingsDto): Promise<ListingWithImages[]> {
-    const listings = await this.listingsRepository.findMany(query);
+  async findAll(
+    query: QueryListingsDto,
+    viewer: AuthenticatedUser,
+  ): Promise<ListingWithImages[]> {
+    const listings = await this.listingsRepository.findMany(query, viewer);
     return this.attachImagesToMany(listings);
   }
 
-  async findOne(id: string): Promise<ListingWithImages> {
+  async findOne(
+    id: string,
+    viewer: AuthenticatedUser,
+  ): Promise<ListingWithImages> {
     const listing = await this.getOrThrow(id);
+    // Same rule findMany applies via SQL, checked here in-memory since this
+    // path already has the row - a draft outside the viewer's org 404s
+    // rather than 403ing, so its existence isn't confirmed to outsiders.
+    if (!isListingVisible(listing, viewer)) {
+      throw new NotFoundException(`listing ${id} not found`);
+    }
     return this.attachImages(listing);
   }
 

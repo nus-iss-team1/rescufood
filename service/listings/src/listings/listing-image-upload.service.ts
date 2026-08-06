@@ -12,6 +12,7 @@ import {
   EXTENSION_BY_MIME_TYPE,
   MAX_IMAGES_PER_LISTING,
 } from './image-upload.constants';
+import { matchesDeclaredImageType } from './image-signature.util';
 import {
   ListingImageResponse,
   toListingImageResponses,
@@ -76,6 +77,14 @@ export class ListingImageUploadService {
     if (existingCount + files.length > MAX_IMAGES_PER_LISTING) {
       throw new BadRequestException(
         `a listing can have at most ${MAX_IMAGES_PER_LISTING} images (${existingCount} already present)`,
+      );
+    }
+    const mismatched = files.filter((file) => !matchesDeclaredImageType(file));
+    if (mismatched.length > 0) {
+      throw new BadRequestException(
+        `file(s) do not match their declared image type: ${mismatched
+          .map((file) => file.originalname)
+          .join(', ')}`,
       );
     }
 

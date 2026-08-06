@@ -10,9 +10,12 @@ import {
   inArray,
   isNull,
   lte,
+  ne,
+  or,
   type Column,
   type SQL,
 } from 'drizzle-orm';
+import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { organisations } from '../db/external.schema';
 import { listings, requests } from '../db/schema';
@@ -31,8 +34,11 @@ export class ListingsRepository {
     return created;
   }
 
-  findMany(query: QueryListingsDto): Promise<Listing[]> {
-    const conditions = this.buildConditions(query);
+  findMany(
+    query: QueryListingsDto,
+    viewer: AuthenticatedUser,
+  ): Promise<Listing[]> {
+    const conditions = this.buildConditions(query, viewer);
     const sortColumn = listings[query.sortBy ?? 'useBy'];
     const order =
       query.sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
@@ -90,7 +96,11 @@ export class ListingsRepository {
   async delete(id: string, nextVersion: number): Promise<Listing | undefined> {
     const [deleted] = await this.db
       .update(listings)
-      .set({ deletedAt: new Date(), version: nextVersion, updatedAt: new Date() })
+      .set({
+        deletedAt: new Date(),
+        version: nextVersion,
+        updatedAt: new Date(),
+      })
       .where(and(eq(listings.id, id), isNull(listings.deletedAt)))
       .returning();
     return deleted;
@@ -108,8 +118,24 @@ export class ListingsRepository {
     return row.value;
   }
 
-  private buildConditions(query: QueryListingsDto): SQL[] {
+  private buildConditions(
+    query: QueryListingsDto,
+    viewer: AuthenticatedUser,
+  ): SQL[] {
     const conditions: SQL[] = [isNull(listings.deletedAt)];
+    // Draft listings are a donor org's private staging state - see
+    // isListingVisible in listing-access.util.ts for the single-listing
+    // equivalent of this rule. Admins see everything.
+    if (viewer.role !== 'admin') {
+      conditions.push(
+        viewer.orgId
+          ? or(
+              ne(listings.status, 'draft'),
+              eq(listings.donorOrgId, viewer.orgId),
+            )!
+          : ne(listings.status, 'draft'),
+      );
+    }
     if (query.status) conditions.push(eq(listings.status, query.status));
     if (query.category) conditions.push(eq(listings.category, query.category));
     if (query.pickupLocation)

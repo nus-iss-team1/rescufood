@@ -16,6 +16,21 @@ async function bootstrap() {
   );
 
   const config = app.get(ConfigService);
+
+  // Mirrors service/profile's CORS setup - see CORS_ALLOWED_ORIGINS in
+  // .env.example.
+  const origins = (
+    config.get<string>('CORS_ALLOWED_ORIGINS') ?? 'http://localhost:5173'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({
+    origin: origins,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+  });
+
   await app.listen(config.get<number>('PORT') ?? 3000);
 }
 void bootstrap();

@@ -1,8 +1,18 @@
 import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
+import type { AuthenticatedUser } from '../common/types/express';
 import type { Database } from '../db/db.module';
 import { listings } from '../db/schema';
 import { ListingsRepository } from './listings.repository';
+
+// Admin bypasses the draft-visibility filter entirely, so most findMany
+// tests below use this viewer to keep their assertions focused on the
+// behaviour under test - the visibility filter itself is covered separately.
+const adminViewer: AuthenticatedUser = {
+  userId: 'admin-1',
+  role: 'admin',
+  orgId: 'org-1',
+};
 
 // asc()/desc() build a SQL fragment as [prefix, column, ' asc' | ' desc'];
 // this reaches into that shape to assert which column and direction the
@@ -170,9 +180,7 @@ describe('ListingsRepository', () => {
       db.update.mockReturnValue(chain([]));
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await expect(
-        repository.delete('listing-1', 2),
-      ).resolves.toBeUndefined();
+      await expect(repository.delete('listing-1', 2)).resolves.toBeUndefined();
     });
   });
 
@@ -195,7 +203,7 @@ describe('ListingsRepository', () => {
       const repository = new ListingsRepository(db as unknown as Database);
 
       await expect(
-        repository.findMany({ limit: 20, offset: 0 }),
+        repository.findMany({ limit: 20, offset: 0 }, adminViewer),
       ).resolves.toEqual([baseListing]);
     });
 
@@ -205,7 +213,7 @@ describe('ListingsRepository', () => {
       db.select.mockReturnValue(queryChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.findMany({ limit: 20, offset: 0 });
+      await repository.findMany({ limit: 20, offset: 0 }, adminViewer);
 
       const [orderArg] = (queryChain.orderBy as jest.Mock).mock
         .calls[0] as SQL[];
@@ -220,12 +228,15 @@ describe('ListingsRepository', () => {
       db.select.mockReturnValue(queryChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.findMany({
-        sortBy: 'remainingQuantity',
-        sortOrder: 'desc',
-        limit: 20,
-        offset: 0,
-      });
+      await repository.findMany(
+        {
+          sortBy: 'remainingQuantity',
+          sortOrder: 'desc',
+          limit: 20,
+          offset: 0,
+        },
+        adminViewer,
+      );
 
       const [orderArg] = (queryChain.orderBy as jest.Mock).mock
         .calls[0] as SQL[];
@@ -240,11 +251,14 @@ describe('ListingsRepository', () => {
       db.select.mockReturnValue(queryChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.findMany({
-        pickupLocation: 'Main',
-        limit: 20,
-        offset: 0,
-      });
+      await repository.findMany(
+        {
+          pickupLocation: 'Main',
+          limit: 20,
+          offset: 0,
+        },
+        adminViewer,
+      );
 
       const { sql, params } = renderWhere(queryChain.where as jest.Mock);
       expect(sql).toContain('ilike');
@@ -257,12 +271,15 @@ describe('ListingsRepository', () => {
       db.select.mockReturnValue(queryChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.findMany({
-        useByFrom: '2026-08-01T00:00:00Z',
-        useByTo: '2026-08-31T00:00:00Z',
-        limit: 20,
-        offset: 0,
-      });
+      await repository.findMany(
+        {
+          useByFrom: '2026-08-01T00:00:00Z',
+          useByTo: '2026-08-31T00:00:00Z',
+          limit: 20,
+          offset: 0,
+        },
+        adminViewer,
+      );
 
       const { sql, params } = renderWhere(queryChain.where as jest.Mock);
       expect(sql).toContain('"use_by" >=');
@@ -280,17 +297,69 @@ describe('ListingsRepository', () => {
         .mockReturnValueOnce(listingsChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.findMany({
-        donorOrgName: 'Acme Foods',
-        limit: 20,
-        offset: 0,
-      });
+      await repository.findMany(
+        {
+          donorOrgName: 'Acme Foods',
+          limit: 20,
+          offset: 0,
+        },
+        adminViewer,
+      );
 
       expect(db.select).toHaveBeenNthCalledWith(1, expect.anything());
       const { sql, params } = renderWhere(orgChain.where as jest.Mock);
       expect(sql).toContain('ilike');
       expect(params).toContain('Acme Foods');
       expect(listingsChain.where).toHaveBeenCalled();
+    });
+
+    it("does not filter by status/org for an admin viewer (sees every listing's draft or not)", async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await repository.findMany({ limit: 20, offset: 0 }, adminViewer);
+
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).not.toContain('"status" <>');
+      expect(params).not.toContain('draft');
+    });
+
+    it('restricts draft listings to the donor org for a non-admin viewer with an org', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+      const viewer: AuthenticatedUser = {
+        userId: 'user-1',
+        role: 'user',
+        orgId: 'org-1',
+      };
+
+      await repository.findMany({ limit: 20, offset: 0 }, viewer);
+
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('"status" <>');
+      expect(sql).toContain('"donor_org_id" =');
+      expect(params).toContain('draft');
+      expect(params).toContain('org-1');
+    });
+
+    it('excludes draft listings entirely for a viewer with no org', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+      const viewer: AuthenticatedUser = { userId: 'user-1', role: 'user' };
+
+      await repository.findMany({ limit: 20, offset: 0 }, viewer);
+
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('"status" <>');
+      expect(sql).not.toContain('"donor_org_id" =');
+      expect(params).toContain('draft');
+      expect(params).not.toContain('org-1');
     });
   });
 });

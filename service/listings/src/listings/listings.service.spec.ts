@@ -249,7 +249,7 @@ describe('ListingsService', () => {
         },
       ]);
 
-      const result = await service.findOne('listing-1');
+      const result = await service.findOne('listing-1', owner);
 
       expect(result).toEqual({
         ...baseListing,
@@ -275,9 +275,42 @@ describe('ListingsService', () => {
       repository.findById.mockResolvedValue(undefined);
       const { service } = makeService(repository);
 
-      await expect(service.findOne('missing')).rejects.toBeInstanceOf(
+      await expect(service.findOne('missing', owner)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+
+    it('404s a draft listing for a viewer outside the donor org', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.findOne('listing-1', otherUser),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('allows an admin to see any draft listing', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing);
+      const { service } = makeService(repository);
+
+      await expect(service.findOne('listing-1', admin)).resolves.toMatchObject({
+        id: 'listing-1',
+      });
+    });
+
+    it('allows any viewer to see a non-draft listing regardless of org', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.findOne('listing-1', otherUser),
+      ).resolves.toMatchObject({ id: 'listing-1' });
     });
   });
 
@@ -589,9 +622,9 @@ describe('ListingsService', () => {
       ]);
 
       const query = { limit: 20, offset: 0 };
-      const result = await service.findAll(query);
+      const result = await service.findAll(query, owner);
 
-      expect(repository.findMany).toHaveBeenCalledWith(query);
+      expect(repository.findMany).toHaveBeenCalledWith(query, owner);
       expect(imagesRepository.findByListingIds).toHaveBeenCalledWith([
         'listing-1',
         'listing-2',
@@ -618,9 +651,9 @@ describe('ListingsService', () => {
       repository.findMany.mockResolvedValue([]);
       const { service, imagesRepository } = makeService(repository);
 
-      await expect(service.findAll({ limit: 20, offset: 0 })).resolves.toEqual(
-        [],
-      );
+      await expect(
+        service.findAll({ limit: 20, offset: 0 }, owner),
+      ).resolves.toEqual([]);
       expect(imagesRepository.findByListingIds).not.toHaveBeenCalled();
     });
   });

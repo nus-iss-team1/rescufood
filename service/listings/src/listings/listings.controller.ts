@@ -19,10 +19,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Logger } from 'nestjs-pino';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { OrgMembershipGuard } from '../auth/org-membership.guard';
+import {
+  OrgContextGuard,
+  OrgMembershipGuard,
+} from '../auth/org-membership.guard';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { QueryListingsDto } from './dto/query-listings.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -45,6 +49,13 @@ const imagesFilePipe = () =>
     ],
   });
 
+// Tighter than the app-wide default (see ThrottlerModule in app.module.ts):
+// these endpoints drive S3 uploads, so they're more expensive to abuse than
+// a plain read or field-only update.
+const writeWithImagesThrottle = Throttle({
+  default: { limit: 10, ttl: 60_000 },
+});
+
 @Controller('listings')
 @UseGuards(JwtAuthGuard)
 export class ListingsController {
@@ -55,6 +66,7 @@ export class ListingsController {
 
   @Post()
   @UseGuards(OrgMembershipGuard)
+  @writeWithImagesThrottle
   @UseInterceptors(
     FilesInterceptor('files', MAX_IMAGES_PER_LISTING, {
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
@@ -73,16 +85,20 @@ export class ListingsController {
   }
 
   @Get()
-  findAll(@Query() query: QueryListingsDto) {
-    return this.listingsService.findAll(query);
+  @UseGuards(OrgContextGuard)
+  findAll(@Query() query: QueryListingsDto, @Req() req: Request) {
+    return this.listingsService.findAll(query, req.user!);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.listingsService.findOne(id);
+  @UseGuards(OrgContextGuard)
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.listingsService.findOne(id, req.user!);
   }
 
   @Patch(':id')
+  @UseGuards(OrgMembershipGuard)
+  @writeWithImagesThrottle
   @UseInterceptors(
     FilesInterceptor('files', MAX_IMAGES_PER_LISTING, {
       limits: { fileSize: MAX_FILE_SIZE_BYTES },
@@ -106,6 +122,7 @@ export class ListingsController {
   }
 
   @Delete(':id')
+  @UseGuards(OrgMembershipGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     this.logger.log(

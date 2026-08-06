@@ -27,13 +27,17 @@ function makeLogger() {
   return { warn: jest.fn(), log: jest.fn(), error: jest.fn() };
 }
 
+// Leading bytes of a real JPEG (0xff 0xd8 0xff) so files pass the
+// magic-byte check in image-signature.util.ts by default.
+const JPEG_MAGIC_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01, 0x02]);
+
 function makeFile(overrides: Partial<Express.Multer.File> = {}) {
   return {
     fieldname: 'files',
     originalname: 'photo.jpg',
     mimetype: 'image/jpeg',
-    buffer: Buffer.from('fake-image-bytes'),
-    size: 16,
+    buffer: JPEG_MAGIC_BYTES,
+    size: JPEG_MAGIC_BYTES.length,
     ...overrides,
   } as Express.Multer.File;
 }
@@ -156,6 +160,16 @@ describe('ListingImageUploadService', () => {
       expect(keys).toEqual([
         expect.stringMatching(/^listings\/listing-1\/.+\.jpg$/),
       ]);
+    });
+
+    it("rejects a file whose bytes don't match its declared mimetype, without uploading anything", async () => {
+      const { service, s3 } = makeService();
+      const spoofed = makeFile({ buffer: Buffer.from('not-actually-a-jpeg') });
+
+      await expect(
+        service.uploadToS3('listing-1', [spoofed], 0),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(s3.upload).not.toHaveBeenCalled();
     });
   });
 

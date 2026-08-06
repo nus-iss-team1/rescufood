@@ -1,7 +1,7 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import type { Request } from 'express';
 import type { Database } from '../db/db.module';
-import { OrgMembershipGuard } from './org-membership.guard';
+import { OrgContextGuard, OrgMembershipGuard } from './org-membership.guard';
 
 // Mirrors the Drizzle chainable-thenable shape used in listings.service.spec.ts.
 function chain(result: unknown) {
@@ -65,5 +65,37 @@ describe('OrgMembershipGuard', () => {
     await expect(
       guard.canActivate(contextWithUser('sub-1')),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
+describe('OrgContextGuard', () => {
+  it("attaches the caller's orgId and allows the request through", async () => {
+    const db = { select: jest.fn() };
+    db.select.mockReturnValue(chain([{ orgId: 'org-1' }]));
+    const guard = new OrgContextGuard(db as unknown as Database);
+    const request = {
+      user: { userId: 'sub-1', role: 'user' },
+    } as unknown as Request;
+    const context = {
+      switchToHttp: () => ({ getRequest: () => request }),
+    } as unknown as ExecutionContext;
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.user!.orgId).toBe('org-1');
+  });
+
+  it('allows a caller with no org through, leaving orgId undefined', async () => {
+    const db = { select: jest.fn() };
+    db.select.mockReturnValue(chain([]));
+    const guard = new OrgContextGuard(db as unknown as Database);
+    const request = {
+      user: { userId: 'sub-1', role: 'user' },
+    } as unknown as Request;
+    const context = {
+      switchToHttp: () => ({ getRequest: () => request }),
+    } as unknown as ExecutionContext;
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.user!.orgId).toBeUndefined();
   });
 });
