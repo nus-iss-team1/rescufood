@@ -1,0 +1,179 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import type { Metadata } from "next";
+
+import { auth } from "@/auth";
+import { getMe, type Me } from "@/lib/profile";
+import {
+  listingStatuses,
+  mockListings,
+  type ListingStatus,
+} from "@/lib/mock-listings";
+import { AnimateIn } from "@/components/animate-in";
+import { ListingList } from "@/components/listings/listing-list";
+import { Badge } from "@rescufood/ui/components/badge";
+import { Button, buttonVariants } from "@rescufood/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@rescufood/ui/components/card";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Your listings — RescuFood",
+};
+
+const tabs = ["all", ...listingStatuses] as const;
+
+function Notice({ title, body }: { title: string; body: React.ReactNode }) {
+  return (
+    <Card className="mx-auto w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{body}</CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
+
+export default async function ListingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/");
+  }
+
+  let me: Me | null = null;
+  if (session.idToken) {
+    try {
+      me = await getMe(session.idToken);
+    } catch {
+      // Falls through to the unavailable notice below.
+    }
+  }
+
+  const shell = (children: React.ReactNode) => (
+    <main className="mx-auto w-full max-w-4xl px-6 pt-24 pb-16">
+      {children}
+    </main>
+  );
+
+  if (!me) {
+    return shell(
+      <Notice
+        title="Profile service unavailable"
+        body="We couldn't confirm your organisation. Please try again shortly."
+      />,
+    );
+  }
+  if (!me.org) {
+    return shell(
+      <Notice
+        title="No organisation found"
+        body={
+          <>
+            Listings belong to an organisation.{" "}
+            <Link
+              href="/register-organisation"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Register yours
+            </Link>
+            .
+          </>
+        }
+      />,
+    );
+  }
+  if (me.org.status !== "approved") {
+    return shell(
+      <Notice
+        title="Registration under review"
+        body={`${me.org.name} can post listings once an administrator approves it.`}
+      />,
+    );
+  }
+  if (me.org.type !== "donor") {
+    return shell(
+      <Notice
+        title="Donors post listings"
+        body={`${me.org.name} is a rescue partner, so it claims listings rather than posting them. Browsing and claiming arrives with the listing service.`}
+      />,
+    );
+  }
+
+  const { status } = await searchParams;
+  const active: (typeof tabs)[number] = tabs.includes(
+    status as (typeof tabs)[number],
+  )
+    ? (status as (typeof tabs)[number])
+    : "all";
+  const listings =
+    active === "all"
+      ? mockListings
+      : mockListings.filter((l) => l.status === (active as ListingStatus));
+
+  return shell(
+    <AnimateIn className="flex flex-col gap-6">
+      <div
+        data-animate="field"
+        className="flex flex-wrap items-end justify-between gap-3"
+      >
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Your listings
+          </h1>
+          <p className="text-sm text-muted-foreground">{me.org.name}</p>
+        </div>
+        <Button disabled>Post surplus food</Button>
+      </div>
+
+      <p
+        data-animate="field"
+        className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground"
+      >
+        <Badge variant="secondary">Sample data</Badge>
+        These listings are placeholders. Posting and claiming arrive with the
+        listing service.
+      </p>
+
+      <nav data-animate="field" className="flex flex-wrap gap-2">
+        {tabs.map((tab) => {
+          const count =
+            tab === "all"
+              ? mockListings.length
+              : mockListings.filter((l) => l.status === tab).length;
+          return (
+            <Link
+              key={tab}
+              href={tab === "all" ? "/listings" : `/listings?status=${tab}`}
+              aria-current={tab === active ? "page" : undefined}
+              className={cn(
+                buttonVariants({
+                  variant: tab === active ? "default" : "outline",
+                  size: "sm",
+                }),
+                "capitalize",
+              )}
+            >
+              {tab}
+              {count > 0 && (
+                <span className="ml-1.5 text-xs opacity-70">{count}</span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div data-animate="field">
+        <ListingList listings={listings} />
+      </div>
+    </AnimateIn>,
+  );
+}

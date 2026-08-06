@@ -61,7 +61,9 @@ const upcoming = [
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-16">{children}</main>
+    <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-16">
+      {children}
+    </main>
   );
 }
 
@@ -100,6 +102,14 @@ function Hero({ org }: { org: Org }) {
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-3">
         <Button disabled>{hero.title}</Button>
+        {org.type === "donor" && (
+          <Link
+            href="/listings"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            Your listings
+          </Link>
+        )}
       </CardContent>
     </Card>
   );
@@ -185,8 +195,8 @@ export default async function DashboardPage() {
       <Shell>
         <AnimateIn>
           <Notice title="Profile service unavailable">
-            We couldn&apos;t load your organisation right now. Please try
-            again shortly.
+            We couldn&apos;t load your organisation right now. Please try again
+            shortly.
           </Notice>
         </AnimateIn>
       </Shell>
