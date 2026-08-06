@@ -27,13 +27,9 @@ export async function SiteHeader() {
               <a href="/dashboard" className={navItemClass}>
                 Home
               </a>
-              <span
-                aria-disabled
-                className="inline-flex h-9 items-center px-3 text-sm font-medium text-muted-foreground/60"
-                title="Coming soon"
-              >
+              <a href="/settings" className={navItemClass}>
                 Settings
-              </span>
+              </a>
               <form action={signOutAction}>
                 <button type="submit" className={navItemClass}>
                   Sign out

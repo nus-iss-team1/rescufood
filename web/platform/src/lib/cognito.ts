@@ -3,6 +3,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 import {
   AdminAddUserToGroupCommand,
+  ChangePasswordCommand,
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
   InitiateAuthCommand,
@@ -118,6 +119,28 @@ export async function addUserToGroup(
       UserPoolId: userPoolId,
       Username: username,
       GroupName: group,
+    })
+  );
+}
+
+/**
+ * Changes a user's password. Authenticating with the current password
+ * both verifies it and yields the access token Cognito requires.
+ */
+export async function changePassword(
+  username: string,
+  current: string,
+  next: string
+) {
+  const result = await passwordAuth(username, current);
+  if (!result?.AccessToken) {
+    throw new Error("sign-in did not return an access token");
+  }
+  await client.send(
+    new ChangePasswordCommand({
+      AccessToken: result.AccessToken,
+      PreviousPassword: current,
+      ProposedPassword: next,
     })
   );
 }

@@ -3,8 +3,9 @@
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
 
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import {
+  changePassword,
   confirmSignUpUser,
   emailInUse,
   resendConfirmationCode,
@@ -260,4 +261,57 @@ export async function registerOrgAction(
     }
     return { error: "Registration failed. Please try again shortly." };
   }
+}
+
+export type PasswordFormState = {
+  error?: string;
+  done?: boolean;
+};
+
+export async function changePasswordAction(
+  _prev: PasswordFormState,
+  formData: FormData
+): Promise<PasswordFormState> {
+  const session = await auth();
+  const username = session?.user?.username;
+  if (!username) {
+    return { error: "Your session has expired. Please sign in again." };
+  }
+
+  const current = String(formData.get("current_password") ?? "");
+  const next = String(formData.get("new_password") ?? "");
+  const confirm = String(formData.get("confirm_password") ?? "");
+
+  if (!current || !next || !confirm) {
+    return { error: "Please fill in every field." };
+  }
+  if (next !== confirm) {
+    return { error: "The new passwords do not match." };
+  }
+  if (next === current) {
+    return { error: "The new password must differ from the current one." };
+  }
+  if (!PASSWORD_RULE.test(next)) {
+    return {
+      error:
+        "Password must be at least 8 characters with upper- and lowercase letters and a number.",
+    };
+  }
+
+  try {
+    await changePassword(username, current, next);
+  } catch (err) {
+    switch ((err as { name?: string }).name) {
+      case "NotAuthorizedException":
+        return { error: "Your current password is incorrect." };
+      case "InvalidPasswordException":
+        return { error: "Cognito rejected that password. Try a different one." };
+      case "LimitExceededException":
+        return { error: "Too many attempts. Please try again in a few minutes." };
+      default:
+        return { error: "Could not change your password. Please try again." };
+    }
+  }
+
+  return { done: true };
 }

@@ -42,14 +42,13 @@ export function HeaderMenu() {
               </a>
             }
           />
-          <Button
-            variant="ghost"
-            size="lg"
-            disabled
-            className="w-full justify-start text-base font-semibold"
-          >
-            Settings
-          </Button>
+          <DrawerClose
+            render={
+              <a href="/settings" className={itemClass}>
+                Settings
+              </a>
+            }
+          />
           <form action={signOutAction}>
             <Button
               type="submit"
