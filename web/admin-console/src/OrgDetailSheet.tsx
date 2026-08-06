@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@rescufood/ui/components/skeleton";
 
 import { client, ApiError } from "./api";
+import { statusBadge } from "./OrgQueue";
 import { ReasonDialog } from "./ReasonDialog";
 import { timeAgo } from "./lib/time";
 
@@ -80,7 +81,7 @@ export function OrgDetailSheet({
                 <Badge variant={org.type === "donor" ? "default" : "secondary"}>
                   {org.type === "donor" ? "Donor" : "Rescue partner"}
                 </Badge>
-                <Badge variant="outline" className="capitalize">
+                <Badge variant={statusBadge[org.status]} className="capitalize">
                   {org.status}
                 </Badge>
               </SheetDescription>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { auth, authConfigured } from "@/auth";
-import { signOutAction } from "@/app/actions";
+import { SignOutButton } from "@/components/auth/sign-out-dialog";
 import { HeaderMenu } from "@/components/header-menu";
 
 const navItemClass =
@@ -30,11 +30,7 @@ export async function SiteHeader() {
               <a href="/settings" className={navItemClass}>
                 Settings
               </a>
-              <form action={signOutAction}>
-                <button type="submit" className={navItemClass}>
-                  Sign out
-                </button>
-              </form>
+              <SignOutButton className={navItemClass} />
             </nav>
             {/* Small screens: hamburger opens the drawer */}
             <div className="md:hidden">

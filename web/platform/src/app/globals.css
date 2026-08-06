@@ -28,6 +28,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -69,7 +72,11 @@
   --muted-foreground: #00000099;
   --accent: #f2f0ed;
   --accent-foreground: #000000;
-  --destructive: #ff5043;
+  /* Darkened from #ff5043 so it reads on a tinted badge. */
+  --destructive: #b43127;
+  --success: #2e6b4a;
+  --warning: #875a08;
+  --info: #1f6c78;
   --border: #0000001a;
   --input: #0000001a;
   --ring: #00000066;
@@ -104,7 +111,10 @@
   --muted-foreground: #ffffff99;
   --accent: #2c2a26;
   --accent-foreground: #ffffff;
-  --destructive: #ff5043;
+  --destructive: #ff7a70;
+  --success: #7fc79b;
+  --warning: #e5b567;
+  --info: #7fc2cf;
   --border: #ffffff1a;
   --input: #ffffff26;
   --ring: #ffffff66;

@@ -36,7 +36,7 @@ export function OrgCard({ org, members }: { org: Org; members: User[] }) {
           <Badge variant="secondary">
             {org.type === "donor" ? "Food donor" : "Rescue partner"}
           </Badge>
-          <Badge variant="outline">Approved</Badge>
+          <Badge variant="success">Approved</Badge>
         </div>
       </CardHeader>
       <CardContent className="grid gap-2">

@@ -38,9 +38,12 @@ const actionsByStatus: Record<
   rejected: [],
 };
 
-const statusBadge: Record<OrgStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  pending: "secondary",
-  approved: "default",
+export const statusBadge: Record<
+  OrgStatus,
+  "success" | "warning" | "destructive" | "outline"
+> = {
+  pending: "warning",
+  approved: "success",
   suspended: "destructive",
   rejected: "outline",
 };

@@ -5,10 +5,10 @@ import { Badge } from "@rescufood/ui/components/badge";
 
 const statusVariant: Record<
   ListingStatus,
-  "default" | "secondary" | "outline" | "destructive"
+  "success" | "info" | "outline" | "destructive"
 > = {
-  available: "default",
-  reserved: "secondary",
+  available: "success",
+  reserved: "info",
   collected: "outline",
   expired: "destructive",
   cancelled: "outline",

@@ -134,15 +134,6 @@ export default async function ListingsPage({
         <Button disabled>Post surplus food</Button>
       </div>
 
-      <p
-        data-animate="field"
-        className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground"
-      >
-        <Badge variant="secondary">Sample data</Badge>
-        These listings are placeholders. Posting and claiming arrive with the
-        listing service.
-      </p>
-
       <nav data-animate="field" className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const count =
