@@ -215,6 +215,37 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('expireOverdue', () => {
+    it('flips available listings past their pickup window to expired and bumps their version', async () => {
+      const db = makeDb();
+      const updateChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+      const now = new Date('2026-08-10T00:00:00Z');
+
+      const result = await repository.expireOverdue(now);
+
+      expect(db.update).toHaveBeenCalledWith(listings);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'expired', updatedAt: now }),
+      );
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" =');
+      expect(sql).toContain('"pickup_window_end" <=');
+      expect(params).toContain('available');
+      expect(params).toContain(now.toISOString());
+      expect(result).toBe(2);
+    });
+
+    it('returns 0 when nothing is overdue', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(repository.expireOverdue()).resolves.toBe(0);
+    });
+  });
+
   describe('findMany', () => {
     it('returns the rows from the query builder', async () => {
       const db = makeDb();

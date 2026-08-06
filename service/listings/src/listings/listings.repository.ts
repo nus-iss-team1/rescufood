@@ -12,6 +12,7 @@ import {
   lte,
   ne,
   or,
+  sql,
   type Column,
   type SQL,
 } from 'drizzle-orm';
@@ -133,6 +134,31 @@ export class ListingsRepository {
       .from(requests)
       .where(eq(requests.listingId, listingId));
     return row.value;
+  }
+
+  // Backs the expiry sweep (ListingExpiryService): flips any listing still
+  // `available` once its pickup window has closed - i.e. nobody's request
+  // was accepted in time - to `expired`. Scoped to `available` to match
+  // listings_expiry_scan_idx exactly, and bumps `version` like every other
+  // mutation so a donor's in-flight optimistic update racing against this
+  // sweep gets a 409 instead of silently overwriting `expired` back.
+  async expireOverdue(now: Date = new Date()): Promise<number> {
+    const result = await this.db
+      .update(listings)
+      .set({
+        status: 'expired',
+        version: sql`${listings.version} + 1`,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(listings.status, 'available'),
+          lte(listings.pickupWindowEnd, now),
+          isNull(listings.deletedAt),
+        ),
+      )
+      .returning({ id: listings.id });
+    return result.length;
   }
 
   private buildConditions(
