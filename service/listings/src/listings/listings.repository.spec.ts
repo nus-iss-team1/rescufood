@@ -149,16 +149,42 @@ describe('ListingsRepository', () => {
   });
 
   describe('delete', () => {
-    it('deletes by id', async () => {
+    it('soft-deletes by id, setting deletedAt and the given version', async () => {
       const db = makeDb();
-      const deleteChain = chain(undefined);
-      db.delete.mockReturnValue(deleteChain);
+      const updateChain = chain([{ ...baseListing, version: 2 }]);
+      db.update.mockReturnValue(updateChain);
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await repository.delete('listing-1');
+      const result = await repository.delete('listing-1', 2);
 
-      expect(db.delete).toHaveBeenCalledWith(listings);
-      expect(deleteChain.where).toHaveBeenCalled();
+      expect(db.update).toHaveBeenCalledWith(listings);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ deletedAt: expect.any(Date), version: 2 }),
+      );
+      expect(updateChain.where).toHaveBeenCalled();
+      expect(result?.version).toBe(2);
+    });
+
+    it('returns undefined when the row is already deleted', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.delete('listing-1', 2),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('countAssociatedRequests', () => {
+    it('returns the request count for the listing', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([{ value: 3 }]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.countAssociatedRequests('listing-1'),
+      ).resolves.toBe(3);
     });
   });
 

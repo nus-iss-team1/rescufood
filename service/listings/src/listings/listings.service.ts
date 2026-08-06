@@ -78,7 +78,7 @@ export class ListingsService {
       // the same request can't be saved, don't leave an image-less listing
       // behind for them to notice and clean up later.
       await this.listingsRepository
-        .delete(created.id)
+        .delete(created.id, created.version + 1)
         .catch((cleanupErr: unknown) => {
           this.logger.warn(
             { listingId: created.id, err: cleanupErr },
@@ -239,16 +239,20 @@ export class ListingsService {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
 
-    try {
-      await this.listingsRepository.delete(id);
-    } catch (err) {
-      if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
-        throw new ConflictException(
-          `listing ${id} has associated requests or images and cannot be deleted`,
-        );
-      }
-      throw err;
+    // Soft delete is a plain UPDATE, so it won't trip a foreign-key
+    // violation the way a hard DELETE used to - check for associated
+    // requests/images up front to keep the same external behaviour.
+    const [imageCount, requestCount] = await Promise.all([
+      this.listingImagesRepository.countByListingId(id),
+      this.listingsRepository.countAssociatedRequests(id),
+    ]);
+    if (imageCount > 0 || requestCount > 0) {
+      throw new ConflictException(
+        `listing ${id} has associated requests or images and cannot be deleted`,
+      );
     }
+
+    await this.listingsRepository.delete(id, existing.version + 1);
   }
 
   private async attachImages(listing: Listing): Promise<ListingWithImages> {

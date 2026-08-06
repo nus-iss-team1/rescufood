@@ -17,12 +17,13 @@ function makeRepository() {
     findById: jest.fn(),
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
+    countAssociatedRequests: jest.fn().mockResolvedValue(0),
   };
 }
 
 function makeImagesRepository() {
   return {
-    countByListingId: jest.fn(),
+    countByListingId: jest.fn().mockResolvedValue(0),
     insertMany: jest.fn(),
     deleteMany: jest.fn().mockResolvedValue([]),
     findByListingId: jest.fn().mockResolvedValue([]),
@@ -201,7 +202,10 @@ describe('ListingsService', () => {
       await expect(
         service.create(validCreateDto, [makeFile()], owner),
       ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.delete).toHaveBeenCalledWith(baseListing.id);
+      expect(repository.delete).toHaveBeenCalledWith(
+        baseListing.id,
+        baseListing.version + 1,
+      );
     });
 
     it('rejects when the pickup window is inverted', async () => {
@@ -527,7 +531,7 @@ describe('ListingsService', () => {
       expect(repository.delete).not.toHaveBeenCalled();
     });
 
-    it('deletes the listing when the caller owns it', async () => {
+    it('soft-deletes the listing (bumping its version) when the caller owns it', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing);
       repository.delete.mockResolvedValue(undefined);
@@ -535,18 +539,34 @@ describe('ListingsService', () => {
 
       await service.remove('listing-1', owner);
 
-      expect(repository.delete).toHaveBeenCalledWith('listing-1');
+      expect(repository.delete).toHaveBeenCalledWith(
+        'listing-1',
+        baseListing.version + 1,
+      );
     });
 
-    it('translates a foreign-key violation into a ConflictException', async () => {
+    it('throws ConflictException when the listing has associated requests', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing);
-      repository.delete.mockRejectedValue({ code: '23503' });
+      repository.countAssociatedRequests.mockResolvedValue(1);
       const { service } = makeService(repository);
 
       await expect(service.remove('listing-1', owner)).rejects.toBeInstanceOf(
         ConflictException,
       );
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when the listing has associated images', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing);
+      const { service, imagesRepository } = makeService(repository);
+      imagesRepository.countByListingId.mockResolvedValue(1);
+
+      await expect(service.remove('listing-1', owner)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(repository.delete).not.toHaveBeenCalled();
     });
   });
 

@@ -124,6 +124,10 @@ export const listings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Soft delete: null means active. Every read path (findById, findMany,
+    // updateWithVersion) filters this out, so a deleted listing behaves as
+    // gone to callers while the row - and its history - is retained.
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
     check(
