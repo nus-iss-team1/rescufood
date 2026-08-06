@@ -81,7 +81,7 @@ with `CallbackUrls`/`LogoutUrls` parameter overrides.
 
 `cloudformation/ecs.yaml` provisions the per-environment compute tier:
 
-- **ECS cluster** (`rescufood-<env>`) and a Fargate **frontend service**
+- **ECS cluster** (`rescufood-<env>`) and a Fargate **web-platform service**
   in the private app subnets (no public IP, image pulls via the NAT).
   The optional **profile service** shares the cluster and ALB — see
   below.
@@ -130,7 +130,7 @@ service manually instead:
 aws ecs update-service \
   --region ap-southeast-1 \
   --cluster rescufood-dev \
-  --service frontend \
+  --service web-platform \
   --force-new-deployment
 ```
 

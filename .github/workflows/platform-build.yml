@@ -87,7 +87,7 @@ jobs:
     env:
       AWS_REGION: ap-southeast-1
       CLUSTER: rescufood-dev
-      SERVICE: frontend
+      SERVICE: web-platform
 
     steps:
       - name: Configure AWS credentials
