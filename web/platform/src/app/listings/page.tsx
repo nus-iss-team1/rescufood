@@ -123,6 +123,10 @@ export default async function ListingsPage({
         title="Your listings"
         subtitle={describeOrg(me)}
         action={<Button disabled>Post surplus food</Button>}
+        crumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Your listings" },
+        ]}
       />
 
       <nav data-animate="field" className="flex flex-wrap gap-2">

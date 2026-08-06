@@ -204,6 +204,7 @@ export default async function DashboardPage() {
         <PageHeader
           title={`Welcome${firstName ? `, ${firstName}` : ""}`}
           subtitle={describeOrg(me)}
+          crumbs={[{ label: "Dashboard" }]}
         />
       </AnimateIn>
 

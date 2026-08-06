@@ -98,7 +98,14 @@ export default async function SettingsPage() {
   return (
     <PageShell>
       <AnimateIn className="flex flex-col gap-6">
-        <PageHeader title="Settings" subtitle={describeOrg(me)} />
+        <PageHeader
+          title="Settings"
+          subtitle={describeOrg(me)}
+          crumbs={[
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Settings" },
+          ]}
+        />
 
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <Card data-animate="field">

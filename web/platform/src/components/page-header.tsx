@@ -1,4 +1,14 @@
+import Link from "next/link";
+
 import type { Me } from "@/lib/profile";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@rescufood/ui/components/breadcrumb";
 
 /** One line of context under a page title: who you are acting as. */
 export function describeOrg(me: Me | null): string | undefined {
@@ -9,29 +19,57 @@ export function describeOrg(me: Me | null): string | undefined {
   return `${me.org.name} · ${type}`;
 }
 
+export interface Crumb {
+  label: string;
+  /** Omit on the current page. */
+  href?: string;
+}
+
 export function PageHeader({
   title,
   subtitle,
   action,
+  crumbs,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  crumbs?: Crumb[];
 }) {
   return (
-    <div
-      data-animate="field"
-      className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2"
-    >
-      <div className="grid gap-1">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-        )}
+    <div data-animate="field" className="grid gap-3">
+      {crumbs && crumbs.length > 0 && (
+        <Breadcrumb>
+          <BreadcrumbList>
+            {crumbs.map((crumb, i) => (
+              <BreadcrumbItem key={crumb.label}>
+                {crumb.href ? (
+                  <>
+                    <BreadcrumbLink render={<Link href={crumb.href} />}>
+                      {crumb.label}
+                    </BreadcrumbLink>
+                    {i < crumbs.length - 1 && <BreadcrumbSeparator />}
+                  </>
+                ) : (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
+
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+        {action}
       </div>
-      {action}
     </div>
   );
 }
