@@ -121,73 +121,70 @@ export default function Home() {
         });
       });
     },
-    { scope: container }
+    { scope: container },
   );
 
   return (
     <div ref={container} className="flex min-h-screen flex-col">
       <main className="flex-1">
-        <section
-          data-animate="hero"
-          className="flex flex-col items-center gap-6 px-6 pt-20 pb-12 text-center sm:pt-28 sm:pb-16"
-        >
-          <Badge variant="secondary">Fighting food waste together</Badge>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            RescuFood
-          </h1>
-          <p className="max-w-xl text-lg text-muted-foreground">
-            Connecting surplus food from businesses with the communities that
-            need it — before it goes to waste.
-          </p>
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:gap-4">
-              <a
-                href="/signup"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "w-full sm:w-auto"
-                )}
-              >
-                Donate food
-              </a>
-              <a
-                href="/signup"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "outline" }),
-                  "w-full sm:w-auto"
-                )}
-              >
-                Find food near you
-              </a>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Create an organisation account or{" "}
-              <a
-                href="/login"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                sign in
-              </a>{" "}
-              to get started.
+        <section className="relative overflow-hidden border-b border-border">
+          <Image
+            src="/images/volunteer-loading-food.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover saturate-[0.92]"
+          />
+          {/* Scrim: keeps the theme's text colours readable on the photo. */}
+          <div className="absolute inset-0 bg-background/80 dark:bg-background/75" />
+          <div
+            data-animate="hero"
+            className="relative mx-auto flex w-full max-w-5xl flex-col items-center gap-6 px-6 pt-28 pb-20 text-center sm:pt-36 sm:pb-28"
+          >
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              RescuFood
+            </h1>
+            <p className="max-w-xl text-lg text-muted-foreground">
+              Connecting surplus food from businesses with the communities that
+              need it
             </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-none sm:flex-row sm:gap-4">
+                <a
+                  href="/signup"
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "w-full sm:w-auto",
+                  )}
+                >
+                  Donate food
+                </a>
+                <a
+                  href="/signup"
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "w-full sm:w-auto",
+                  )}
+                >
+                  Find food near you
+                </a>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Create an organisation account or{" "}
+                <a
+                  href="/login"
+                  className="font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  sign in
+                </a>{" "}
+                to get started.
+              </p>
+            </div>
           </div>
         </section>
 
-        <section data-animate="banner" className="px-6 pb-16 sm:pb-24">
-          <div className="relative mx-auto aspect-[16/9] w-full max-w-5xl overflow-hidden rounded-3xl ring-1 ring-border sm:aspect-[21/9]">
-            <Image
-              src="/images/volunteer-loading-food.jpg"
-              alt="A volunteer loading boxes of donated food into a delivery van"
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover saturate-[0.92]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/25 to-transparent" />
-          </div>
-        </section>
-
-        <section className="border-t border-border bg-secondary/40 px-6 py-20 sm:py-28">
+        <section className="bg-secondary/40 px-6 py-20 sm:py-28">
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
             <div className="flex flex-col items-center gap-3 text-center">
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
