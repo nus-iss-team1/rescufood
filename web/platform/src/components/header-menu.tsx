@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
 
 import { SignOutConfirm } from "@/components/auth/sign-out-dialog";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
@@ -20,6 +19,25 @@ const itemClass = cn(
 );
 
 /**
+ * Two hairlines that cross into a close mark, the way apple's mobile
+ * menu behaves. Only transforms animate, so it stays smooth.
+ */
+function MenuGlyph({ open }: { open: boolean }) {
+  const bar =
+    "absolute left-0 h-px w-full rounded-full bg-current transition-transform duration-300 ease-out";
+  return (
+    <span aria-hidden className="relative block h-[9px] w-[17px]">
+      <span
+        className={cn(bar, "top-0", open && "translate-y-[4px] rotate-45")}
+      />
+      <span
+        className={cn(bar, "bottom-0", open && "-translate-y-[4px] -rotate-45")}
+      />
+    </span>
+  );
+}
+
+/**
  * Compact navigation for signed-in users on small screens. Desktop renders
  * the nav inline in the header instead (see SiteHeader).
  */
@@ -32,14 +50,13 @@ export function HeaderMenu() {
       <Drawer open={menuOpen} onOpenChange={setMenuOpen} swipeDirection="up">
         <DrawerTrigger
           render={
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label="Open menu"
-              className="rounded-full text-muted-foreground hover:text-foreground"
+            <button
+              type="button"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              className="inline-flex size-10 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <Menu className="size-[18px]" strokeWidth={1.5} />
-            </Button>
+              <MenuGlyph open={menuOpen} />
+            </button>
           }
         />
         <DrawerContent className="px-6 pt-20 pb-10">
