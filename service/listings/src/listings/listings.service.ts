@@ -6,10 +6,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  type Column,
+  type SQL,
+} from 'drizzle-orm';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { listings } from '../db/schema';
+import { organisations } from '../db/external.schema';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { QueryListingsDto } from './dto/query-listings.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -53,14 +65,43 @@ export class ListingsService {
     if (query.status) conditions.push(eq(listings.status, query.status));
     if (query.category) conditions.push(eq(listings.category, query.category));
     if (query.pickupLocation)
-      conditions.push(eq(listings.pickupLocation, query.pickupLocation));
-    if (query.donorOrgId)
-      conditions.push(eq(listings.donorOrgId, query.donorOrgId));
+      conditions.push(
+        ilike(listings.pickupLocation, `%${query.pickupLocation}%`),
+      );
+    if (query.donorOrgName)
+      conditions.push(
+        inArray(
+          listings.donorOrgId,
+          this.db
+            .select({ id: organisations.id })
+            .from(organisations)
+            .where(ilike(organisations.name, query.donorOrgName)),
+        ),
+      );
+    conditions.push(
+      ...dateRange(listings.useBy, query.useByFrom, query.useByTo),
+      ...dateRange(
+        listings.pickupWindowStart,
+        query.pickupWindowStartFrom,
+        query.pickupWindowStartTo,
+      ),
+      ...dateRange(
+        listings.pickupWindowEnd,
+        query.pickupWindowEndFrom,
+        query.pickupWindowEndTo,
+      ),
+      ...dateRange(listings.createdAt, query.createdAtFrom, query.createdAtTo),
+    );
+
+    const sortColumn = listings[query.sortBy ?? 'useBy'];
+    const order =
+      query.sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     const items = await this.db
       .select()
       .from(listings)
       .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(order)
       .limit(query.limit ?? 20)
       .offset(query.offset ?? 0);
 
@@ -163,6 +204,17 @@ function assertCanModify(
   if (user.role !== 'admin' && listing.createdBy !== user.userId) {
     throw new ForbiddenException('you do not have access to this listing');
   }
+}
+
+function dateRange<TColumn extends Column>(
+  column: TColumn,
+  from: string | undefined,
+  to: string | undefined,
+): SQL[] {
+  const conditions: SQL[] = [];
+  if (from) conditions.push(gte(column, new Date(from)));
+  if (to) conditions.push(lte(column, new Date(to)));
+  return conditions;
 }
 
 function assertPickupWindowValid(start: string, end: string): void {

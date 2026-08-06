@@ -4,9 +4,34 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type { AuthenticatedUser } from '../common/types/express';
 import type { Database } from '../db/db.module';
+import { listings } from '../db/schema';
 import { ListingsService } from './listings.service';
+
+// asc()/desc() build a SQL fragment as [prefix, column, ' asc' | ' desc'];
+// this reaches into that shape to assert which column and direction the
+// service asked the query builder to sort by.
+function sortedColumnAndDirection(orderArg: SQL) {
+  const [, column, direction] = orderArg.queryChunks as [
+    unknown,
+    unknown,
+    { value: string[] },
+  ];
+  return { column, direction: direction.value[0] };
+}
+
+// The `where(...)` argument is a real drizzle-orm SQL AST (only `db.select`
+// itself is mocked) - rendering it through the pg dialect turns it back into
+// readable SQL text + params so tests can assert on filter behaviour without
+// a live database.
+const dialect = new PgDialect();
+function renderWhere(whereMock: jest.Mock) {
+  const [condition] = whereMock.mock.calls[0] as [SQL];
+  return dialect.sqlToQuery(condition);
+}
 
 // Drizzle's query builder is a chainable thenable: every call
 // (.select().from().where()...) returns the same object, and awaiting it
@@ -21,6 +46,7 @@ function chain(result: unknown) {
     'returning',
     'from',
     'where',
+    'orderBy',
     'limit',
     'offset',
     'set',
@@ -258,6 +284,100 @@ describe('ListingsService', () => {
       await expect(service.findAll({ limit: 20, offset: 0 })).resolves.toEqual([
         baseListing,
       ]);
+    });
+
+    it('defaults to sorting by useBy ascending', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const service = new ListingsService(db as unknown as Database);
+
+      await service.findAll({ limit: 20, offset: 0 });
+
+      const [orderArg] = (queryChain.orderBy as jest.Mock).mock
+        .calls[0] as SQL[];
+      const { column, direction } = sortedColumnAndDirection(orderArg);
+      expect(column).toBe(listings.useBy);
+      expect(direction).toContain('asc');
+    });
+
+    it('sorts by the requested field and direction', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const service = new ListingsService(db as unknown as Database);
+
+      await service.findAll({
+        sortBy: 'remainingQuantity',
+        sortOrder: 'desc',
+        limit: 20,
+        offset: 0,
+      });
+
+      const [orderArg] = (queryChain.orderBy as jest.Mock).mock
+        .calls[0] as SQL[];
+      const { column, direction } = sortedColumnAndDirection(orderArg);
+      expect(column).toBe(listings.remainingQuantity);
+      expect(direction).toContain('desc');
+    });
+
+    it('matches pickupLocation as a substring, not an exact value', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const service = new ListingsService(db as unknown as Database);
+
+      await service.findAll({
+        pickupLocation: 'Main',
+        limit: 20,
+        offset: 0,
+      });
+
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('ilike');
+      expect(params).toContain('%Main%');
+    });
+
+    it('applies from/to as an inclusive range on the requested timestamp column', async () => {
+      const db = makeDb();
+      const queryChain = chain([baseListing]);
+      db.select.mockReturnValue(queryChain);
+      const service = new ListingsService(db as unknown as Database);
+
+      await service.findAll({
+        useByFrom: '2026-08-01T00:00:00Z',
+        useByTo: '2026-08-31T00:00:00Z',
+        limit: 20,
+        offset: 0,
+      });
+
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('"use_by" >=');
+      expect(sql).toContain('"use_by" <=');
+      expect(params).toContain(new Date('2026-08-01T00:00:00Z').toISOString());
+      expect(params).toContain(new Date('2026-08-31T00:00:00Z').toISOString());
+    });
+
+    it('resolves donorOrgName to a donor_org_id filter via an organisation name lookup', async () => {
+      const db = makeDb();
+      const orgChain = chain([{ id: 'org-1' }]);
+      const listingsChain = chain([baseListing]);
+      db.select
+        .mockReturnValueOnce(orgChain)
+        .mockReturnValueOnce(listingsChain);
+      const service = new ListingsService(db as unknown as Database);
+
+      await service.findAll({
+        donorOrgName: 'Acme Foods',
+        limit: 20,
+        offset: 0,
+      });
+
+      expect(db.select).toHaveBeenNthCalledWith(1, expect.anything());
+      const { sql, params } = renderWhere(orgChain.where as jest.Mock);
+      expect(sql).toContain('ilike');
+      expect(params).toContain('Acme Foods');
+      expect(listingsChain.where).toHaveBeenCalled();
     });
   });
 });
