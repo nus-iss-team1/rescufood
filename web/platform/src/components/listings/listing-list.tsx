@@ -48,7 +48,7 @@ export function ListingList({ listings }: { listings: Listing[] }) {
         <li
           key={listing.id}
           data-animate="field"
-          className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[1fr_auto] sm:items-start"
+          className="grid min-h-32 gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[1fr_auto] sm:items-start"
         >
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
