@@ -43,29 +43,9 @@ export function OrgCard({ org, members }: { org: Org; members: User[] }) {
         <Line icon={Mail}>{org.contact_email}</Line>
         {org.contact_phone && <Line icon={Phone}>{org.contact_phone}</Line>}
         {org.address && <Line icon={MapPin}>{org.address}</Line>}
-        {members.length > 0 && (
-          <Line icon={Users}>
-            {members.length === 1
-              ? "You are the only member"
-              : `${members.length} members`}
-            {members.length > 1 && (
-              <span className="text-muted-foreground">
-                {" — "}
-                {members
-                  .slice(0, 3)
-                  .map((m) => m.name || m.email)
-                  .join(", ")}
-                {members.length > 3 && ` +${members.length - 3} more`}
-              </span>
-            )}
-          </Line>
-        )}
-        {org.domain && (
-          <p className="pt-1 text-xs text-muted-foreground">
-            Anyone with an @{org.domain} email joins this organisation
-            automatically.
-          </p>
-        )}
+        <Line icon={Users}>
+          {members.length} members
+        </Line>
       </CardContent>
     </Card>
   );

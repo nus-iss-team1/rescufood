@@ -84,14 +84,13 @@ function DetailsStep({
         </a>
       </p>
       <p className="text-center text-sm text-muted-foreground">
-        Signing up requires an approved organisation.{" "}
+        Organisation not registered?{" "}
         <a
           href="/register-organisation"
           className="font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Register yours first
+          Register it
         </a>
-        .
       </p>
     </form>
   );

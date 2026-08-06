@@ -100,7 +100,6 @@ function Hero({ org }: { org: Org }) {
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-3">
         <Button disabled>{hero.title}</Button>
-        <Badge variant="secondary">Opens next sprint</Badge>
       </CardContent>
     </Card>
   );
@@ -205,14 +204,6 @@ export default async function DashboardPage() {
         >
           Welcome{firstName ? `, ${firstName}` : ""}
         </h1>
-        {me.org && (
-          <div data-animate="field" className="flex flex-wrap gap-2">
-            <Badge variant="secondary">{me.org.name}</Badge>
-            <Badge variant="outline">
-              {me.org.type === "donor" ? "Food donor" : "Rescue partner"}
-            </Badge>
-          </div>
-        )}
       </AnimateIn>
 
       {me.is_admin ? (
