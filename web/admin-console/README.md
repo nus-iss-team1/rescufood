@@ -1,32 +1,36 @@
-# React + TypeScript + Vite
+# Admin console
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React SPA for platform administrators: approve organisations, and
+suspend or reactivate members. Every action requires a reason.
 
-Currently, two official plugins are available:
+Uses [`@rescufood/profile-sdk`](../sdk) for the API and
+[`@rescufood/ui`](../ui) for components. It is **not deployed** — run
+it locally against the environment you are administering
+([ADR 0001](../../docs/adr/0001-keep-the-admin-console-local.md)).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Running it
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+cp .env.example .env   # fill in the values below
+npm run dev            # http://localhost:5173
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+| Variable | Value |
+| --- | --- |
+| `VITE_AWS_REGION` | `ap-southeast-1` |
+| `VITE_COGNITO_CLIENT_ID` | `AdminConsoleClientId` from the IAM stack |
+| `VITE_API_BASE` | `http://localhost:3001`, or the ALB URL for deployed dev |
+
+Vite reads `.env` at boot, so restart after editing it. Sign in with a
+Cognito account in the `admin` group; the IAM stack seeds one.
+
+Against a deployed environment, its `ExtraCorsOrigins` must list
+`http://localhost:5173`.
+
+## Checks
+
+```sh
+npm run build   # type-checks and bundles
+npm run lint
+```
