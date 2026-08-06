@@ -16,6 +16,7 @@ import {
 import type { Request } from 'express';
 import { Logger } from 'nestjs-pino';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OrgMembershipGuard } from '../auth/org-membership.guard';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { QueryListingsDto } from './dto/query-listings.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -30,6 +31,7 @@ export class ListingsController {
   ) {}
 
   @Post()
+  @UseGuards(OrgMembershipGuard)
   create(@Body() dto: CreateListingDto, @Req() req: Request) {
     this.logger.log({ userId: req.user!.userId }, 'creating listing');
     return this.listingsService.create(dto, req.user!);

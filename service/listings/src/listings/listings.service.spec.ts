@@ -49,9 +49,21 @@ function makeDb() {
   };
 }
 
-const owner: AuthenticatedUser = { userId: 'user-1', role: 'user' };
-const otherUser: AuthenticatedUser = { userId: 'user-2', role: 'user' };
-const admin: AuthenticatedUser = { userId: 'admin-1', role: 'admin' };
+const owner: AuthenticatedUser = {
+  userId: 'user-1',
+  role: 'user',
+  orgId: 'org-1',
+};
+const otherUser: AuthenticatedUser = {
+  userId: 'user-2',
+  role: 'user',
+  orgId: 'org-2',
+};
+const admin: AuthenticatedUser = {
+  userId: 'admin-1',
+  role: 'admin',
+  orgId: 'org-1',
+};
 
 const baseListing = {
   id: 'listing-1',
@@ -75,7 +87,6 @@ const baseListing = {
 };
 
 const validCreateDto = {
-  donorOrgId: 'org-1',
   category: 'produce' as const,
   description: 'Fresh vegetables',
   remainingQuantity: 10,

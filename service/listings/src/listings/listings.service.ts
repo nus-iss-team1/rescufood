@@ -29,7 +29,9 @@ export class ListingsService {
     const [created] = await this.db
       .insert(listings)
       .values({
-        donorOrgId: dto.donorOrgId,
+        // Guaranteed by OrgMembershipGuard, not client input - a listing
+        // is always attributed to the caller's own organisation.
+        donorOrgId: user.orgId!,
         createdBy: user.userId,
         category: dto.category,
         description: dto.description,

@@ -6,15 +6,11 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  IsUUID,
   MinLength,
 } from 'class-validator';
 import { listingCategory } from '../../db/schema';
 
 export class CreateListingDto {
-  @IsUUID()
-  donorOrgId!: string;
-
   @IsIn(listingCategory.enumValues)
   category!: (typeof listingCategory.enumValues)[number];
 
