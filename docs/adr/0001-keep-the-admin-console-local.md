@@ -4,56 +4,28 @@ Status: accepted, 2026-08-06
 
 ## Context
 
-The platform has three applications: the Next.js web platform for
-donors and rescue partners, the Go profile service, and the React admin
-console used by platform administrators to approve organisations and
-suspend members (FR1).
-
-The first two are deployed to ECS behind the shared load balancer.
-Deploying the console as well would mean:
-
-- an image serving the built bundle, an ECS service, a target group and
-  another ALB rule, plus its own CI and CD workflows;
-- about US$11 per month for a third Fargate task;
-- solving environment-specific builds, because Vite bakes `VITE_*`
-  values into the bundle at build time. One image could not serve both
-  dev and prod, which breaks the build-once-promote-everywhere
-  property the other two components have.
-
-The console's users are the project team, not the public.
+Deploying the console would add a Fargate task, a target group, an ALB
+rule and its own pipelines, and Vite bakes `VITE_*` values at build
+time so one image could not serve both environments. Its users are the
+project team, not the public.
 
 ## Decision
 
-The admin console is not deployed. Administrators run it locally with
-`npm run dev` and point `VITE_API_BASE` at whichever environment they
-are administering. The service name `web-admin` stays reserved in the
-cluster in case this is revisited.
+The console is not deployed. Administrators run it locally and point
+`VITE_API_BASE` at the environment they are administering.
 
 ## Consequences
 
-Gained:
+- No administrative interface is reachable from the internet, and there
+  is no third pipeline or task to pay for.
+- Administrators need the repository and Node, so whoever demonstrates
+  the system must have it running.
+- The admin API stays public: `/api/profile/admin/*` is protected by
+  the token's admin claim, which is the real security boundary.
+- `CORS_ALLOWED_ORIGINS` must list `http://localhost:5173` wherever
+  administrators work. CORS governs browsers only, so this does not
+  weaken the API.
 
-- No administrative interface is reachable from the internet.
-- No third pipeline, target group or Fargate task to pay for and
-  maintain.
-- The console needs no environment-specific image.
-
-Accepted:
-
-- Administrators need the repository, Node and a local dev server, so
-  whoever demonstrates the system must have it running beforehand.
-- **The administrative API stays public.** Keeping the console local
-  hides the interface, not the endpoints: `/api/profile/admin/*` is
-  served by the internet-facing load balancer and protected by Cognito
-  token verification plus an `is_admin` check. That check, not the
-  console's location, is the security boundary.
-- `CORS_ALLOWED_ORIGINS` must include `http://localhost:5173` in every
-  environment administrators manage from their machines. This does not
-  weaken the API: CORS governs what a browser lets JavaScript read and
-  is ignored by any other client.
-
-Revisit if administrators outside the team ever need access. The
-cheapest hosted option is a static bundle on S3 behind CloudFront
-(about US$1 per month), which would first require moving the console
-from build-time `VITE_*` values to runtime configuration it fetches on
-boot.
+Revisit if administrators outside the team need access: a static bundle
+on S3 behind CloudFront costs about US$1 per month, but first needs
+runtime configuration instead of build-time `VITE_*` values.
