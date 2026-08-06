@@ -144,52 +144,62 @@ and log group, and an ALB rule routing `/api/profile/*` to it.
 | Parameter | Notes |
 |---|---|
 | `ProfileImage` | `ghcr.io/nus-iss-team1/rescufood/profile:develop` |
-| `ProfileDbSecretArn` | Secret holding the full `DATABASE_URL` as plain text |
 | `AuthCognitoIssuer` | `Issuer` output of the IAM stack |
+| `ProfileDbName` | Database and role the service owns (`profile`) |
+| `DataStackName` | Data stack whose database exports to import |
 
-The service pings its database at startup and exits when it cannot
-connect, and it never migrates schema itself. So the database, its
-migrations and the secret must exist **before** the first deploy:
+The service reads `DB_HOST`, `DB_PORT`, `DB_USER` and `DB_NAME` from the
+task definition (imported from the data stack) and `DB_PASSWORD` from
+Secrets Manager, then composes its own connection string. The password
+lives in a secret this stack **generates** — nothing to create by hand,
+and it never appears in a template, a parameter file or a log.
+
+### One-time database bootstrap
+
+Postgres roles, databases and tables are not CloudFormation resources —
+no resource type reaches inside an instance. The stack therefore ships a
+`rescufood-<env>-db-bootstrap` task definition that creates the role and
+database using the RDS master credentials. Run it once per environment
+(and again after rotating the generated password); it is idempotent:
 
 ```sh
-# 1. Tunnel to RDS through a running ECS task (needs the ssm plugin:
-#    brew install --cask session-manager-plugin, plus libpq for psql)
-task=$(aws ecs list-tasks --region ap-southeast-1 --cluster rescufood-dev \
-  --service-name frontend --query 'taskArns[0]' --output text)
-rt=$(aws ecs describe-tasks --region ap-southeast-1 --cluster rescufood-dev \
-  --tasks "$task" --query 'tasks[0].containers[0].runtimeId' --output text)
-aws ssm start-session --region ap-southeast-1 \
-  --target "ecs:rescufood-dev_${task##*/}_${rt}" \
-  --document-name AWS-StartPortForwardingSessionToRemoteHost \
-  --parameters \
-  '{"host":["<DbEndpoint>"],"portNumber":["5432"],"localPortNumber":["5432"]}'
+subnets=$(aws cloudformation describe-stacks --region ap-southeast-1 \
+  --stack-name rescufood-core-network \
+  --query "Stacks[0].Outputs[?OutputKey=='AppSubnetIds'].OutputValue" \
+  --output text)
+sg=$(aws cloudformation describe-stacks --region ap-southeast-1 \
+  --stack-name rescufood-dev-security \
+  --query "Stacks[0].Outputs[?OutputKey=='AppSecurityGroupId'].OutputValue" \
+  --output text)
+net="awsvpcConfiguration={subnets=[$subnets],securityGroups=[$sg],\
+assignPublicIp=DISABLED}"
 
-# 2. In a second shell: create the database and its role. The master
-#    password comes from the data stack's DbSecretArn.
-psql "postgres://rescufood_admin:<master>@localhost:5432/rescufood" <<'SQL'
-CREATE ROLE profile LOGIN PASSWORD '<pw>';
-CREATE DATABASE profile OWNER profile;
-SQL
-
-# 3. Apply migrations to it
-cd service/profile
-local_url="postgres://profile:<pw>@localhost:5432/profile?sslmode=disable"
-DATABASE_URL="$local_url" go run ./cmd/migrate up
-
-# 4. Store the in-VPC connection string for the task to read
-aws secretsmanager create-secret --region ap-southeast-1 \
-  --name rescufood/dev/profile-db-url \
-  --secret-string \
-  "postgres://profile:<pw>@<DbEndpoint>:5432/profile?sslmode=require"
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-db-bootstrap --launch-type FARGATE \
+  --network-configuration "$net"
 ```
 
-Then add `ProfileImage`, `ProfileDbSecretArn` and `AuthCognitoIssuer` to
-`parameters/ecs-dev.json` and redeploy the ECS stack. Until the service
-exists, `profile-build.yml` still builds and pushes the image but warns
-instead of rolling a deployment.
+Watch it with
+`aws logs tail /ecs/rescufood-dev/db-bootstrap --region ap-southeast-1`.
 
-Later migrations are deliberately manual: run step 3 against the tunnel
-**before** deploying code that needs the new schema.
+### Applying migrations
+
+The service never migrates schema itself. Its image carries a `migrate`
+binary, so schema changes run as the same task definition with the
+command overridden — no tunnel and no local database client:
+
+```sh
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-profile --launch-type FARGATE \
+  --network-configuration "$net" \
+  --overrides '{"containerOverrides":[{"name":"profile",
+    "command":["/migrate","up"]}]}'
+```
+
+Run this **before** deploying code that needs the new schema: a rollout
+reverts the code, never the database. Until `ProfileImage` is set, the
+service and this task definition do not exist, and `profile-build.yml`
+still builds and pushes the image but warns instead of deploying.
 
 ## Database (data) stack
 

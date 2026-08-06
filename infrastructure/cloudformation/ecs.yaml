@@ -95,12 +95,15 @@ Parameters:
     Default: 3001
     Description: Port the profile service listens on
 
-  ProfileDbSecretArn:
+  DataStackName:
     Type: String
-    Default: ""
-    Description: >-
-      Secrets Manager secret holding the profile service's full
-      DATABASE_URL as plain text.
+    Default: rescufood-dev-data
+    Description: Name of the data stack whose database exports to import
+
+  ProfileDbName:
+    Type: String
+    Default: profile
+    Description: Database and role the profile service owns
 
   AuthCognitoIssuer:
     Type: String
@@ -339,6 +342,125 @@ Resources:
         - Key: attached-listener
           Value: !If [HasCertificate, !Ref HttpsListener, !Ref HttpListener]
 
+  # ------------------------------------- Profile database bootstrap
+  # Generated here so no password is ever typed or committed.
+  ProfileDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${ProjectName}/${EnvironmentName}/profile-db
+      Description: Login for the profile service's database role
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${ProfileDbName}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  DbBootstrapExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-db-bootstrap
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-db-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - Fn::ImportValue: !Sub ${DataStackName}-DbSecretArn
+                  - !Ref ProfileDbSecret
+
+  DbBootstrapLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/db-bootstrap
+      RetentionInDays: !Ref LogRetentionDays
+
+  # Run once per environment (and again after a password rotation):
+  #   aws ecs run-task --cluster <cluster> --task-definition <family> ...
+  DbBootstrapTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-db-bootstrap
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !GetAtt DbBootstrapExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: bootstrap
+          Image: public.ecr.aws/docker/library/postgres:17-alpine
+          Essential: true
+          EntryPoint: [/bin/sh, -c]
+          Command:
+            # The generated password excludes punctuation, so it is safe
+            # to interpolate into these statements.
+            - |
+              set -eu
+              admin="postgres://$MASTER_USER:$MASTER_PASSWORD@$DB_HOST:$DB_PORT/$MASTER_DB?sslmode=require"
+              run() { psql "$admin" -v ON_ERROR_STOP=1 -c "$1"; }
+              exists() { psql "$admin" -tAc "$1" | grep -q 1; }
+
+              if exists "SELECT 1 FROM pg_roles WHERE rolname = '$DB_ROLE'"; then
+                run "ALTER ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "updated role $DB_ROLE"
+              else
+                run "CREATE ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "created role $DB_ROLE"
+              fi
+
+              # The rds master is not a superuser: it must belong to the
+              # role to create a database owned by it.
+              run "GRANT \"$DB_ROLE\" TO \"$MASTER_USER\""
+
+              if exists "SELECT 1 FROM pg_database WHERE datname = '$DB_ROLE'"; then
+                echo "database $DB_ROLE already exists"
+              else
+                run "CREATE DATABASE \"$DB_ROLE\" OWNER \"$DB_ROLE\""
+                echo "created database $DB_ROLE"
+              fi
+              echo bootstrap complete
+          Environment:
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: MASTER_DB
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbName
+            - Name: DB_ROLE
+              Value: !Ref ProfileDbName
+          Secrets:
+            - Name: MASTER_USER
+              ValueFrom: !Sub
+                - "${arn}:username::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: MASTER_PASSWORD
+              ValueFrom: !Sub
+                - "${arn}:password::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DbBootstrapLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: bootstrap
+
   # ------------------------------------------------- Profile service
   ProfileTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -419,7 +541,7 @@ Resources:
                 Action: secretsmanager:GetSecretValue
                 Resource:
                   - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
-                  - !Ref ProfileDbSecretArn
+                  - !Ref ProfileDbSecret
 
   ProfileTaskRole:
     Type: AWS::IAM::Role
@@ -483,9 +605,19 @@ Resources:
                 - HasCertificate
                 - !Sub https://${LoadBalancer.DNSName}
                 - !Sub http://${LoadBalancer.DNSName}
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref ProfileDbName
+            - Name: DB_NAME
+              Value: !Ref ProfileDbName
           Secrets:
-            - Name: DATABASE_URL
-              ValueFrom: !Ref ProfileDbSecretArn
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
           LogConfiguration:
             LogDriver: awslogs
             Options:
