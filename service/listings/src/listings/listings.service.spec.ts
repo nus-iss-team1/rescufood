@@ -14,6 +14,7 @@ function makeRepository() {
   return {
     create: jest.fn(),
     findMany: jest.fn(),
+    countMany: jest.fn().mockResolvedValue(0),
     findById: jest.fn(),
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
@@ -610,6 +611,7 @@ describe('ListingsService', () => {
         baseListing,
         { ...baseListing, id: 'listing-2' },
       ]);
+      repository.countMany.mockResolvedValue(2);
       const { service, imagesRepository } = makeService(repository);
       imagesRepository.findByListingIds.mockResolvedValue([
         {
@@ -625,35 +627,40 @@ describe('ListingsService', () => {
       const result = await service.findAll(query, owner);
 
       expect(repository.findMany).toHaveBeenCalledWith(query, owner);
+      expect(repository.countMany).toHaveBeenCalledWith(query, owner);
       expect(imagesRepository.findByListingIds).toHaveBeenCalledWith([
         'listing-1',
         'listing-2',
       ]);
-      expect(result).toEqual([
-        { ...baseListing, images: [] },
-        {
-          ...baseListing,
-          id: 'listing-2',
-          images: [
-            {
-              id: 'image-1',
-              position: 0,
-              url: 'https://signed.example/a.jpg',
-              createdAt: baseListing.createdAt,
-            },
-          ],
-        },
-      ]);
+      expect(result).toEqual({
+        total: 2,
+        items: [
+          { ...baseListing, images: [] },
+          {
+            ...baseListing,
+            id: 'listing-2',
+            images: [
+              {
+                id: 'image-1',
+                position: 0,
+                url: 'https://signed.example/a.jpg',
+                createdAt: baseListing.createdAt,
+              },
+            ],
+          },
+        ],
+      });
     });
 
     it('skips the image lookup entirely when there are no listings', async () => {
       const repository = makeRepository();
       repository.findMany.mockResolvedValue([]);
+      repository.countMany.mockResolvedValue(0);
       const { service, imagesRepository } = makeService(repository);
 
       await expect(
         service.findAll({ limit: 20, offset: 0 }, owner),
-      ).resolves.toEqual([]);
+      ).resolves.toEqual({ items: [], total: 0 });
       expect(imagesRepository.findByListingIds).not.toHaveBeenCalled();
     });
   });

@@ -196,6 +196,25 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('countMany', () => {
+    it('returns the row count for the same filters findMany would use', async () => {
+      const db = makeDb();
+      const queryChain = chain([{ value: 7 }]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.countMany(
+          { pickupLocation: 'Main', limit: 20, offset: 0 },
+          adminViewer,
+        ),
+      ).resolves.toBe(7);
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('ilike');
+      expect(params).toContain('%Main%');
+    });
+  });
+
   describe('findMany', () => {
     it('returns the rows from the query builder', async () => {
       const db = makeDb();

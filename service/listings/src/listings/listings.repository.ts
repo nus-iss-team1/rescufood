@@ -52,6 +52,23 @@ export class ListingsRepository {
       .offset(query.offset ?? 0);
   }
 
+  // Paired with findMany against the same filters (ignoring limit/offset) so
+  // callers can render pagination controls without a second round trip of
+  // their own. Kept as a separate query rather than a window function since
+  // findMany's caller (ListingsService.findAll) already runs both in
+  // parallel via Promise.all.
+  async countMany(
+    query: QueryListingsDto,
+    viewer: AuthenticatedUser,
+  ): Promise<number> {
+    const conditions = this.buildConditions(query, viewer);
+    const [row] = await this.db
+      .select({ value: count() })
+      .from(listings)
+      .where(conditions.length ? and(...conditions) : undefined);
+    return row.value;
+  }
+
   async findById(id: string): Promise<Listing | undefined> {
     const [listing] = await this.db
       .select()

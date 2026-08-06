@@ -96,9 +96,12 @@ export class ListingsService {
   async findAll(
     query: QueryListingsDto,
     viewer: AuthenticatedUser,
-  ): Promise<ListingWithImages[]> {
-    const listings = await this.listingsRepository.findMany(query, viewer);
-    return this.attachImagesToMany(listings);
+  ): Promise<{ items: ListingWithImages[]; total: number }> {
+    const [listings, total] = await Promise.all([
+      this.listingsRepository.findMany(query, viewer),
+      this.listingsRepository.countMany(query, viewer),
+    ]);
+    return { items: await this.attachImagesToMany(listings), total };
   }
 
   async findOne(
