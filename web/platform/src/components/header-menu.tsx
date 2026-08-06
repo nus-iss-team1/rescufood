@@ -13,8 +13,7 @@ import {
 } from "@rescufood/ui/components/drawer";
 import { cn } from "@/lib/utils";
 
-// Quiet rows separated by hairlines, no fills: the weight comes from
-// spacing rather than type.
+// Quiet rows: the weight comes from spacing rather than type.
 const itemClass =
   "flex h-11 w-full items-center text-[15px] font-normal text-foreground/80 outline-none transition-colors hover:text-foreground focus-visible:text-foreground";
 
@@ -61,7 +60,7 @@ export function HeaderMenu() {
         />
         <DrawerContent className="px-6 pt-20 pb-10">
           <DrawerTitle className="sr-only">Menu</DrawerTitle>
-          <nav className="mx-auto flex w-full max-w-md flex-col divide-y divide-border">
+          <nav className="mx-auto flex w-full max-w-md flex-col gap-1">
             <DrawerClose
               render={
                 <a href="/dashboard" className={itemClass}>
