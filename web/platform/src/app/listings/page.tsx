@@ -11,6 +11,7 @@ import {
 } from "@/lib/mock-listings";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
+import { PageShell } from "@/components/page-shell";
 import { ListingList } from "@/components/listings/listing-list";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -58,9 +59,7 @@ export default async function ListingsPage({
   }
 
   const shell = (children: React.ReactNode) => (
-    <main className="mx-auto w-full max-w-4xl px-6 pt-24 pb-16">
-      {children}
-    </main>
+    <PageShell>{children}</PageShell>
   );
 
   if (!me) {
@@ -154,7 +153,12 @@ export default async function ListingsPage({
         })}
       </nav>
 
-      <div data-animate="field">
+      {/* The list scrolls inside its own region: the header and filters
+          stay put, and scrollsmoother rules out position sticky. */}
+      <div
+        data-animate="field"
+        className="max-h-[60vh] overflow-y-auto pr-1 sm:max-h-[62vh]"
+      >
         <ListingList listings={listings} />
       </div>
     </AnimateIn>,
