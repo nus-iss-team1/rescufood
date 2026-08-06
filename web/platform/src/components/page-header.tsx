@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 
 import type { Me } from "@/lib/profile";
@@ -42,18 +43,20 @@ export function PageHeader({
         <Breadcrumb>
           <BreadcrumbList>
             {crumbs.map((crumb, i) => (
-              <BreadcrumbItem key={crumb.label}>
-                {crumb.href ? (
-                  <>
+              // The separator is a sibling li: nesting one inside the
+              // item would be invalid markup and break hydration.
+              <Fragment key={crumb.label}>
+                <BreadcrumbItem>
+                  {crumb.href ? (
                     <BreadcrumbLink render={<Link href={crumb.href} />}>
                       {crumb.label}
                     </BreadcrumbLink>
-                    {i < crumbs.length - 1 && <BreadcrumbSeparator />}
-                  </>
-                ) : (
-                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                )}
-              </BreadcrumbItem>
+                  ) : (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {i < crumbs.length - 1 && <BreadcrumbSeparator />}
+              </Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
