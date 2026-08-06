@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@rescufood/ui/components/dialog";
@@ -30,7 +29,7 @@ export function SignOutConfirm({
             You will need to sign in again to reach your workspace.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -39,7 +38,7 @@ export function SignOutConfirm({
               Sign out
             </Button>
           </form>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
