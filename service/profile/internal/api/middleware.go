@@ -18,7 +18,7 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			logger.Info(
 				"request",
 				"method", r.Method,
-				"path", r.URL.Path,
+				"path", logSafe(r.URL.Path),
 				"status", ww.Status(),
 				"bytes", ww.BytesWritten(),
 				"duration", time.Since(start),
