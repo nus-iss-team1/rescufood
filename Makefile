@@ -61,23 +61,34 @@ run-admin:
 	@cd web/admin-console && npm run dev 2>&1 | awk '{ printf "\033[35m[admin]\033[0m %s\n", $$0; fflush() }'
 
 rds = aws rds --region $(AWS_REGION)
-ecs = aws ecs --region $(AWS_REGION) --cluster $(CLUSTER)
+ecs = aws ecs --region $(AWS_REGION)
 rds_status = $$($(rds) describe-db-instances --db-instance-identifier $(DB_INSTANCE) \
 	--query 'DBInstances[0].DBInstanceStatus' --output text 2>/dev/null)
+# Prints nothing when the service is absent, so callers can test it.
+ecs_active = $(ecs) describe-services --cluster $(CLUSTER) --services $$s \
+	--query "services[?status=='ACTIVE'].serviceName" --output text
+
+define ecs_scale
+@for s in $(SERVICES); do \
+	if [ -n "$$($(ecs_active))" ]; then \
+		$(ecs) update-service --cluster $(CLUSTER) --service $$s --desired-count $(1) \
+			--query 'service.serviceName' --output text | sed 's/^/scaled to $(1): /'; \
+	else \
+		echo "$$s: not deployed"; \
+	fi; \
+done
+endef
 
 aws-status: ## show the deployed dev environment's running state
 	@for s in $(SERVICES); do \
-		$(ecs) describe-services --services $$s \
+		$(ecs) describe-services --cluster $(CLUSTER) --services $$s \
 			--query "services[?status=='ACTIVE'].[serviceName,desiredCount,runningCount]" \
 			--output text | grep . || echo "$$s	not deployed"; \
 	done
 	@echo "$(DB_INSTANCE)	$(rds_status)"
 
 aws-pause: ## scale ecs services to zero and stop rds (saves ~40 usd/month)
-	@for s in $(SERVICES); do \
-		$(ecs) update-service --service $$s --desired-count 0 \
-			--query 'service.serviceName' --output text | sed 's/^/scaled to zero: /' || true; \
-	done
+	$(call ecs_scale,0)
 	@status=$(rds_status); \
 	if [ "$$status" = "available" ]; then \
 		$(rds) stop-db-instance --db-instance-identifier $(DB_INSTANCE) \
@@ -102,10 +113,7 @@ aws-resume: ## start rds, wait for it, then scale ecs services back to one
 	fi
 	@echo "waiting for the database..."
 	@$(rds) wait db-instance-available --db-instance-identifier $(DB_INSTANCE)
-	@for s in $(SERVICES); do \
-		$(ecs) update-service --service $$s --desired-count 1 \
-			--query 'service.serviceName' --output text | sed 's/^/scaled to one: /' || true; \
-	done
+	$(call ecs_scale,1)
 	@echo "tasks need about a minute to pass health checks"
 
 test: ## backend tests plus frontend type-checks and lint
