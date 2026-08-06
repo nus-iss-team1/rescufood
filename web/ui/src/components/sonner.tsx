@@ -47,3 +47,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 }
 
 export { Toaster }
+
+// Re-exported so callers share this module's sonner instance:
+// a second copy would queue toasts into a store no Toaster observes.
+export { toast } from "sonner"

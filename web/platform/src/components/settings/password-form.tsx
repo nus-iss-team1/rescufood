@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { toast } from "@rescufood/ui/components/sonner";
 
 import { changePasswordAction, type PasswordFormState } from "@/app/actions";
 import { Button } from "@rescufood/ui/components/button";

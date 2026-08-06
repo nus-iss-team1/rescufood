@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@rescufood/ui/components/sonner";
 import type { Org, OrgCounts, OrgStatus } from "@rescufood/profile-sdk";
 
 import { Badge } from "@rescufood/ui/components/badge";
