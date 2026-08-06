@@ -5,7 +5,23 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 )
+
+// AllowedOrigins splits CORS_ALLOWED_ORIGINS, dropping blanks so a
+// trailing comma is harmless. Falls back to the local admin console.
+func AllowedOrigins() []string {
+	var out []string
+	for _, o := range strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			out = append(out, o)
+		}
+	}
+	if len(out) == 0 {
+		return []string{"http://localhost:5173"}
+	}
+	return out
+}
 
 // DatabaseURL returns DATABASE_URL when set, otherwise a DSN composed
 // from DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME and DB_SSLMODE.

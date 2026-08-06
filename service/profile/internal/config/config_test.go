@@ -5,6 +5,28 @@ import (
 	"testing"
 )
 
+func TestAllowedOrigins(t *testing.T) {
+	cases := map[string]struct {
+		env  string
+		want []string
+	}{
+		"unset":          {"", []string{"http://localhost:5173"}},
+		"single":         {"http://a", []string{"http://a"}},
+		"trailing comma": {"http://a,", []string{"http://a"}},
+		"spaces":         {" http://a , http://b ", []string{"http://a", "http://b"}},
+		"only commas":    {",,", []string{"http://localhost:5173"}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("CORS_ALLOWED_ORIGINS", tc.env)
+			got := AllowedOrigins()
+			if strings.Join(got, "|") != strings.Join(tc.want, "|") {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestDatabaseURL(t *testing.T) {
 	t.Run("prefers DATABASE_URL", func(t *testing.T) {
 		t.Setenv("DATABASE_URL", "postgres://a:b@h:5432/db")
