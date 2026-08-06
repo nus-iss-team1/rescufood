@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@rescufood/ui/components/dialog";
@@ -45,7 +44,7 @@ export function ReasonDialog({
           placeholder="Reason"
           autoFocus
         />
-        <DialogFooter>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
@@ -55,7 +54,7 @@ export function ReasonDialog({
           >
             Confirm
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
