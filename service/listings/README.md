@@ -57,6 +57,25 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Database migrations
+
+```bash
+# apply pending migrations to the local postgres (DATABASE_URL in .env)
+$ npm run db:migrate
+```
+
+RDS isn't publicly reachable (see `infrastructure/cloudformation/security-groups.yaml`),
+so migrating a deployed environment tunnels through a running frontend ECS task via
+SSM instead of connecting directly. The frontend service needs to already be running
+(desired count > 0) - the script errors out rather than starting it for you:
+
+```bash
+# requires AWS CLI v2, the Session Manager plugin, and IAM permissions for
+# cloudformation:DescribeStacks, secretsmanager:GetSecretValue, ecs:ListTasks,
+# ecs:DescribeTasks, ecs:ExecuteCommand and ssm:StartSession
+$ ./scripts/migrate-rds.sh dev
+```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
