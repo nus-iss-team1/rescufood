@@ -10,7 +10,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { listingCategory } from '../../db/schema';
-import { parseMultipartJsonArray } from './multipart-json-array.transform';
+import { parseMultipartJsonArray } from './transforms/multipart-json-array.transform';
 
 export class CreateListingDto {
   @IsIn(listingCategory.enumValues)

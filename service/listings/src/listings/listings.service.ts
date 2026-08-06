@@ -17,13 +17,16 @@ import { S3Service } from '../storage/s3.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { QueryListingsDto } from './dto/query-listings.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { assertCanModify, isListingVisible } from './listing-access.util';
+import {
+  assertCanModify,
+  isListingVisible,
+} from './common/listing-access.util';
 import {
   ListingImageResponse,
   toListingImageResponses,
-} from './listing-image-response.util';
-import { ListingImageUploadService } from './listing-image-upload.service';
-import { ListingImagesRepository } from './listing-images.repository';
+} from './images/listing-image-response.util';
+import { ListingImageUploadService } from './images/listing-image-upload.service';
+import { ListingImagesRepository } from './images/listing-images.repository';
 import { Listing, ListingsRepository } from './listings.repository';
 
 export type ListingWithImages = Listing & { images: ListingImageResponse[] };

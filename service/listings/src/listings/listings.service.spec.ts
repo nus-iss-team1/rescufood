@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/types/express';
-import { ListingImageUploadService } from './listing-image-upload.service';
-import { ListingImagesRepository } from './listing-images.repository';
+import { ListingImageUploadService } from './images/listing-image-upload.service';
+import { ListingImagesRepository } from './images/listing-images.repository';
 import { ListingsRepository } from './listings.repository';
 import { ListingsService } from './listings.service';
 

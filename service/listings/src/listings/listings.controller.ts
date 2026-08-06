@@ -34,7 +34,7 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_FILE_SIZE_BYTES,
   MAX_IMAGES_PER_LISTING,
-} from './image-upload.constants';
+} from './images/image-upload.constants';
 import { ListingsService } from './listings.service';
 
 // Optional on both endpoints: a request with no `files` part (plain JSON,

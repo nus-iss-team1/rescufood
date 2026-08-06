@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { listingStatus } from '../../db/schema';
 import { CreateListingDto } from './create-listing.dto';
-import { parseMultipartJsonArray } from './multipart-json-array.transform';
+import { parseMultipartJsonArray } from './transforms/multipart-json-array.transform';
 
 export class UpdateListingDto extends PartialType(CreateListingDto) {
   // Optimistic concurrency: caller must echo back the version they last

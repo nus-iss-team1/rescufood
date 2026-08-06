@@ -1,4 +1,4 @@
-import type { S3Service } from '../storage/s3.service';
+import type { S3Service } from '../../storage/s3.service';
 import type { ListingImage } from './listing-images.repository';
 
 export interface ListingImageResponse {

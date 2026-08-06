@@ -1,5 +1,5 @@
-import type { Database } from '../db/db.module';
-import { listingImages } from '../db/schema';
+import type { Database } from '../../db/db.module';
+import { listingImages } from '../../db/schema';
 import { ListingImagesRepository } from './listing-images.repository';
 
 // Same chainable-thenable mock shape as listings.repository.spec.ts - see

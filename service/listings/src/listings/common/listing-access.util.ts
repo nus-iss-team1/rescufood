@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import type { AuthenticatedUser } from '../common/types/express';
+import type { AuthenticatedUser } from '../../common/types/express';
 
 // Requires the caller's *current* org membership to match the listing's
 // donor org, not just that they were the original creator - a user who

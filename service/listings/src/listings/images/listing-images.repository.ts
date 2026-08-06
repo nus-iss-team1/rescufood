@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, inArray, max } from 'drizzle-orm';
-import { DATABASE, type Database } from '../db/db.module';
-import { listingImages } from '../db/schema';
+import { DATABASE, type Database } from '../../db/db.module';
+import { listingImages } from '../../db/schema';
 
 export type ListingImage = typeof listingImages.$inferSelect;
 
