@@ -64,7 +64,7 @@
   --card-foreground: #000000;
   --popover: #ffffff;
   --popover-foreground: #000000;
-  --primary: #000000;
+  --primary: #1f6b45;
   --primary-foreground: #ffffff;
   --secondary: #e8e6e3;
   --secondary-foreground: #000000;
@@ -73,13 +73,13 @@
   --accent: #f2f0ed;
   --accent-foreground: #000000;
   /* Darkened from #ff5043 so it reads on a tinted badge. */
-  --destructive: #b43127;
+  --destructive: #a92e25;
   --success: #2e6b4a;
-  --warning: #875a08;
-  --info: #1f6c78;
+  --warning: #7f5508;
+  --info: #1d6671;
   --border: #0000001a;
   --input: #0000001a;
-  --ring: #00000066;
+  --ring: #1f6b4599;
   --chart-1: #ff8308;
   --chart-2: #ff5043;
   --chart-3: #392bd5;
@@ -103,8 +103,8 @@
   --card-foreground: #ffffff;
   --popover: #211f1c;
   --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #000000;
+  --primary: #86cfa4;
+  --primary-foreground: #10281c;
   --secondary: #2c2a26;
   --secondary-foreground: #ffffff;
   --muted: #2c2a26;
@@ -117,7 +117,7 @@
   --info: #7fc2cf;
   --border: #ffffff1a;
   --input: #ffffff26;
-  --ring: #ffffff66;
+  --ring: #86cfa499;
   --chart-1: #ff8308;
   --chart-2: #ff5043;
   --chart-3: #392bd5;

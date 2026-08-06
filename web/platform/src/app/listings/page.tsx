@@ -10,12 +10,11 @@ import {
   type ListingStatus,
 } from "@/lib/mock-listings";
 import { AnimateIn } from "@/components/animate-in";
+import { PageHeader, describeOrg } from "@/components/page-header";
 import { ListingList } from "@/components/listings/listing-list";
-import { Badge } from "@rescufood/ui/components/badge";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -121,18 +120,11 @@ export default async function ListingsPage({
 
   return shell(
     <AnimateIn className="flex flex-col gap-6">
-      <div
-        data-animate="field"
-        className="flex flex-wrap items-end justify-between gap-3"
-      >
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Your listings
-          </h1>
-          <p className="text-sm text-muted-foreground">{me.org.name}</p>
-        </div>
-        <Button disabled>Post surplus food</Button>
-      </div>
+      <PageHeader
+        title="Your listings"
+        subtitle={describeOrg(me)}
+        action={<Button disabled>Post surplus food</Button>}
+      />
 
       <nav data-animate="field" className="flex flex-wrap gap-2">
         {tabs.map((tab) => {

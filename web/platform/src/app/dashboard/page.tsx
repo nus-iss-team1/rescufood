@@ -21,9 +21,9 @@ import {
   type User,
 } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
+import { PageHeader, describeOrg } from "@/components/page-header";
 import { OrgCard } from "@/components/dashboard/org-card";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
-import { Badge } from "@rescufood/ui/components/badge";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
@@ -207,13 +207,11 @@ export default async function DashboardPage() {
 
   return (
     <Shell>
-      <AnimateIn className="mb-8 flex flex-wrap items-center gap-3">
-        <h1
-          data-animate="field"
-          className="text-2xl font-bold tracking-tight sm:text-3xl"
-        >
-          Welcome{firstName ? `, ${firstName}` : ""}
-        </h1>
+      <AnimateIn className="mb-8">
+        <PageHeader
+          title={`Welcome${firstName ? `, ${firstName}` : ""}`}
+          subtitle={describeOrg(me)}
+        />
       </AnimateIn>
 
       {me.is_admin ? (

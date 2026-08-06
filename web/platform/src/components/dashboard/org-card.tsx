@@ -1,6 +1,7 @@
 import { Building2, Mail, MapPin, Phone, Users } from "lucide-react";
 
 import type { Org, User } from "@/lib/profile";
+import { ApprovedMark } from "@/components/dashboard/approved-mark";
 import { Badge } from "@rescufood/ui/components/badge";
 import {
   Card,
@@ -36,7 +37,7 @@ export function OrgCard({ org, members }: { org: Org; members: User[] }) {
           <Badge variant="secondary">
             {org.type === "donor" ? "Food donor" : "Rescue partner"}
           </Badge>
-          <Badge variant="success">Approved</Badge>
+          <ApprovedMark />
         </div>
       </CardHeader>
       <CardContent className="grid gap-2">

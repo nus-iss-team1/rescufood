@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { getMe, type Me } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
+import { PageHeader, describeOrg } from "@/components/page-header";
 import { PasswordForm } from "@/components/settings/password-form";
 import { Badge } from "@rescufood/ui/components/badge";
 import {
@@ -69,7 +70,10 @@ function Profile({ me, username }: { me: Me | null; username?: string }) {
           label="Role"
           value={me.is_admin ? "Platform administrator" : "Member"}
         />
-        <Row label="Account" value={<span className="capitalize">{me.status}</span>} />
+        <Row
+          label="Account"
+          value={<span className="capitalize">{me.status}</span>}
+        />
       </dl>
     </CardContent>
   );
@@ -93,19 +97,13 @@ export default async function SettingsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 pt-24 pb-16">
       <AnimateIn className="flex flex-col gap-6">
-        <h1
-          data-animate="field"
-          className="text-2xl font-bold tracking-tight sm:text-3xl"
-        >
-          Settings
-        </h1>
+        <PageHeader title="Settings" subtitle={describeOrg(me)} />
 
         <Card data-animate="field">
           <CardHeader>
             <CardTitle>Your profile</CardTitle>
             <CardDescription>
-              Organisation details are managed by the platform
-              administrators.
+              Organisation details are managed by the platform administrators.
             </CardDescription>
           </CardHeader>
           <Profile me={me} username={session.user.username} />
