@@ -5,8 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/types/express';
+import { hashPickupCode } from './pickup/pickup-code.util';
 import { RequestsRepository } from './requests.repository';
 import { RequestsService } from './requests.service';
+
+// RequestsService.verifyPickupCode resolves the code-generator's *current*
+// org via this, the same helper OrgMembershipGuard uses - mocked here so
+// tests control it directly instead of faking a drizzle select chain.
+jest.mock('../auth/org-membership.guard', () => ({
+  resolveOrgId: jest.fn(),
+}));
+import { resolveOrgId } from '../auth/org-membership.guard';
+const mockResolveOrgId = resolveOrgId as jest.Mock;
 
 function makeRepository() {
   return {
@@ -19,6 +29,7 @@ function makeRepository() {
     updateStatus: jest.fn(),
     decrementListingQuantity: jest.fn(),
     incrementListingQuantity: jest.fn(),
+    incrementPickupCodeAttempts: jest.fn(),
   };
 }
 
@@ -77,6 +88,10 @@ const baseRequest = {
 };
 
 describe('RequestsService', () => {
+  beforeEach(() => {
+    mockResolveOrgId.mockReset();
+  });
+
   describe('create', () => {
     const dto = {
       listingId: 'listing-1',
@@ -459,6 +474,447 @@ describe('RequestsService', () => {
       await service.decide('request-1', dto, rescueUser);
 
       expect(repository.incrementListingQuantity).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('decide - no_show', () => {
+    const dto = {
+      status: 'no_show' as const,
+      noShowReason: 'nobody came to collect it',
+    };
+
+    it('allows either party to report a no-show on an accepted request', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      repository.findListingById.mockResolvedValue({
+        ...availableListing,
+        status: 'reserved',
+        remainingQuantity: '0.00',
+      });
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'no_show',
+      });
+      const { service } = makeService(repository);
+
+      const result = await service.decide('request-1', dto, donorUser);
+
+      expect(result.status).toBe('no_show');
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'accepted',
+        expect.objectContaining({
+          status: 'no_show',
+          noShowReason: 'nobody came to collect it',
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('restores the listing quantity, same as a cancelled accepted request', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      repository.findListingById.mockResolvedValue({
+        ...availableListing,
+        status: 'reserved',
+        remainingQuantity: '0.00',
+      });
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'no_show',
+      });
+      const { service } = makeService(repository);
+
+      await service.decide('request-1', dto, rescueUser);
+
+      expect(repository.incrementListingQuantity).toHaveBeenCalledWith(
+        'listing-1',
+        '5.00',
+        expect.anything(),
+      );
+    });
+
+    it('rejects an outsider', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.decide('request-1', dto, outsider),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('rejects reporting a no-show on a request that is still pending', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest); // status: pending
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.decide('request-1', dto, rescueUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generatePickupCode', () => {
+    const acceptedRequest = {
+      ...baseRequest,
+      status: 'accepted' as const,
+    };
+
+    it('generates a 6-digit code, hashes it for storage, and returns the raw code once', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        pickupCodeHash: 'irrelevant-to-the-caller',
+      });
+      const { service } = makeService(repository);
+
+      const result = await service.generatePickupCode('request-1', rescueUser);
+
+      expect(result.code).toMatch(/^\d{6}$/);
+      expect(result.expiresAt).toBeInstanceOf(Date);
+      const [, , values] = repository.updateStatus.mock.calls[0] as [
+        string,
+        string,
+        {
+          pickupCodeHash: string;
+          codeGeneratedBy: string;
+          pickupCodeAttempts: number;
+        },
+      ];
+      expect(values.pickupCodeHash).toBe(hashPickupCode(result.code));
+      expect(values.codeGeneratedBy).toBe(rescueUser.userId);
+      expect(values.pickupCodeAttempts).toBe(0);
+    });
+
+    it('allows either party to generate a code', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue(acceptedRequest);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', donorUser),
+      ).resolves.toMatchObject({ code: expect.any(String) as string });
+    });
+
+    it('rejects an outsider', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', outsider),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('rejects generating a code for a request that is not accepted', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest); // status: pending
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', rescueUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('409s when the request was modified since it was read', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue(undefined);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', rescueUser),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('verifyPickupCode', () => {
+    const code = '123456';
+    const now = new Date('2026-08-06T01:00:00Z');
+    const acceptedRequest = {
+      ...baseRequest,
+      status: 'accepted' as const,
+      pickupCodeHash: hashPickupCode(code),
+      codeExpiresAt: new Date(now.getTime() + 60_000),
+      codeGeneratedBy: 'user-rescue',
+      pickupCodeAttempts: 0,
+    };
+
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(now);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('completes the request when the code matches and is unexpired', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      // Generated by the rescue org, so the donor org must be the one to verify.
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      const { service } = makeService(repository);
+
+      const result = await service.verifyPickupCode(
+        'request-1',
+        { code },
+        donorUser,
+      );
+
+      expect(result.status).toBe('completed');
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'accepted',
+        expect.objectContaining({
+          status: 'completed',
+          verifiedBy: donorUser.userId,
+          collectedQuantity: '5',
+        }),
+      );
+    });
+
+    it('defaults collectedQuantity to the full requestedQuantity when omitted', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      const { service } = makeService(repository);
+
+      await service.verifyPickupCode('request-1', { code }, donorUser);
+
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'accepted',
+        expect.objectContaining({ collectedQuantity: '5' }),
+      );
+    });
+
+    it('rejects a collectedQuantity greater than what was requested', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode(
+          'request-1',
+          { code, collectedQuantity: 50 },
+          donorUser,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the same org generated and is trying to verify the code', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, rescueUser),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.incrementPickupCodeAttempts).not.toHaveBeenCalled();
+    });
+
+    it('rejects an outsider entirely', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, outsider),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('rejects when no code has been generated yet', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, donorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects verifying a request that is not accepted', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, donorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('gives the same generic error for a wrong code as for an expired one', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.incrementPickupCodeAttempts.mockResolvedValue(1);
+
+      repository.findById.mockResolvedValue(acceptedRequest);
+      const { service: wrongCodeService } = makeService(repository);
+      let wrongCodeError: unknown;
+      try {
+        await wrongCodeService.verifyPickupCode(
+          'request-1',
+          { code: '000000' },
+          donorUser,
+        );
+      } catch (err) {
+        wrongCodeError = err;
+      }
+
+      repository.findById.mockResolvedValue({
+        ...acceptedRequest,
+        codeExpiresAt: new Date(now.getTime() - 1),
+      });
+      const { service: expiredCodeService } = makeService(repository);
+      let expiredCodeError: unknown;
+      try {
+        await expiredCodeService.verifyPickupCode(
+          'request-1',
+          { code },
+          donorUser,
+        );
+      } catch (err) {
+        expiredCodeError = err;
+      }
+
+      expect(wrongCodeError).toBeInstanceOf(BadRequestException);
+      expect(expiredCodeError).toBeInstanceOf(BadRequestException);
+      expect((wrongCodeError as BadRequestException).message).toBe(
+        (expiredCodeError as BadRequestException).message,
+      );
+    });
+
+    it('counts a failed attempt and does not complete the request', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.incrementPickupCodeAttempts.mockResolvedValue(2);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code: '000000' }, donorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.incrementPickupCodeAttempts).toHaveBeenCalledWith(
+        'request-1',
+        now,
+      );
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('force-invalidates the code after hitting the attempt cap', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.incrementPickupCodeAttempts.mockResolvedValue(5);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code: '000000' }, donorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'accepted',
+        expect.objectContaining({
+          pickupCodeHash: null,
+          codeExpiresAt: null,
+          codeGeneratedBy: null,
+          pickupCodeAttempts: 0,
+        }),
+      );
+    });
+
+    it('409s when the request stopped being accepted mid-verify', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.incrementPickupCodeAttempts.mockResolvedValue(undefined);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code: '000000' }, donorUser),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('409s when the request was modified since it was read on a successful verify', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.updateStatus.mockResolvedValue(undefined);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, donorUser),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('lets an admin verify regardless of org, without the cross-org check', async () => {
+      const repository = makeRepository();
+      const admin: AuthenticatedUser = {
+        userId: 'admin-1',
+        role: 'admin',
+        orgId: 'org-rescue', // same org as the generator - would fail the check for a non-admin
+      };
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, admin),
+      ).resolves.toMatchObject({ status: 'completed' });
+      expect(mockResolveOrgId).not.toHaveBeenCalled();
     });
   });
 });

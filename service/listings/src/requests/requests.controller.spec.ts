@@ -19,6 +19,8 @@ function makeService() {
     findAll: jest.fn(),
     findOne: jest.fn(),
     decide: jest.fn(),
+    generatePickupCode: jest.fn(),
+    verifyPickupCode: jest.fn(),
   };
 }
 
@@ -102,6 +104,54 @@ describe('RequestsController', () => {
 
       expect(service.decide).toHaveBeenCalledWith('request-1', dto, user);
       expect(result).toEqual({ id: 'request-1', status: 'accepted' });
+    });
+  });
+
+  describe('generatePickupCode', () => {
+    it('delegates to the service with the id and caller', async () => {
+      const service = makeService();
+      const expiresAt = new Date('2026-08-06T00:30:00Z');
+      service.generatePickupCode.mockResolvedValue({
+        code: '042917',
+        expiresAt,
+      });
+      const { controller } = makeController(service);
+
+      const result = await controller.generatePickupCode(
+        'request-1',
+        makeRequest(),
+      );
+
+      expect(service.generatePickupCode).toHaveBeenCalledWith(
+        'request-1',
+        user,
+      );
+      expect(result).toEqual({ code: '042917', expiresAt });
+    });
+  });
+
+  describe('verifyPickupCode', () => {
+    it('delegates to the service with the id, dto and caller', async () => {
+      const service = makeService();
+      service.verifyPickupCode.mockResolvedValue({
+        id: 'request-1',
+        status: 'completed',
+      });
+      const { controller } = makeController(service);
+      const dto = { code: '042917' } as never;
+
+      const result = await controller.verifyPickupCode(
+        'request-1',
+        dto,
+        makeRequest(),
+      );
+
+      expect(service.verifyPickupCode).toHaveBeenCalledWith(
+        'request-1',
+        dto,
+        user,
+      );
+      expect(result).toEqual({ id: 'request-1', status: 'completed' });
     });
   });
 });

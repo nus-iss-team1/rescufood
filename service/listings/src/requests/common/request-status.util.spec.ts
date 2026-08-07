@@ -7,6 +7,7 @@ describe('assertValidRequestStatusTransition', () => {
     ['pending', 'declined'],
     ['pending', 'cancelled'],
     ['accepted', 'cancelled'],
+    ['accepted', 'no_show'],
   ] as const)('allows %s -> %s', (current, next) => {
     expect(() =>
       assertValidRequestStatusTransition(current, next),
@@ -21,6 +22,7 @@ describe('assertValidRequestStatusTransition', () => {
     ['accepted', 'accepted'],
     ['accepted', 'declined'],
     ['accepted', 'completed'],
+    ['pending', 'no_show'],
     ['declined', 'accepted'],
     ['declined', 'cancelled'],
     ['cancelled', 'pending'],

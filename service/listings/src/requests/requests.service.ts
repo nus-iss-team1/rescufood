@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { resolveOrgId } from '../auth/org-membership.guard';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
@@ -14,14 +16,26 @@ import {
   PG_UNIQUE_VIOLATION,
 } from '../db/pg-errors';
 import {
-  assertCanCancel,
   assertCanRespond,
+  assertIsParty,
   isRequestVisible,
 } from './common/request-access.util';
+import {
+  PublicListingRequest,
+  toPublicRequest,
+} from './common/request-response.util';
 import { assertValidRequestStatusTransition } from './common/request-status.util';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
+import { VerifyPickupCodeDto } from './dto/verify-pickup-code.dto';
+import {
+  createPickupCode,
+  hashPickupCode,
+  MAX_PICKUP_CODE_ATTEMPTS,
+  PICKUP_CODE_TTL_MINUTES,
+  pickupCodeMatches,
+} from './pickup/pickup-code.util';
 import {
   ListingRequest,
   RequestedListing,
@@ -38,7 +52,7 @@ export class RequestsService {
   async create(
     dto: CreateRequestDto,
     user: AuthenticatedUser,
-  ): Promise<ListingRequest> {
+  ): Promise<PublicListingRequest> {
     const listing = await this.requestsRepository.findListingById(
       dto.listingId,
     );
@@ -61,13 +75,14 @@ export class RequestsService {
     }
 
     try {
-      return await this.requestsRepository.create({
+      const created = await this.requestsRepository.create({
         listingId: dto.listingId,
         rescueOrgId: user.orgId!,
         claimedBy: user.userId,
         idempotencyKey: dto.idempotencyKey,
         requestedQuantity: dto.requestedQuantity.toString(),
       });
+      return toPublicRequest(created);
     } catch (err) {
       if (isPgError(err, PG_UNIQUE_VIOLATION)) {
         // A retried submit with the same key - replay the original result
@@ -75,7 +90,7 @@ export class RequestsService {
         const existing = await this.requestsRepository.findByIdempotencyKey(
           dto.idempotencyKey,
         );
-        if (existing) return existing;
+        if (existing) return toPublicRequest(existing);
       }
       throw err;
     }
@@ -84,37 +99,39 @@ export class RequestsService {
   async findAll(
     query: QueryRequestsDto,
     viewer: AuthenticatedUser,
-  ): Promise<{ items: ListingRequest[]; total: number }> {
+  ): Promise<{ items: PublicListingRequest[]; total: number }> {
     const [items, total] = await Promise.all([
       this.requestsRepository.findMany(query, viewer),
       this.requestsRepository.countMany(query, viewer),
     ]);
-    return { items, total };
+    return { items: items.map(toPublicRequest), total };
   }
 
   async findOne(
     id: string,
     viewer: AuthenticatedUser,
-  ): Promise<ListingRequest> {
+  ): Promise<PublicListingRequest> {
     const request = await this.getOrThrow(id);
     const listing = await this.getListingOrThrow(request.listingId);
     if (!isRequestVisible(request, listing, viewer)) {
       throw new NotFoundException(`request ${id} not found`);
     }
-    return request;
+    return toPublicRequest(request);
   }
 
   async decide(
     id: string,
     dto: UpdateRequestDto,
     user: AuthenticatedUser,
-  ): Promise<ListingRequest> {
+  ): Promise<PublicListingRequest> {
     const existing = await this.getOrThrow(id);
     const listing = await this.getListingOrThrow(existing.listingId);
     assertValidRequestStatusTransition(existing.status, dto.status);
 
-    if (dto.status === 'cancelled') {
-      assertCanCancel(existing, listing, user);
+    const releasesQuantity =
+      dto.status === 'cancelled' || dto.status === 'no_show';
+    if (releasesQuantity) {
+      assertIsParty(existing, listing, user);
     } else {
       assertCanRespond(listing, user);
     }
@@ -133,10 +150,7 @@ export class RequestsService {
               `listing ${existing.listingId} is no longer available to accept this request`,
             );
           }
-        } else if (
-          dto.status === 'cancelled' &&
-          existing.status === 'accepted'
-        ) {
+        } else if (releasesQuantity && existing.status === 'accepted') {
           await this.requestsRepository.incrementListingQuantity(
             existing.listingId,
             existing.requestedQuantity,
@@ -149,7 +163,7 @@ export class RequestsService {
           existing.status,
           {
             status: dto.status,
-            ...(dto.status !== 'cancelled' && {
+            ...((dto.status === 'accepted' || dto.status === 'declined') && {
               respondedBy: user.userId,
               respondedAt: new Date(),
             }),
@@ -159,6 +173,9 @@ export class RequestsService {
             ...(dto.status === 'cancelled' && {
               cancelledAt: new Date(),
               cancellationReason: dto.cancellationReason ?? '',
+            }),
+            ...(dto.status === 'no_show' && {
+              noShowReason: dto.noShowReason ?? '',
             }),
             updatedAt: new Date(),
           },
@@ -170,7 +187,7 @@ export class RequestsService {
             `request ${id} was modified since it was read`,
           );
         }
-        return updated;
+        return toPublicRequest(updated);
       });
     } catch (err) {
       if (isPgError(err, PG_CHECK_VIOLATION)) {
@@ -183,6 +200,134 @@ export class RequestsService {
       }
       throw err;
     }
+  }
+
+  // Either party on an accepted request may (re)generate a pickup code -
+  // calling this again immediately invalidates whatever code existed before
+  // (new hash overwrites the old one, attempts reset to 0), so a stale QR
+  // that failed to scan is never a dead end.
+  async generatePickupCode(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<{ code: string; expiresAt: Date }> {
+    const existing = await this.getOrThrow(id);
+    const listing = await this.getListingOrThrow(existing.listingId);
+    assertIsParty(existing, listing, user);
+
+    if (existing.status !== 'accepted') {
+      throw new BadRequestException(
+        `cannot generate a pickup code for a request that is ${existing.status}`,
+      );
+    }
+
+    const code = createPickupCode();
+    const expiresAt = new Date(Date.now() + PICKUP_CODE_TTL_MINUTES * 60_000);
+
+    const updated = await this.requestsRepository.updateStatus(id, 'accepted', {
+      pickupCodeHash: hashPickupCode(code),
+      codeExpiresAt: expiresAt,
+      codeGeneratedBy: user.userId,
+      pickupCodeAttempts: 0,
+      updatedAt: new Date(),
+    });
+    if (!updated) {
+      throw new ConflictException(
+        `request ${id} was modified since it was read`,
+      );
+    }
+
+    return { code, expiresAt };
+  }
+
+  // Redeems a code generated by generatePickupCode. A wrong guess and an
+  // expired code produce the exact same error - distinguishing them would
+  // tell a guesser their timing is the only thing standing between them and
+  // a valid-looking code. Five wrong guesses (right or wrong reason) force
+  // the code to be regenerated, bounding how much an online guesser can try
+  // against the 6-digit space per code.
+  async verifyPickupCode(
+    id: string,
+    dto: VerifyPickupCodeDto,
+    user: AuthenticatedUser,
+  ): Promise<PublicListingRequest> {
+    const existing = await this.getOrThrow(id);
+    const listing = await this.getListingOrThrow(existing.listingId);
+    assertIsParty(existing, listing, user);
+
+    if (existing.status !== 'accepted') {
+      throw new BadRequestException(
+        `cannot verify a pickup code for a request that is ${existing.status}`,
+      );
+    }
+    if (!existing.pickupCodeHash) {
+      throw new BadRequestException(
+        'no pickup code has been generated for this request',
+      );
+    }
+    // Requires the verifier to belong to the *other* org from whoever
+    // generated the code - otherwise one org could generate and verify by
+    // itself, which defeats the point of a shared handshake.
+    if (user.role !== 'admin' && existing.codeGeneratedBy) {
+      const generatorOrgId = await resolveOrgId(
+        this.db,
+        existing.codeGeneratedBy,
+      );
+      if (generatorOrgId && generatorOrgId === user.orgId) {
+        throw new ForbiddenException(
+          'the organisation that generated the pickup code cannot also verify it',
+        );
+      }
+    }
+
+    const now = new Date();
+    const expired = !existing.codeExpiresAt || existing.codeExpiresAt <= now;
+    const matches =
+      !expired && pickupCodeMatches(dto.code, existing.pickupCodeHash);
+
+    if (!matches) {
+      const attempts =
+        await this.requestsRepository.incrementPickupCodeAttempts(id, now);
+      if (attempts === undefined) {
+        throw new ConflictException(`request ${id} is no longer accepted`);
+      }
+      if (attempts >= MAX_PICKUP_CODE_ATTEMPTS) {
+        await this.requestsRepository.updateStatus(id, 'accepted', {
+          pickupCodeHash: null,
+          codeExpiresAt: null,
+          codeGeneratedBy: null,
+          pickupCodeAttempts: 0,
+          updatedAt: now,
+        });
+        throw new BadRequestException(
+          'too many failed pickup code attempts - generate a new code',
+        );
+      }
+      throw new BadRequestException('invalid pickup code');
+    }
+
+    const collectedQuantity = (
+      dto.collectedQuantity ?? Number(existing.requestedQuantity)
+    ).toString();
+    if (Number(collectedQuantity) > Number(existing.requestedQuantity)) {
+      throw new BadRequestException(
+        `collected quantity cannot exceed the requested ${existing.requestedQuantity}`,
+      );
+    }
+
+    const updated = await this.requestsRepository.updateStatus(id, 'accepted', {
+      status: 'completed',
+      verifiedBy: user.userId,
+      collectedAt: now,
+      collectedQuantity,
+      pickupCodeAttempts: 0,
+      updatedAt: now,
+    });
+    if (!updated) {
+      throw new ConflictException(
+        `request ${id} was modified since it was read`,
+      );
+    }
+    return toPublicRequest(updated);
   }
 
   private async getOrThrow(id: string): Promise<ListingRequest> {

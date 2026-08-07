@@ -1,10 +1,17 @@
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-// The only three decisions reachable through this endpoint - `superseded`,
-// `completed`, `no_show` and `expired` are system-driven (pickup flow /
-// listing-expiry sweep), never a direct client decision. See
-// request-status.util.ts for the full transition map.
-export const requestDecisions = ['accepted', 'declined', 'cancelled'] as const;
+// The only four decisions reachable through this endpoint - `superseded`,
+// `completed` and `expired` are system-driven (pickup-verification flow /
+// listing-expiry sweep), never a direct client decision. `no_show` *is*
+// client-driven (either party reporting a failed pickup), unlike the other
+// two pickup-related states. See request-status.util.ts for the full
+// transition map.
+export const requestDecisions = [
+  'accepted',
+  'declined',
+  'cancelled',
+  'no_show',
+] as const;
 export type RequestDecision = (typeof requestDecisions)[number];
 
 export class UpdateRequestDto {
@@ -23,4 +30,8 @@ export class UpdateRequestDto {
   @IsOptional()
   @IsString()
   cancellationReason?: string;
+
+  @IsOptional()
+  @IsString()
+  noShowReason?: string;
 }

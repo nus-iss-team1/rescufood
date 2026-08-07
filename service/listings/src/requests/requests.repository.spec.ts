@@ -94,6 +94,7 @@ const baseRequest = {
   pickupCodeHash: null,
   codeExpiresAt: null,
   codeGeneratedBy: null,
+  pickupCodeAttempts: 0,
   verifiedBy: null,
   collectedQuantity: null,
   collectedAt: null,
@@ -236,6 +237,40 @@ describe('RequestsRepository', () => {
 
       expect(tx.update).toHaveBeenCalledWith(requests);
       expect(db.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('incrementPickupCodeAttempts', () => {
+    it('atomically bumps the counter for a request still accepted and returns the new count', async () => {
+      const db = makeDb();
+      const updateChain = chain([{ pickupCodeAttempts: 3 }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new RequestsRepository(db as unknown as Database);
+      const now = new Date('2026-08-06T01:00:00Z');
+
+      const result = await repository.incrementPickupCodeAttempts(
+        'request-1',
+        now,
+      );
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ updatedAt: now }),
+      );
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" =');
+      expect(params).toContain('accepted');
+      expect(result).toBe(3);
+    });
+
+    it('returns undefined when the request is no longer accepted', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      await expect(
+        repository.incrementPickupCodeAttempts('request-1', new Date()),
+      ).resolves.toBeUndefined();
     });
   });
 

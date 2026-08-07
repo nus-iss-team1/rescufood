@@ -1,0 +1,45 @@
+import { toPublicRequest } from './request-response.util';
+import type { ListingRequest } from '../requests.repository';
+
+const fullRequest: ListingRequest = {
+  id: 'request-1',
+  listingId: 'listing-1',
+  rescueOrgId: 'org-rescue',
+  claimedBy: 'user-rescue',
+  idempotencyKey: 'idem-1',
+  status: 'accepted',
+  requestedQuantity: '5.00',
+  requestedAt: new Date('2026-08-06T00:00:00Z'),
+  respondedBy: 'user-donor',
+  respondedAt: new Date('2026-08-06T01:00:00Z'),
+  declineReason: '',
+  cancelledAt: null,
+  cancellationReason: '',
+  pickupCodeHash: 'super-secret-hash',
+  codeExpiresAt: new Date('2026-08-06T02:00:00Z'),
+  codeGeneratedBy: 'user-donor',
+  pickupCodeAttempts: 3,
+  verifiedBy: null,
+  collectedQuantity: null,
+  collectedAt: null,
+  noShowReason: '',
+  createdAt: new Date('2026-08-06T00:00:00Z'),
+  updatedAt: new Date('2026-08-06T01:00:00Z'),
+};
+
+describe('toPublicRequest', () => {
+  it('omits the pickup code hash and attempt counter', () => {
+    const result = toPublicRequest(fullRequest);
+
+    expect(result).not.toHaveProperty('pickupCodeHash');
+    expect(result).not.toHaveProperty('pickupCodeAttempts');
+  });
+
+  it('keeps every other field intact', () => {
+    const { pickupCodeHash, pickupCodeAttempts, ...expected } = fullRequest;
+    void pickupCodeHash;
+    void pickupCodeAttempts;
+
+    expect(toPublicRequest(fullRequest)).toEqual(expected);
+  });
+});

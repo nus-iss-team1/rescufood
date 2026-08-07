@@ -1,7 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../common/types/express';
 import {
-  assertCanCancel,
+  assertIsParty,
   assertCanRespond,
   isRequestVisible,
 } from './request-access.util';
@@ -52,21 +52,21 @@ describe('assertCanRespond', () => {
   });
 });
 
-describe('assertCanCancel', () => {
+describe('assertIsParty', () => {
   it('allows the rescue org that filed the request', () => {
-    expect(() => assertCanCancel(request, listing, rescueUser)).not.toThrow();
+    expect(() => assertIsParty(request, listing, rescueUser)).not.toThrow();
   });
 
   it('allows the donor org that owns the listing', () => {
-    expect(() => assertCanCancel(request, listing, donorUser)).not.toThrow();
+    expect(() => assertIsParty(request, listing, donorUser)).not.toThrow();
   });
 
   it('allows an admin regardless of org', () => {
-    expect(() => assertCanCancel(request, listing, admin)).not.toThrow();
+    expect(() => assertIsParty(request, listing, admin)).not.toThrow();
   });
 
   it('rejects an outsider', () => {
-    expect(() => assertCanCancel(request, listing, outsider)).toThrow(
+    expect(() => assertIsParty(request, listing, outsider)).toThrow(
       ForbiddenException,
     );
   });

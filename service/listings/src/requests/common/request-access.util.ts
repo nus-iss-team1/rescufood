@@ -15,9 +15,13 @@ export function assertCanRespond(
   }
 }
 
-// Cancellation is symmetric: either the rescue org that filed the request or
-// the donor org that owns the listing can back out, before or after accept.
-export function assertCanCancel(
+// Symmetric access: either the rescue org that filed the request or the
+// donor org that owns the listing may act - cancellation, no-show
+// reporting, and pickup-code generation/verification all use this. Neither
+// side unilaterally decides the *outcome* of a pending request (that's
+// assertCanRespond's job), but either can back out, report a failed
+// handoff, or take part in one.
+export function assertIsParty(
   request: { rescueOrgId: string },
   listing: { donorOrgId: string },
   user: AuthenticatedUser,

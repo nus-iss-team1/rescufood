@@ -164,6 +164,28 @@ export class RequestsRepository {
     return updated;
   }
 
+  // Atomically bumps the failed-verify-attempt counter for a request still
+  // `accepted` and returns the new count, so RequestsService.verifyPickupCode
+  // can enforce MAX_PICKUP_CODE_ATTEMPTS without a lost-update race between
+  // two concurrent wrong guesses (a read-then-write of the count would let
+  // both land on the same "3" and miscount). Returns undefined if the
+  // request moved on since (e.g. cancelled mid-verify).
+  async incrementPickupCodeAttempts(
+    id: string,
+    now: Date,
+    executor: Database = this.db,
+  ): Promise<number | undefined> {
+    const [row] = await executor
+      .update(requests)
+      .set({
+        pickupCodeAttempts: sql`${requests.pickupCodeAttempts} + 1`,
+        updatedAt: now,
+      })
+      .where(and(eq(requests.id, id), eq(requests.status, 'accepted')))
+      .returning({ pickupCodeAttempts: requests.pickupCodeAttempts });
+    return row?.pickupCodeAttempts;
+  }
+
   // Reverses decrementListingQuantity for a cancelled accepted request. Only
   // reopens the listing (reserved -> available) - if it's already
   // cancelled/expired by the time this runs, it stays that way; the quantity
