@@ -176,9 +176,14 @@ describe('ListingsRepository', () => {
       const result = await repository.delete('listing-1', 2);
 
       expect(db.update).toHaveBeenCalledWith(listings);
-      expect(updateChain.set).toHaveBeenCalledWith(
-        expect.objectContaining({ deletedAt: expect.any(Date), version: 2 }),
-      );
+      // Asserted by destructuring rather than expect.any(Date) inside
+      // objectContaining - the latter types as `any` and trips
+      // no-unsafe-assignment.
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { deletedAt: unknown; version: number },
+      ];
+      expect(setArg.deletedAt).toBeInstanceOf(Date);
+      expect(setArg.version).toBe(2);
       expect(updateChain.where).toHaveBeenCalled();
       expect(result?.version).toBe(2);
     });
