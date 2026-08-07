@@ -138,27 +138,60 @@ export class ListingsRepository {
 
   // Backs the expiry sweep (ListingExpiryService): flips any listing still
   // `available` once its pickup window has closed - i.e. nobody's request
-  // was accepted in time - to `expired`. Scoped to `available` to match
-  // listings_expiry_scan_idx exactly, and bumps `version` like every other
-  // mutation so a donor's in-flight optimistic update racing against this
-  // sweep gets a 409 instead of silently overwriting `expired` back.
-  async expireOverdue(now: Date = new Date()): Promise<number> {
-    const result = await this.db
-      .update(listings)
-      .set({
-        status: 'expired',
-        version: sql`${listings.version} + 1`,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(listings.status, 'available'),
-          lte(listings.pickupWindowEnd, now),
-          isNull(listings.deletedAt),
-        ),
-      )
-      .returning({ id: listings.id });
-    return result.length;
+  // was accepted in time, or it was only ever partially claimed - to
+  // `expired`, and in the same transaction expires any of its requests
+  // still open (`pending`/`accepted`) so they stop pointing at a dead
+  // listing instead of sitting there forever. A fully `reserved` listing
+  // (claimed down to zero) is deliberately out of scope here - whether an
+  // accepted-but-uncollected request on one becomes `no_show` or something
+  // else is a call for the pickup-verification flow, not a time-based
+  // sweep. Scoped to `available` to match listings_expiry_scan_idx exactly,
+  // and bumps `version` like every other mutation so a donor's in-flight
+  // optimistic update racing against this sweep gets a 409 instead of
+  // silently overwriting `expired` back.
+  async expireOverdue(
+    now: Date = new Date(),
+  ): Promise<{ expiredListings: number; expiredRequests: number }> {
+    return this.db.transaction(async (tx) => {
+      const expired = await tx
+        .update(listings)
+        .set({
+          status: 'expired',
+          version: sql`${listings.version} + 1`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(listings.status, 'available'),
+            lte(listings.pickupWindowEnd, now),
+            isNull(listings.deletedAt),
+          ),
+        )
+        .returning({ id: listings.id });
+
+      if (expired.length === 0) {
+        return { expiredListings: 0, expiredRequests: 0 };
+      }
+
+      const expiredRequests = await tx
+        .update(requests)
+        .set({ status: 'expired', updatedAt: now })
+        .where(
+          and(
+            inArray(
+              requests.listingId,
+              expired.map((listing) => listing.id),
+            ),
+            inArray(requests.status, ['pending', 'accepted']),
+          ),
+        )
+        .returning({ id: requests.id });
+
+      return {
+        expiredListings: expired.length,
+        expiredRequests: expiredRequests.length,
+      };
+    });
   }
 
   private buildConditions(
