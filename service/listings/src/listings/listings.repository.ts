@@ -136,6 +136,33 @@ export class ListingsRepository {
     return row.value;
   }
 
+  // Cascades a donor cancelling the listing outright onto its requests: the
+  // donor isn't giving anything out anymore, so every request still in play
+  // (pending, or already accepted and awaiting pickup) becomes superseded -
+  // not declined/cancelled, since neither party *to the request* is the one
+  // who backed out. Terminal requests (declined/cancelled/completed/
+  // no_show/expired/already-superseded) are untouched. Only ever called
+  // against a `draft`/`available` listing (see ALLOWED_TRANSITIONS in
+  // listing-status.util.ts - `reserved`/`collected` listings can't be
+  // cancelled through this endpoint), so remaining_quantity bookkeeping
+  // doesn't matter here: the listing itself is dead either way.
+  async supersedeRequestsForListing(
+    listingId: string,
+    executor: Database = this.db,
+  ): Promise<number> {
+    const result = await executor
+      .update(requests)
+      .set({ status: 'superseded', updatedAt: new Date() })
+      .where(
+        and(
+          eq(requests.listingId, listingId),
+          inArray(requests.status, ['pending', 'accepted']),
+        ),
+      )
+      .returning({ id: requests.id });
+    return result.length;
+  }
+
   // Backs the expiry sweep (ListingExpiryService): flips any listing still
   // `available` once its pickup window has closed - i.e. nobody's request
   // was accepted in time, or it was only ever partially claimed - to

@@ -7,6 +7,8 @@ import {
   eq,
   inArray,
   isNull,
+  ne,
+  notExists,
   or,
   sql,
   type SQL,
@@ -184,6 +186,67 @@ export class RequestsRepository {
       .where(and(eq(requests.id, id), eq(requests.status, 'accepted')))
       .returning({ pickupCodeAttempts: requests.pickupCodeAttempts });
     return row?.pickupCodeAttempts;
+  }
+
+  // Fires when an accept just fully reserved the listing (decrementListingQuantity
+  // returned status: 'reserved'): every other request still pending on it can
+  // never be fulfilled now, so they're superseded rather than left dangling
+  // forever. Scoped to `pending` only - an already-accepted request (partial
+  // fulfillment alongside this one) is untouched, since it's still headed
+  // for its own pickup.
+  async supersedeOtherPending(
+    listingId: string,
+    excludeRequestId: string,
+    executor: Database = this.db,
+  ): Promise<number> {
+    const result = await executor
+      .update(requests)
+      .set({ status: 'superseded', updatedAt: new Date() })
+      .where(
+        and(
+          eq(requests.listingId, listingId),
+          eq(requests.status, 'pending'),
+          ne(requests.id, excludeRequestId),
+        ),
+      )
+      .returning({ id: requests.id });
+    return result.length;
+  }
+
+  // Fires after a request just verified into `completed`: closes the
+  // listing out to `collected` iff nothing else on it is still `accepted`
+  // (awaiting its own pickup) - a single atomic statement, so two verifies
+  // racing on the same listing's last two accepted requests can't both
+  // (mis)judge themselves as "the last one". Scoped to `status = 'reserved'`
+  // so a listing that got reopened to `available` by a concurrent
+  // cancel/no-show (see incrementListingQuantity) is correctly left alone.
+  async markListingCollectedIfDone(
+    listingId: string,
+    executor: Database = this.db,
+  ): Promise<boolean> {
+    const stillAccepted = executor
+      .select({ id: requests.id })
+      .from(requests)
+      .where(
+        and(eq(requests.listingId, listingId), eq(requests.status, 'accepted')),
+      );
+
+    const [updated] = await executor
+      .update(listings)
+      .set({
+        status: 'collected',
+        version: sql`${listings.version} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(listings.id, listingId),
+          eq(listings.status, 'reserved'),
+          notExists(stillAccepted),
+        ),
+      )
+      .returning({ id: listings.id });
+    return !!updated;
   }
 
   // Reverses decrementListingQuantity for a cancelled accepted request. Only

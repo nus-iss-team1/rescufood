@@ -232,6 +232,21 @@ export class ListingsService {
               `listing ${id} was modified since version ${dto.version} was read`,
             );
           }
+
+          // The donor isn't giving this out anymore - every request still
+          // in play on it (pending, or accepted and awaiting pickup) is
+          // moot now.
+          if (dto.status === 'cancelled') {
+            const supersededCount =
+              await this.listingsRepository.supersedeRequestsForListing(id, tx);
+            if (supersededCount > 0) {
+              this.logger.log(
+                { listingId: id, supersededCount },
+                'superseded requests on a cancelled listing',
+              );
+            }
+          }
+
           return { updated, deletedImages };
         },
       );

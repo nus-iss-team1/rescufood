@@ -30,6 +30,8 @@ function makeRepository() {
     decrementListingQuantity: jest.fn(),
     incrementListingQuantity: jest.fn(),
     incrementPickupCodeAttempts: jest.fn(),
+    supersedeOtherPending: jest.fn().mockResolvedValue(0),
+    markListingCollectedIfDone: jest.fn().mockResolvedValue(false),
   };
 }
 
@@ -44,13 +46,19 @@ function makeDb() {
   };
 }
 
+function makeLogger() {
+  return { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
+}
+
 function makeService(repository: ReturnType<typeof makeRepository>) {
   const db = makeDb();
+  const logger = makeLogger();
   const service = new RequestsService(
     repository as unknown as RequestsRepository,
     db as never,
+    logger as never,
   );
-  return { service, db };
+  return { service, db, logger };
 }
 
 const rescueUser: AuthenticatedUser = {
@@ -271,6 +279,57 @@ describe('RequestsService', () => {
         expect.anything(),
       );
       expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(repository.supersedeOtherPending).not.toHaveBeenCalled();
+    });
+
+    it('supersedes other pending requests on the listing when this accept fully reserves it', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.decrementListingQuantity.mockResolvedValue({
+        ...availableListing,
+        status: 'reserved',
+        remainingQuantity: '0.00',
+      });
+      repository.supersedeOtherPending.mockResolvedValue(2);
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      const { service, logger } = makeService(repository);
+
+      await service.decide('request-1', dto, donorUser);
+
+      expect(repository.supersedeOtherPending).toHaveBeenCalledWith(
+        'listing-1',
+        'request-1',
+        expect.anything(),
+      );
+      expect(logger.log).toHaveBeenCalledWith(
+        { listingId: 'listing-1', supersededCount: 2 },
+        expect.stringContaining('superseded'),
+      );
+    });
+
+    it('does not log when nothing else was pending to supersede', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.decrementListingQuantity.mockResolvedValue({
+        ...availableListing,
+        status: 'reserved',
+        remainingQuantity: '0.00',
+      });
+      repository.supersedeOtherPending.mockResolvedValue(0);
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'accepted',
+      });
+      const { service, logger } = makeService(repository);
+
+      await service.decide('request-1', dto, donorUser);
+
+      expect(logger.log).not.toHaveBeenCalled();
     });
 
     it('rejects when a rescue org tries to accept its own request', async () => {
@@ -695,6 +754,7 @@ describe('RequestsService', () => {
           verifiedBy: donorUser.userId,
           collectedQuantity: '5',
         }),
+        expect.anything(),
       );
     });
 
@@ -715,7 +775,49 @@ describe('RequestsService', () => {
         'request-1',
         'accepted',
         expect.objectContaining({ collectedQuantity: '5' }),
+        expect.anything(),
       );
+    });
+
+    it('checks whether the listing can now be marked collected', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      repository.markListingCollectedIfDone.mockResolvedValue(true);
+      const { service, logger } = makeService(repository);
+
+      await service.verifyPickupCode('request-1', { code }, donorUser);
+
+      expect(repository.markListingCollectedIfDone).toHaveBeenCalledWith(
+        'listing-1',
+        expect.anything(),
+      );
+      expect(logger.log).toHaveBeenCalledWith(
+        { listingId: 'listing-1' },
+        expect.stringContaining('collected'),
+      );
+    });
+
+    it('does not log when other accepted requests are still outstanding', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      mockResolveOrgId.mockResolvedValue('org-rescue');
+      repository.updateStatus.mockResolvedValue({
+        ...acceptedRequest,
+        status: 'completed',
+      });
+      repository.markListingCollectedIfDone.mockResolvedValue(false);
+      const { service, logger } = makeService(repository);
+
+      await service.verifyPickupCode('request-1', { code }, donorUser);
+
+      expect(logger.log).not.toHaveBeenCalled();
     });
 
     it('rejects a collectedQuantity greater than what was requested', async () => {

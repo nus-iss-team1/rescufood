@@ -274,6 +274,72 @@ describe('RequestsRepository', () => {
     });
   });
 
+  describe('supersedeOtherPending', () => {
+    it('supersedes other pending requests on the listing, excluding the given one', async () => {
+      const db = makeDb();
+      const updateChain = chain([{ id: 'request-2' }, { id: 'request-3' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      const result = await repository.supersedeOtherPending(
+        'listing-1',
+        'request-1',
+      );
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'superseded' }),
+      );
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" =');
+      expect(sql).toContain('<>'); // excludes the given request id
+      expect(params).toEqual(
+        expect.arrayContaining(['listing-1', 'pending', 'request-1']),
+      );
+      expect(result).toBe(2);
+    });
+
+    it('returns 0 when nothing else was pending', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      await expect(
+        repository.supersedeOtherPending('listing-1', 'request-1'),
+      ).resolves.toBe(0);
+    });
+  });
+
+  describe('markListingCollectedIfDone', () => {
+    it('flips a reserved listing to collected when no accepted requests remain', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([]));
+      const updateChain = chain([{ id: 'listing-1' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      const result = await repository.markListingCollectedIfDone('listing-1');
+
+      expect(db.update).toHaveBeenCalledWith(listings);
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" =');
+      expect(sql).toContain('not exists');
+      expect(params).toContain('reserved');
+      expect(result).toBe(true);
+    });
+
+    it('returns false when the listing is not reserved, or an accepted request remains', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([]));
+      db.update.mockReturnValue(chain([]));
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      await expect(
+        repository.markListingCollectedIfDone('listing-1'),
+      ).resolves.toBe(false);
+    });
+  });
+
   describe('decrementListingQuantity', () => {
     it('updates the listings table, scoped to available and not soft-deleted', async () => {
       const db = makeDb();

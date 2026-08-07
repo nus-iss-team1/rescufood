@@ -204,6 +204,38 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('supersedeRequestsForListing', () => {
+    it('supersedes pending and accepted requests on the listing', async () => {
+      const db = makeDb();
+      const updateChain = chain([{ id: 'request-1' }, { id: 'request-2' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      const result = await repository.supersedeRequestsForListing('listing-1');
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'superseded' }),
+      );
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" in');
+      expect(params).toEqual(
+        expect.arrayContaining(['listing-1', 'pending', 'accepted']),
+      );
+      expect(result).toBe(2);
+    });
+
+    it('returns 0 when nothing was pending or accepted', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.supersedeRequestsForListing('listing-1'),
+      ).resolves.toBe(0);
+    });
+  });
+
   describe('countMany', () => {
     it('returns the row count for the same filters findMany would use', async () => {
       const db = makeDb();

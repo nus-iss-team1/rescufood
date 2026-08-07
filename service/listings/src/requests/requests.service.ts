@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import { resolveOrgId } from '../auth/org-membership.guard';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
@@ -47,6 +48,7 @@ export class RequestsService {
   constructor(
     private readonly requestsRepository: RequestsRepository,
     @Inject(DATABASE) private readonly db: Database,
+    private readonly logger: Logger,
   ) {}
 
   async create(
@@ -149,6 +151,22 @@ export class RequestsService {
             throw new ConflictException(
               `listing ${existing.listingId} is no longer available to accept this request`,
             );
+          }
+          // This accept just claimed the last of it - nobody else's
+          // pending request on this listing can ever be fulfilled now.
+          if (updatedListing.status === 'reserved') {
+            const supersededCount =
+              await this.requestsRepository.supersedeOtherPending(
+                existing.listingId,
+                id,
+                tx,
+              );
+            if (supersededCount > 0) {
+              this.logger.log(
+                { listingId: existing.listingId, supersededCount },
+                'superseded other pending requests - listing fully reserved',
+              );
+            }
           }
         } else if (releasesQuantity && existing.status === 'accepted') {
           await this.requestsRepository.incrementListingQuantity(
@@ -314,20 +332,42 @@ export class RequestsService {
       );
     }
 
-    const updated = await this.requestsRepository.updateStatus(id, 'accepted', {
-      status: 'completed',
-      verifiedBy: user.userId,
-      collectedAt: now,
-      collectedQuantity,
-      pickupCodeAttempts: 0,
-      updatedAt: now,
-    });
-    if (!updated) {
-      throw new ConflictException(
-        `request ${id} was modified since it was read`,
+    return this.db.transaction(async (tx) => {
+      const updated = await this.requestsRepository.updateStatus(
+        id,
+        'accepted',
+        {
+          status: 'completed',
+          verifiedBy: user.userId,
+          collectedAt: now,
+          collectedQuantity,
+          pickupCodeAttempts: 0,
+          updatedAt: now,
+        },
+        tx,
       );
-    }
-    return toPublicRequest(updated);
+      if (!updated) {
+        throw new ConflictException(
+          `request ${id} was modified since it was read`,
+        );
+      }
+
+      // Was this the last accepted request on the listing still awaiting
+      // pickup? If so, the listing itself is now fully collected.
+      const collected =
+        await this.requestsRepository.markListingCollectedIfDone(
+          existing.listingId,
+          tx,
+        );
+      if (collected) {
+        this.logger.log(
+          { listingId: existing.listingId },
+          'listing fully collected - every accepted request has been verified',
+        );
+      }
+
+      return toPublicRequest(updated);
+    });
   }
 
   private async getOrThrow(id: string): Promise<ListingRequest> {
