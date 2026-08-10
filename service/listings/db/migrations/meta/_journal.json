@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785936924788,
+      "tag": "0000_pink_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785936945487,
+      "tag": "0001_cross_service_fks",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786009130875,
+      "tag": "0002_amusing_dark_phoenix",
+      "breakpoints": true
+    }
+  ]
+}
