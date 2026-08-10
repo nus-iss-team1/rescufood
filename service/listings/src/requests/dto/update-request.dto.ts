@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
 // The only four decisions reachable through this endpoint - `superseded`,
@@ -20,17 +21,21 @@ export class UpdateRequestDto {
   // every other state is terminal), so RequestsService.decide CASes on the
   // status it read instead - equivalent optimistic-concurrency protection
   // without asking the caller to echo anything back.
+  @ApiProperty({ enum: requestDecisions })
   @IsIn(requestDecisions)
   status!: RequestDecision;
 
+  @ApiPropertyOptional({ description: 'Only used when status is "declined".' })
   @IsOptional()
   @IsString()
   declineReason?: string;
 
+  @ApiPropertyOptional({ description: 'Only used when status is "cancelled".' })
   @IsOptional()
   @IsString()
   cancellationReason?: string;
 
+  @ApiPropertyOptional({ description: 'Only used when status is "no_show".' })
   @IsOptional()
   @IsString()
   noShowReason?: string;
