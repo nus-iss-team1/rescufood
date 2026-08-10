@@ -19,6 +19,7 @@ function makeRepository() {
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
+    supersedeRequestsForListing: jest.fn().mockResolvedValue(0),
   };
 }
 
@@ -714,6 +715,87 @@ describe('ListingsService', () => {
       await expect(
         service.update('listing-1', { version: 1, status: 'draft' }, [], owner),
       ).resolves.toMatchObject({ status: 'draft' });
+    });
+  });
+
+  describe('update - cancelling a listing supersedes its requests', () => {
+    it('supersedes the pending/accepted requests in the same transaction', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'cancelled',
+        version: 2,
+      });
+      repository.supersedeRequestsForListing.mockResolvedValue(2);
+      const { service, db, logger } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'cancelled' },
+        [],
+        owner,
+      );
+
+      expect(repository.supersedeRequestsForListing).toHaveBeenCalledWith(
+        'listing-1',
+        expect.anything(),
+      );
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(logger.log).toHaveBeenCalledWith(
+        { listingId: 'listing-1', supersededCount: 2 },
+        expect.stringContaining('superseded'),
+      );
+    });
+
+    it('does not log when there was nothing to supersede', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'cancelled',
+        version: 2,
+      });
+      repository.supersedeRequestsForListing.mockResolvedValue(0);
+      const { service, logger } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'cancelled' },
+        [],
+        owner,
+      );
+
+      expect(logger.log).not.toHaveBeenCalled();
+    });
+
+    it('does not cascade for a non-cancelling status update', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'draft',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'available' },
+        [],
+        owner,
+      );
+
+      expect(repository.supersedeRequestsForListing).not.toHaveBeenCalled();
     });
   });
 });

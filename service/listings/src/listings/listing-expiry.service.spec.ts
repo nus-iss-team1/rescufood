@@ -10,9 +10,12 @@ function makeLogger() {
 }
 
 describe('ListingExpiryService', () => {
-  it('logs how many listings were expired when the sweep finds overdue listings', async () => {
+  it('logs how many listings and requests were expired when the sweep finds overdue listings', async () => {
     const repository = makeRepository();
-    repository.expireOverdue.mockResolvedValue(3);
+    repository.expireOverdue.mockResolvedValue({
+      expiredListings: 3,
+      expiredRequests: 2,
+    });
     const logger = makeLogger();
     const service = new ListingExpiryService(
       repository as unknown as ListingsRepository,
@@ -23,14 +26,17 @@ describe('ListingExpiryService', () => {
 
     expect(repository.expireOverdue).toHaveBeenCalled();
     expect(logger.log).toHaveBeenCalledWith(
-      { expiredCount: 3 },
+      { expiredListings: 3, expiredRequests: 2 },
       'expired overdue listings',
     );
   });
 
   it('does not log when nothing was overdue', async () => {
     const repository = makeRepository();
-    repository.expireOverdue.mockResolvedValue(0);
+    repository.expireOverdue.mockResolvedValue({
+      expiredListings: 0,
+      expiredRequests: 0,
+    });
     const logger = makeLogger();
     const service = new ListingExpiryService(
       repository as unknown as ListingsRepository,

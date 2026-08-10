@@ -2,7 +2,7 @@ import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { AuthenticatedUser } from '../common/types/express';
 import type { Database } from '../db/db.module';
-import { listings } from '../db/schema';
+import { listings, requests } from '../db/schema';
 import { ListingsRepository } from './listings.repository';
 
 // Admin bypasses the draft-visibility filter entirely, so most findMany
@@ -60,11 +60,19 @@ function chain(result: unknown) {
 }
 
 function makeDb() {
-  return {
+  const db = {
     select: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+  };
+  return {
+    ...db,
+    // expireOverdue runs inside a transaction - reusing the same mock
+    // object as `tx` lets its `update` mock (set up per-test via
+    // mockReturnValueOnce) serve both the listings and requests updates
+    // issued inside the callback.
+    transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
   };
 }
 
@@ -168,9 +176,14 @@ describe('ListingsRepository', () => {
       const result = await repository.delete('listing-1', 2);
 
       expect(db.update).toHaveBeenCalledWith(listings);
-      expect(updateChain.set).toHaveBeenCalledWith(
-        expect.objectContaining({ deletedAt: expect.any(Date), version: 2 }),
-      );
+      // Asserted by destructuring rather than expect.any(Date) inside
+      // objectContaining - the latter types as `any` and trips
+      // no-unsafe-assignment.
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { deletedAt: unknown; version: number },
+      ];
+      expect(setArg.deletedAt).toBeInstanceOf(Date);
+      expect(setArg.version).toBe(2);
       expect(updateChain.where).toHaveBeenCalled();
       expect(result?.version).toBe(2);
     });
@@ -196,6 +209,38 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('supersedeRequestsForListing', () => {
+    it('supersedes pending and accepted requests on the listing', async () => {
+      const db = makeDb();
+      const updateChain = chain([{ id: 'request-1' }, { id: 'request-2' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      const result = await repository.supersedeRequestsForListing('listing-1');
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'superseded' }),
+      );
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"status" in');
+      expect(params).toEqual(
+        expect.arrayContaining(['listing-1', 'pending', 'accepted']),
+      );
+      expect(result).toBe(2);
+    });
+
+    it('returns 0 when nothing was pending or accepted', async () => {
+      const db = makeDb();
+      db.update.mockReturnValue(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.supersedeRequestsForListing('listing-1'),
+      ).resolves.toBe(0);
+    });
+  });
+
   describe('countMany', () => {
     it('returns the row count for the same filters findMany would use', async () => {
       const db = makeDb();
@@ -218,31 +263,59 @@ describe('ListingsRepository', () => {
   describe('expireOverdue', () => {
     it('flips available listings past their pickup window to expired and bumps their version', async () => {
       const db = makeDb();
-      const updateChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
-      db.update.mockReturnValue(updateChain);
+      const listingsChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
+      const requestsChain = chain([{ id: 'request-1' }]);
+      db.update
+        .mockReturnValueOnce(listingsChain)
+        .mockReturnValueOnce(requestsChain);
       const repository = new ListingsRepository(db as unknown as Database);
       const now = new Date('2026-08-10T00:00:00Z');
 
       const result = await repository.expireOverdue(now);
 
-      expect(db.update).toHaveBeenCalledWith(listings);
-      expect(updateChain.set).toHaveBeenCalledWith(
+      expect(db.update).toHaveBeenNthCalledWith(1, listings);
+      expect(listingsChain.set).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'expired', updatedAt: now }),
       );
-      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      const { sql, params } = renderWhere(listingsChain.where as jest.Mock);
       expect(sql).toContain('"status" =');
       expect(sql).toContain('"pickup_window_end" <=');
       expect(params).toContain('available');
       expect(params).toContain(now.toISOString());
-      expect(result).toBe(2);
+
+      // Same sweep expires that listing's still-open requests too, scoped
+      // to the ids just expired and to pending/accepted (not already
+      // declined/cancelled/etc).
+      expect(db.update).toHaveBeenNthCalledWith(2, requests);
+      expect(requestsChain.set).toHaveBeenCalledWith({
+        status: 'expired',
+        updatedAt: now,
+      });
+      const requestsWhere = renderWhere(requestsChain.where as jest.Mock);
+      expect(requestsWhere.sql).toContain('"listing_id" in');
+      expect(requestsWhere.sql).toContain('"status" in');
+      expect(requestsWhere.params).toEqual(
+        expect.arrayContaining([
+          'listing-1',
+          'listing-2',
+          'pending',
+          'accepted',
+        ]),
+      );
+
+      expect(result).toEqual({ expiredListings: 2, expiredRequests: 1 });
     });
 
-    it('returns 0 when nothing is overdue', async () => {
+    it('returns zero counts and never touches requests when nothing is overdue', async () => {
       const db = makeDb();
-      db.update.mockReturnValue(chain([]));
+      db.update.mockReturnValueOnce(chain([]));
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await expect(repository.expireOverdue()).resolves.toBe(0);
+      await expect(repository.expireOverdue()).resolves.toEqual({
+        expiredListings: 0,
+        expiredRequests: 0,
+      });
+      expect(db.update).toHaveBeenCalledTimes(1);
     });
   });
 

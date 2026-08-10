@@ -219,6 +219,10 @@ export const requests = pgTable(
     pickupCodeHash: text('pickup_code_hash'),
     codeExpiresAt: timestamp('code_expires_at', { withTimezone: true }),
     codeGeneratedBy: uuid('code_generated_by'), // FK -> users.id, whichever party generates it
+    // Failed verify attempts against the current pickupCodeHash. Reset to 0
+    // whenever a new code is generated (or the current one is invalidated
+    // after hitting the attempt cap) - never carries over between codes.
+    pickupCodeAttempts: integer('pickup_code_attempts').notNull().default(0),
     verifiedBy: uuid('verified_by'), // FK -> users.id, whichever party scans/enters it
     collectedQuantity: numeric('collected_quantity', {
       precision: 10,
