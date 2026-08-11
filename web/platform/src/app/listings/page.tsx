@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { forbidden } from "next/navigation";
 import type { Metadata } from "next";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
@@ -98,24 +99,7 @@ export default async function ListingsPage({
     );
   }
   if (me.org.type !== "donor") {
-    return shell(
-      <Notice
-        title="Donors post listings"
-        body={
-          <>
-            {me.org.name} is a rescue partner, so it claims listings rather than
-            posting them.{" "}
-            <Link
-              href="/browse"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Find surplus food
-            </Link>
-            .
-          </>
-        }
-      />,
-    );
+    forbidden();
   }
 
   const { status, view } = await searchParams;

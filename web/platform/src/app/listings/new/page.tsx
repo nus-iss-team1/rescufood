@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { forbidden } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getMe, type Me } from "@/lib/profile";
@@ -82,12 +83,7 @@ export default async function NewListingPage() {
     );
   }
   if (me.org.type !== "donor") {
-    return (
-      <Notice
-        title="Donors post listings"
-        body={`${me.org.name} is a rescue partner, so it claims listings rather than posting them.`}
-      />
-    );
+    forbidden();
   }
 
   return (

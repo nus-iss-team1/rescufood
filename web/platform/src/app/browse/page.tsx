@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { forbidden } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getMe, type Me } from "@/lib/profile";
@@ -85,12 +86,7 @@ export default async function BrowsePage() {
     );
   }
   if (me.org.type !== "rescue_partner") {
-    return (
-      <Notice
-        title="Rescue partners claim listings"
-        body={`${me.org.name} is a food donor, so it posts listings rather than claiming them.`}
-      />
-    );
+    forbidden();
   }
 
   let listings: Listing[] = [];

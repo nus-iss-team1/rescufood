@@ -12,6 +12,8 @@ loadEnvConfig(workspaceRoot, process.env.NODE_ENV !== "production", undefined, t
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // forbidden() and app/forbidden.tsx
+  experimental: { authInterrupts: true },
   transpilePackages: [
     "@rescufood/listings-sdk",
     "@rescufood/profile-sdk",
