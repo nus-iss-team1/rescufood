@@ -734,7 +734,17 @@ Resources:
       Priority: 11
       Conditions:
         - Field: path-pattern
-          Values: [/api/listings/*, /api/requests/*]
+          # Both the bare and /* forms are needed: /api/listings and
+          # /api/requests themselves are routes (POST/GET on the
+          # collection), not just prefixes - path-pattern /api/listings/*
+          # does not match a path with nothing after the slash.
+          Values:
+            [
+              /api/listings,
+              /api/listings/*,
+              /api/requests,
+              /api/requests/*,
+            ]
       Actions:
         - Type: forward
           TargetGroupArn: !Ref ListingsTargetGroup
@@ -747,7 +757,17 @@ Resources:
       Priority: 11
       Conditions:
         - Field: path-pattern
-          Values: [/api/listings/*, /api/requests/*]
+          # Both the bare and /* forms are needed: /api/listings and
+          # /api/requests themselves are routes (POST/GET on the
+          # collection), not just prefixes - path-pattern /api/listings/*
+          # does not match a path with nothing after the slash.
+          Values:
+            [
+              /api/listings,
+              /api/listings/*,
+              /api/requests,
+              /api/requests/*,
+            ]
       Actions:
         - Type: forward
           TargetGroupArn: !Ref ListingsTargetGroup
@@ -846,6 +866,18 @@ Resources:
         - Name: listings
           Image: !Ref ListingsImage
           Essential: true
+          # The app reads a single DATABASE_URL (see src/db/db.module.ts),
+          # unlike profile's Go code which composes its own DSN from
+          # discrete DB_* vars. Composed here instead of passed as one
+          # secret so DB_PASSWORD still flows through the standard ECS
+          # Secrets mechanism - never resolved into the task definition
+          # itself, only into the running container's environment.
+          EntryPoint: ["/bin/sh", "-c"]
+          Command:
+            - >-
+              export
+              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require";
+              exec node dist/main
           PortMappings:
             - ContainerPort: !Ref ListingsPort
               Protocol: tcp
