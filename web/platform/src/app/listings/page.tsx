@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
 import { requireSession } from "@/lib/session";
@@ -11,6 +12,7 @@ import {
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
+import { ListingCards } from "@/components/listings/listing-cards";
 import { ListingList } from "@/components/listings/listing-list";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -27,6 +29,11 @@ export const metadata: Metadata = {
 
 const tabs = ["all", ...listingStatuses] as const;
 
+const views = [
+  { key: "list", label: "List view", Icon: Rows3 },
+  { key: "card", label: "Card view", Icon: LayoutGrid },
+] as const;
+
 function Notice({ title, body }: { title: string; body: React.ReactNode }) {
   return (
     <Card className="mx-auto w-full max-w-lg">
@@ -41,7 +48,7 @@ function Notice({ title, body }: { title: string; body: React.ReactNode }) {
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; view?: string }>;
 }) {
   const session = await requireSession();
 
@@ -102,12 +109,25 @@ export default async function ListingsPage({
     );
   }
 
-  const { status } = await searchParams;
+  const { status, view } = await searchParams;
   const active: (typeof tabs)[number] = tabs.includes(
     status as (typeof tabs)[number],
   )
     ? (status as (typeof tabs)[number])
     : "all";
+  const layout: (typeof views)[number]["key"] =
+    view === "card" ? "card" : "list";
+
+  // Each control keeps the other's selection; defaults stay out of the url.
+  const href = (next: { status?: string; view?: string }) => {
+    const params = new URLSearchParams();
+    const s = next.status ?? active;
+    const v = next.view ?? layout;
+    if (s !== "all") params.set("status", s);
+    if (v !== "list") params.set("view", v);
+    const qs = params.toString();
+    return qs ? `/listings?${qs}` : "/listings";
+  };
   const listings =
     active === "all"
       ? mockListings
@@ -129,41 +149,70 @@ export default async function ListingsPage({
         ]}
       />
 
-      <nav data-animate="field" className="flex flex-wrap gap-2">
-        {tabs.map((tab) => {
-          const count =
-            tab === "all"
-              ? mockListings.length
-              : mockListings.filter((l) => l.status === tab).length;
-          return (
+      <nav
+        data-animate="field"
+        className="flex flex-wrap items-center justify-between gap-2"
+      >
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => {
+            const count =
+              tab === "all"
+                ? mockListings.length
+                : mockListings.filter((l) => l.status === tab).length;
+            return (
+              <Link
+                key={tab}
+                href={href({ status: tab })}
+                aria-current={tab === active ? "page" : undefined}
+                className={cn(
+                  buttonVariants({
+                    variant: tab === active ? "default" : "outline",
+                    size: "sm",
+                  }),
+                  "capitalize",
+                )}
+              >
+                {tab}
+                {count > 0 && (
+                  <span className="ml-1.5 text-xs opacity-70">{count}</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-1" role="group" aria-label="View">
+          {views.map(({ key, label, Icon }) => (
             <Link
-              key={tab}
-              href={tab === "all" ? "/listings" : `/listings?status=${tab}`}
-              aria-current={tab === active ? "page" : undefined}
+              key={key}
+              href={href({ view: key })}
+              aria-current={key === layout ? "true" : undefined}
+              title={label}
               className={cn(
                 buttonVariants({
-                  variant: tab === active ? "default" : "outline",
-                  size: "sm",
+                  variant: key === layout ? "default" : "outline",
+                  size: "icon-sm",
                 }),
-                "capitalize",
               )}
             >
-              {tab}
-              {count > 0 && (
-                <span className="ml-1.5 text-xs opacity-70">{count}</span>
-              )}
+              <Icon className="size-4" aria-hidden />
+              <span className="sr-only">{label}</span>
             </Link>
-          );
-        })}
+          ))}
+        </div>
       </nav>
 
       {/* The list scrolls inside its own region: the header and filters
           stay put, and scrollsmoother rules out position sticky. */}
       <div
         data-animate="field"
-        className="max-h-[60vh] overflow-y-auto pr-1 sm:max-h-[62vh]"
+        className="max-h-[60vh] overflow-y-auto px-1 pb-4 sm:max-h-[62vh]"
       >
-        <ListingList listings={listings} />
+        {layout === "card" ? (
+          <ListingCards listings={listings} />
+        ) : (
+          <ListingList listings={listings} />
+        )}
       </div>
     </AnimateIn>,
   );

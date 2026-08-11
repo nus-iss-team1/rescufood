@@ -1,39 +1,10 @@
 import { CalendarClock, TriangleAlert } from "lucide-react";
 
-import type { Listing, ListingStatus } from "@/lib/mock-listings";
+import type { Listing } from "@/lib/mock-listings";
+import { pickupWindow, statusVariant } from "./listing-format";
 import { Badge } from "@rescufood/ui/components/badge";
 
 import { cn } from "@/lib/utils";
-
-const statusVariant: Record<
-  ListingStatus,
-  "success" | "info" | "outline" | "destructive"
-> = {
-  available: "success",
-  reserved: "info",
-  collected: "outline",
-  expired: "destructive",
-  cancelled: "outline",
-};
-
-const time = new Intl.DateTimeFormat("en-SG", {
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-function pickupWindow(listing: Listing) {
-  const from = new Date(listing.pickupFrom);
-  const to = new Date(listing.pickupTo);
-  const sameDay = from.toDateString() === to.toDateString();
-  return sameDay
-    ? `${time.format(from)} – ${new Intl.DateTimeFormat("en-SG", {
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(to)}`
-    : `${time.format(from)} – ${time.format(to)}`;
-}
 
 export function ListingList({ listings }: { listings: Listing[] }) {
   if (listings.length === 0) {
