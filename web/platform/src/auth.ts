@@ -30,6 +30,16 @@ export const authConfigured = Boolean(
     process.env.AUTH_COGNITO_ISSUER
 );
 
+/** Unix seconds from a Cognito ID token's exp claim. */
+function idTokenExpiry(idToken: string): number | undefined {
+  try {
+    const { exp } = decodeJwt(idToken);
+    return typeof exp === "number" ? exp : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Cognito,
@@ -78,14 +88,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (typeof profile?.["cognito:username"] === "string") {
         token.username = profile["cognito:username"];
       }
-      if (account?.id_token) token.idToken = account.id_token;
+      if (account?.id_token) {
+        token.idToken = account.id_token;
+        token.idTokenExpires = idTokenExpiry(account.id_token);
+      }
       // Credentials sign-in: claims were decoded from the Cognito ID token.
       const u = user as
         | { groups?: string[]; username?: string; idToken?: string }
         | undefined;
       if (Array.isArray(u?.groups)) token.groups = u.groups;
       if (u?.username) token.username = u.username;
-      if (u?.idToken) token.idToken = u.idToken;
+      if (u?.idToken) {
+        token.idToken = u.idToken;
+        token.idTokenExpires = idTokenExpiry(u.idToken);
+      }
+      // Past the Cognito token's expiry: null drops the session cookie.
+      if (
+        typeof token.idTokenExpires === "number" &&
+        Date.now() >= token.idTokenExpires * 1000
+      ) {
+        return null;
+      }
       return token;
     },
     session({ session, token }) {

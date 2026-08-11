@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { auth } from "@/auth";
 import { getMe, type Me } from "@/lib/profile";
+import { requireSession } from "@/lib/session";
 import {
   listingStatuses,
   mockListings,
@@ -44,10 +43,7 @@ export default async function ListingsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/");
-  }
+  const session = await requireSession();
 
   let me: Me | null = null;
   if (session.idToken) {

@@ -1,8 +1,7 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-import { auth } from "@/auth";
 import { getMe, type Me } from "@/lib/profile";
+import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
@@ -81,10 +80,7 @@ function Profile({ me, username }: { me: Me | null; username?: string }) {
 }
 
 export default async function SettingsPage() {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/");
-  }
+  const session = await requireSession();
 
   let me: Me | null = null;
   if (session.idToken) {

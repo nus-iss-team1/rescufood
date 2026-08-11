@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
@@ -10,8 +9,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { auth } from "@/auth";
 import { signOutAction } from "@/app/actions";
+import { requireSession } from "@/lib/session";
 import {
   getMe,
   getMyOrgMembers,
@@ -137,10 +136,7 @@ function Workspace({ org, members }: { org: Org; members: User[] }) {
 }
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/");
-  }
+  const session = await requireSession();
 
   let me: Me | null = null;
   let members: User[] = [];
