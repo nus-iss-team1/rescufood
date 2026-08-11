@@ -22,7 +22,9 @@ import {
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
+import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { OrgCard } from "@/components/dashboard/org-card";
+import { listRequests, type ListingRequest } from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -123,12 +125,24 @@ function Hero({ org }: { org: Org }) {
   );
 }
 
-function Workspace({ org, members }: { org: Org; members: User[] }) {
+function Workspace({
+  org,
+  members,
+  recent,
+}: {
+  org: Org;
+  members: User[];
+  recent: ListingRequest[];
+}) {
   return (
     <>
       <AnimateIn className="grid gap-6 lg:grid-cols-3">
         <Hero org={org} />
         <OrgCard org={org} members={members} />
+      </AnimateIn>
+
+      <AnimateIn className="mt-6">
+        <RecentRequests requests={recent} />
       </AnimateIn>
 
       <div className="mt-10">
@@ -156,6 +170,7 @@ export default async function DashboardPage() {
 
   let me: Me | null = null;
   let members: User[] = [];
+  let recent: ListingRequest[] = [];
   let staleSession = !session.idToken;
   let apiDown = false;
 
@@ -164,6 +179,16 @@ export default async function DashboardPage() {
       me = await getMe(session.idToken);
       if (me.org?.status === "approved") {
         members = await getMyOrgMembers(session.idToken);
+        try {
+          const page = await listRequests(session.idToken, {
+            sortBy: "updatedAt",
+            sortOrder: "desc",
+            limit: 5,
+          });
+          recent = page.items;
+        } catch {
+          // The card renders empty rather than taking the page down.
+        }
       }
     } catch (err) {
       if (err instanceof ProfileApiError && err.status === 401) {
@@ -266,7 +291,7 @@ export default async function DashboardPage() {
           </Card>
         </AnimateIn>
       ) : me.org.status === "approved" ? (
-        <Workspace org={me.org} members={members} />
+        <Workspace org={me.org} members={members} recent={recent} />
       ) : (
         <AnimateIn>
           <Notice
