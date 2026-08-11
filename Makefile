@@ -119,7 +119,7 @@ aws-resume: ## start rds, wait for it, then scale ecs services back to one
 test: ## backend tests plus frontend type-checks and lint
 	cd service/profile && go vet ./... && go test ./...
 	cd web/sdk && npm run check
-	cd web/listings-sdk && npm run check
+	cd web/listings-sdk && npm run check && npm run check:contract
 	cd web/ui && npm run check
 	cd web/platform && npx tsc --noEmit && npm run lint
 	cd web/admin-console && npm run build
