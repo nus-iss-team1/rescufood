@@ -19,9 +19,10 @@ import {
 
 const base = process.env.LISTINGS_API_URL ?? "http://localhost:3002";
 
-// The listings service is not deployed yet, so the sdk serves its own
-// sample data. Set LISTINGS_MOCK=false to call the real one.
-const mock = process.env.LISTINGS_MOCK !== "false";
+// The listings service is not deployed yet, so every call is served by
+// the sdk's stand-in. Flip to false once it ships and LISTINGS_API_URL
+// points at it.
+const mock: boolean = true;
 
 // One store for the process, so a request filed on one page is there on
 // the next. Real clients are per-call because they carry the caller's token.
