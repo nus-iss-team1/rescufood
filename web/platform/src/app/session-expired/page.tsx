@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { AnimateIn } from "@/components/animate-in";
+import { PageShell } from "@/components/page-shell";
 import { AutoRedirect } from "@/components/auth/auto-redirect";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -20,12 +21,14 @@ export const metadata: Metadata = {
 
 export default function SessionExpiredPage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex flex-1 items-center justify-center px-6 py-16">
-        <AnimateIn className="w-full max-w-md">
+    <>
+      <PageShell width="narrow">
+        <AnimateIn>
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Your session has expired</CardTitle>
+              <CardTitle className="text-2xl">
+                Your session has expired
+              </CardTitle>
               <CardDescription>
                 You have been signed out for security. Sign in again to pick up
                 where you left off.
@@ -39,9 +42,9 @@ export default function SessionExpiredPage() {
             </CardContent>
           </Card>
         </AnimateIn>
-      </main>
+      </PageShell>
       {/* Redirects without javascript. */}
       <meta httpEquiv="refresh" content="5;url=/login" />
-    </div>
+    </>
   );
 }
