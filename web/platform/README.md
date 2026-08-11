@@ -43,6 +43,8 @@ Both web apps share [`web/.env`](../.env.example) — copy
 | `AUTH_COGNITO_ID` | Cognito app client id | `WebClientId` stack output |
 | `AUTH_COGNITO_SECRET` | Cognito app client secret | Cognito console / CLI (below) |
 | `AUTH_COGNITO_ISSUER` | OIDC issuer URL | `Issuer` stack output |
+| `PROFILE_API_URL` | Profile service base URL | `http://localhost:3001` in dev |
+| `LISTINGS_API_URL` | Listings service base URL | `http://localhost:3002` in dev |
 
 Fetch everything from the deployed stack in one go:
 
@@ -60,7 +62,7 @@ SECRET=$(aws cognito-idp describe-user-pool-client --region $REGION \
   --user-pool-id "$POOL" --client-id "$CLIENT" \
   --query "UserPoolClient.ClientSecret" --output text)
 
-printf 'AUTH_SECRET=%s\nAUTH_COGNITO_ID=%s\nAUTH_COGNITO_SECRET=%s\nAUTH_COGNITO_ISSUER=%s\nPROFILE_API_URL=http://localhost:3001\n\nVITE_AWS_REGION=%s\nVITE_COGNITO_CLIENT_ID=%s\nVITE_PROFILE_API_URL=http://localhost:3001\n' \
+printf 'AUTH_SECRET=%s\nAUTH_COGNITO_ID=%s\nAUTH_COGNITO_SECRET=%s\nAUTH_COGNITO_ISSUER=%s\nPROFILE_API_URL=http://localhost:3001\nLISTINGS_API_URL=http://localhost:3002\n\nVITE_AWS_REGION=%s\nVITE_COGNITO_CLIENT_ID=%s\nVITE_PROFILE_API_URL=http://localhost:3001\n' \
   "$(openssl rand -base64 32)" "$CLIENT" "$SECRET" "$ISSUER" "$REGION" "$ADMIN" > ../.env
 ```
 
