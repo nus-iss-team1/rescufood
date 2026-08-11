@@ -106,7 +106,17 @@ function Hero({ org }: { org: Org }) {
             </Link>
           </>
         ) : (
-          <Button disabled>{hero.title}</Button>
+          <>
+            <Link href="/browse" className={cn(buttonVariants())}>
+              Find surplus food
+            </Link>
+            <Link
+              href="/requests"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Your requests
+            </Link>
+          </>
         )}
       </CardContent>
     </Card>
