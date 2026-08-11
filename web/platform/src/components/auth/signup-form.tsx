@@ -29,7 +29,6 @@ function DetailsStep({
           id="username"
           name="username"
           autoComplete="username"
-          placeholder="yourusername"
           minLength={3}
           maxLength={32}
           pattern="[a-zA-Z0-9._\-]+"

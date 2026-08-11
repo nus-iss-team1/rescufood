@@ -6,7 +6,6 @@ import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { PasswordForm } from "@/components/settings/password-form";
-import { Badge } from "@rescufood/ui/components/badge";
 import {
   Card,
   CardContent,
@@ -52,14 +51,6 @@ function Profile({ me, username }: { me: Me | null; username?: string }) {
             me.org ? (
               <span className="flex flex-wrap items-center gap-2">
                 {me.org.name}
-                <Badge variant="secondary">
-                  {me.org.type === "donor" ? "Food donor" : "Rescue partner"}
-                </Badge>
-                {me.org.status !== "approved" && (
-                  <Badge variant="outline" className="capitalize">
-                    {me.org.status}
-                  </Badge>
-                )}
               </span>
             ) : (
               "None"

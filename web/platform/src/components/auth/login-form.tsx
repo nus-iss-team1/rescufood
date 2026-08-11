@@ -21,7 +21,6 @@ export function LoginForm() {
           id="username"
           name="username"
           autoComplete="username"
-          placeholder="yourusername"
           required
         />
       </div>
