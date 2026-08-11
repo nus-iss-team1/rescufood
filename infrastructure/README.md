@@ -66,7 +66,7 @@ independently at any time.
   is included in tokens (`cognito:groups` claim) for role checks.
 
 The frontend consumes the stack via environment variables (see
-`web/platform/.env.example`):
+`web/.env.example`):
 
 | Frontend env var | Source |
 |---|---|
@@ -110,7 +110,7 @@ Two optional Secrets Manager secrets, passed by ARN:
   "password": "<PAT with read:packages>"}`. Making the package public
   (GitHub → Packages → frontend → settings) avoids this entirely.
 - **App secrets** (`AppSecretsArn`) — one secret holding the four auth
-  variables from `web/platform/.env.example` as JSON keys: `AUTH_SECRET`,
+  variables from `web/.env.example` as JSON keys: `AUTH_SECRET`,
   `AUTH_COGNITO_ID`, `AUTH_COGNITO_SECRET`, `AUTH_COGNITO_ISSUER`.
 
 Caveat while the ALB is HTTP-only: Cognito rejects non-HTTPS callback

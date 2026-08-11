@@ -33,7 +33,7 @@ preflight:
 			exit 1; \
 		fi; \
 	done
-	@for f in service/profile/.env web/platform/.env.local web/admin-console/.env; do \
+	@for f in service/profile/.env web/.env; do \
 		if [ ! -f "$$f" ]; then \
 			echo "missing $$f - copy the .env.example next to it and fill it in"; \
 			exit 1; \

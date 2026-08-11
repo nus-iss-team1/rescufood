@@ -12,18 +12,19 @@ it locally against the environment you are administering
 
 ```sh
 npm install
-cp .env.example .env   # fill in the values below
-npm run dev            # http://localhost:5173
+cp ../.env.example ../.env   # fill in the values below
+npm run dev                  # http://localhost:5173
 ```
 
 | Variable | Value |
 | --- | --- |
 | `VITE_AWS_REGION` | `ap-southeast-1` |
 | `VITE_COGNITO_CLIENT_ID` | `AdminConsoleClientId` from the IAM stack |
-| `VITE_API_BASE` | `http://localhost:3001`, or the ALB URL for deployed dev |
+| `VITE_PROFILE_API_URL` | `http://localhost:3001`, or the ALB URL for deployed dev |
 
-Vite reads `.env` at boot, so restart after editing it. Sign in with a
-Cognito account in the `admin` group; the IAM stack seeds one.
+Both web apps share [`web/.env`](../.env.example); Vite reads it at boot,
+so restart after editing it. Sign in with a Cognito account in the
+`admin` group; the IAM stack seeds one.
 
 Against a deployed environment, its `ExtraCorsOrigins` must list
 `http://localhost:5173`.

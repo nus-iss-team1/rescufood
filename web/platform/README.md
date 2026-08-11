@@ -22,9 +22,9 @@ auth entry points are simply disabled.
 ## Quick start
 
 ```sh
-cd frontend
+cd platform
 npm install
-cp .env.example .env.local   # then fill in the values (next section)
+cp ../.env.example ../.env   # then fill in the values (next section)
 npm run dev
 ```
 
@@ -34,7 +34,8 @@ registers those two.
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local` (gitignored) and fill in:
+Both web apps share [`web/.env`](../.env.example) — copy
+`web/.env.example` to `web/.env` (gitignored) and fill in:
 
 | Variable | What it is | Where it comes from |
 |---|---|---|
@@ -51,14 +52,16 @@ POOL=$(aws cloudformation describe-stacks --region $REGION --stack-name rescufoo
   --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
 CLIENT=$(aws cloudformation describe-stacks --region $REGION --stack-name rescufood-dev-iam \
   --query "Stacks[0].Outputs[?OutputKey=='WebClientId'].OutputValue" --output text)
+ADMIN=$(aws cloudformation describe-stacks --region $REGION --stack-name rescufood-dev-iam \
+  --query "Stacks[0].Outputs[?OutputKey=='AdminConsoleClientId'].OutputValue" --output text)
 ISSUER=$(aws cloudformation describe-stacks --region $REGION --stack-name rescufood-dev-iam \
   --query "Stacks[0].Outputs[?OutputKey=='Issuer'].OutputValue" --output text)
 SECRET=$(aws cognito-idp describe-user-pool-client --region $REGION \
   --user-pool-id "$POOL" --client-id "$CLIENT" \
   --query "UserPoolClient.ClientSecret" --output text)
 
-printf 'AUTH_SECRET=%s\nAUTH_COGNITO_ID=%s\nAUTH_COGNITO_SECRET=%s\nAUTH_COGNITO_ISSUER=%s\n' \
-  "$(openssl rand -base64 32)" "$CLIENT" "$SECRET" "$ISSUER" > .env.local
+printf 'AUTH_SECRET=%s\nAUTH_COGNITO_ID=%s\nAUTH_COGNITO_SECRET=%s\nAUTH_COGNITO_ISSUER=%s\nPROFILE_API_URL=http://localhost:3001\n\nVITE_AWS_REGION=%s\nVITE_COGNITO_CLIENT_ID=%s\nVITE_PROFILE_API_URL=http://localhost:3001\n' \
+  "$(openssl rand -base64 32)" "$CLIENT" "$SECRET" "$ISSUER" "$REGION" "$ADMIN" > ../.env
 ```
 
 > The IAM stack is replaced (not updated) for certain pool changes — if
@@ -112,7 +115,7 @@ user, port 3000):
 
 ```sh
 docker build -t rescufood-frontend .
-docker run --rm -p 3000:3000 --env-file .env.local rescufood-frontend
+docker run --rm -p 3000:3000 --env-file ../.env rescufood-frontend
 ```
 
 CI builds and pushes the image to GHCR
