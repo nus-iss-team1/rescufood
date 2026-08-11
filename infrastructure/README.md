@@ -229,6 +229,32 @@ The backend consumes the stack through the `DbEndpoint`, `DbPort`,
 override `MultiAz=true`, `DeletionProtection=true` and a larger instance
 class in `parameters/data-prod.json`.
 
+### Listing images bucket
+
+The same stack provisions `rescufood-<env>-listing-images-<account-id>`,
+the S3 bucket `service/listings`' `S3Service` reads and writes
+(`src/storage/s3.service.ts`). The account id suffix exists only because
+S3 bucket names are unique across all of AWS, not because the bucket is
+shared between environments.
+
+- **Private** — all four public-access-block settings on, no bucket
+  policy. Images are served through short-lived presigned GET URLs
+  generated on read; nothing is ever fetched directly from the bucket.
+- **SSE-S3 encryption** at rest.
+- **No CORS configuration** — uploads go through the listings service
+  (`multipart/form-data` to the API, which then calls `PutObjectCommand`
+  server-side), so the browser never talks to S3 directly.
+- **`DeletionPolicy: Retain`** — same reasoning as the database's
+  snapshot policy: deleting the stack must not be able to take listing
+  images with it. CloudFormation also refuses to delete a non-empty
+  bucket regardless.
+
+Not yet wired up: no task role has `s3:PutObject`/`GetObject`/
+`DeleteObject` on this bucket (the listings service has no ECS presence
+yet — see the compute stack section above), and `S3_BUCKET_NAME` in
+`service/listings/.env.example` still needs to be set to the `BucketName`
+output once a consuming stack exists.
+
 ## Deploying (not yet executed)
 
 All deploy commands are idempotent: `aws cloudformation deploy` creates the
