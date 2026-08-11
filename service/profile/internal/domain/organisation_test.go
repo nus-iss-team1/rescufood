@@ -29,7 +29,7 @@ func TestNewOrganisation(t *testing.T) {
 		{"missing domain", func(p *NewOrganisationParams) { p.Domain = "" }, true},
 		{"domain with @", func(p *NewOrganisationParams) { p.Domain = "ops@freshmart.sg" }, true},
 		{"domain without dot", func(p *NewOrganisationParams) { p.Domain = "freshmart" }, true},
-		{"public email domain", func(p *NewOrganisationParams) { p.Domain = "gmail.com" }, true},
+		{"public email domain", func(p *NewOrganisationParams) { p.Domain = "yahoo.com" }, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

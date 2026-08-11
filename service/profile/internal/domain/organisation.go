@@ -49,9 +49,7 @@ type NewOrganisationParams struct {
 
 // publicEmailDomains cannot be claimed as an organisation domain.
 var publicEmailDomains = map[string]bool{
-	"gmail.com":   true,
 	"yahoo.com":   true,
-	"hotmail.com": true,
 	"outlook.com": true,
 	"icloud.com":  true,
 }
