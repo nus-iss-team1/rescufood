@@ -5,7 +5,6 @@
 FROM node:25-alpine AS deps
 WORKDIR /app/platform
 COPY sdk /app/sdk
-COPY listings-sdk /app/listings-sdk
 COPY ui /app/ui
 # The linked ui package resolves its own runtime deps from /app/ui.
 RUN cd /app/ui && npm ci --omit=dev

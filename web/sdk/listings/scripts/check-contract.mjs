@@ -10,7 +10,7 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repo = join(here, "..", "..", "..");
+const repo = join(here, "..", "..", "..", "..");
 const types = join(here, "..", "src", "types.ts");
 const svc = (...p) => join(repo, "service", "listings", "src", ...p);
 
@@ -175,7 +175,7 @@ compareValues(
 
 if (drift.length > 0) {
   console.error(
-    `\n${drift.length} drift(s). Update web/listings-sdk/src to match service/listings.`
+    `\n${drift.length} drift(s). Update web/sdk/listings/src to match service/listings.`
   );
   process.exit(1);
 }

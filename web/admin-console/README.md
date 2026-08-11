@@ -3,7 +3,7 @@
 React SPA for platform administrators: approve organisations, and
 suspend or reactivate members. Every action requires a reason.
 
-Uses [`@rescufood/profile-sdk`](../sdk) for the API and
+Uses [`@rescufood/profile-sdk`](../sdk/profile) for the API and
 [`@rescufood/ui`](../ui) for components. It is **not deployed** — run
 it locally against the environment you are administering
 ([ADR 0001](../../docs/adr/0001-keep-the-admin-console-local.md)).
