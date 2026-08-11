@@ -10,32 +10,39 @@ SERVICES ?= web-platform profile
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev preflight db db-down migrate run-profile run-platform run-admin \
-	test aws-status aws-pause aws-resume
+.PHONY: help dev preflight db db-down migrate run-profile run-listings \
+	run-platform run-admin test aws-status aws-pause aws-resume
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
 
-dev: preflight db ## run postgres and all three services (ctrl-c stops the services)
+dev: preflight db ## run postgres and all four services (ctrl-c stops the services)
 	@echo ""
 	@echo "  platform       http://localhost:3000"
 	@echo "  admin console  http://localhost:5173"
 	@echo "  profile api    http://localhost:3001"
+	@echo "  listings api   http://localhost:3002 (docs at /api/listings/docs)"
 	@echo "  postgres       localhost:5432 (stays up after ctrl-c: make db-down)"
 	@echo ""
-	@$(MAKE) --no-print-directory -j3 run-profile run-platform run-admin
+	@$(MAKE) --no-print-directory -j4 run-profile run-listings run-platform run-admin
 
 preflight:
-	@for port in 3000 3001 5173; do \
+	@for port in 3000 3001 3002 5173; do \
 		pid=$$(lsof -nP -ti "tcp:$$port" -s tcp:LISTEN 2>/dev/null); \
 		if [ -n "$$pid" ]; then \
 			echo "port $$port is already in use by pid $$pid - stop it first: kill $$pid"; \
 			exit 1; \
 		fi; \
 	done
-	@for f in service/profile/.env web/.env; do \
+	@for f in service/profile/.env service/listings/.env web/.env; do \
 		if [ ! -f "$$f" ]; then \
 			echo "missing $$f - copy the .env.example next to it and fill it in"; \
+			exit 1; \
+		fi; \
+	done
+	@for d in service/listings web/platform web/admin-console; do \
+		if [ ! -d "$$d/node_modules" ]; then \
+			echo "missing $$d/node_modules - run npm install in $$d"; \
 			exit 1; \
 		fi; \
 	done
@@ -50,9 +57,13 @@ db-down: ## stop postgres (data volume survives)
 
 migrate: db ## apply pending database migrations locally
 	cd service/profile && go run ./cmd/migrate up
+	cd service/listings && npm run db:migrate
 
 run-profile:
 	@cd service/profile && go run ./cmd/server 2>&1 | awk '{ printf "\033[32m[profile]\033[0m %s\n", $$0; fflush() }'
+
+run-listings:
+	@cd service/listings && npm run start:dev 2>&1 | awk '{ printf "\033[36m[listings]\033[0m %s\n", $$0; fflush() }'
 
 run-platform:
 	@cd web/platform && npm run dev 2>&1 | awk '{ printf "\033[34m[platform]\033[0m %s\n", $$0; fflush() }'
@@ -118,6 +129,7 @@ aws-resume: ## start rds, wait for it, then scale ecs services back to one
 
 test: ## backend tests plus frontend type-checks and lint
 	cd service/profile && go vet ./... && go test ./...
+	cd service/listings && npm test
 	cd web/sdk && npm run check
 	cd web/listings-sdk && npm run check && npm run check:contract
 	cd web/ui && npm run check
