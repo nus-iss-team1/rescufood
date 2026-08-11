@@ -14,7 +14,7 @@ export async function SiteHeader() {
     <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between px-6">
         <Link
-          href="/"
+          href={session?.user ? "/dashboard" : "/"}
           className="text-base font-bold tracking-tight text-foreground"
         >
           RescuFood
