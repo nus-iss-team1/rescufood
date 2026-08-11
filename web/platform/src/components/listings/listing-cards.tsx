@@ -1,25 +1,32 @@
-import { CalendarClock, ImageOff, TriangleAlert } from "lucide-react";
+import { CalendarClock, MapPin, TriangleAlert } from "lucide-react";
+import type { Listing } from "@rescufood/listings-sdk";
 
-import type { Listing } from "@/lib/mock-listings";
-import { pickupWindow, statusVariant } from "./listing-format";
+import {
+  categoryLabels,
+  listingStatusVariant,
+  pickupWindow,
+  quantity,
+} from "@/lib/listing-labels";
+import { ListingPhoto } from "@/components/listings/listing-photo";
 import { Badge } from "@rescufood/ui/components/badge";
 import { cn } from "@/lib/utils";
 
-/** Stands in until listings carry images. */
-function Placeholder() {
-  return (
-    <div className="flex aspect-video items-center justify-center rounded-lg bg-muted">
-      <ImageOff className="size-6 text-muted-foreground" aria-hidden />
-      <span className="sr-only">No photo yet</span>
-    </div>
-  );
-}
-
-export function ListingCards({ listings }: { listings: Listing[] }) {
+export function ListingCards({
+  listings,
+  action,
+  showStatus = true,
+  empty = "Nothing here yet.",
+}: {
+  listings: Listing[];
+  /** Rendered at the foot of each card, e.g. a request button. */
+  action?: (listing: Listing) => React.ReactNode;
+  showStatus?: boolean;
+  empty?: string;
+}) {
   if (listings.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
-        <p className="text-sm text-muted-foreground">Nothing here yet.</p>
+        <p className="text-sm text-muted-foreground">{empty}</p>
       </div>
     );
   }
@@ -32,28 +39,38 @@ export function ListingCards({ listings }: { listings: Listing[] }) {
           data-animate="field"
           className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
         >
-          <Placeholder />
+          <ListingPhoto listing={listing} />
 
           <div className="flex items-start justify-between gap-2">
-            <span className="font-medium">{listing.title}</span>
-            <Badge
-              variant={statusVariant[listing.status]}
-              className="shrink-0 capitalize"
-            >
-              {listing.status}
-            </Badge>
+            <span className="font-medium">{listing.description}</span>
+            {showStatus && (
+              <Badge
+                variant={listingStatusVariant[listing.status]}
+                className="shrink-0 capitalize"
+              >
+                {listing.status}
+              </Badge>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{listing.category}</Badge>
+            <Badge variant="secondary">
+              {categoryLabels[listing.category]}
+            </Badge>
             <span className="text-sm text-muted-foreground">
-              {listing.quantity}
+              {quantity(listing.remainingQuantity, listing.unit)}
             </span>
           </div>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <CalendarClock className="size-4 shrink-0" aria-hidden />
-            Pickup {pickupWindow(listing)}
+            Pickup{" "}
+            {pickupWindow(listing.pickupWindowStart, listing.pickupWindowEnd)}
+          </p>
+
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="size-4 shrink-0" aria-hidden />
+            {listing.pickupLocation}
           </p>
 
           {/* Always rendered so cards with and without allergens line up. */}
@@ -70,9 +87,13 @@ export function ListingCards({ listings }: { listings: Listing[] }) {
               : "No allergens declared"}
           </p>
 
-          <p className="mt-auto text-xs text-muted-foreground">
-            {listing.handling}
-          </p>
+          {listing.handlingInstructions && (
+            <p className="text-xs text-muted-foreground">
+              {listing.handlingInstructions}
+            </p>
+          )}
+
+          {action && <div className="mt-auto pt-1">{action(listing)}</div>}
         </li>
       ))}
     </ul>

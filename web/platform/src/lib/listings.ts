@@ -2,7 +2,8 @@ import "server-only";
 
 import {
   ApiError,
-  ListingsClient,
+  createListingsClient,
+  type ListingsApi,
   type Listing,
   type ListingQuery,
   type ListingRequest,
@@ -18,8 +19,20 @@ import {
 
 const base = process.env.LISTINGS_API_URL ?? "http://localhost:3002";
 
+// The listings service is not deployed yet, so the sdk serves its own
+// sample data. Set LISTINGS_MOCK=false to call the real one.
+const mock = process.env.LISTINGS_MOCK !== "false";
+
+// One store for the process, so a request filed on one page is there on
+// the next. Real clients are per-call because they carry the caller's token.
+let mockClient: ListingsApi | undefined;
+
 function client(idToken: string) {
-  return new ListingsClient({ baseUrl: base, getToken: () => idToken });
+  if (mock) {
+    mockClient ??= createListingsClient({ baseUrl: base, mock: true });
+    return mockClient;
+  }
+  return createListingsClient({ baseUrl: base, getToken: () => idToken });
 }
 
 export { ApiError as ListingsApiError };

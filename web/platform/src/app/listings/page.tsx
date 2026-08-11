@@ -4,11 +4,8 @@ import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
 import { requireSession } from "@/lib/session";
-import {
-  listingStatuses,
-  mockListings,
-  type ListingStatus,
-} from "@/lib/mock-listings";
+import { listingStatuses, type ListingStatus } from "@rescufood/listings-sdk";
+import { listListings, type Listing } from "@/lib/listings";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
@@ -104,7 +101,19 @@ export default async function ListingsPage({
     return shell(
       <Notice
         title="Donors post listings"
-        body={`${me.org.name} is a rescue partner, so it claims listings rather than posting them. Browsing and claiming arrives with the listing service.`}
+        body={
+          <>
+            {me.org.name} is a rescue partner, so it claims listings rather than
+            posting them.{" "}
+            <Link
+              href="/browse"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Find surplus food
+            </Link>
+            .
+          </>
+        }
       />,
     );
   }
@@ -128,10 +137,25 @@ export default async function ListingsPage({
     const qs = params.toString();
     return qs ? `/listings?${qs}` : "/listings";
   };
+  // Every status, so the tab counts are right; the service has no
+  // "my organisation" filter beyond the donor's name.
+  let all: Listing[] = [];
+  let unavailable = false;
+  try {
+    const page = await listListings(session.idToken!, {
+      donorOrgName: me.org.name,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      limit: 100,
+    });
+    all = page.items;
+  } catch {
+    unavailable = true;
+  }
   const listings =
     active === "all"
-      ? mockListings
-      : mockListings.filter((l) => l.status === (active as ListingStatus));
+      ? all
+      : all.filter((l) => l.status === (active as ListingStatus));
 
   return shell(
     <AnimateIn className="flex flex-col gap-6">
@@ -151,14 +175,14 @@ export default async function ListingsPage({
 
       <nav
         data-animate="field"
-        className="flex flex-wrap items-center justify-between gap-2"
+        className="flex items-start justify-between gap-3"
       >
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => {
             const count =
               tab === "all"
-                ? mockListings.length
-                : mockListings.filter((l) => l.status === tab).length;
+                ? all.length
+                : all.filter((l) => l.status === tab).length;
             return (
               <Link
                 key={tab}
@@ -181,7 +205,7 @@ export default async function ListingsPage({
           })}
         </div>
 
-        <div className="flex gap-1" role="group" aria-label="View">
+        <div className="flex shrink-0 gap-1" role="group" aria-label="View">
           {views.map(({ key, label, Icon }) => (
             <Link
               key={key}
@@ -208,10 +232,15 @@ export default async function ListingsPage({
         data-animate="field"
         className="max-h-[60vh] overflow-y-auto px-1 pb-4 sm:max-h-[62vh]"
       >
-        {layout === "card" ? (
-          <ListingCards listings={listings} />
+        {unavailable ? (
+          <Notice
+            title="Listings service unavailable"
+            body="We couldn't load your listings. Please try again shortly."
+          />
+        ) : layout === "card" ? (
+          <ListingCards listings={listings} empty="No listings here yet." />
         ) : (
-          <ListingList listings={listings} />
+          <ListingList listings={listings} empty="No listings here yet." />
         )}
       </div>
     </AnimateIn>,
