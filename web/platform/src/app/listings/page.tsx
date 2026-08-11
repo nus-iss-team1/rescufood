@@ -12,7 +12,7 @@ import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { ListingList } from "@/components/listings/listing-list";
-import { Button, buttonVariants } from "@rescufood/ui/components/button";
+import { buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
   CardDescription,
@@ -118,7 +118,11 @@ export default async function ListingsPage({
       <PageHeader
         title="Your listings"
         subtitle={describeOrg(me)}
-        action={<Button disabled>Post surplus food</Button>}
+        action={
+          <Link href="/listings/new" className={cn(buttonVariants())}>
+            Create listing
+          </Link>
+        }
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Your listings" },

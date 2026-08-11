@@ -93,14 +93,20 @@ function Hero({ org }: { org: Org }) {
         <CardDescription>{hero.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-3">
-        <Button disabled>{hero.title}</Button>
-        {org.type === "donor" && (
-          <Link
-            href="/listings"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Your listings
-          </Link>
+        {org.type === "donor" ? (
+          <>
+            <Link href="/listings/new" className={cn(buttonVariants())}>
+              Create listing
+            </Link>
+            <Link
+              href="/listings"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Your listings
+            </Link>
+          </>
+        ) : (
+          <Button disabled>{hero.title}</Button>
         )}
       </CardContent>
     </Card>
