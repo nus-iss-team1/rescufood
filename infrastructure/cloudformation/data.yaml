@@ -126,7 +126,11 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Sub ${ProjectName}-${EnvironmentName}-listing-images-${AWS::AccountId}
+      # No account-id suffix: bucket names are unique across all of AWS,
+      # not just this account, so a name collision is possible if another
+      # AWS customer ever claims this exact name. Accepted for a shorter,
+      # readable name - checked available at commit time.
+      BucketName: !Sub ${ProjectName}-${EnvironmentName}-listing-images
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:

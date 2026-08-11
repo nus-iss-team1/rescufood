@@ -284,11 +284,13 @@ class in `parameters/data-prod.json`.
 
 ### Listing images bucket
 
-The same stack provisions `rescufood-<env>-listing-images-<account-id>`,
-the S3 bucket `service/listings`' `S3Service` reads and writes
-(`src/storage/s3.service.ts`). The account id suffix exists only because
-S3 bucket names are unique across all of AWS, not because the bucket is
-shared between environments.
+The same stack provisions `rescufood-<env>-listing-images`, the S3
+bucket `service/listings`' `S3Service` reads and writes
+(`src/storage/s3.service.ts`). S3 bucket names are unique across all of
+AWS, not just this account, so this name is only safe as long as no
+other AWS customer claims it first - checked available before each
+environment's first deploy. If a collision ever blocks a deploy, add an
+account-id or random suffix in `data.yaml`'s `BucketName`.
 
 - **Private** — all four public-access-block settings on, no bucket
   policy. Images are served through short-lived presigned GET URLs
