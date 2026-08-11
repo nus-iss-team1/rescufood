@@ -11,10 +11,14 @@ on:
       - ".github/workflows/reusable-sast.yml"
       - ".github/workflows/reusable-dast.yml"
       - ".github/zap/**"
-  schedule:
-    # Mondays 02:00 SGT - runs the active (full) ZAP scan.
-    - cron: "0 18 * * 0"
   workflow_dispatch:
+    inputs:
+      scan-type:
+        description: ZAP scan type. Active attacks run only on request.
+        required: false
+        default: baseline
+        type: choice
+        options: [baseline, full]
 
 concurrency:
   group: platform-ci-${{ github.ref }}
@@ -80,7 +84,8 @@ jobs:
       port: 3000
       health-path: /
       scan-path: /
-      scan-type: ${{ github.event_name == 'schedule' && 'full' || 'baseline' }}
+      # Empty on pull requests, where only the passive scan makes sense.
+      scan-type: ${{ inputs.scan-type || 'baseline' }}
       fail-on-findings: false
       # Cognito variables are left unset, so the app renders sign-in as disabled.
       runtime-env: |
