@@ -212,3 +212,25 @@ export interface VerifyPickup {
   /** Defaults to the full requested quantity when omitted. */
   collectedQuantity?: number;
 }
+
+/** Every call the platform makes, so a stand-in can satisfy the same shape. */
+export interface ListingsApi {
+  listListings(query?: ListingQuery): Promise<Paginated<Listing>>;
+  getListing(id: string): Promise<Listing>;
+  createListing(listing: NewListing, images?: Blob[]): Promise<Listing>;
+  updateListing(
+    id: string,
+    update: ListingUpdate,
+    images?: Blob[]
+  ): Promise<Listing>;
+  deleteListing(id: string): Promise<void>;
+  listRequests(query?: RequestQuery): Promise<Paginated<ListingRequest>>;
+  getRequest(id: string): Promise<ListingRequest>;
+  createRequest(request: NewRequest): Promise<ListingRequest>;
+  decideRequest(
+    id: string,
+    decision: RequestDecisionInput
+  ): Promise<ListingRequest>;
+  generatePickupCode(id: string): Promise<PickupCode>;
+  verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
+}

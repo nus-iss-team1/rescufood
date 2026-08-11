@@ -1,5 +1,6 @@
 import type {
   Listing,
+  ListingsApi,
   ListingQuery,
   ListingRequest,
   ListingUpdate,
@@ -57,7 +58,7 @@ function multipart(fields: object, files: Blob[]): FormData {
   return form;
 }
 
-export class ListingsClient {
+export class ListingsClient implements ListingsApi {
   private readonly opts: ListingsClientOptions;
 
   constructor(opts: ListingsClientOptions) {

@@ -1,3 +1,6 @@
+export { sampleListings, sampleRequests } from "./fixtures";
+export { MockListingsClient } from "./mock";
+export { createListingsClient } from "./factory";
 export {
   ApiError,
   ListingsClient,
@@ -20,6 +23,7 @@ export {
   type ListingUpdate,
   type NewListing,
   type NewRequest,
+  type ListingsApi,
   type Paginated,
   type PickupCode,
   type RequestDecision,
