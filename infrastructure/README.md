@@ -201,6 +201,59 @@ reverts the code, never the database. Until `ProfileImage` is set, the
 service and this task definition do not exist, and `profile-build.yml`
 still builds and pushes the image but warns instead of deploying.
 
+## Listings service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the NestJS listings service,
+gated on `ListingsImage` the same way the profile service is gated on
+`ProfileImage` — leave it empty and no listings resources are created.
+When set it adds a Fargate service on port 3002, its own target group
+and log group, and one ALB rule routing both `/api/listings/*` and
+`/api/requests/*` to it (one service handles both resource types).
+
+| Parameter | Notes |
+|---|---|
+| `ListingsImage` | `ghcr.io/nus-iss-team1/rescufood/listings:develop` |
+| `ListingsPort` | Default `3002` |
+
+Unlike the profile service, listings gets **no database role, secret or
+bootstrap task of its own**. Its tables (listings, requests,
+notifications, audit_log) live in the same `profile` database and
+reference organisations/users via plain FK columns (see
+`service/listings/src/db/external.schema.ts`), so the task definition
+reuses `ProfileDbName` for `DB_USER`/`DB_NAME` and reads `DB_PASSWORD`
+from the same `ProfileDbSecret` the profile service uses. Deploying the
+listings service therefore requires the profile service's database
+bootstrap (above) to have already run — there is no separate one for
+listings.
+
+The task role also carries an inline policy granting `s3:PutObject`,
+`s3:GetObject` and `s3:DeleteObject` on the data stack's listing images
+bucket (`${BucketArn}/*`, imported via `DataStackName`) — see
+`src/storage/s3.service.ts`. No other AWS access is needed; the bucket
+stays private, images are served through presigned GET URLs.
+
+The ALB health check hits `/api/health`, an unauthenticated endpoint
+added specifically for this — every other route in the service sits
+behind `JwtAuthGuard`, which an ALB target group health check has no
+bearer token to satisfy.
+
+### Applying migrations
+
+Unlike profile, the listings image carries no `migrate` binary and the
+task definition has no override path for one. Migrations run from a
+developer machine instead, through an SSM tunnel to a running
+frontend task:
+
+```sh
+service/listings/scripts/migrate-rds.sh dev
+```
+
+Requires the AWS CLI v2, the Session Manager plugin, and an IAM
+principal allowed to call `cloudformation:DescribeStacks`,
+`secretsmanager:GetSecretValue`, `ecs:ListTasks`, `ecs:DescribeTasks`,
+`ecs:ExecuteCommand` and `ssm:StartSession`. Run it before deploying
+code that needs the new schema, same as profile's migration step.
+
 ## Database (data) stack
 
 `cloudformation/data.yaml` provisions the per-environment data tier:
@@ -249,11 +302,10 @@ shared between environments.
   images with it. CloudFormation also refuses to delete a non-empty
   bucket regardless.
 
-Not yet wired up: no task role has `s3:PutObject`/`GetObject`/
-`DeleteObject` on this bucket (the listings service has no ECS presence
-yet — see the compute stack section above), and `S3_BUCKET_NAME` in
-`service/listings/.env.example` still needs to be set to the `BucketName`
-output once a consuming stack exists.
+The listings task role (`ListingsTaskRole` in the ECS stack, see above)
+is the only principal granted access, scoped to `PutObject`/`GetObject`/
+`DeleteObject`. `S3_BUCKET_NAME` in the listings task definition is
+wired to this stack's `BucketName` export.
 
 ## Deploying (not yet executed)
 

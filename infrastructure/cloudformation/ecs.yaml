@@ -114,9 +114,21 @@ Parameters:
     Type: String
     Default: ""
     Description: >-
-      Extra browser origins allowed to call the profile API, comma
-      separated. Dev convenience: lets a locally served admin console
-      talk to the deployed service.
+      Extra browser origins allowed to call the profile and listings
+      APIs, comma separated. Dev convenience: lets a locally served
+      admin console talk to the deployed service.
+
+  ListingsImage:
+    Type: String
+    Default: ""
+    Description: >-
+      Listings service container image. Empty leaves the service, its
+      target group and its listener rule undeployed.
+
+  ListingsPort:
+    Type: Number
+    Default: 3002
+    Description: Port the listings service listens on
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref CertificateArn, ""]]
@@ -126,6 +138,9 @@ Conditions:
   HasProfile: !Not [!Equals [!Ref ProfileImage, ""]]
   ProfileOnHttp: !And [!Condition HasProfile, !Not [!Condition HasCertificate]]
   ProfileOnHttps: !And [!Condition HasProfile, !Condition HasCertificate]
+  HasListings: !Not [!Equals [!Ref ListingsImage, ""]]
+  ListingsOnHttp: !And [!Condition HasListings, !Not [!Condition HasCertificate]]
+  ListingsOnHttps: !And [!Condition HasListings, !Condition HasCertificate]
 
 Resources:
   # ------------------------------------------------------- Load balancer
@@ -681,6 +696,241 @@ Resources:
         # orders service creation after the rule carrying the target group
         - Key: attached-rule
           Value: !If [HasCertificate, !Ref ProfileHttpsRule, !Ref ProfileHttpRule]
+
+  # ------------------------------------------------- Listings service
+  # Shares the profile service's database (ProfileDbSecret, ProfileDbName)
+  # rather than getting its own role/secret: listings/requests tables live
+  # in the same "profile" database and reference organisations/users via
+  # plain FK columns (see service/listings/src/db/external.schema.ts). One
+  # role, one password, one secret.
+  ListingsTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasListings
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-listings
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref ListingsPort
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ListingsHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: ListingsOnHttp
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 11
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/listings/*, /api/requests/*]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ListingsTargetGroup
+
+  ListingsHttpsRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: ListingsOnHttps
+    Properties:
+      ListenerArn: !Ref HttpsListener
+      Priority: 11
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/listings/*, /api/requests/*]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ListingsTargetGroup
+
+  ListingsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasListings
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/listings
+      RetentionInDays: !Ref LogRetentionDays
+
+  ListingsExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: HasListings
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-listings-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !Ref ProfileDbSecret
+
+  ListingsTaskRole:
+    Type: AWS::IAM::Role
+    Condition: HasListings
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-listings-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+        # The actual point of this stage: PutObject/GetObject for uploads
+        # and presigned GET URLs, DeleteObject for the cleanup-on-failure
+        # and delete paths in ListingImageUploadService. Object-level
+        # actions need the /* suffix - the bare bucket ARN only covers
+        # bucket-level actions like ListBucket, which this service never
+        # calls (see service/listings/src/storage/s3.service.ts).
+        - PolicyName: listing-images-s3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub
+                  - ${BucketArn}/*
+                  - BucketArn:
+                      Fn::ImportValue: !Sub ${DataStackName}-BucketArn
+
+  ListingsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasListings
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-listings
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ListingsExecutionRole.Arn
+      TaskRoleArn: !GetAtt ListingsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: listings
+          Image: !Ref ListingsImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ListingsPort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Environment:
+            - Name: PORT
+              Value: !Ref ListingsPort
+            - Name: AUTH_COGNITO_ISSUER
+              Value: !Ref AuthCognitoIssuer
+            # Browser origin allowed to call the api: the admin console
+            # is served elsewhere, so this is the platform's own origin.
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: !Join
+                - ","
+                - - !If
+                    - HasCertificate
+                    - !Sub https://${LoadBalancer.DNSName}
+                    - !Sub http://${LoadBalancer.DNSName}
+                  - !Ref ExtraCorsOrigins
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref ProfileDbName
+            - Name: DB_NAME
+              Value: !Ref ProfileDbName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: S3_BUCKET_NAME
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-BucketName
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ListingsLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: listings
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ListingsService:
+    Type: AWS::ECS::Service
+    Condition: HasListings
+    Properties:
+      ServiceName: listings
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref ListingsTaskDefinition
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: listings
+          ContainerPort: !Ref ListingsPort
+          TargetGroupArn: !Ref ListingsTargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the rule carrying the target group
+        - Key: attached-rule
+          Value: !If [HasCertificate, !Ref ListingsHttpsRule, !Ref ListingsHttpRule]
 
 Outputs:
   ClusterName:
