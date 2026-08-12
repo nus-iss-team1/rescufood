@@ -24,12 +24,8 @@ CLUSTER="${PROJECT}-${ENV}"
 DATA_STACK="${PROJECT}-${ENV}-data"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Listings tables live in the profile service's database, not the RDS
-# instance's own default database (the data stack's DbName output,
-# "rescufood" - used for admin connections like the bootstrap task).
-# Migrating against the wrong database fails as soon as a migration
-# touches a table it doesn't have, e.g. 0001_cross_service_fks's FK
-# constraints on profile's organisations/users tables.
+# listings tables live in the profile service's database, not the RDS
+# instance's default "rescufood" database
 DB_NAME="profile"
 
 echo "==> resolving RDS connection details from ${DATA_STACK}"
@@ -82,13 +78,17 @@ for _ in $(seq 1 30); do
 done
 
 echo "==> running drizzle-kit migrate against ${ENV} (${DbEndpoint})"
-# uselibpqcompat restores the classic libpq meaning of sslmode=require
-# (encrypt, don't verify the chain) - newer pg-connection-string otherwise
-# treats require as an alias for verify-full, which rejects RDS's cert
-# chain since we never bundle AWS's CA bundle into any client here.
-#
-# CI=true: drizzle-kit's progress spinner assumes a TTY and can swallow
-# its own failure output when run through a pipe/log capture instead -
-# this makes it print plain lines so a real error is actually visible.
-CI=true DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DB_NAME}?sslmode=require&uselibpqcompat=true" \
-  npm run --prefix "${SCRIPT_DIR}/.." db:migrate
+DB_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DB_NAME}?sslmode=require&uselibpqcompat=true"
+CI=true DATABASE_URL="$DB_URL" npm run --prefix "${SCRIPT_DIR}/.." db:migrate
+
+echo "==> granting the profile role privileges on migrated tables"
+DATABASE_URL="$DB_URL" NODE_PATH="${SCRIPT_DIR}/../node_modules" node -e '
+const { Client } = require("pg");
+(async () => {
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  await client.query("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO profile");
+  await client.query("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO profile");
+  await client.end();
+})();
+'
