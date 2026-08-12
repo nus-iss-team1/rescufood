@@ -872,11 +872,20 @@ Resources:
           # secret so DB_PASSWORD still flows through the standard ECS
           # Secrets mechanism - never resolved into the task definition
           # itself, only into the running container's environment.
+          #
+          # uselibpqcompat restores the classic libpq meaning of
+          # sslmode=require (encrypt, don't verify the chain) - newer
+          # pg-connection-string otherwise treats require as an alias for
+          # verify-full, which rejects RDS's cert chain since nothing here
+          # bundles AWS's CA bundle. Without it every DB query fails with
+          # "self-signed certificate in certificate chain" - the health
+          # check doesn't touch the DB, so this can look deployed and
+          # healthy while every real request 500s.
           EntryPoint: ["/bin/sh", "-c"]
           Command:
             - >-
               export
-              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require";
+              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require&uselibpqcompat=true";
               exec node dist/main
           PortMappings:
             - ContainerPort: !Ref ListingsPort

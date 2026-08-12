@@ -3,8 +3,8 @@
 #
 # RDS sits in isolated subnets reachable only from the app security group
 # (infrastructure/cloudformation/security-groups.yaml), so this opens an SSM
-# port-forward tunnel through a running frontend ECS task (which already has
-# EnableExecuteCommand: true) and runs `npm run db:migrate` through it.
+# port-forward tunnel through a running web-platform ECS task (which already
+# has EnableExecuteCommand: true) and runs `npm run db:migrate` through it.
 #
 # Usage: scripts/migrate-rds.sh [env] [local-port]
 #   env         dev or prod (default: dev)
@@ -24,13 +24,21 @@ CLUSTER="${PROJECT}-${ENV}"
 DATA_STACK="${PROJECT}-${ENV}-data"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Listings tables live in the profile service's database, not the RDS
+# instance's own default database (the data stack's DbName output,
+# "rescufood" - used for admin connections like the bootstrap task).
+# Migrating against the wrong database fails as soon as a migration
+# touches a table it doesn't have, e.g. 0001_cross_service_fks's FK
+# constraints on profile's organisations/users tables.
+DB_NAME="profile"
+
 echo "==> resolving RDS connection details from ${DATA_STACK}"
 OUTPUTS_JSON=$(aws cloudformation describe-stacks --region "$REGION" \
   --stack-name "$DATA_STACK" --query "Stacks[0].Outputs" --output json)
 eval "$(node -e '
 const outputs = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const map = Object.fromEntries(outputs.map(o => [o.OutputKey, o.OutputValue]));
-for (const key of ["DbEndpoint", "DbPort", "DbName", "DbSecretArn"]) {
+for (const key of ["DbEndpoint", "DbPort", "DbSecretArn"]) {
   if (!map[key]) throw new Error(`missing stack output ${key}`);
   console.log(`${key}=${JSON.stringify(map[key])}`);
 }
@@ -45,11 +53,11 @@ console.log(`DB_USER=${JSON.stringify(encodeURIComponent(s.username))}`);
 console.log(`DB_PASS=${JSON.stringify(encodeURIComponent(s.password))}`);
 ' <<<"$SECRET_JSON")"
 
-echo "==> finding a running frontend task in ${CLUSTER}"
+echo "==> finding a running web-platform task in ${CLUSTER}"
 TASK_ARN=$(aws ecs list-tasks --region "$REGION" --cluster "$CLUSTER" \
-  --service-name frontend --query "taskArns[0]" --output text)
+  --service-name web-platform --query "taskArns[0]" --output text)
 if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-  echo "no running frontend task found in cluster ${CLUSTER} - start it before migrating" >&2
+  echo "no running web-platform task found in cluster ${CLUSTER} - start it before migrating" >&2
   exit 1
 fi
 TASK_ID="${TASK_ARN##*/}"
@@ -74,5 +82,13 @@ for _ in $(seq 1 30); do
 done
 
 echo "==> running drizzle-kit migrate against ${ENV} (${DbEndpoint})"
-DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DbName}?sslmode=require" \
+# uselibpqcompat restores the classic libpq meaning of sslmode=require
+# (encrypt, don't verify the chain) - newer pg-connection-string otherwise
+# treats require as an alias for verify-full, which rejects RDS's cert
+# chain since we never bundle AWS's CA bundle into any client here.
+#
+# CI=true: drizzle-kit's progress spinner assumes a TTY and can swallow
+# its own failure output when run through a pipe/log capture instead -
+# this makes it print plain lines so a real error is actually visible.
+CI=true DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DB_NAME}?sslmode=require&uselibpqcompat=true" \
   npm run --prefix "${SCRIPT_DIR}/.." db:migrate
