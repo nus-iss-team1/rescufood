@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
 
@@ -49,7 +50,7 @@ import { RequestsModule } from './requests/requests.module';
     ListingsModule,
     RequestsModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -24,7 +24,7 @@ per-environment security groups, ECS services, and databases, tagged with
 Security group chain per environment:
 
 ```
-internet → alb-sg (80/443) → app-sg (3000 web, 3001 api) → db-sg (5432)
+internet → alb-sg (80/443) → app-sg (3000 web, 3001 profile, 3002 listings) → db-sg (5432)
 ```
 
 ## Stacks
@@ -201,6 +201,59 @@ reverts the code, never the database. Until `ProfileImage` is set, the
 service and this task definition do not exist, and `profile-build.yml`
 still builds and pushes the image but warns instead of deploying.
 
+## Listings service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the NestJS listings service,
+gated on `ListingsImage` the same way the profile service is gated on
+`ProfileImage` — leave it empty and no listings resources are created.
+When set it adds a Fargate service on port 3002, its own target group
+and log group, and one ALB rule routing both `/api/listings/*` and
+`/api/requests/*` to it (one service handles both resource types).
+
+| Parameter | Notes |
+|---|---|
+| `ListingsImage` | `ghcr.io/nus-iss-team1/rescufood/listings:develop` |
+| `ListingsPort` | Default `3002` |
+
+Unlike the profile service, listings gets **no database role, secret or
+bootstrap task of its own**. Its tables (listings, requests,
+notifications, audit_log) live in the same `profile` database and
+reference organisations/users via plain FK columns (see
+`service/listings/src/db/external.schema.ts`), so the task definition
+reuses `ProfileDbName` for `DB_USER`/`DB_NAME` and reads `DB_PASSWORD`
+from the same `ProfileDbSecret` the profile service uses. Deploying the
+listings service therefore requires the profile service's database
+bootstrap (above) to have already run — there is no separate one for
+listings.
+
+The task role also carries an inline policy granting `s3:PutObject`,
+`s3:GetObject` and `s3:DeleteObject` on the data stack's listing images
+bucket (`${BucketArn}/*`, imported via `DataStackName`) — see
+`src/storage/s3.service.ts`. No other AWS access is needed; the bucket
+stays private, images are served through presigned GET URLs.
+
+The ALB health check hits `/api/health`, an unauthenticated endpoint
+added specifically for this — every other route in the service sits
+behind `JwtAuthGuard`, which an ALB target group health check has no
+bearer token to satisfy.
+
+### Applying migrations
+
+Unlike profile, the listings image carries no `migrate` binary and the
+task definition has no override path for one. Migrations run from a
+developer machine instead, through an SSM tunnel to a running
+frontend task:
+
+```sh
+service/listings/scripts/migrate-rds.sh dev
+```
+
+Requires the AWS CLI v2, the Session Manager plugin, and an IAM
+principal allowed to call `cloudformation:DescribeStacks`,
+`secretsmanager:GetSecretValue`, `ecs:ListTasks`, `ecs:DescribeTasks`,
+`ecs:ExecuteCommand` and `ssm:StartSession`. Run it before deploying
+code that needs the new schema, same as profile's migration step.
+
 ## Database (data) stack
 
 `cloudformation/data.yaml` provisions the per-environment data tier:
@@ -228,6 +281,33 @@ The backend consumes the stack through the `DbEndpoint`, `DbPort`,
 `postgresql://<username>:<password>@<endpoint>:<port>/<name>`. For prod,
 override `MultiAz=true`, `DeletionProtection=true` and a larger instance
 class in `parameters/data-prod.json`.
+
+### Listing images bucket
+
+The same stack provisions `rescufood-<env>-listing-images`, the S3
+bucket `service/listings`' `S3Service` reads and writes
+(`src/storage/s3.service.ts`). S3 bucket names are unique across all of
+AWS, not just this account, so this name is only safe as long as no
+other AWS customer claims it first - checked available before each
+environment's first deploy. If a collision ever blocks a deploy, add an
+account-id or random suffix in `data.yaml`'s `BucketName`.
+
+- **Private** — all four public-access-block settings on, no bucket
+  policy. Images are served through short-lived presigned GET URLs
+  generated on read; nothing is ever fetched directly from the bucket.
+- **SSE-S3 encryption** at rest.
+- **No CORS configuration** — uploads go through the listings service
+  (`multipart/form-data` to the API, which then calls `PutObjectCommand`
+  server-side), so the browser never talks to S3 directly.
+- **`DeletionPolicy: Retain`** — same reasoning as the database's
+  snapshot policy: deleting the stack must not be able to take listing
+  images with it. CloudFormation also refuses to delete a non-empty
+  bucket regardless.
+
+The listings task role (`ListingsTaskRole` in the ECS stack, see above)
+is the only principal granted access, scoped to `PutObject`/`GetObject`/
+`DeleteObject`. `S3_BUCKET_NAME` in the listings task definition is
+wired to this stack's `BucketName` export.
 
 ## Deploying (not yet executed)
 

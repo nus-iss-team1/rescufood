@@ -29,6 +29,11 @@ Parameters:
     Default: 3001
     Description: Container port for the NestJS API
 
+  ListingsPort:
+    Type: Number
+    Default: 3002
+    Description: Container port for the listings service
+
 Resources:
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -70,6 +75,11 @@ Resources:
           ToPort: !Ref ApiPort
           SourceSecurityGroupId: !Ref AlbSecurityGroup
           Description: NestJS API from ALB
+        - IpProtocol: tcp
+          FromPort: !Ref ListingsPort
+          ToPort: !Ref ListingsPort
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: Listings service from ALB
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-app-sg

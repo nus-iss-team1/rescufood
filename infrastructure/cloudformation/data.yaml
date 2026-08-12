@@ -1,8 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   RescuFood per-environment data tier: RDS PostgreSQL instance in the
-  isolated data subnets, reachable only from the app security group.
-  Master credentials live in an RDS-managed Secrets Manager secret.
+  isolated data subnets, reachable only from the app security group, and
+  the S3 bucket the listings service stores listing images in. Master
+  credentials live in an RDS-managed Secrets Manager secret.
 
 Parameters:
   ProjectName:
@@ -119,6 +120,30 @@ Resources:
         - Key: Environment
           Value: !Ref EnvironmentName
 
+  # ------------------------------------------------- Listing images bucket
+  ListingImagesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # No account-id suffix: bucket names are unique across all of AWS,
+      # not just this account, so a name collision is possible if another
+      # AWS customer ever claims this exact name. Accepted for a shorter,
+      # readable name - checked available at commit time.
+      BucketName: !Sub ${ProjectName}-${EnvironmentName}-listing-images
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
 Outputs:
   DbEndpoint:
     Description: Hostname of the database instance
@@ -141,3 +166,14 @@ Outputs:
     Value: !GetAtt Database.MasterUserSecret.SecretArn
     Export:
       Name: !Sub ${AWS::StackName}-DbSecretArn
+
+  BucketName:
+    Description: S3 bucket the listings service stores listing images in
+    Value: !Ref ListingImagesBucket
+    Export:
+      Name: !Sub ${AWS::StackName}-BucketName
+
+  BucketArn:
+    Value: !GetAtt ListingImagesBucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-BucketArn
