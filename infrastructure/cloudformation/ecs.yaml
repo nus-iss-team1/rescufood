@@ -312,6 +312,13 @@ Resources:
                 - HasCertificate
                 - !Sub https://${LoadBalancer.DNSName}
                 - !Sub http://${LoadBalancer.DNSName}
+            # Server-side calls to the listings service travel back in
+            # through the load balancer's /api/listings and /api/requests rules.
+            - Name: LISTINGS_API_URL
+              Value: !If
+                - HasCertificate
+                - !Sub https://${LoadBalancer.DNSName}
+                - !Sub http://${LoadBalancer.DNSName}
           RepositoryCredentials: !If
             - HasPullSecret
             - CredentialsParameter: !Ref GhcrPullSecretArn
