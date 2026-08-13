@@ -44,9 +44,18 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: web/platform/package-lock.json
+          cache-dependency-path: |
+            web/platform/package-lock.json
+            web/ui/package-lock.json
 
-      - name: Install dependencies
+      # The linked ui package resolves its own runtime deps from web/ui,
+      # since it's a file: dependency, not an npm workspace (see
+      # web/platform/Dockerfile).
+      - name: Install ui dependencies
+        working-directory: web/ui
+        run: npm ci --omit=dev
+
+      - name: Install platform dependencies
         run: npm ci
 
       - name: Lint

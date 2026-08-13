@@ -1,117 +1,119 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# RescuFood Listings Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The listings service — food listing and pickup-request lifecycle for donor
+and rescue organisations: listing CRUD, requests/claims, and pickup-code
+verification.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**Stack:** NestJS 11 · TypeScript · Drizzle ORM · PostgreSQL (shared with
+`service/profile`) · S3-backed image storage · Cognito-issued JWTs.
 
-## Description
+## Prerequisites
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Node.js 20+** (developed on Node 24) and **npm**
+- A running Postgres instance with `service/profile`'s schema applied —
+  listings/requests/notifications/audit_log reference `organisations`/`users`
+  via plain FK columns (see `src/db/external.schema.ts`), so the profile
+  service's migrations must run first.
+- AWS credentials that can reach the target S3 bucket (default AWS SDK
+  chain — a local profile/env vars in dev, the ECS task role when deployed).
 
-## Project setup
+## Quick start
 
-```bash
-$ npm install
+```sh
+cd service/listings
+npm install
+cp .env.example .env   # fill in AUTH_COGNITO_ISSUER and S3_BUCKET_NAME
+npm run db:migrate
+npm run start:dev
 ```
 
-## Compile and run the project
+Or run everything (profile, listings, both web apps) together from the repo
+root with `make dev` — see the root [`Makefile`](../../Makefile). The service
+listens on **http://localhost:3002**, with Swagger docs at
+`/api/listings/docs` (not exposed publicly — same trust boundary as the
+service itself).
 
-```bash
-# development
-$ npm run start
+## Environment variables
 
-# watch mode
-$ npm run start:dev
+See [`.env.example`](.env.example) for the full list with defaults. The
+notable ones:
 
-# production mode
-$ npm run start:prod
+| Variable | What it is |
+|---|---|
+| `DATABASE_URL` | Shared with `service/profile`; `profile` database, `profile` role |
+| `AUTH_COGNITO_ISSUER` | OIDC issuer URL — `Issuer` output of the `rescufood-<env>-iam` stack |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API |
+| `AWS_REGION` / `S3_BUCKET_NAME` | Where listing images are uploaded (`src/storage/s3.service.ts`) |
+| `RATE_LIMIT_TTL_SECONDS` / `RATE_LIMIT_MAX_REQUESTS` | App-wide throttle, default 100 req/60s/client |
+
+## API
+
+All routes are namespaced under `/api` (`app.setGlobalPrefix('api')` in
+`src/main.ts`):
+
+| Resource | Routes |
+|---|---|
+| `/api/listings` | `POST /`, `GET /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` |
+| `/api/requests` | `POST /`, `GET /`, `GET /:id`, `PATCH /:id`, `POST /:id/pickup-code`, `POST /:id/verify` |
+| `/api/health` | Health check — the ECS target group's health check path |
+
+Requests carry a Cognito-issued bearer token; org membership and
+listing/request ownership are enforced per-route (see
+`src/auth/org-membership.guard.ts` and the `*-access.util.ts` helpers).
+
+## Database
+
+Migrations are managed with Drizzle Kit (`drizzle.config.ts`,
+`db/migrations/`):
+
+```sh
+npm run db:generate   # generate a migration from schema changes
+npm run db:migrate    # apply migrations (local DATABASE_URL)
 ```
 
-## Run tests
+Against the deployed RDS instance, use
+[`scripts/migrate-rds.sh`](scripts/migrate-rds.sh) instead — it tunnels
+through SSM to reach the private DB and runs migrations from a developer
+machine. See the comments in that script and in `Dockerfile` for why: the
+production image intentionally ships without `drizzle-kit` or the `db/`
+folder, since migrations never run from inside the container.
 
-```bash
-# unit tests
-$ npm run test
+## Scripts
 
-# e2e tests
-$ npm run test:e2e
+| Command | What it does |
+|---|---|
+| `npm run start:dev` | Dev server with hot reload |
+| `npm run build` | Compile to `dist/` |
+| `npm run start:prod` | Run the compiled build |
+| `npm run lint` | ESLint (`--fix`) |
+| `npm test` | Unit tests |
+| `npm run test:e2e` | End-to-end tests |
 
-# test coverage
-$ npm run test:cov
+## Docker
+
+The Dockerfile builds a four-stage image (deps → build → prod-deps →
+runtime), non-root user, port 3002:
+
+```sh
+npm run docker:build
+npm run docker:run
 ```
 
-## Database migrations
+CI builds and pushes the image to GHCR
+(`ghcr.io/nus-iss-team1/rescufood/listings`) on every push to `develop`
+that touches `service/listings/**` — see
+[`.github/workflows/listings-build.yml`](../../.github/workflows/listings-build.yml).
 
-```bash
-# apply pending migrations to the local postgres (DATABASE_URL in .env)
-$ npm run db:migrate
+## Project structure
+
+```text
+src/
+├── main.ts                 # Bootstrap, global prefix, Swagger, CORS
+├── app.module.ts
+├── auth/                    # JWT guard + org-membership guard
+├── db/                      # Drizzle schema (own + external/profile tables)
+├── listings/                # Listings CRUD, image upload, expiry job
+├── requests/                # Request/claim lifecycle, pickup-code verification
+├── storage/                 # S3 upload service
+└── health/                  # Health check controller
 ```
-
-RDS isn't publicly reachable (see `infrastructure/cloudformation/security-groups.yaml`),
-so migrating a deployed environment tunnels through a running frontend ECS task via
-SSM instead of connecting directly. The frontend service needs to already be running
-(desired count > 0) - the script errors out rather than starting it for you:
-
-```bash
-# requires AWS CLI v2, the Session Manager plugin, and IAM permissions for
-# cloudformation:DescribeStacks, secretsmanager:GetSecretValue, ecs:ListTasks,
-# ecs:DescribeTasks, ecs:ExecuteCommand and ssm:StartSession
-$ ./scripts/migrate-rds.sh dev
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

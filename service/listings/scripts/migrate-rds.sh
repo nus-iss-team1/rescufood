@@ -3,8 +3,8 @@
 #
 # RDS sits in isolated subnets reachable only from the app security group
 # (infrastructure/cloudformation/security-groups.yaml), so this opens an SSM
-# port-forward tunnel through a running frontend ECS task (which already has
-# EnableExecuteCommand: true) and runs `npm run db:migrate` through it.
+# port-forward tunnel through a running web-platform ECS task (which already
+# has EnableExecuteCommand: true) and runs `npm run db:migrate` through it.
 #
 # Usage: scripts/migrate-rds.sh [env] [local-port]
 #   env         dev or prod (default: dev)
@@ -24,13 +24,17 @@ CLUSTER="${PROJECT}-${ENV}"
 DATA_STACK="${PROJECT}-${ENV}-data"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# listings tables live in the profile service's database, not the RDS
+# instance's default "rescufood" database
+DB_NAME="profile"
+
 echo "==> resolving RDS connection details from ${DATA_STACK}"
 OUTPUTS_JSON=$(aws cloudformation describe-stacks --region "$REGION" \
   --stack-name "$DATA_STACK" --query "Stacks[0].Outputs" --output json)
 eval "$(node -e '
 const outputs = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const map = Object.fromEntries(outputs.map(o => [o.OutputKey, o.OutputValue]));
-for (const key of ["DbEndpoint", "DbPort", "DbName", "DbSecretArn"]) {
+for (const key of ["DbEndpoint", "DbPort", "DbSecretArn"]) {
   if (!map[key]) throw new Error(`missing stack output ${key}`);
   console.log(`${key}=${JSON.stringify(map[key])}`);
 }
@@ -45,11 +49,11 @@ console.log(`DB_USER=${JSON.stringify(encodeURIComponent(s.username))}`);
 console.log(`DB_PASS=${JSON.stringify(encodeURIComponent(s.password))}`);
 ' <<<"$SECRET_JSON")"
 
-echo "==> finding a running frontend task in ${CLUSTER}"
+echo "==> finding a running web-platform task in ${CLUSTER}"
 TASK_ARN=$(aws ecs list-tasks --region "$REGION" --cluster "$CLUSTER" \
-  --service-name frontend --query "taskArns[0]" --output text)
+  --service-name web-platform --query "taskArns[0]" --output text)
 if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-  echo "no running frontend task found in cluster ${CLUSTER} - start it before migrating" >&2
+  echo "no running web-platform task found in cluster ${CLUSTER} - start it before migrating" >&2
   exit 1
 fi
 TASK_ID="${TASK_ARN##*/}"
@@ -74,5 +78,17 @@ for _ in $(seq 1 30); do
 done
 
 echo "==> running drizzle-kit migrate against ${ENV} (${DbEndpoint})"
-DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DbName}?sslmode=require" \
-  npm run --prefix "${SCRIPT_DIR}/.." db:migrate
+DB_URL="postgres://${DB_USER}:${DB_PASS}@localhost:${LOCAL_PORT}/${DB_NAME}?sslmode=require&uselibpqcompat=true"
+CI=true DATABASE_URL="$DB_URL" npm run --prefix "${SCRIPT_DIR}/.." db:migrate
+
+echo "==> granting the profile role privileges on migrated tables"
+DATABASE_URL="$DB_URL" NODE_PATH="${SCRIPT_DIR}/../node_modules" node -e '
+const { Client } = require("pg");
+(async () => {
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  await client.query("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO profile");
+  await client.query("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO profile");
+  await client.end();
+})();
+'

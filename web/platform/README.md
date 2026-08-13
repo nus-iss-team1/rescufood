@@ -122,7 +122,8 @@ docker run --rm -p 3000:3000 --env-file ../.env rescufood-frontend
 
 CI builds and pushes the image to GHCR
 (`ghcr.io/nus-iss-team1/rescufood/frontend`) on every push to `develop`
-that touches `frontend/**` — see `.github/workflows/frontend-build.yml`.
+that touches `web/platform/**` — see
+[`.github/workflows/platform-build.yml`](../../.github/workflows/platform-build.yml).
 
 ## Project structure
 
