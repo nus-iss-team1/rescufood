@@ -7,15 +7,16 @@ A NUS-ISS Team 1 project.
 
 ## Repository layout
 
-| Folder | What's in it |
-| --- | --- |
-| [`web/platform/`](web/platform/README.md) | Next.js web client for donors and rescue partners (setup guide inside) |
-| [`web/admin-console/`](web/admin-console/README.md) | React SPA for platform administrators, run locally |
-| `web/sdk/` | Shared TypeScript clients for the profile and listings services |
-| `web/ui/` | Shared shadcn/ui components used by both web apps |
-| [`service/profile/`](service/profile) | Go profile service — users, organisations, approval |
-| [`infrastructure/`](infrastructure/README.md) | AWS CloudFormation stacks (network, security, identity, ECS, data) |
-| [`docs/adr/`](docs/adr/README.md) | Architecture decision records |
+| Folder                                              | What's in it                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [`web/platform/`](web/platform/README.md)           | Next.js web client for donors and rescue partners (setup guide inside)        |
+| [`web/admin-console/`](web/admin-console/README.md) | React SPA for platform administrators, run locally                            |
+| `web/sdk/`                                          | Shared TypeScript clients for the profile and listings services               |
+| `web/ui/`                                           | Shared shadcn/ui components used by both web apps                             |
+| [`service/profile/`](service/profile)               | Go profile service — users, organisations, approval                           |
+| [`service/listings/`](service/listings/README.md)   | NestJS listings service — listings CRUD, requests/claims, pickup verification |
+| [`infrastructure/`](infrastructure/README.md)       | AWS CloudFormation stacks (network, security, identity, ECS, data)            |
+| [`docs/adr/`](docs/adr/README.md)                   | Architecture decision records                                                 |
 
 ## Quick start
 
