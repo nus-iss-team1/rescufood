@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import dayjs from "dayjs";
 import { RefreshCw, Trash2, Upload } from "lucide-react";
 import { listingCategories } from "@rescufood/listings-sdk";
 
@@ -63,9 +64,23 @@ export function CreateListingForm() {
     {},
   );
 
+  const today = dayjs().format("YYYY-MM-DD");
+
+  // Controlled form state with sensible defaults
+  const [category, setCategory] = useState("produce");
+  const [remainingQuantity, setRemainingQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [description, setDescription] = useState("");
+  const [allergens, setAllergens] = useState("");
+  const [useBy, setUseBy] = useState(`${today}T23:55:00`);
+  const [handlingInstructions, setHandlingInstructions] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [pickupWindowStart, setPickupWindowStart] = useState(`${today}T09:00:00`);
+  const [pickupWindowEnd, setPickupWindowEnd] = useState(`${today}T18:00:00`);
+
+  // Standardized image state
   const [listingImage, setListingImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [_uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,8 +156,11 @@ export function CreateListingForm() {
       <Field label="Category" htmlFor="category">
         <Select
           name="category"
+          value={category}
+          onValueChange={(val) => {
+            if (val) setCategory(val);
+          }}
           items={categoryLabels}
-          defaultValue="produce"
           required
         >
           <SelectTrigger id="category" className="w-full">
@@ -167,11 +185,20 @@ export function CreateListingForm() {
             min="0.01"
             step="0.01"
             placeholder="24"
+            value={remainingQuantity}
+            onChange={(e) => setRemainingQuantity(e.target.value)}
             required
           />
         </Field>
         <Field label="Unit" htmlFor="unit">
-          <Input id="unit" name="unit" placeholder="loaves" required />
+          <Input
+            id="unit"
+            name="unit"
+            placeholder="loaves"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+            required
+          />
         </Field>
       </div>
 
@@ -186,6 +213,8 @@ export function CreateListingForm() {
           name="description"
           rows={3}
           placeholder="24 loaves of sourdough from today's bake"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           required
         />
       </Field>
@@ -253,11 +282,23 @@ export function CreateListingForm() {
       </div>
 
       <Field label="Allergens" htmlFor="allergens" hint="">
-        <Input id="allergens" name="allergens" placeholder="Gluten, Sesame" />
+        <Input
+          id="allergens"
+          name="allergens"
+          placeholder="Gluten, Sesame"
+          value={allergens}
+          onChange={(e) => setAllergens(e.target.value)}
+        />
       </Field>
 
       <div data-animate="field">
-        <DateTimeField id="useBy" name="useBy" label="Use by" />
+        <DateTimeField
+          id="useBy"
+          name="useBy"
+          label="Use by"
+          value={useBy}
+          onChange={setUseBy}
+        />
       </div>
 
       <Field
@@ -271,6 +312,8 @@ export function CreateListingForm() {
           name="handlingInstructions"
           rows={2}
           placeholder="Keep dry, best eaten today"
+          value={handlingInstructions}
+          onChange={(e) => setHandlingInstructions(e.target.value)}
         />
       </Field>
 
@@ -283,6 +326,8 @@ export function CreateListingForm() {
           id="pickupLocation"
           name="pickupLocation"
           placeholder="12 Bakery Lane, #01-08"
+          value={pickupLocation}
+          onChange={(e) => setPickupLocation(e.target.value)}
           required
         />
       </Field>
@@ -297,11 +342,15 @@ export function CreateListingForm() {
             id="pickupWindowStart"
             name="pickupWindowStart"
             label="From"
+            value={pickupWindowStart}
+            onChange={setPickupWindowStart}
           />
           <DateTimeField
             id="pickupWindowEnd"
             name="pickupWindowEnd"
             label="Until"
+            value={pickupWindowEnd}
+            onChange={setPickupWindowEnd}
           />
         </div>
       </fieldset>
