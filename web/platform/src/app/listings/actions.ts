@@ -90,9 +90,15 @@ export async function createListingAction(
   const listing = readListing(formData);
   if (typeof listing === "string") return { error: listing };
 
+  const imageEntry = formData.get("image");
+  const images: Blob[] = [];
+  if (imageEntry instanceof File && imageEntry.size > 0) {
+    images.push(imageEntry);
+  }
+
   let created;
   try {
-    created = await createListing(idToken, listing);
+    created = await createListing(idToken, listing, images);
   } catch (err) {
     if (err instanceof ListingsApiError) {
       return { error: err.message };
