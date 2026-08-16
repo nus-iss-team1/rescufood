@@ -10,10 +10,24 @@ import {
   type NewListing,
 } from "@/lib/listings";
 
+export type ListingFormValues = {
+  category?: string;
+  remainingQuantity?: string;
+  unit?: string;
+  description?: string;
+  allergens?: string;
+  useBy?: string;
+  handlingInstructions?: string;
+  pickupLocation?: string;
+  pickupWindowStart?: string;
+  pickupWindowEnd?: string;
+};
+
 export type ListingFormState = {
   error?: string;
   /** Set once the listing is live. */
   publishedId?: string;
+  values?: ListingFormValues;
 };
 
 const text = (form: FormData, key: string) =>
@@ -23,6 +37,21 @@ const text = (form: FormData, key: string) =>
 function isoOrNull(value: string): string | null {
   const at = new Date(value);
   return Number.isNaN(at.getTime()) ? null : at.toISOString();
+}
+
+function extractValues(form: FormData): ListingFormValues {
+  return {
+    category: text(form, "category"),
+    remainingQuantity: text(form, "remainingQuantity"),
+    unit: text(form, "unit"),
+    description: text(form, "description"),
+    allergens: text(form, "allergens"),
+    useBy: text(form, "useBy"),
+    handlingInstructions: text(form, "handlingInstructions"),
+    pickupLocation: text(form, "pickupLocation"),
+    pickupWindowStart: text(form, "pickupWindowStart"),
+    pickupWindowEnd: text(form, "pickupWindowEnd"),
+  };
 }
 
 function readListing(form: FormData): NewListing | string {
@@ -81,23 +110,31 @@ export async function createListingAction(
   _prev: ListingFormState,
   formData: FormData
 ): Promise<ListingFormState> {
+  const values = extractValues(formData);
+
   const session = await auth();
   const idToken = session?.idToken;
   if (!idToken) {
-    return { error: "Your session has expired. Please sign in again." };
+    return { error: "Your session has expired. Please sign in again.", values };
   }
 
   const listing = readListing(formData);
-  if (typeof listing === "string") return { error: listing };
+  if (typeof listing === "string") return { error: listing, values };
+
+  const imageEntry = formData.get("image");
+  const images: Blob[] = [];
+  if (imageEntry instanceof File && imageEntry.size > 0) {
+    images.push(imageEntry);
+  }
 
   let created;
   try {
-    created = await createListing(idToken, listing);
+    created = await createListing(idToken, listing, images);
   } catch (err) {
     if (err instanceof ListingsApiError) {
-      return { error: err.message };
+      return { error: err.message, values };
     }
-    return { error: "Could not reach the listings service. Please try again." };
+    return { error: "Could not reach the listings service. Please try again.", values };
   }
 
   try {
@@ -109,6 +146,7 @@ export async function createListingAction(
     return {
       error:
         "Your listing was saved as a draft, but publishing it failed. Open it from your listings to publish.",
+      values,
     };
   }
 
