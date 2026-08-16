@@ -24,16 +24,16 @@ function contextWithUser(userId: string): ExecutionContext {
 describe('OrgMembershipGuard', () => {
   it('allows a caller whose profile has an org_id', async () => {
     const db = { select: jest.fn() };
-    db.select.mockReturnValue(chain([{ orgId: 'org-1' }]));
+    db.select.mockReturnValue(chain([{ id: 'user-1', orgId: 'org-1' }]));
     const guard = new OrgMembershipGuard(db as unknown as Database);
     const context = contextWithUser('sub-1');
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
   });
 
-  it('attaches the resolved orgId onto request.user', async () => {
+  it("attaches the resolved orgId and overwrites userId with the profile's id", async () => {
     const db = { select: jest.fn() };
-    db.select.mockReturnValue(chain([{ orgId: 'org-1' }]));
+    db.select.mockReturnValue(chain([{ id: 'user-1', orgId: 'org-1' }]));
     const guard = new OrgMembershipGuard(db as unknown as Database);
     const request = {
       user: { userId: 'sub-1', role: 'user' },
@@ -45,11 +45,12 @@ describe('OrgMembershipGuard', () => {
     await guard.canActivate(context);
 
     expect(request.user!.orgId).toBe('org-1');
+    expect(request.user!.userId).toBe('user-1');
   });
 
   it('throws ForbiddenException when the profile has no org_id', async () => {
     const db = { select: jest.fn() };
-    db.select.mockReturnValue(chain([{ orgId: null }]));
+    db.select.mockReturnValue(chain([{ id: 'user-1', orgId: null }]));
     const guard = new OrgMembershipGuard(db as unknown as Database);
 
     await expect(
@@ -69,9 +70,9 @@ describe('OrgMembershipGuard', () => {
 });
 
 describe('OrgContextGuard', () => {
-  it("attaches the caller's orgId and allows the request through", async () => {
+  it("attaches the caller's orgId, overwrites userId with the profile's id, and allows the request through", async () => {
     const db = { select: jest.fn() };
-    db.select.mockReturnValue(chain([{ orgId: 'org-1' }]));
+    db.select.mockReturnValue(chain([{ id: 'user-1', orgId: 'org-1' }]));
     const guard = new OrgContextGuard(db as unknown as Database);
     const request = {
       user: { userId: 'sub-1', role: 'user' },
@@ -82,9 +83,10 @@ describe('OrgContextGuard', () => {
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.user!.orgId).toBe('org-1');
+    expect(request.user!.userId).toBe('user-1');
   });
 
-  it('allows a caller with no org through, leaving orgId undefined', async () => {
+  it('allows a caller with no profile row through, leaving userId and orgId untouched/undefined', async () => {
     const db = { select: jest.fn() };
     db.select.mockReturnValue(chain([]));
     const guard = new OrgContextGuard(db as unknown as Database);
@@ -97,5 +99,6 @@ describe('OrgContextGuard', () => {
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.user!.orgId).toBeUndefined();
+    expect(request.user!.userId).toBe('sub-1');
   });
 });

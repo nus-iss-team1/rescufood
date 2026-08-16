@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-import { resolveOrgId } from '../auth/org-membership.guard';
+import { resolveOrgIdByUserId } from '../auth/org-membership.guard';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
@@ -286,7 +286,7 @@ export class RequestsService {
     // generated the code - otherwise one org could generate and verify by
     // itself, which defeats the point of a shared handshake.
     if (user.role !== 'admin' && existing.codeGeneratedBy) {
-      const generatorOrgId = await resolveOrgId(
+      const generatorOrgId = await resolveOrgIdByUserId(
         this.db,
         existing.codeGeneratedBy,
       );
