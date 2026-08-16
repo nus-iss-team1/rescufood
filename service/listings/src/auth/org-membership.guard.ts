@@ -10,14 +10,40 @@ import type { Request } from 'express';
 import { DATABASE, type Database } from '../db/db.module';
 import { users } from '../db/external.schema';
 
-export async function resolveOrgId(
+interface CallerProfile {
+  // service/profile's internal users.id - distinct from the Cognito sub
+  // JwtAuthGuard puts on request.user.userId. This is what listings/requests
+  // rows' created_by/claimed_by/etc. FK against (see db/schema.ts), so it's
+  // resolved here and written back onto request.user.userId for every
+  // downstream read of it to use.
+  id: string;
+  orgId?: string;
+}
+
+async function resolveProfile(
+  db: Database,
+  cognitoSub: string,
+): Promise<CallerProfile | undefined> {
+  const [profile] = await db
+    .select({ id: users.id, orgId: users.orgId })
+    .from(users)
+    .where(eq(users.cognitoSub, cognitoSub));
+  if (!profile) return undefined;
+  return { id: profile.id, orgId: profile.orgId ?? undefined };
+}
+
+// Resolves the org behind an *already-resolved* profile id (users.id), as
+// opposed to resolveProfile's lookup by the raw Cognito sub. Used where a
+// previously persisted userId (e.g. requests.codeGeneratedBy) needs its
+// current org re-checked.
+export async function resolveOrgIdByUserId(
   db: Database,
   userId: string,
 ): Promise<string | undefined> {
   const [profile] = await db
     .select({ orgId: users.orgId })
     .from(users)
-    .where(eq(users.cognitoSub, userId));
+    .where(eq(users.id, userId));
   return profile?.orgId ?? undefined;
 }
 
@@ -31,15 +57,16 @@ export class OrgMembershipGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const orgId = await resolveOrgId(this.db, request.user!.userId);
+    const profile = await resolveProfile(this.db, request.user!.userId);
 
-    if (!orgId) {
+    if (!profile?.orgId) {
       throw new ForbiddenException(
         'you must belong to an organisation to do this',
       );
     }
 
-    request.user!.orgId = orgId;
+    request.user!.userId = profile.id;
+    request.user!.orgId = profile.orgId;
     return true;
   }
 }
@@ -55,7 +82,11 @@ export class OrgContextGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    request.user!.orgId = await resolveOrgId(this.db, request.user!.userId);
+    const profile = await resolveProfile(this.db, request.user!.userId);
+    if (profile) {
+      request.user!.userId = profile.id;
+    }
+    request.user!.orgId = profile?.orgId;
     return true;
   }
 }

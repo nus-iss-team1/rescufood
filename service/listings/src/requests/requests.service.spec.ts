@@ -13,10 +13,10 @@ import { RequestsService } from './requests.service';
 // org via this, the same helper OrgMembershipGuard uses - mocked here so
 // tests control it directly instead of faking a drizzle select chain.
 jest.mock('../auth/org-membership.guard', () => ({
-  resolveOrgId: jest.fn(),
+  resolveOrgIdByUserId: jest.fn(),
 }));
-import { resolveOrgId } from '../auth/org-membership.guard';
-const mockResolveOrgId = resolveOrgId as jest.Mock;
+import { resolveOrgIdByUserId } from '../auth/org-membership.guard';
+const mockResolveOrgId = resolveOrgIdByUserId as jest.Mock;
 
 function makeRepository() {
   return {
