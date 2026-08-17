@@ -222,9 +222,36 @@ export default async function ListingsPage({
             body="We couldn't load your listings. Please try again shortly."
           />
         ) : layout === "card" ? (
-          <ListingCards listings={listings} empty="No listings here yet." />
+          <ListingCards
+            listings={listings}
+            empty="No listings here yet."
+            action={(listing) => (
+              <Link
+                href={`/listings/${listing.id}`}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "w-full",
+                )}
+              >
+                View / Edit
+              </Link>
+            )}
+          />
         ) : (
-          <ListingList listings={listings} empty="No listings here yet." />
+          <ListingList
+            listings={listings}
+            empty="No listings here yet."
+            action={(listing) => (
+              <Link
+                href={`/listings/${listing.id}`}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                )}
+              >
+                View / Edit
+              </Link>
+            )}
+          />
         )}
       </div>
     </AnimateIn>,

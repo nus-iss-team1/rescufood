@@ -1,12 +1,18 @@
 "use server";
 
-import { listingCategories } from "@rescufood/listings-sdk";
+import { revalidatePath } from "next/cache";
+import {
+  listingCategories,
+  listingStatuses,
+  type ListingStatus,
+} from "@rescufood/listings-sdk";
 
 import { auth } from "@/auth";
 import {
   createListing,
   updateListing,
   ListingsApiError,
+  type ListingUpdate,
   type NewListing,
 } from "@/lib/listings";
 
@@ -21,12 +27,15 @@ export type ListingFormValues = {
   pickupLocation?: string;
   pickupWindowStart?: string;
   pickupWindowEnd?: string;
+  status?: string;
 };
 
 export type ListingFormState = {
   error?: string;
   /** Set once the listing is live. */
   publishedId?: string;
+  /** Set once the listing has been updated. */
+  updatedId?: string;
   values?: ListingFormValues;
 };
 
@@ -51,10 +60,14 @@ function extractValues(form: FormData): ListingFormValues {
     pickupLocation: text(form, "pickupLocation"),
     pickupWindowStart: text(form, "pickupWindowStart"),
     pickupWindowEnd: text(form, "pickupWindowEnd"),
+    status: text(form, "status") || undefined,
   };
 }
 
-function readListing(form: FormData): NewListing | string {
+function readListing(
+  form: FormData,
+  isAvailableTarget: boolean = true
+): NewListing | string {
   const category = text(form, "category");
   if (!listingCategories.includes(category as NewListing["category"])) {
     return "Please choose a category.";
@@ -82,6 +95,12 @@ function readListing(form: FormData): NewListing | string {
   if (!start || !end) return "Please give both ends of the pickup window.";
   if (new Date(end) <= new Date(start)) {
     return "The pickup window must end after it starts.";
+  }
+
+  if (isAvailableTarget) {
+    if (new Date(useBy) < new Date(start)) {
+      return "Use-by date cannot be earlier than the pickup window start.";
+    }
   }
 
   return {
@@ -118,7 +137,7 @@ export async function createListingAction(
     return { error: "Your session has expired. Please sign in again.", values };
   }
 
-  const listing = readListing(formData);
+  const listing = readListing(formData, true);
   if (typeof listing === "string") return { error: listing, values };
 
   const imageEntry = formData.get("image");
@@ -134,7 +153,10 @@ export async function createListingAction(
     if (err instanceof ListingsApiError) {
       return { error: err.message, values };
     }
-    return { error: "Could not reach the listings service. Please try again.", values };
+    return {
+      error: "Could not reach the listings service. Please try again.",
+      values,
+    };
   }
 
   try {
@@ -150,5 +172,122 @@ export async function createListingAction(
     };
   }
 
+  revalidatePath("/listings");
   return { publishedId: created.id };
 }
+
+const LOCKED_STATUSES = new Set(["reserved", "collected", "expired", "cancelled"]);
+
+/**
+ * Updates an existing listing via PATCH /listings/:id.
+ * Enforces dual validation modes (strict when published/available, looser for draft)
+ * and guards against modifying locked terminal states.
+ */
+export async function updateListingAction(
+  _prev: ListingFormState,
+  formData: FormData
+): Promise<ListingFormState> {
+  const values = extractValues(formData);
+
+  const session = await auth();
+  const idToken = session?.idToken;
+  if (!idToken) {
+    return { error: "Your session has expired. Please sign in again.", values };
+  }
+
+  const id = text(formData, "id");
+  const versionStr = text(formData, "version");
+  const currentStatus = text(formData, "currentStatus");
+  const targetStatus = text(formData, "status");
+
+  if (!id || !versionStr) {
+    return { error: "Missing listing identifier or version.", values };
+  }
+
+  const version = Number(versionStr);
+  if (!Number.isInteger(version) || version < 1) {
+    return { error: "Invalid listing version.", values };
+  }
+
+  // State Machine Lock Guard
+  if (LOCKED_STATUSES.has(currentStatus)) {
+    return {
+      error: `Listings in "${currentStatus}" status are locked and cannot be edited.`,
+      values,
+    };
+  }
+
+  const isPublishingOrAvailable =
+    targetStatus === "available" ||
+    (!targetStatus && currentStatus === "available");
+
+  const listingData = readListing(formData, isPublishingOrAvailable);
+  if (typeof listingData === "string") {
+    return { error: listingData, values };
+  }
+
+  // Parse any deleteImageIds passed as JSON array or comma separated
+  const deleteImageIdsRaw = text(formData, "deleteImageIds");
+  let deleteImageIds: string[] = [];
+  if (deleteImageIdsRaw) {
+    try {
+      const parsed = JSON.parse(deleteImageIdsRaw);
+      if (Array.isArray(parsed)) {
+        deleteImageIds = parsed.filter((x) => typeof x === "string");
+      }
+    } catch {
+      deleteImageIds = deleteImageIdsRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  const imageEntry = formData.get("image");
+  const images: Blob[] = [];
+  if (imageEntry instanceof File && imageEntry.size > 0) {
+    images.push(imageEntry);
+  }
+
+  const updatePayload: ListingUpdate = {
+    version,
+    category: listingData.category,
+    description: listingData.description,
+    remainingQuantity: listingData.remainingQuantity,
+    unit: listingData.unit,
+    allergens: listingData.allergens,
+    handlingInstructions: listingData.handlingInstructions,
+    useBy: listingData.useBy,
+    pickupLocation: listingData.pickupLocation,
+    pickupWindowStart: listingData.pickupWindowStart,
+    pickupWindowEnd: listingData.pickupWindowEnd,
+    ...(targetStatus &&
+    listingStatuses.includes(targetStatus as ListingStatus)
+      ? { status: targetStatus as ListingStatus }
+      : {}),
+    ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
+  };
+
+  try {
+    await updateListing(idToken, id, updatePayload, images);
+    revalidatePath("/listings");
+    revalidatePath(`/listings/${id}`);
+    return { updatedId: id };
+  } catch (err) {
+    if (err instanceof ListingsApiError) {
+      if (err.status === 409) {
+        return {
+          error:
+            "This listing was updated elsewhere. Please refresh the page and try again.",
+          values,
+        };
+      }
+      return { error: err.message, values };
+    }
+    return {
+      error: "Could not reach the listings service. Please try again.",
+      values,
+    };
+  }
+}
+

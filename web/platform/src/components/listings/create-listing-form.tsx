@@ -153,6 +153,68 @@ export function CreateListingForm() {
 
   return (
     <form action={handleSubmit} className="grid gap-5 md:grid-cols-2">
+      {/* Standardized Image Upload Slot */}
+      <div data-animate="field" className="flex flex-col gap-2 md:col-span-2">
+        <Label>Listing image</Label>
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {!imagePreview ? (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="border-dashed border-2 border-border rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer w-full flex flex-col items-center justify-center gap-2"
+          >
+            <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+              <Upload className="size-5 text-muted-foreground" aria-hidden />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-foreground">
+                Listing Image
+              </span>
+              <span className="text-xs text-muted-foreground">
+                PNG, JPG, or WebP up to 10MB
+              </span>
+            </div>
+          </button>
+        ) : (
+          <div className="aspect-video rounded-xl overflow-hidden ring-1 ring-border group relative w-full">
+            <Image
+              src={imagePreview}
+              alt="Listing preview"
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <RefreshCw className="size-4" />
+                Replace
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleRemoveImage}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <Field label="Category" htmlFor="category">
         <Select
           name="category"
@@ -218,68 +280,6 @@ export function CreateListingForm() {
           required
         />
       </Field>
-
-      {/* Standardized Image Upload Slot */}
-      <div data-animate="field" className="flex flex-col gap-2 md:col-span-2">
-        <Label>Listing image</Label>
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
-        {!imagePreview ? (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="border-dashed border-2 border-border rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer w-full flex flex-col items-center justify-center gap-2"
-          >
-            <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-              <Upload className="size-5 text-muted-foreground" aria-hidden />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-foreground">
-                Listing Image
-              </span>
-              <span className="text-xs text-muted-foreground">
-                PNG, JPG, or WebP up to 10MB
-              </span>
-            </div>
-          </button>
-        ) : (
-          <div className="aspect-video rounded-xl overflow-hidden ring-1 ring-border group relative w-full">
-            <Image
-              src={imagePreview}
-              alt="Listing preview"
-              fill
-              unoptimized
-              className="object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <RefreshCw className="size-4" />
-                Replace
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleRemoveImage}
-              >
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
 
       <Field label="Allergens" htmlFor="allergens" hint="">
         <Input
