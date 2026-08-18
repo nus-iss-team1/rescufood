@@ -242,7 +242,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   }
 
   return (
-    <form action={handleSubmit} className="grid gap-5 md:grid-cols-2">
+    <form action={handleSubmit} noValidate className="grid gap-5 md:grid-cols-2">
       {/* State Machine Lock Banner */}
       {isLocked && (
         <div
