@@ -23,6 +23,10 @@ import {
 } from './common/listing-access.util';
 import { assertValidStatusTransition } from './common/listing-status.util';
 import {
+  PublicationValidationException,
+  validateForPublication,
+} from './common/publication-validation.util';
+import {
   ListingImageResponse,
   toListingImageResponses,
 } from './images/listing-image-response.util';
@@ -145,6 +149,25 @@ export class ListingsService {
       dto.pickupWindowStart ?? existing.pickupWindowStart.toISOString();
     const end = dto.pickupWindowEnd ?? existing.pickupWindowEnd.toISOString();
     assertPickupWindowValid(start, end);
+
+    // Gates on the post-update status, not just draft->available - editing
+    // an already-available listing must not leave it inconsistent either.
+    const resultStatus = dto.status ?? existing.status;
+    if (resultStatus === 'available') {
+      const publicationErrors = validateForPublication({
+        description: dto.description ?? existing.description,
+        pickupLocation: dto.pickupLocation ?? existing.pickupLocation,
+        unit: dto.unit ?? existing.unit,
+        allergens: dto.allergens ?? existing.allergens,
+        remainingQuantity: dto.remainingQuantity ?? existing.remainingQuantity,
+        pickupWindowStart: start,
+        pickupWindowEnd: end,
+        useBy: dto.useBy ?? existing.useBy,
+      });
+      if (publicationErrors.length > 0) {
+        throw new PublicationValidationException(publicationErrors);
+      }
+    }
 
     const deleteImageIds = dto.deleteImageIds ?? [];
     // Fails fast on an unknown/foreign id before touching S3 or the DB.

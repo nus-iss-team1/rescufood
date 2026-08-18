@@ -163,7 +163,14 @@ export class ListingsController {
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody(withFilesBody(UpdateListingDto))
   @ApiResponse({ status: 200, type: ListingResponseDto })
-  @ApiResponse({ status: 400, description: 'Validation failed.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation failed. When publishing (status "available"), all failing ' +
+      'rules are returned together as `errors: { field, code, message }[]` ' +
+      '(REQUIRED, QUANTITY_INVALID, PICKUP_WINDOW_INVALID, PICKUP_WINDOW_PAST, ' +
+      'USE_BY_INCONSISTENT, ALLERGENS_INVALID). Listing is left unchanged.',
+  })
   @ApiResponse({
     status: 403,
     description: "Caller is not a member of the listing's donor organisation.",
