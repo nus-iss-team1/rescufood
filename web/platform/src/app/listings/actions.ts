@@ -32,8 +32,10 @@ export type ListingFormValues = {
 
 export type ListingFormState = {
   error?: string;
-  /** Set once the listing is live. */
+  /** Set once the listing is live or saved as draft. */
   publishedId?: string;
+  /** Status of the created listing: 'draft' | 'available' */
+  status?: string;
   /** Set once the listing has been updated. */
   updatedId?: string;
   values?: ListingFormValues;
@@ -68,51 +70,90 @@ function readListing(
   form: FormData,
   isAvailableTarget: boolean = true
 ): NewListing | string {
-  const category = text(form, "category");
-  if (!listingCategories.includes(category as NewListing["category"])) {
-    return "Please choose a category.";
-  }
-
-  const description = text(form, "description");
-  if (!description) return "Please describe what you are giving away.";
-
-  const quantity = Number(text(form, "remainingQuantity"));
-  if (!Number.isFinite(quantity) || quantity <= 0) {
-    return "Quantity must be a number greater than zero.";
-  }
-
-  const unit = text(form, "unit");
-  if (!unit) return "Please give the unit, for example kg or meals.";
-
-  const pickupLocation = text(form, "pickupLocation");
-  if (!pickupLocation) return "Please give a pickup address.";
-
-  const useBy = isoOrNull(text(form, "useBy"));
-  if (!useBy) return "Please give a use-by date and time.";
-
-  const start = isoOrNull(text(form, "pickupWindowStart"));
-  const end = isoOrNull(text(form, "pickupWindowEnd"));
-  if (!start || !end) return "Please give both ends of the pickup window.";
-  if (new Date(end) <= new Date(start)) {
-    return "The pickup window must end after it starts.";
-  }
+  const categoryRaw = text(form, "category");
+  const descriptionRaw = text(form, "description");
+  const quantityRaw = Number(text(form, "remainingQuantity"));
+  const unitRaw = text(form, "unit");
+  const pickupLocationRaw = text(form, "pickupLocation");
+  const useByRaw = isoOrNull(text(form, "useBy"));
+  const startRaw = isoOrNull(text(form, "pickupWindowStart"));
+  const endRaw = isoOrNull(text(form, "pickupWindowEnd"));
+  const allergens = text(form, "allergens")
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+  const handlingInstructions = text(form, "handlingInstructions");
 
   if (isAvailableTarget) {
-    if (new Date(useBy) < new Date(start)) {
+    if (!listingCategories.includes(categoryRaw as NewListing["category"])) {
+      return "Please choose a category.";
+    }
+    if (!descriptionRaw) return "Please describe what you are giving away.";
+    if (!Number.isFinite(quantityRaw) || quantityRaw <= 0) {
+      return "Quantity must be a number greater than zero.";
+    }
+    if (!unitRaw) return "Please give the unit, for example kg or meals.";
+    if (!pickupLocationRaw) return "Please give a pickup address.";
+    if (!useByRaw) return "Please give a use-by date and time.";
+    if (!startRaw || !endRaw) return "Please give both ends of the pickup window.";
+    if (new Date(endRaw) <= new Date(startRaw)) {
+      return "The pickup window must end after it starts.";
+    }
+
+    const now = new Date();
+    if (new Date(endRaw) <= now) {
+      return "The pickup window has already ended. Please set a future collection time.";
+    }
+    if (new Date(useByRaw) <= now) {
+      return "The use-by date must be in the future.";
+    }
+    if (new Date(useByRaw) < new Date(startRaw)) {
       return "Use-by date cannot be earlier than the pickup window start.";
     }
+
+    return {
+      category: categoryRaw as NewListing["category"],
+      description: descriptionRaw,
+      remainingQuantity: quantityRaw,
+      unit: unitRaw,
+      allergens,
+      handlingInstructions,
+      useBy: useByRaw,
+      pickupLocation: pickupLocationRaw,
+      pickupWindowStart: startRaw,
+      pickupWindowEnd: endRaw,
+    };
   }
 
+  // Draft mode: allow saving even with partial/empty fields by using valid type fallbacks
+  const now = new Date();
+  const defaultStart = new Date(now.getTime() + 24 * 60 * 60 * 1000); // tomorrow
+  defaultStart.setHours(9, 0, 0, 0);
+  const defaultEnd = new Date(defaultStart.getTime() + 8 * 60 * 60 * 1000); // tomorrow 17:00
+  const defaultUseBy = new Date(defaultStart.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
+
+  const category = listingCategories.includes(categoryRaw as NewListing["category"])
+    ? (categoryRaw as NewListing["category"])
+    : "produce";
+  const description = descriptionRaw || "Untitled draft";
+  const remainingQuantity =
+    Number.isFinite(quantityRaw) && quantityRaw > 0 ? quantityRaw : 1;
+  const unit = unitRaw || "items";
+  const pickupLocation = pickupLocationRaw || "To be determined";
+  const start = startRaw || defaultStart.toISOString();
+  let end = endRaw || defaultEnd.toISOString();
+  if (new Date(end) <= new Date(start)) {
+    end = new Date(new Date(start).getTime() + 8 * 60 * 60 * 1000).toISOString();
+  }
+  const useBy = useByRaw || defaultUseBy.toISOString();
+
   return {
-    category: category as NewListing["category"],
+    category,
     description,
-    remainingQuantity: quantity,
+    remainingQuantity,
     unit,
-    allergens: text(form, "allergens")
-      .split(",")
-      .map((a) => a.trim())
-      .filter(Boolean),
-    handlingInstructions: text(form, "handlingInstructions"),
+    allergens,
+    handlingInstructions,
     useBy,
     pickupLocation,
     pickupWindowStart: start,
@@ -121,9 +162,8 @@ function readListing(
 }
 
 /**
- * Creates the listing and moves it out of draft. The service defaults new
- * listings to draft, so publishing is the create followed by a status
- * change to available.
+ * Creates the listing. Defaults new listings to draft in the service.
+ * If intent is 'available', immediately transitions it to available.
  */
 export async function createListingAction(
   _prev: ListingFormState,
@@ -137,7 +177,10 @@ export async function createListingAction(
     return { error: "Your session has expired. Please sign in again.", values };
   }
 
-  const listing = readListing(formData, true);
+  const intent = text(formData, "intent") || text(formData, "status") || "available";
+  const isPublishing = intent === "available";
+
+  const listing = readListing(formData, isPublishing);
   if (typeof listing === "string") return { error: listing, values };
 
   const imageEntry = formData.get("image");
@@ -159,21 +202,26 @@ export async function createListingAction(
     };
   }
 
-  try {
-    await updateListing(idToken, created.id, {
-      version: created.version,
-      status: "available",
-    });
-  } catch {
-    return {
-      error:
-        "Your listing was saved as a draft, but publishing it failed. Open it from your listings to publish.",
-      values,
-    };
+  if (isPublishing) {
+    try {
+      await updateListing(idToken, created.id, {
+        version: created.version,
+        status: "available",
+      });
+    } catch {
+      return {
+        error:
+          "Your listing was saved as a draft, but publishing it failed. Open it from your listings to publish.",
+        values,
+      };
+    }
   }
 
   revalidatePath("/listings");
-  return { publishedId: created.id };
+  return {
+    publishedId: created.id,
+    status: isPublishing ? "available" : "draft",
+  };
 }
 
 const LOCKED_STATUSES = new Set(["reserved", "collected", "expired", "cancelled"]);
