@@ -436,7 +436,7 @@ describe('ListingsRepository', () => {
       expect(listingsChain.where).toHaveBeenCalled();
     });
 
-    it("does not filter by status/org for an admin viewer (sees every listing's draft or not)", async () => {
+    it("does not filter by status/org for an admin viewer (sees every listing, any status)", async () => {
       const db = makeDb();
       const queryChain = chain([baseListing]);
       db.select.mockReturnValue(queryChain);
@@ -445,11 +445,11 @@ describe('ListingsRepository', () => {
       await repository.findMany({ limit: 20, offset: 0 }, adminViewer);
 
       const { sql, params } = renderWhere(queryChain.where as jest.Mock);
-      expect(sql).not.toContain('"status" <>');
-      expect(params).not.toContain('draft');
+      expect(sql).not.toContain('"status" =');
+      expect(params).not.toContain('available');
     });
 
-    it('restricts draft listings to the donor org for a non-admin viewer with an org', async () => {
+    it('restricts other orgs to available listings, but shows a non-admin viewer their own org in every status', async () => {
       const db = makeDb();
       const queryChain = chain([baseListing]);
       db.select.mockReturnValue(queryChain);
@@ -463,13 +463,13 @@ describe('ListingsRepository', () => {
       await repository.findMany({ limit: 20, offset: 0 }, viewer);
 
       const { sql, params } = renderWhere(queryChain.where as jest.Mock);
-      expect(sql).toContain('"status" <>');
+      expect(sql).toContain('"status" =');
       expect(sql).toContain('"donor_org_id" =');
-      expect(params).toContain('draft');
+      expect(params).toContain('available');
       expect(params).toContain('org-1');
     });
 
-    it('excludes draft listings entirely for a viewer with no org', async () => {
+    it('restricts a viewer with no org to available listings only', async () => {
       const db = makeDb();
       const queryChain = chain([baseListing]);
       db.select.mockReturnValue(queryChain);
@@ -479,9 +479,9 @@ describe('ListingsRepository', () => {
       await repository.findMany({ limit: 20, offset: 0 }, viewer);
 
       const { sql, params } = renderWhere(queryChain.where as jest.Mock);
-      expect(sql).toContain('"status" <>');
+      expect(sql).toContain('"status" =');
       expect(sql).not.toContain('"donor_org_id" =');
-      expect(params).toContain('draft');
+      expect(params).toContain('available');
       expect(params).not.toContain('org-1');
     });
   });

@@ -10,7 +10,6 @@ import {
   inArray,
   isNull,
   lte,
-  ne,
   or,
   sql,
   type Column,
@@ -226,17 +225,20 @@ export class ListingsRepository {
     viewer: AuthenticatedUser,
   ): SQL[] {
     const conditions: SQL[] = [isNull(listings.deletedAt)];
-    // Draft listings are a donor org's private staging state - see
-    // isListingVisible in listing-access.util.ts for the single-listing
-    // equivalent of this rule. Admins see everything.
+    // Search/discovery only surfaces available listings for orgs that don't
+    // own them - reserved/collected/etc. listings a rescue org already has
+    // via a request are looked up individually instead (findOne / GET :id),
+    // not through this endpoint. See isListingVisible in
+    // listing-access.util.ts for that single-listing equivalent, which stays
+    // broader (any non-draft status). Admins see everything here too.
     if (viewer.role !== 'admin') {
       conditions.push(
         viewer.orgId
           ? or(
-              ne(listings.status, 'draft'),
+              eq(listings.status, 'available'),
               eq(listings.donorOrgId, viewer.orgId),
             )!
-          : ne(listings.status, 'draft'),
+          : eq(listings.status, 'available'),
       );
     }
     if (query.status) conditions.push(eq(listings.status, query.status));
