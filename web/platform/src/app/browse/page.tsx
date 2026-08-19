@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { forbidden } from "next/navigation";
 import type { Metadata } from "next";
+import { SearchX } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
 import { listListings, type Listing } from "@/lib/listings";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
 import { ListingCards } from "@/components/listings/listing-cards";
+import { ListingFilters } from "@/components/listings/listing-filters";
 import { RequestDialog } from "@/components/browse/request-dialog";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
@@ -18,6 +20,11 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { cn } from "@/lib/utils";
+import {
+  filterListings,
+  isFilterActive,
+  type ListingFilterParams,
+} from "@/lib/filter-listings";
 
 export const metadata: Metadata = {
   title: "Find surplus food — RescuFood",
@@ -38,7 +45,17 @@ function Notice({ title, body }: { title: string; body: React.ReactNode }) {
   );
 }
 
-export default async function BrowsePage() {
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    area?: string;
+    category?: string;
+    minQty?: string;
+    pickupWindow?: string;
+    pickupBefore?: string;
+  }>;
+}) {
   const session = await requireSession();
 
   let me: Me | null = null;
@@ -89,6 +106,15 @@ export default async function BrowsePage() {
     forbidden();
   }
 
+  const rawParams = await searchParams;
+  const filters: ListingFilterParams = {
+    area: rawParams.area,
+    category: rawParams.category,
+    minQty: rawParams.minQty,
+    pickupWindow: rawParams.pickupWindow,
+    pickupBefore: rawParams.pickupBefore,
+  };
+
   let listings: Listing[] = [];
   let unavailable = false;
   try {
@@ -96,12 +122,15 @@ export default async function BrowsePage() {
       status: "available",
       sortBy: "useBy",
       sortOrder: "asc",
-      limit: 60,
+      limit: 100,
     });
     listings = page.items;
   } catch {
     unavailable = true;
   }
+
+  const filteredListings = filterListings(listings, filters);
+  const activeFilters = isFilterActive(filters);
 
   return (
     <PageShell>
@@ -123,6 +152,12 @@ export default async function BrowsePage() {
           ]}
         />
 
+        {!unavailable && (
+          <div data-animate="field">
+            <ListingFilters />
+          </div>
+        )}
+
         {unavailable ? (
           <Card data-animate="field" className="mx-auto w-full max-w-lg">
             <CardHeader>
@@ -135,12 +170,35 @@ export default async function BrowsePage() {
           </Card>
         ) : (
           <div data-animate="field">
-            <ListingCards
-              listings={listings}
-              showStatus={false}
-              empty="Nothing available right now. Check back after the next drop-off."
-              action={(listing) => <RequestDialog listing={listing} />}
-            />
+            {filteredListings.length === 0 && activeFilters ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-xs">
+                <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
+                  <SearchX className="size-6" />
+                </div>
+                <h3 className="text-base font-medium text-foreground">
+                  No surplus food matches your criteria
+                </h3>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  Try adjusting or clearing your filters to see more available listings.
+                </p>
+                <Link
+                  href="/browse"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "mt-4 rounded-full",
+                  )}
+                >
+                  Reset all filters
+                </Link>
+              </div>
+            ) : (
+              <ListingCards
+                listings={filteredListings}
+                showStatus={false}
+                empty="Nothing available right now. Check back after the next drop-off."
+                action={(listing) => <RequestDialog listing={listing} />}
+              />
+            )}
           </div>
         )}
       </AnimateIn>

@@ -21,9 +21,12 @@ export function ListingCards({
   /** Rendered at the foot of each card, e.g. a request button. */
   action?: (listing: Listing) => React.ReactNode;
   showStatus?: boolean;
-  empty?: string;
+  empty?: React.ReactNode;
 }) {
   if (listings.length === 0) {
+    if (typeof empty !== "string") {
+      return <>{empty}</>;
+    }
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
         <p className="text-sm text-muted-foreground">{empty}</p>
