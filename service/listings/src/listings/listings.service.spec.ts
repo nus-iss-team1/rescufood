@@ -737,6 +737,46 @@ describe('ListingsService', () => {
     });
   });
 
+  describe('update - locked/terminal statuses', () => {
+    it.each(['reserved', 'collected', 'expired', 'cancelled'] as const)(
+      'rejects editing a field on a %s listing even without touching status',
+      async (status) => {
+        const repository = makeRepository();
+        repository.findById.mockResolvedValue({ ...baseListing, status });
+        const { service } = makeService(repository);
+
+        await expect(
+          service.update(
+            'listing-1',
+            { version: 1, description: 'Updated' },
+            [],
+            owner,
+          ),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(repository.updateWithVersion).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects a status change attempt on a locked listing too', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'available' },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+  });
+
   describe('update - publication validation gate', () => {
     it('rejects publishing with a zero quantity and leaves the listing untouched', async () => {
       const repository = makeRepository();

@@ -1,5 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
-import { assertValidStatusTransition } from './listing-status.util';
+import {
+  assertListingIsEditable,
+  assertValidStatusTransition,
+} from './listing-status.util';
 
 describe('assertValidStatusTransition', () => {
   it('allows publishing a draft', () => {
@@ -49,6 +52,26 @@ describe('assertValidStatusTransition', () => {
       'cancelled',
     ] as const) {
       expect(() => assertValidStatusTransition(terminal, 'available')).toThrow(
+        BadRequestException,
+      );
+    }
+  });
+});
+
+describe('assertListingIsEditable', () => {
+  it('allows draft and available', () => {
+    expect(() => assertListingIsEditable('draft')).not.toThrow();
+    expect(() => assertListingIsEditable('available')).not.toThrow();
+  });
+
+  it('rejects every terminal status', () => {
+    for (const terminal of [
+      'reserved',
+      'collected',
+      'expired',
+      'cancelled',
+    ] as const) {
+      expect(() => assertListingIsEditable(terminal)).toThrow(
         BadRequestException,
       );
     }

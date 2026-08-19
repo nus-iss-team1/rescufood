@@ -21,7 +21,10 @@ import {
   assertCanModify,
   isListingVisible,
 } from './common/listing-access.util';
-import { assertValidStatusTransition } from './common/listing-status.util';
+import {
+  assertListingIsEditable,
+  assertValidStatusTransition,
+} from './common/listing-status.util';
 import {
   PublicationValidationException,
   validateForPublication,
@@ -140,6 +143,7 @@ export class ListingsService {
   ): Promise<ListingWithImages> {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
+    assertListingIsEditable(existing.status);
 
     if (dto.status !== undefined) {
       assertValidStatusTransition(existing.status, dto.status);
