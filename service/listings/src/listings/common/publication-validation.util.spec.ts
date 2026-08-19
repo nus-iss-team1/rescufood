@@ -70,15 +70,18 @@ describe('validateForPublication', () => {
       'pickupWindowStart',
       'pickupWindowEnd',
       'useBy',
-    ] as const)('rejects a missing (null) %s on an incomplete Draft', (field) => {
-      const errors = validateForPublication(
-        validCandidate({ [field]: null }),
-        NOW,
-      );
-      expect(errors).toContainEqual(
-        expect.objectContaining({ field, code: 'REQUIRED' }),
-      );
-    });
+    ] as const)(
+      'rejects a missing (null) %s on an incomplete Draft',
+      (field) => {
+        const errors = validateForPublication(
+          validCandidate({ [field]: null }),
+          NOW,
+        );
+        expect(errors).toContainEqual(
+          expect.objectContaining({ field, code: 'REQUIRED' }),
+        );
+      },
+    );
 
     it.each([
       'category',
@@ -121,7 +124,11 @@ describe('validateForPublication', () => {
         NOW,
       );
       expect(errors).toEqual([
-        { field: 'pickupWindowStart', code: 'REQUIRED', message: 'pickupWindowStart is required' },
+        {
+          field: 'pickupWindowStart',
+          code: 'REQUIRED',
+          message: 'pickupWindowStart is required',
+        },
       ]);
     });
 

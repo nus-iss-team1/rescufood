@@ -140,7 +140,7 @@ export class ListingsController {
   @ApiOperation({
     summary: 'List listings',
     description:
-      'Paginated, filterable search over active listings. Listings you don\'t ' +
+      "Paginated, filterable search over active listings. Listings you don't " +
       'own are only included while "available" - your own org\'s listings are ' +
       'included in every status.',
   })

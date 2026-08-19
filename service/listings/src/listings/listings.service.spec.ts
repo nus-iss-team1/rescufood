@@ -153,6 +153,32 @@ function publishableFields() {
   };
 }
 
+interface TypedPublicationError {
+  field: string;
+  code: string;
+  message: string;
+}
+
+// Extracts the typed errors[] off a rejected update() call - avoids nesting
+// expect.objectContaining inside toMatchObject, which types as `any` and
+// trips no-unsafe-assignment (same reasoning as listings.repository.spec.ts's
+// destructuring around expect.any(Date)).
+async function captureUpdateErrors(
+  service: ListingsService,
+  id: string,
+  dto: Parameters<ListingsService['update']>[1],
+  owner: AuthenticatedUser,
+): Promise<TypedPublicationError[]> {
+  let caught: unknown;
+  try {
+    await service.update(id, dto, [], owner);
+  } catch (err) {
+    caught = err;
+  }
+  return (caught as { response: { errors: TypedPublicationError[] } }).response
+    .errors;
+}
+
 const imageResponse = {
   id: 'image-1',
   position: 0,
@@ -259,11 +285,7 @@ describe('ListingsService', () => {
       repository.create.mockResolvedValue(incompleteDraft);
       const { service } = makeService(repository);
 
-      const result = await service.create(
-        { category: 'produce' },
-        [],
-        owner,
-      );
+      const result = await service.create({ category: 'produce' }, [], owner);
 
       expect(result).toEqual({ ...incompleteDraft, images: [] });
       expect(repository.create).toHaveBeenCalledWith(
@@ -823,20 +845,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [
-            expect.objectContaining({ code: 'QUANTITY_INVALID' }),
-          ],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'QUANTITY_INVALID' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -851,20 +868,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [
-            expect.objectContaining({ code: 'PICKUP_WINDOW_PAST' }),
-          ],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'PICKUP_WINDOW_PAST' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -878,20 +890,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [
-            expect.objectContaining({ code: 'USE_BY_INCONSISTENT' }),
-          ],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'USE_BY_INCONSISTENT' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -904,18 +911,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [expect.objectContaining({ field: 'category', code: 'REQUIRED' })],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ field: 'category', code: 'REQUIRED' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -928,18 +932,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [expect.objectContaining({ field: 'allergens', code: 'REQUIRED' })],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ field: 'allergens', code: 'REQUIRED' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -952,20 +953,18 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        ),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [
-            expect.objectContaining({ field: 'allergens', code: 'ALLERGENS_INVALID' }),
-          ],
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          field: 'allergens',
+          code: 'ALLERGENS_INVALID',
         }),
-      });
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
@@ -981,23 +980,12 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      let caught: unknown;
-      try {
-        await service.update(
-          'listing-1',
-          { version: 1, status: 'available' },
-          [],
-          owner,
-        );
-      } catch (err) {
-        caught = err;
-      }
-
-      const errors = (
-        caught as {
-          response: { errors: { code: string }[] };
-        }
-      ).response.errors;
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
       const codes = errors.map((error) => error.code).sort();
       expect(codes).toEqual(
         ['PICKUP_WINDOW_PAST', 'QUANTITY_INVALID', 'REQUIRED'].sort(),
@@ -1015,13 +1003,15 @@ describe('ListingsService', () => {
       });
       const { service } = makeService(repository);
 
-      await expect(
-        service.update('listing-1', { version: 1, description: 'Updated' }, [], owner),
-      ).rejects.toMatchObject({
-        response: expect.objectContaining({
-          errors: [expect.objectContaining({ code: 'QUANTITY_INVALID' })],
-        }),
-      });
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, description: 'Updated' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'QUANTITY_INVALID' }),
+      );
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
   });

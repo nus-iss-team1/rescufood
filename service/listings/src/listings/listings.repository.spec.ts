@@ -436,7 +436,7 @@ describe('ListingsRepository', () => {
       expect(listingsChain.where).toHaveBeenCalled();
     });
 
-    it("does not filter by status/org for an admin viewer (sees every listing, any status)", async () => {
+    it('does not filter by status/org for an admin viewer (sees every listing, any status)', async () => {
       const db = makeDb();
       const queryChain = chain([baseListing]);
       db.select.mockReturnValue(queryChain);

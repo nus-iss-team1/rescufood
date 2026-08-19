@@ -131,11 +131,7 @@ export function validateForPublication(
     });
   }
 
-  if (
-    pickupWindowEnd &&
-    useBy &&
-    pickupWindowEnd.getTime() > useBy.getTime()
-  ) {
+  if (pickupWindowEnd && useBy && pickupWindowEnd.getTime() > useBy.getTime()) {
     errors.push({
       field: 'useBy',
       code: 'USE_BY_INCONSISTENT',

@@ -155,8 +155,7 @@ export class ListingsService {
 
     const start =
       dto.pickupWindowStart ?? existing.pickupWindowStart?.toISOString();
-    const end =
-      dto.pickupWindowEnd ?? existing.pickupWindowEnd?.toISOString();
+    const end = dto.pickupWindowEnd ?? existing.pickupWindowEnd?.toISOString();
     assertPickupWindowValid(start, end);
 
     // Gates on the post-update status, not just draft->available - editing
