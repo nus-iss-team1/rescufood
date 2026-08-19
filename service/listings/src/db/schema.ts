@@ -91,8 +91,12 @@ export const listings = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     donorOrgId: uuid('donor_org_id').notNull(), // FK -> organisations.id (service/profile)
     createdBy: uuid('created_by').notNull(), // FK -> users.id (service/profile)
-    category: listingCategory('category').notNull(),
-    description: text('description').notNull(),
+    // Nullable: a Draft can be saved with only some fields filled in -
+    // validateForPublication is what requires these before status can
+    // become 'available' (see the CHECK below, and publication-validation
+    // util.ts).
+    category: listingCategory('category'),
+    description: text('description'),
     // The only quantity column on listings - no separate "original total".
     // Seeded to the donor's specified amount at creation; decremented on
     // accept, incremented back when an accepted request ends in
@@ -100,21 +104,24 @@ export const listings = pgTable(
     remainingQuantity: numeric('remaining_quantity', {
       precision: 10,
       scale: 2,
-    }).notNull(),
-    unit: text('unit').notNull(),
+    }),
+    unit: text('unit'),
+    // NOT NULL, unlike the rest above - '{}' is itself the "not yet
+    // declared" sentinel that validateForPublication checks for, so there's
+    // no separate null state to represent.
     allergens: text('allergens')
       .array()
       .notNull()
       .default(sql`'{}'`),
     handlingInstructions: text('handling_instructions').notNull().default(''),
-    useBy: timestamp('use_by', { withTimezone: true }).notNull(),
-    pickupLocation: text('pickup_location').notNull(),
+    useBy: timestamp('use_by', { withTimezone: true }),
+    pickupLocation: text('pickup_location'),
     pickupWindowStart: timestamp('pickup_window_start', {
       withTimezone: true,
-    }).notNull(),
+    }),
     pickupWindowEnd: timestamp('pickup_window_end', {
       withTimezone: true,
-    }).notNull(),
+    }),
     status: listingStatus('status').notNull().default('draft'),
     version: integer('version').notNull().default(1),
     cancelledReason: text('cancelled_reason').notNull().default(''),
@@ -141,6 +148,24 @@ export const listings = pgTable(
     check(
       'remaining_quantity_non_negative',
       sql`${table.remainingQuantity} >= 0`,
+    ),
+    // Backstop for the publish gate in ListingsService.update() - so status
+    // can never become 'available' with a still-incomplete Draft's fields,
+    // even via a raw SQL path (see e.g. requests.repository.ts's direct
+    // status writes on accept/cancel).
+    check(
+      'available_listing_is_complete',
+      sql`${table.status} <> 'available' or (
+        ${table.category} is not null and
+        ${table.description} is not null and
+        ${table.remainingQuantity} is not null and
+        ${table.unit} is not null and
+        ${table.useBy} is not null and
+        ${table.pickupLocation} is not null and
+        ${table.pickupWindowStart} is not null and
+        ${table.pickupWindowEnd} is not null and
+        coalesce(array_length(${table.allergens}, 1), 0) > 0
+      )`,
     ),
     index('listings_discovery_idx').on(
       table.status,

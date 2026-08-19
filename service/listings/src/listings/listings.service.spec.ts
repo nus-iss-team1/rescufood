@@ -137,6 +137,48 @@ const baseListing = {
   updatedAt: new Date('2026-08-06T00:00:00Z'),
 };
 
+// baseListing's fixed dates fail the past-window rule once "now" moves
+// past them - use these overrides instead for publish-path tests.
+function publishableFields() {
+  const pickupWindowStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const pickupWindowEnd = new Date(
+    pickupWindowStart.getTime() + 8 * 60 * 60 * 1000,
+  );
+  const useBy = new Date(pickupWindowEnd.getTime() + 24 * 60 * 60 * 1000);
+  return {
+    allergens: ['none'],
+    pickupWindowStart,
+    pickupWindowEnd,
+    useBy,
+  };
+}
+
+interface TypedPublicationError {
+  field: string;
+  code: string;
+  message: string;
+}
+
+// Extracts the typed errors[] off a rejected update() call - avoids nesting
+// expect.objectContaining inside toMatchObject, which types as `any` and
+// trips no-unsafe-assignment (same reasoning as listings.repository.spec.ts's
+// destructuring around expect.any(Date)).
+async function captureUpdateErrors(
+  service: ListingsService,
+  id: string,
+  dto: Parameters<ListingsService['update']>[1],
+  owner: AuthenticatedUser,
+): Promise<TypedPublicationError[]> {
+  let caught: unknown;
+  try {
+    await service.update(id, dto, [], owner);
+  } catch (err) {
+    caught = err;
+  }
+  return (caught as { response: { errors: TypedPublicationError[] } }).response
+    .errors;
+}
+
 const imageResponse = {
   id: 'image-1',
   position: 0,
@@ -226,6 +268,38 @@ describe('ListingsService', () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('creates a genuinely incomplete draft when most fields are omitted', async () => {
+      const repository = makeRepository();
+      const incompleteDraft = {
+        ...baseListing,
+        description: null,
+        remainingQuantity: null,
+        unit: null,
+        useBy: null,
+        pickupLocation: null,
+        pickupWindowStart: null,
+        pickupWindowEnd: null,
+      };
+      repository.create.mockResolvedValue(incompleteDraft);
+      const { service } = makeService(repository);
+
+      const result = await service.create({ category: 'produce' }, [], owner);
+
+      expect(result).toEqual({ ...incompleteDraft, images: [] });
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'produce',
+          description: undefined,
+          remainingQuantity: undefined,
+          unit: undefined,
+          useBy: undefined,
+          pickupLocation: undefined,
+          pickupWindowStart: undefined,
+          pickupWindowEnd: undefined,
+        }),
+      );
     });
   });
 
@@ -685,7 +759,10 @@ describe('ListingsService', () => {
 
     it('allows a status transition reachable from the current one', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseListing); // status: draft
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+      });
       repository.updateWithVersion.mockResolvedValue({
         ...baseListing,
         status: 'available',
@@ -715,6 +792,227 @@ describe('ListingsService', () => {
       await expect(
         service.update('listing-1', { version: 1, status: 'draft' }, [], owner),
       ).resolves.toMatchObject({ status: 'draft' });
+    });
+  });
+
+  describe('update - locked/terminal statuses', () => {
+    it.each(['reserved', 'collected', 'expired', 'cancelled'] as const)(
+      'rejects editing a field on a %s listing even without touching status',
+      async (status) => {
+        const repository = makeRepository();
+        repository.findById.mockResolvedValue({ ...baseListing, status });
+        const { service } = makeService(repository);
+
+        await expect(
+          service.update(
+            'listing-1',
+            { version: 1, description: 'Updated' },
+            [],
+            owner,
+          ),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(repository.updateWithVersion).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects a status change attempt on a locked listing too', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'available' },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update - publication validation gate', () => {
+    it('rejects publishing with a zero quantity and leaves the listing untouched', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        remainingQuantity: '0.00',
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'QUANTITY_INVALID' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing a pickup window that has already passed', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        pickupWindowStart: new Date('2026-08-09T09:00:00Z'),
+        pickupWindowEnd: new Date('2026-08-09T17:00:00Z'),
+        useBy: new Date('2026-08-10T00:00:00Z'),
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'PICKUP_WINDOW_PAST' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing when pickupWindowEnd is after useBy', async () => {
+      const repository = makeRepository();
+      const fields = publishableFields();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...fields,
+        useBy: new Date(fields.pickupWindowStart.getTime() - 1000),
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'USE_BY_INCONSISTENT' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing an incomplete draft missing category, reporting it in errors[]', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        category: null,
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ field: 'category', code: 'REQUIRED' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing with no allergen information declared', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        allergens: [],
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ field: 'allergens', code: 'REQUIRED' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing with a blank allergen entry', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        allergens: ['peanuts', '   '],
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          field: 'allergens',
+          code: 'ALLERGENS_INVALID',
+        }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('reports every failing rule together (AC7)', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        remainingQuantity: '0.00',
+        allergens: [],
+        pickupWindowStart: new Date('2026-08-09T09:00:00Z'),
+        pickupWindowEnd: new Date('2026-08-09T17:00:00Z'),
+        useBy: new Date('2026-08-10T00:00:00Z'),
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, status: 'available' },
+        owner,
+      );
+      const codes = errors.map((error) => error.code).sort();
+      expect(codes).toEqual(
+        ['PICKUP_WINDOW_PAST', 'QUANTITY_INVALID', 'REQUIRED'].sort(),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('also gates editing an already-available listing', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        status: 'available',
+        remainingQuantity: '0.00',
+      });
+      const { service } = makeService(repository);
+
+      const errors = await captureUpdateErrors(
+        service,
+        'listing-1',
+        { version: 1, description: 'Updated' },
+        owner,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ code: 'QUANTITY_INVALID' }),
+      );
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
   });
 
@@ -779,6 +1077,7 @@ describe('ListingsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseListing,
+        ...publishableFields(),
         status: 'draft',
       });
       repository.updateWithVersion.mockResolvedValue({

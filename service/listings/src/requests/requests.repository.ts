@@ -29,8 +29,11 @@ export type RequestedListing = {
   id: string;
   donorOrgId: string;
   status: (typeof listings.$inferSelect)['status'];
-  remainingQuantity: string;
-  unit: string;
+  // Nullable on a Draft - RequestsService only reads these once it's
+  // confirmed status === 'available', where they're guaranteed non-null
+  // (see the available_listing_is_complete CHECK in db/schema.ts).
+  remainingQuantity: string | null;
+  unit: string | null;
 };
 
 @Injectable()

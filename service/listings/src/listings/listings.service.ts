@@ -21,7 +21,14 @@ import {
   assertCanModify,
   isListingVisible,
 } from './common/listing-access.util';
-import { assertValidStatusTransition } from './common/listing-status.util';
+import {
+  assertListingIsEditable,
+  assertValidStatusTransition,
+} from './common/listing-status.util';
+import {
+  PublicationValidationException,
+  validateForPublication,
+} from './common/publication-validation.util';
 import {
   ListingImageResponse,
   toListingImageResponses,
@@ -57,14 +64,18 @@ export class ListingsService {
       createdBy: user.userId,
       category: dto.category,
       description: dto.description,
-      remainingQuantity: dto.remainingQuantity.toString(),
+      remainingQuantity: dto.remainingQuantity?.toString(),
       unit: dto.unit,
       allergens: dto.allergens,
       handlingInstructions: dto.handlingInstructions,
-      useBy: new Date(dto.useBy),
+      useBy: dto.useBy ? new Date(dto.useBy) : undefined,
       pickupLocation: dto.pickupLocation,
-      pickupWindowStart: new Date(dto.pickupWindowStart),
-      pickupWindowEnd: new Date(dto.pickupWindowEnd),
+      pickupWindowStart: dto.pickupWindowStart
+        ? new Date(dto.pickupWindowStart)
+        : undefined,
+      pickupWindowEnd: dto.pickupWindowEnd
+        ? new Date(dto.pickupWindowEnd)
+        : undefined,
     });
 
     if (files.length === 0) {
@@ -136,15 +147,36 @@ export class ListingsService {
   ): Promise<ListingWithImages> {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
+    assertListingIsEditable(existing.status);
 
     if (dto.status !== undefined) {
       assertValidStatusTransition(existing.status, dto.status);
     }
 
     const start =
-      dto.pickupWindowStart ?? existing.pickupWindowStart.toISOString();
-    const end = dto.pickupWindowEnd ?? existing.pickupWindowEnd.toISOString();
+      dto.pickupWindowStart ?? existing.pickupWindowStart?.toISOString();
+    const end = dto.pickupWindowEnd ?? existing.pickupWindowEnd?.toISOString();
     assertPickupWindowValid(start, end);
+
+    // Gates on the post-update status, not just draft->available - editing
+    // an already-available listing must not leave it inconsistent either.
+    const resultStatus = dto.status ?? existing.status;
+    if (resultStatus === 'available') {
+      const publicationErrors = validateForPublication({
+        category: dto.category ?? existing.category,
+        description: dto.description ?? existing.description,
+        pickupLocation: dto.pickupLocation ?? existing.pickupLocation,
+        unit: dto.unit ?? existing.unit,
+        allergens: dto.allergens ?? existing.allergens,
+        remainingQuantity: dto.remainingQuantity ?? existing.remainingQuantity,
+        pickupWindowStart: start,
+        pickupWindowEnd: end,
+        useBy: dto.useBy ?? existing.useBy,
+      });
+      if (publicationErrors.length > 0) {
+        throw new PublicationValidationException(publicationErrors);
+      }
+    }
 
     const deleteImageIds = dto.deleteImageIds ?? [];
     // Fails fast on an unknown/foreign id before touching S3 or the DB.
@@ -333,7 +365,13 @@ export class ListingsService {
   }
 }
 
-function assertPickupWindowValid(start: string, end: string): void {
+// A missing pair isn't an invalid *sequence*, just not filled in yet -
+// validateForPublication is what flags that at publish time.
+function assertPickupWindowValid(
+  start: string | undefined,
+  end: string | undefined,
+): void {
+  if (start === undefined || end === undefined) return;
   if (new Date(end).getTime() <= new Date(start).getTime()) {
     throw new BadRequestException(
       'pickupWindowEnd must be after pickupWindowStart',

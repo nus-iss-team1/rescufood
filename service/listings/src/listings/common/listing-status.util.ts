@@ -30,3 +30,15 @@ export function assertValidStatusTransition(
     );
   }
 }
+
+// A status with no outgoing edges above is terminal from the donor's side -
+// block editing any field on it here, not just `status`, so a PATCH that
+// omits `status` can't sneak past assertValidStatusTransition (which only
+// runs when the caller sends one).
+export function assertListingIsEditable(status: ListingStatus): void {
+  if (ALLOWED_TRANSITIONS[status].length === 0) {
+    throw new BadRequestException(
+      `listing is ${status} and can no longer be modified`,
+    );
+  }
+}

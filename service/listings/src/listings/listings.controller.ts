@@ -103,7 +103,11 @@ export class ListingsController {
   @ApiOperation({
     summary: 'Create a listing',
     description:
-      'Donor-org members only. Accepts either a plain JSON body or multipart/form-data with an inline `files` part for images.',
+      'Donor-org members only. Accepts either a plain JSON body or ' +
+      'multipart/form-data with an inline `files` part for images. Every ' +
+      'field is optional, to allow saving an incomplete Draft - publication ' +
+      'validation (see PATCH .../:id) is what requires them before the ' +
+      'listing can become "available".',
   })
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody(withFilesBody(CreateListingDto))
@@ -135,7 +139,10 @@ export class ListingsController {
 
   @ApiOperation({
     summary: 'List listings',
-    description: 'Paginated, filterable search over active listings.',
+    description:
+      "Paginated, filterable search over active listings. Listings you don't " +
+      'own are only included while "available" - your own org\'s listings are ' +
+      'included in every status.',
   })
   @ApiResponse({ status: 200, type: PaginatedListingsResponseDto })
   @Get()
@@ -163,7 +170,14 @@ export class ListingsController {
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody(withFilesBody(UpdateListingDto))
   @ApiResponse({ status: 200, type: ListingResponseDto })
-  @ApiResponse({ status: 400, description: 'Validation failed.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation failed. When publishing (status "available"), all failing ' +
+      'rules are returned together as `errors: { field, code, message }[]` ' +
+      '(REQUIRED, QUANTITY_INVALID, PICKUP_WINDOW_INVALID, PICKUP_WINDOW_PAST, ' +
+      'USE_BY_INCONSISTENT, ALLERGENS_INVALID). Listing is left unchanged.',
+  })
   @ApiResponse({
     status: 403,
     description: "Caller is not a member of the listing's donor organisation.",
