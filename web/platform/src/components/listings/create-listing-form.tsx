@@ -81,6 +81,9 @@ export function CreateListingForm() {
   // Standardized image state
   const [listingImage, setListingImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [submitIntent, setSubmitIntent] = useState<"available" | "draft">(
+    "available",
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,17 +127,22 @@ export function CreateListingForm() {
     if (listingImage) {
       formData.set("image", listingImage);
     }
+    if (!formData.get("intent")) {
+      formData.set("intent", submitIntent);
+    }
     action(formData);
   };
 
   const canSubmit = !pending;
 
   if (state.publishedId) {
+    const isDraft = state.status === "draft";
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Your listing is live. Rescue partners can request it until the pickup
-          window closes.
+          {isDraft
+            ? "Your listing has been saved as a draft. You can edit or publish it anytime from your listings."
+            : "Your listing is live. Rescue partners can request it until the pickup window closes."}
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href="/listings" className={cn(buttonVariants())}>
@@ -152,7 +160,7 @@ export function CreateListingForm() {
   }
 
   return (
-    <form action={handleSubmit} className="grid gap-5 md:grid-cols-2">
+    <form action={handleSubmit} noValidate className="grid gap-5 md:grid-cols-2">
       {/* Standardized Image Upload Slot */}
       <div data-animate="field" className="flex flex-col gap-2 md:col-span-2">
         <Label>Listing image</Label>
@@ -361,14 +369,36 @@ export function CreateListingForm() {
         </p>
       ) : null}
 
-      <Button
-        type="submit"
-        size="lg"
-        disabled={pending || !canSubmit}
-        className="w-full md:col-span-2"
-      >
-        {pending ? "Publishing..." : "Publish listing"}
-      </Button>
+      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 md:col-span-2">
+        <Button
+          type="submit"
+          name="intent"
+          value="available"
+          size="lg"
+          disabled={pending || !canSubmit}
+          onClick={() => setSubmitIntent("available")}
+          className="w-full sm:w-auto"
+        >
+          {pending && submitIntent === "available"
+            ? "Publishing..."
+            : "Publish listing"}
+        </Button>
+        <Button
+          type="submit"
+          name="intent"
+          value="draft"
+          variant="outline"
+          size="lg"
+          formNoValidate
+          disabled={pending || !canSubmit}
+          onClick={() => setSubmitIntent("draft")}
+          className="w-full sm:w-auto"
+        >
+          {pending && submitIntent === "draft"
+            ? "Saving draft..."
+            : "Save as draft"}
+        </Button>
+      </div>
     </form>
   );
 }
