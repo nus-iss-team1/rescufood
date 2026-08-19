@@ -12,20 +12,21 @@ export class ListingResponseDto {
   @ApiProperty({ format: 'uuid' })
   createdBy!: string;
 
-  @ApiProperty({ enum: listingCategory.enumValues })
-  category!: (typeof listingCategory.enumValues)[number];
+  @ApiProperty({ enum: listingCategory.enumValues, nullable: true })
+  category!: (typeof listingCategory.enumValues)[number] | null;
 
-  @ApiProperty()
-  description!: string;
+  @ApiProperty({ type: String, nullable: true })
+  description!: string | null;
 
   @ApiProperty({
-    type: 'string',
+    type: String,
+    nullable: true,
     description: 'Decimal string, e.g. "12.50".',
   })
-  remainingQuantity!: string;
+  remainingQuantity!: string | null;
 
-  @ApiProperty()
-  unit!: string;
+  @ApiProperty({ type: String, nullable: true })
+  unit!: string | null;
 
   @ApiProperty({ type: [String] })
   allergens!: string[];
@@ -33,17 +34,17 @@ export class ListingResponseDto {
   @ApiProperty()
   handlingInstructions!: string;
 
-  @ApiProperty()
-  useBy!: Date;
+  @ApiProperty({ type: String, nullable: true })
+  useBy!: Date | null;
 
-  @ApiProperty()
-  pickupLocation!: string;
+  @ApiProperty({ type: String, nullable: true })
+  pickupLocation!: string | null;
 
-  @ApiProperty()
-  pickupWindowStart!: Date;
+  @ApiProperty({ type: String, nullable: true })
+  pickupWindowStart!: Date | null;
 
-  @ApiProperty()
-  pickupWindowEnd!: Date;
+  @ApiProperty({ type: String, nullable: true })
+  pickupWindowEnd!: Date | null;
 
   @ApiProperty({ enum: listingStatus.enumValues })
   status!: (typeof listingStatus.enumValues)[number];

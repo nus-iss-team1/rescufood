@@ -70,7 +70,9 @@ export class RequestsService {
     if (listing.donorOrgId === user.orgId) {
       throw new BadRequestException('you cannot request your own listing');
     }
-    if (dto.requestedQuantity > Number(listing.remainingQuantity)) {
+    // Non-null: guaranteed by the available_listing_is_complete CHECK now
+    // that status is confirmed 'available' above.
+    if (dto.requestedQuantity > Number(listing.remainingQuantity!)) {
       throw new BadRequestException(
         `requested quantity exceeds the ${listing.remainingQuantity} ${listing.unit} remaining`,
       );

@@ -243,6 +243,42 @@ describe('ListingsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
     });
+
+    it('creates a genuinely incomplete draft when most fields are omitted', async () => {
+      const repository = makeRepository();
+      const incompleteDraft = {
+        ...baseListing,
+        description: null,
+        remainingQuantity: null,
+        unit: null,
+        useBy: null,
+        pickupLocation: null,
+        pickupWindowStart: null,
+        pickupWindowEnd: null,
+      };
+      repository.create.mockResolvedValue(incompleteDraft);
+      const { service } = makeService(repository);
+
+      const result = await service.create(
+        { category: 'produce' },
+        [],
+        owner,
+      );
+
+      expect(result).toEqual({ ...incompleteDraft, images: [] });
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'produce',
+          description: undefined,
+          remainingQuantity: undefined,
+          unit: undefined,
+          useBy: undefined,
+          pickupLocation: undefined,
+          pickupWindowStart: undefined,
+          pickupWindowEnd: undefined,
+        }),
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -854,6 +890,30 @@ describe('ListingsService', () => {
           errors: [
             expect.objectContaining({ code: 'USE_BY_INCONSISTENT' }),
           ],
+        }),
+      });
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('rejects publishing an incomplete draft missing category, reporting it in errors[]', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        category: null,
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'available' },
+          [],
+          owner,
+        ),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          errors: [expect.objectContaining({ field: 'category', code: 'REQUIRED' })],
         }),
       });
       expect(repository.updateWithVersion).not.toHaveBeenCalled();

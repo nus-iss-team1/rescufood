@@ -103,7 +103,11 @@ export class ListingsController {
   @ApiOperation({
     summary: 'Create a listing',
     description:
-      'Donor-org members only. Accepts either a plain JSON body or multipart/form-data with an inline `files` part for images.',
+      'Donor-org members only. Accepts either a plain JSON body or ' +
+      'multipart/form-data with an inline `files` part for images. Every ' +
+      'field is optional, to allow saving an incomplete Draft - publication ' +
+      'validation (see PATCH .../:id) is what requires them before the ' +
+      'listing can become "available".',
   })
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody(withFilesBody(CreateListingDto))

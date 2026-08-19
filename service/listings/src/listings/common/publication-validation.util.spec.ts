@@ -9,6 +9,7 @@ function validCandidate(
   overrides: Partial<PublicationCandidate> = {},
 ): PublicationCandidate {
   return {
+    category: 'produce',
     description: 'Assorted bread',
     pickupLocation: '123 Main St',
     unit: 'kg',
@@ -58,6 +59,86 @@ describe('validateForPublication', () => {
         NOW,
       );
       expect(errors).toEqual([]);
+    });
+
+    it.each([
+      'category',
+      'description',
+      'pickupLocation',
+      'unit',
+      'remainingQuantity',
+      'pickupWindowStart',
+      'pickupWindowEnd',
+      'useBy',
+    ] as const)('rejects a missing (null) %s on an incomplete Draft', (field) => {
+      const errors = validateForPublication(
+        validCandidate({ [field]: null }),
+        NOW,
+      );
+      expect(errors).toContainEqual(
+        expect.objectContaining({ field, code: 'REQUIRED' }),
+      );
+    });
+
+    it.each([
+      'category',
+      'description',
+      'pickupLocation',
+      'unit',
+      'remainingQuantity',
+      'pickupWindowStart',
+      'pickupWindowEnd',
+      'useBy',
+    ] as const)(
+      'rejects a missing (undefined) %s on an incomplete Draft',
+      (field) => {
+        const errors = validateForPublication(
+          validCandidate({ [field]: undefined }),
+          NOW,
+        );
+        expect(errors).toContainEqual(
+          expect.objectContaining({ field, code: 'REQUIRED' }),
+        );
+      },
+    );
+
+    it('reports a missing quantity as REQUIRED, not QUANTITY_INVALID (the NaN trap)', () => {
+      const errors = validateForPublication(
+        validCandidate({ remainingQuantity: undefined }),
+        NOW,
+      );
+      expect(errors).toContainEqual({
+        field: 'remainingQuantity',
+        code: 'REQUIRED',
+        message: 'remainingQuantity is required',
+      });
+      expect(errors.some((e) => e.code === 'QUANTITY_INVALID')).toBe(false);
+    });
+
+    it('does not double-report a missing pickupWindowStart as PICKUP_WINDOW_INVALID too', () => {
+      const errors = validateForPublication(
+        validCandidate({ pickupWindowStart: undefined }),
+        NOW,
+      );
+      expect(errors).toEqual([
+        { field: 'pickupWindowStart', code: 'REQUIRED', message: 'pickupWindowStart is required' },
+      ]);
+    });
+
+    it('does not report PICKUP_WINDOW_PAST when pickupWindowEnd is simply missing', () => {
+      const errors = validateForPublication(
+        validCandidate({ pickupWindowEnd: undefined }),
+        NOW,
+      );
+      expect(errors.some((e) => e.code === 'PICKUP_WINDOW_PAST')).toBe(false);
+    });
+
+    it('does not report USE_BY_INCONSISTENT when useBy is simply missing', () => {
+      const errors = validateForPublication(
+        validCandidate({ useBy: undefined }),
+        NOW,
+      );
+      expect(errors.some((e) => e.code === 'USE_BY_INCONSISTENT')).toBe(false);
     });
   });
 

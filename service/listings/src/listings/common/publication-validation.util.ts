@@ -17,15 +17,18 @@ export class PublicationValidationException extends BadRequestException {
   }
 }
 
+// A Draft can have any of these unset - allergens is the one exception,
+// where '{}' is itself the "not yet declared" sentinel, so it's never null.
 export interface PublicationCandidate {
-  description: string;
-  pickupLocation: string;
-  unit: string;
+  category: string | null | undefined;
+  description: string | null | undefined;
+  pickupLocation: string | null | undefined;
+  unit: string | null | undefined;
   allergens: string[];
-  remainingQuantity: number | string;
-  pickupWindowStart: Date | string;
-  pickupWindowEnd: Date | string;
-  useBy: Date | string;
+  remainingQuantity: number | string | null | undefined;
+  pickupWindowStart: Date | string | null | undefined;
+  pickupWindowEnd: Date | string | null | undefined;
+  useBy: Date | string | null | undefined;
 }
 
 // Never throws or short-circuits - collects every failing rule so callers
@@ -37,11 +40,12 @@ export function validateForPublication(
   const errors: PublicationValidationError[] = [];
 
   for (const [field, value] of [
+    ['category', listing.category],
     ['description', listing.description],
     ['pickupLocation', listing.pickupLocation],
     ['unit', listing.unit],
   ] as const) {
-    if (value.trim().length === 0) {
+    if (value == null || value.trim().length === 0) {
       errors.push({
         field,
         code: 'REQUIRED',
@@ -65,7 +69,13 @@ export function validateForPublication(
     });
   }
 
-  if (Number(listing.remainingQuantity) <= 0) {
+  if (listing.remainingQuantity == null) {
+    errors.push({
+      field: 'remainingQuantity',
+      code: 'REQUIRED',
+      message: 'remainingQuantity is required',
+    });
+  } else if (Number(listing.remainingQuantity) <= 0) {
     errors.push({
       field: 'remainingQuantity',
       code: 'QUANTITY_INVALID',
@@ -73,11 +83,39 @@ export function validateForPublication(
     });
   }
 
-  const pickupWindowStart = new Date(listing.pickupWindowStart);
-  const pickupWindowEnd = new Date(listing.pickupWindowEnd);
-  const useBy = new Date(listing.useBy);
+  for (const [field, value] of [
+    ['pickupWindowStart', listing.pickupWindowStart],
+    ['pickupWindowEnd', listing.pickupWindowEnd],
+    ['useBy', listing.useBy],
+  ] as const) {
+    if (value == null) {
+      errors.push({
+        field,
+        code: 'REQUIRED',
+        message: `${field} is required`,
+      });
+    }
+  }
 
-  if (pickupWindowEnd.getTime() <= pickupWindowStart.getTime()) {
+  // Only meaningful once both sides of each comparison are actually
+  // present - a missing field is already reported as REQUIRED above, and
+  // e.g. Number(undefined) / new Date(undefined) comparisons silently
+  // evaluate to false rather than flagging anything.
+  const pickupWindowStart =
+    listing.pickupWindowStart != null
+      ? new Date(listing.pickupWindowStart)
+      : undefined;
+  const pickupWindowEnd =
+    listing.pickupWindowEnd != null
+      ? new Date(listing.pickupWindowEnd)
+      : undefined;
+  const useBy = listing.useBy != null ? new Date(listing.useBy) : undefined;
+
+  if (
+    pickupWindowStart &&
+    pickupWindowEnd &&
+    pickupWindowEnd.getTime() <= pickupWindowStart.getTime()
+  ) {
     errors.push({
       field: 'pickupWindowEnd',
       code: 'PICKUP_WINDOW_INVALID',
@@ -85,7 +123,7 @@ export function validateForPublication(
     });
   }
 
-  if (pickupWindowEnd.getTime() <= now.getTime()) {
+  if (pickupWindowEnd && pickupWindowEnd.getTime() <= now.getTime()) {
     errors.push({
       field: 'pickupWindowEnd',
       code: 'PICKUP_WINDOW_PAST',
@@ -93,7 +131,11 @@ export function validateForPublication(
     });
   }
 
-  if (pickupWindowEnd.getTime() > useBy.getTime()) {
+  if (
+    pickupWindowEnd &&
+    useBy &&
+    pickupWindowEnd.getTime() > useBy.getTime()
+  ) {
     errors.push({
       field: 'useBy',
       code: 'USE_BY_INCONSISTENT',
