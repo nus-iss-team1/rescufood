@@ -83,12 +83,14 @@ export class MockListingsClient implements ListingsApi {
     if (query.pickupLocation) {
       const needle = query.pickupLocation.toLowerCase();
       items = items.filter((l) =>
-        l.pickupLocation.toLowerCase().includes(needle)
+        (l.pickupLocation ?? "").toLowerCase().includes(needle)
       );
     }
     items = items.filter(
       (l) =>
-        within(l.useBy, query.useByFrom, query.useByTo) &&
+        // "" sorts before any real date, so a null useBy is excluded by an
+        // active from/to filter but doesn't affect the unfiltered case.
+        within(l.useBy ?? "", query.useByFrom, query.useByTo) &&
         within(l.createdAt, query.createdAtFrom, query.createdAtTo)
     );
 
@@ -110,16 +112,21 @@ export class MockListingsClient implements ListingsApi {
       id: crypto.randomUUID(),
       donorOrgId: sampleListings[0].donorOrgId,
       createdBy: sampleListings[0].createdBy,
-      category: listing.category,
-      description: listing.description,
-      remainingQuantity: listing.remainingQuantity.toFixed(2),
-      unit: listing.unit,
+      // NewListing's fields are all optional (a Draft can be incomplete) -
+      // Listing's are all nullable, so an absent field becomes null here.
+      category: listing.category ?? null,
+      description: listing.description ?? null,
+      remainingQuantity:
+        listing.remainingQuantity != null
+          ? listing.remainingQuantity.toFixed(2)
+          : null,
+      unit: listing.unit ?? null,
       allergens: listing.allergens ?? [],
       handlingInstructions: listing.handlingInstructions ?? "",
-      useBy: listing.useBy,
-      pickupLocation: listing.pickupLocation,
-      pickupWindowStart: listing.pickupWindowStart,
-      pickupWindowEnd: listing.pickupWindowEnd,
+      useBy: listing.useBy ?? null,
+      pickupLocation: listing.pickupLocation ?? null,
+      pickupWindowStart: listing.pickupWindowStart ?? null,
+      pickupWindowEnd: listing.pickupWindowEnd ?? null,
       // The service defaults new listings to draft; publishing is a
       // follow-up status change.
       status: "draft",

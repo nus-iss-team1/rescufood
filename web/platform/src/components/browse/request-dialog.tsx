@@ -112,8 +112,10 @@ export function RequestDialog({ listing }: { listing: Listing }) {
           <DialogHeader>
             <DialogTitle>Request this listing</DialogTitle>
             <DialogDescription>
-              {categoryLabels[listing.category]} ·{" "}
-              {quantity(listing.remainingQuantity, listing.unit)} left at{" "}
+              {/* Non-null: only available listings reach this dialog, and
+                  the service guarantees these are filled in by then. */}
+              {categoryLabels[listing.category!]} ·{" "}
+              {quantity(listing.remainingQuantity!, listing.unit!)} left at{" "}
               {listing.pickupLocation}.
             </DialogDescription>
           </DialogHeader>
