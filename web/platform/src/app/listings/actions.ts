@@ -95,6 +95,9 @@ function readListing(
     }
     if (!unitRaw) return "Please give the unit, for example kg or meals.";
     if (!pickupLocationRaw) return "Please give a pickup address.";
+    if (allergens.length === 0) {
+      return "Please list allergens, or enter \"none\" if there aren't any.";
+    }
     if (!useByRaw) return "Please give a use-by date and time.";
     if (!startRaw || !endRaw)
       return "Please give both ends of the pickup window.";
@@ -109,8 +112,8 @@ function readListing(
     if (new Date(useByRaw) <= now) {
       return "The use-by date must be in the future.";
     }
-    if (new Date(useByRaw) < new Date(startRaw)) {
-      return "Use-by date cannot be earlier than the pickup window start.";
+    if (new Date(endRaw) > new Date(useByRaw)) {
+      return "Use-by date cannot be earlier than the pickup window ends.";
     }
 
     return {
