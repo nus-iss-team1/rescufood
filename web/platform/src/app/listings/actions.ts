@@ -69,7 +69,7 @@ function extractValues(form: FormData): ListingFormValues {
 
 function readListing(
   form: FormData,
-  isAvailableTarget: boolean = true
+  isAvailableTarget: boolean = true,
 ): NewListing | string {
   const categoryRaw = text(form, "category");
   const descriptionRaw = text(form, "description");
@@ -96,9 +96,10 @@ function readListing(
     if (!unitRaw) return "Please give the unit, for example kg or meals.";
     if (!pickupLocationRaw) return "Please give a pickup address.";
     if (!useByRaw) return "Please give a use-by date and time.";
-    if (!startRaw || !endRaw) return "Please give both ends of the pickup window.";
+    if (!startRaw || !endRaw)
+      return "Please give both ends of the pickup window.";
     if (new Date(endRaw) <= new Date(startRaw)) {
-      return "The pickup window must end after it starts.";
+      return "Pickup end time must be after the start time.";
     }
 
     const now = new Date();
@@ -126,39 +127,25 @@ function readListing(
     };
   }
 
-  // Draft mode: allow saving even with partial/empty fields by using valid type fallbacks
-  const now = new Date();
-  const defaultStart = new Date(now.getTime() + 24 * 60 * 60 * 1000); // tomorrow
-  defaultStart.setHours(9, 0, 0, 0);
-  const defaultEnd = new Date(defaultStart.getTime() + 8 * 60 * 60 * 1000); // tomorrow 17:00
-  const defaultUseBy = new Date(defaultStart.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
-
-  const category = listingCategories.includes(categoryRaw as ListingCategory)
-    ? (categoryRaw as ListingCategory)
-    : "produce";
-  const description = descriptionRaw || "Untitled draft";
-  const remainingQuantity =
-    Number.isFinite(quantityRaw) && quantityRaw > 0 ? quantityRaw : 1;
-  const unit = unitRaw || "items";
-  const pickupLocation = pickupLocationRaw || "To be determined";
-  const start = startRaw || defaultStart.toISOString();
-  let end = endRaw || defaultEnd.toISOString();
-  if (new Date(end) <= new Date(start)) {
-    end = new Date(new Date(start).getTime() + 8 * 60 * 60 * 1000).toISOString();
-  }
-  const useBy = useByRaw || defaultUseBy.toISOString();
-
+  // Draft mode: send only what's actually filled in, rather than padding
+  // the rest with placeholder text - CreateListingDto accepts every field
+  // as optional now, so an omitted one just stays unset until the donor
+  // fills it in later. Whatever *is* provided is still validated by the
+  // service (e.g. an inverted pickup window still 400s).
   return {
-    category,
-    description,
-    remainingQuantity,
-    unit,
+    category: listingCategories.includes(categoryRaw as ListingCategory)
+      ? (categoryRaw as ListingCategory)
+      : undefined,
+    description: descriptionRaw || undefined,
+    remainingQuantity:
+      Number.isFinite(quantityRaw) && quantityRaw > 0 ? quantityRaw : undefined,
+    unit: unitRaw || undefined,
     allergens,
     handlingInstructions,
-    useBy,
-    pickupLocation,
-    pickupWindowStart: start,
-    pickupWindowEnd: end,
+    useBy: useByRaw ?? undefined,
+    pickupLocation: pickupLocationRaw || undefined,
+    pickupWindowStart: startRaw ?? undefined,
+    pickupWindowEnd: endRaw ?? undefined,
   };
 }
 
@@ -168,7 +155,7 @@ function readListing(
  */
 export async function createListingAction(
   _prev: ListingFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ListingFormState> {
   const values = extractValues(formData);
 
@@ -178,7 +165,8 @@ export async function createListingAction(
     return { error: "Your session has expired. Please sign in again.", values };
   }
 
-  const intent = text(formData, "intent") || text(formData, "status") || "available";
+  const intent =
+    text(formData, "intent") || text(formData, "status") || "available";
   const isPublishing = intent === "available";
 
   const listing = readListing(formData, isPublishing);
@@ -225,7 +213,12 @@ export async function createListingAction(
   };
 }
 
-const LOCKED_STATUSES = new Set(["reserved", "collected", "expired", "cancelled"]);
+const LOCKED_STATUSES = new Set([
+  "reserved",
+  "collected",
+  "expired",
+  "cancelled",
+]);
 
 /**
  * Updates an existing listing via PATCH /listings/:id.
@@ -234,7 +227,7 @@ const LOCKED_STATUSES = new Set(["reserved", "collected", "expired", "cancelled"
  */
 export async function updateListingAction(
   _prev: ListingFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ListingFormState> {
   const values = extractValues(formData);
 
@@ -310,8 +303,7 @@ export async function updateListingAction(
     pickupLocation: listingData.pickupLocation,
     pickupWindowStart: listingData.pickupWindowStart,
     pickupWindowEnd: listingData.pickupWindowEnd,
-    ...(targetStatus &&
-    listingStatuses.includes(targetStatus as ListingStatus)
+    ...(targetStatus && listingStatuses.includes(targetStatus as ListingStatus)
       ? { status: targetStatus as ListingStatus }
       : {}),
     ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
@@ -339,4 +331,3 @@ export async function updateListingAction(
     };
   }
 }
-
