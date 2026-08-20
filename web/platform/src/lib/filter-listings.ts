@@ -90,7 +90,8 @@ export function filterListings(
     ) {
       const min = Number(filters.minQty);
       if (!Number.isNaN(min) && min > 0) {
-        const remaining = parseFloat(listing.remainingQuantity);
+        // Non-null: the status gate above already confirmed 'available'.
+        const remaining = parseFloat(listing.remainingQuantity!);
         if (Number.isNaN(remaining) || remaining < min) {
           return false;
         }

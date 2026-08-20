@@ -61,7 +61,9 @@ export function RequestCards({
           <div className="flex flex-wrap items-center gap-2">
             {listings?.get(request.listingId) && (
               <Badge variant="secondary">
-                {categoryLabels[listings.get(request.listingId)!.category]}
+                {/* Non-null: a request can only exist against a listing that
+                    was available (and so complete) when it was made. */}
+                {categoryLabels[listings.get(request.listingId)!.category!]}
               </Badge>
             )}
             <span className="text-sm text-muted-foreground">

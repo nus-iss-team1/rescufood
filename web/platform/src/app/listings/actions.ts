@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   listingCategories,
   listingStatuses,
+  type ListingCategory,
   type ListingStatus,
 } from "@rescufood/listings-sdk";
 
@@ -85,7 +86,7 @@ function readListing(
   const handlingInstructions = text(form, "handlingInstructions");
 
   if (isAvailableTarget) {
-    if (!listingCategories.includes(categoryRaw as NewListing["category"])) {
+    if (!listingCategories.includes(categoryRaw as ListingCategory)) {
       return "Please choose a category.";
     }
     if (!descriptionRaw) return "Please describe what you are giving away.";
@@ -132,8 +133,8 @@ function readListing(
   const defaultEnd = new Date(defaultStart.getTime() + 8 * 60 * 60 * 1000); // tomorrow 17:00
   const defaultUseBy = new Date(defaultStart.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
 
-  const category = listingCategories.includes(categoryRaw as NewListing["category"])
-    ? (categoryRaw as NewListing["category"])
+  const category = listingCategories.includes(categoryRaw as ListingCategory)
+    ? (categoryRaw as ListingCategory)
     : "produce";
   const description = descriptionRaw || "Untitled draft";
   const remainingQuantity =

@@ -84,17 +84,18 @@ export interface Listing {
   id: string;
   donorOrgId: string;
   createdBy: string;
-  category: ListingCategory;
-  description: string;
-  /** Decimal string, e.g. "12.50". */
-  remainingQuantity: string;
-  unit: string;
+  /** Null on a Draft that hasn't set this field yet. */
+  category: ListingCategory | null;
+  description: string | null;
+  /** Decimal string, e.g. "12.50", or null on an incomplete Draft. */
+  remainingQuantity: string | null;
+  unit: string | null;
   allergens: string[];
   handlingInstructions: string;
-  useBy: string;
-  pickupLocation: string;
-  pickupWindowStart: string;
-  pickupWindowEnd: string;
+  useBy: string | null;
+  pickupLocation: string | null;
+  pickupWindowStart: string | null;
+  pickupWindowEnd: string | null;
   status: ListingStatus;
   /** Echo back on update; the service rejects a stale value with 409. */
   version: number;
@@ -106,17 +107,19 @@ export interface Listing {
   images: ListingImage[];
 }
 
+// Every field optional: a Draft can be saved with only some of these filled
+// in. A field that *is* provided still has to be valid.
 export interface NewListing {
-  category: ListingCategory;
-  description: string;
-  remainingQuantity: number;
-  unit: string;
+  category?: ListingCategory;
+  description?: string;
+  remainingQuantity?: number;
+  unit?: string;
   allergens?: string[];
   handlingInstructions?: string;
-  useBy: string;
-  pickupLocation: string;
-  pickupWindowStart: string;
-  pickupWindowEnd: string;
+  useBy?: string;
+  pickupLocation?: string;
+  pickupWindowStart?: string;
+  pickupWindowEnd?: string;
 }
 
 export interface ListingUpdate extends Partial<NewListing> {

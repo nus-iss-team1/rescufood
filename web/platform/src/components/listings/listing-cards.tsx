@@ -45,7 +45,9 @@ export function ListingCards({
           <ListingPhoto listing={listing} />
 
           <div className="flex items-start justify-between gap-2">
-            <span className="font-medium">{listing.description}</span>
+            <span className="font-medium">
+              {listing.description || "Untitled draft"}
+            </span>
             {showStatus && (
               <Badge
                 variant={listingStatusVariant[listing.status]}
@@ -58,22 +60,28 @@ export function ListingCards({
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
-              {categoryLabels[listing.category]}
+              {listing.category
+                ? categoryLabels[listing.category]
+                : "No category yet"}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {quantity(listing.remainingQuantity, listing.unit)}
+              {listing.remainingQuantity != null && listing.unit
+                ? quantity(listing.remainingQuantity, listing.unit)
+                : "Quantity not set"}
             </span>
           </div>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <CalendarClock className="size-4 shrink-0" aria-hidden />
             Pickup{" "}
-            {pickupWindow(listing.pickupWindowStart, listing.pickupWindowEnd)}
+            {listing.pickupWindowStart && listing.pickupWindowEnd
+              ? pickupWindow(listing.pickupWindowStart, listing.pickupWindowEnd)
+              : "time not set"}
           </p>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="size-4 shrink-0" aria-hidden />
-            {listing.pickupLocation}
+            {listing.pickupLocation || "Pickup location not set"}
           </p>
 
           {/* Always rendered so cards with and without allergens line up. */}

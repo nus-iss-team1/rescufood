@@ -73,13 +73,17 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
   const isLocked = LOCKED_STATUSES.has(listing.status);
 
-  // Controlled form state initialized from listing prop
-  const [category, setCategory] = useState<string>(listing.category);
+  // Controlled form state initialized from listing prop - a Draft can have
+  // any of these unset, so each falls back to an empty/unselected state
+  // rather than trusting the field to always be filled in.
+  const [category, setCategory] = useState<string>(listing.category ?? "");
   const [remainingQuantity, setRemainingQuantity] = useState<string>(
-    String(listing.remainingQuantity),
+    listing.remainingQuantity != null ? String(listing.remainingQuantity) : "",
   );
-  const [unit, setUnit] = useState<string>(listing.unit);
-  const [description, setDescription] = useState<string>(listing.description);
+  const [unit, setUnit] = useState<string>(listing.unit ?? "");
+  const [description, setDescription] = useState<string>(
+    listing.description ?? "",
+  );
   const [allergens, setAllergens] = useState<string>(
     (listing.allergens ?? []).join(", "),
   );
