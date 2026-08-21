@@ -9,7 +9,22 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
+
+// fakeSubjectResolver maps known identifiers (username or email) to a
+// cognito_sub, mirroring store.Users.ResolveCognitoSub. An unmapped
+// identifier reports domain.ErrNotFound, same as an account this
+// service has never seen authenticate successfully.
+type fakeSubjectResolver map[string]string
+
+func (f fakeSubjectResolver) ResolveCognitoSub(_ context.Context, identifier string) (string, error) {
+	if sub, ok := f[strings.ToLower(identifier)]; ok {
+		return sub, nil
+	}
+	return "", domain.ErrNotFound
+}
 
 type fakeLoginAttempts struct {
 	restricted  bool
@@ -50,9 +65,13 @@ func (f *fakeLoginAttempts) RecordSuccess(_ context.Context, username string) er
 }
 
 func authRouter(attempts *fakeLoginAttempts, threshold int, duration time.Duration) http.Handler {
+	return authRouterWithResolver(attempts, fakeSubjectResolver{}, threshold, duration)
+}
+
+func authRouterWithResolver(attempts *fakeLoginAttempts, resolver fakeSubjectResolver, threshold int, duration time.Duration) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/login-status", loginStatus(attempts))
-	r.Post("/login-outcome", loginOutcome(attempts, threshold, duration))
+	r.Get("/login-status", loginStatus(attempts, resolver))
+	r.Post("/login-outcome", loginOutcome(attempts, resolver, threshold, duration))
 	r.Post("/password-reset-completed", passwordResetCompleted())
 	return r
 }
@@ -149,6 +168,28 @@ func TestLoginOutcome(t *testing.T) {
 		}
 		if !fake.newlyLocked {
 			t.Fatal("expected the crossing call to report newlyLocked")
+		}
+	})
+
+	t.Run("username and email alias for the same account share one counter", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		resolver := fakeSubjectResolver{
+			"carol":             "sub-carol",
+			"carol@example.com": "sub-carol",
+		}
+		router := authRouterWithResolver(fake, resolver, 3, 15*time.Minute)
+
+		doAuth(t, router, http.MethodPost, "/login-outcome", `{"username":"carol","success":false}`)
+		doAuth(t, router, http.MethodPost, "/login-outcome", `{"username":"Carol@example.com","success":false}`)
+		if fake.restricted {
+			t.Fatal("only 2 of 3 failures recorded, must not be restricted yet")
+		}
+		doAuth(t, router, http.MethodPost, "/login-outcome", `{"username":"carol","success":false}`)
+		if !fake.restricted {
+			t.Fatal("expected the shared cognito_sub counter to cross the threshold")
+		}
+		if fake.failures["sub-carol"] != 3 {
+			t.Fatalf("expected all 3 failures recorded under the resolved sub, got %v", fake.failures)
 		}
 	})
 }

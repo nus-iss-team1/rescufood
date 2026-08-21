@@ -137,21 +137,21 @@ func toUserResponse(u *domain.User) userResponse {
 
 // stampLocked annotates each response with its current restriction, if any.
 func stampLocked(ctx context.Context, locks LockLookup, users []domain.User, out []userResponse) error {
-	usernames := make([]string, 0, len(users))
+	subs := make([]string, 0, len(users))
 	for _, u := range users {
-		if u.Username != "" {
-			usernames = append(usernames, u.Username)
+		if u.CognitoSub != "" {
+			subs = append(subs, u.CognitoSub)
 		}
 	}
-	if len(usernames) == 0 {
+	if len(subs) == 0 {
 		return nil
 	}
-	locked, err := locks.GetLockedUntil(ctx, usernames)
+	locked, err := locks.GetLockedUntil(ctx, subs)
 	if err != nil {
 		return err
 	}
 	for i := range users {
-		if until, ok := locked[strings.ToLower(users[i].Username)]; ok {
+		if until, ok := locked[strings.ToLower(users[i].CognitoSub)]; ok {
 			out[i].LockedUntil = &until
 		}
 	}
@@ -223,7 +223,7 @@ func unlockUser(users UserAdmin, unlocker LoginUnlocker) http.HandlerFunc {
 			return
 		}
 
-		if err := unlocker.AdminUnlock(r.Context(), user.Username); err != nil {
+		if err := unlocker.AdminUnlock(r.Context(), user.CognitoSub); err != nil {
 			slog.ErrorContext(r.Context(), "unlock user failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
 			return
