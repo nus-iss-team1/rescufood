@@ -18,6 +18,7 @@ type User struct {
 	CognitoSub string
 	Email      string
 	Name       string
+	Username   string
 	OrgID      *uuid.UUID
 	IsAdmin    bool
 	Status     UserStatus

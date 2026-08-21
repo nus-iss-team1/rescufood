@@ -17,15 +17,17 @@ type pgxDB interface {
 }
 
 type Store struct {
-	pool          *pgxpool.Pool
-	Users         *Users
-	Organisations *Organisations
+	pool              *pgxpool.Pool
+	Users             *Users
+	Organisations     *Organisations
+	LoginRestrictions *LoginRestrictions
 }
 
 func New(pool *pgxpool.Pool) *Store {
 	return &Store{
-		pool:          pool,
-		Users:         &Users{db: pool},
-		Organisations: &Organisations{db: pool},
+		pool:              pool,
+		Users:             &Users{db: pool},
+		Organisations:     &Organisations{db: pool},
+		LoginRestrictions: &LoginRestrictions{db: pool},
 	}
 }

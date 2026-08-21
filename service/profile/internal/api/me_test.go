@@ -48,7 +48,7 @@ func TestListMyOrgMembers(t *testing.T) {
 			req = req.WithContext(auth.WithUser(req.Context(), user))
 		}
 		rec := httptest.NewRecorder()
-		listMyOrgMembers(users)(rec, req)
+		listMyOrgMembers(users, &fakeLockLookup{})(rec, req)
 		return rec
 	}
 

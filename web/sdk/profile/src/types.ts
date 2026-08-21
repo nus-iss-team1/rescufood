@@ -31,6 +31,13 @@ export interface User {
   is_admin: boolean;
   status: "active" | "suspended";
   created_at: string;
+  /** Set while a failed-login restriction is active; absent otherwise. */
+  locked_until?: string | null;
+}
+
+export interface LoginStatus {
+  restricted: boolean;
+  retry_after?: string | null;
 }
 
 export interface NewOrganisation {

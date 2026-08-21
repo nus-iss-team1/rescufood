@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -77,6 +78,26 @@ func (f *fakeUserAdmin) ListByOrg(_ context.Context, orgID uuid.UUID) ([]domain.
 
 func (f *fakeUserAdmin) UpdateStatus(_ context.Context, _ uuid.UUID, status domain.UserStatus) error {
 	f.updated = &status
+	return nil
+}
+
+type fakeLockLookup struct {
+	locked   map[string]time.Time
+	unlocked string
+}
+
+func (f *fakeLockLookup) GetLockedUntil(_ context.Context, usernames []string) (map[string]time.Time, error) {
+	out := map[string]time.Time{}
+	for _, u := range usernames {
+		if until, ok := f.locked[strings.ToLower(u)]; ok {
+			out[strings.ToLower(u)] = until
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeLockLookup) AdminUnlock(_ context.Context, username string) error {
+	f.unlocked = strings.ToLower(username)
 	return nil
 }
 
@@ -173,10 +194,15 @@ func TestTransitionOrg(t *testing.T) {
 }
 
 func userRouter(users UserAdmin) http.Handler {
+	return userRouterWithLocks(users, &fakeLockLookup{})
+}
+
+func userRouterWithLocks(users UserAdmin, locks *fakeLockLookup) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/", listUsers(users))
+	r.Get("/", listUsers(users, locks))
 	r.Post("/{id}/suspend", transitionUser(users, "suspend", domain.UserSuspended))
 	r.Post("/{id}/reactivate", transitionUser(users, "reactivate", domain.UserActive))
+	r.Post("/{id}/unlock", unlockUser(users, locks))
 	return r
 }
 
@@ -252,7 +278,7 @@ func TestTransitionUser(t *testing.T) {
 
 func TestListUsers(t *testing.T) {
 	orgID := uuid.New()
-	user := &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "member@freshmart.sg"}
+	user := &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "member@freshmart.sg", Username: "member1"}
 	fake := &fakeUserAdmin{user: user}
 
 	rec := doAdmin(t, userRouter(fake), nil, http.MethodGet, "/?org_id="+orgID.String(), "")
@@ -264,6 +290,76 @@ func TestListUsers(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("bad org_id: status = %d, want 400", rec.Code)
 	}
+
+	t.Run("stamps locked_until for restricted members", func(t *testing.T) {
+		until := time.Now().Add(15 * time.Minute).UTC()
+		locks := &fakeLockLookup{locked: map[string]time.Time{"member1": until}}
+		r := chi.NewRouter()
+		r.Get("/", listUsers(fake, locks))
+		rec := doAdmin(t, r, nil, http.MethodGet, "/?org_id="+orgID.String(), "")
+		var out []userResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		if len(out) != 1 || out[0].LockedUntil == nil {
+			t.Fatalf("expected one locked member, got %+v", out)
+		}
+	})
+}
+
+func TestUnlockUser(t *testing.T) {
+	admin := &domain.User{ID: uuid.New(), IsAdmin: true}
+	member := func() *domain.User {
+		orgID := uuid.New()
+		return &domain.User{ID: uuid.New(), OrgID: &orgID, Status: domain.UserActive, Username: "member1"}
+	}
+
+	t.Run("missing reason", func(t *testing.T) {
+		fake := &fakeUserAdmin{user: member()}
+		locks := &fakeLockLookup{}
+		rec := doAdmin(t, userRouterWithLocks(fake, locks), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/unlock", `{}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+		if locks.unlocked != "" {
+			t.Fatal("must not unlock without a reason")
+		}
+	})
+
+	t.Run("unknown user", func(t *testing.T) {
+		locks := &fakeLockLookup{}
+		rec := doAdmin(t, userRouterWithLocks(&fakeUserAdmin{}, locks), admin,
+			http.MethodPost, "/"+uuid.NewString()+"/unlock", `{"reason":"false alarm"}`)
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("status = %d, want 404", rec.Code)
+		}
+	})
+
+	t.Run("unlocks a restricted member", func(t *testing.T) {
+		u := member()
+		fake := &fakeUserAdmin{user: u}
+		locks := &fakeLockLookup{}
+		rec := doAdmin(t, userRouterWithLocks(fake, locks), admin,
+			http.MethodPost, "/"+u.ID.String()+"/unlock", `{"reason":"verified with user"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if locks.unlocked != "member1" {
+			t.Fatalf("unlock not applied to expected username: got %q", locks.unlocked)
+		}
+	})
+
+	t.Run("idempotent: already unlocked", func(t *testing.T) {
+		u := member()
+		fake := &fakeUserAdmin{user: u}
+		locks := &fakeLockLookup{}
+		rec := doAdmin(t, userRouterWithLocks(fake, locks), admin,
+			http.MethodPost, "/"+u.ID.String()+"/unlock", `{"reason":"just in case"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200 even when already unlocked", rec.Code)
+		}
+	})
 }
 
 func TestCountOrgs(t *testing.T) {

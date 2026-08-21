@@ -1,9 +1,19 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Cognito from "next-auth/providers/cognito";
 import Credentials from "next-auth/providers/credentials";
 import { decodeJwt } from "jose";
 
 import { passwordAuth } from "@/lib/cognito";
+import { loginStatus, recordLoginOutcome } from "@/lib/profile";
+
+/**
+ * Thrown from `authorize` when the failed-login threshold has restricted
+ * this account. `code` surfaces to the server action's catch block so it
+ * can show a distinct message instead of the generic invalid-credentials one.
+ */
+export class AccountRestricted extends CredentialsSignin {
+  code = "account_restricted";
+}
 
 declare module "next-auth" {
   interface Session {
@@ -53,9 +63,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!username || !password) return null;
 
+        // Fail open: a precheck failure (profile service down/slow) must
+        // not turn into a full login outage.
+        const restricted = await loginStatus(username).then(
+          (s) => s.restricted,
+          () => false
+        );
+        if (restricted) {
+          throw new AccountRestricted();
+        }
+
         try {
           const result = await passwordAuth(username, password);
-          if (!result?.IdToken) return null;
+          if (!result?.IdToken) {
+            await recordLoginOutcome(username, false).catch(() => {});
+            return null;
+          }
+
+          await recordLoginOutcome(username, true).catch(() => {});
 
           // The ID token comes straight from Cognito over TLS.
           const claims = decodeJwt(result.IdToken);
@@ -72,6 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
         } catch {
           // Wrong password, unconfirmed account, unknown user, ...
+          await recordLoginOutcome(username, false).catch(() => {});
           return null;
         }
       },
