@@ -135,7 +135,7 @@ func toUserResponse(u *domain.User) userResponse {
 	}
 }
 
-// stampLocked annotates each response with its current restriction, if any. 
+// stampLocked annotates each response with its current restriction, if any.
 func stampLocked(ctx context.Context, locks LockLookup, users []domain.User, out []userResponse) error {
 	subs := make([]string, 0, len(users))
 	for _, u := range users {
