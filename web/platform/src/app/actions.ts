@@ -1,7 +1,7 @@
 "use server";
 
 import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 
 import { auth, signIn, signOut } from "@/auth";
 import {
@@ -52,6 +52,12 @@ export async function loginAction(
     return {};
   } catch (err) {
     if (isRedirectError(err)) throw err; // successful sign-in redirects
+    if (err instanceof CredentialsSignin && err.code === "account_restricted") {
+      return {
+        error:
+          "Your account is temporarily locked after repeated failed sign-in attempts. Try again later or contact an administrator.",
+      };
+    }
     if (err instanceof AuthError) {
       return {
         error:

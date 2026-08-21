@@ -59,10 +59,12 @@ func main() {
 
 	st := store.New(pool)
 	router := api.NewRouter(api.Deps{
-		Logger:         logger,
-		Store:          st,
-		Auth:           auth.Middleware(verifier, st.Users),
-		AllowedOrigins: config.AllowedOrigins(),
+		Logger:               logger,
+		Store:                st,
+		Auth:                 auth.Middleware(verifier, st.Users),
+		AllowedOrigins:       config.AllowedOrigins(),
+		FailedLoginThreshold: config.FailedLoginThreshold(),
+		RestrictionDuration:  config.RestrictionDuration(),
 	})
 
 	port := os.Getenv("PORT")

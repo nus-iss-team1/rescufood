@@ -65,7 +65,7 @@ func getMe(orgs OrgGetter) http.HandlerFunc {
 }
 
 // listMyOrgMembers returns the caller's own organisation members.
-func listMyOrgMembers(users MemberLister) http.HandlerFunc {
+func listMyOrgMembers(users MemberLister, locks LockLookup) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := auth.UserFromContext(r.Context())
 		if !ok {
@@ -88,6 +88,11 @@ func listMyOrgMembers(users MemberLister) http.HandlerFunc {
 		out := make([]userResponse, 0, len(list))
 		for i := range list {
 			out = append(out, toUserResponse(&list[i]))
+		}
+		if err := stampLocked(r.Context(), locks, list, out); err != nil {
+			slog.ErrorContext(r.Context(), "stamp locked members failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
 		}
 		writeJSON(w, http.StatusOK, out)
 	}

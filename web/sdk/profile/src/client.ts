@@ -1,5 +1,6 @@
 import type {
   DomainLookup,
+  LoginStatus,
   Me,
   NewOrganisation,
   Org,
@@ -53,6 +54,9 @@ export class ProfileClient {
       const body = await res.json().catch(() => ({}));
       throw new ApiError(res.status, body.detail || body.title || res.statusText);
     }
+    if (res.status === 204) {
+      return undefined as T;
+    }
     return res.json() as Promise<T>;
   }
 
@@ -68,6 +72,21 @@ export class ProfileClient {
 
   lookupOrganisation(domain: string): Promise<DomainLookup> {
     return this.request(`/orgs/lookup?domain=${encodeURIComponent(domain)}`);
+  }
+
+  /** Precheck before attempting Cognito authentication. */
+  loginStatus(username: string): Promise<LoginStatus> {
+    return this.request(`/auth/login-status?username=${encodeURIComponent(username)}`);
+  }
+
+  /** Reports the result of a login attempt against the app's own form. */
+  recordLoginOutcome(username: string, success: boolean): Promise<void> {
+    return this.post("/auth/login-outcome", { username, success });
+  }
+
+  /** Audit-only: call once a password reset has completed. */
+  recordPasswordResetCompleted(username: string): Promise<void> {
+    return this.post("/auth/password-reset-completed", { username });
   }
 
   // ----------------------------------------------------- authenticated
@@ -113,5 +132,9 @@ export class ProfileClient {
 
   reactivateUser(id: string, reason: string): Promise<User> {
     return this.post(`/admin/users/${id}/reactivate`, { reason });
+  }
+
+  unlockUser(id: string, reason: string): Promise<User> {
+    return this.post(`/admin/users/${id}/unlock`, { reason });
   }
 }

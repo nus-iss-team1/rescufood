@@ -33,6 +33,17 @@ type UserAdmin interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus) error
 }
 
+// LockLookup reports which of a set of usernames are currently
+// restricted, for stamping onto user list responses.
+type LockLookup interface {
+	GetLockedUntil(ctx context.Context, usernames []string) (map[string]time.Time, error)
+}
+
+// LoginUnlocker clears a failed-login restriction.
+type LoginUnlocker interface {
+	AdminUnlock(ctx context.Context, username string) error
+}
+
 // requireAdmin rejects requests whose authenticated user is not an admin.
 func requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,12 +115,13 @@ func countOrgs(orgs OrgAdmin) http.HandlerFunc {
 }
 
 type userResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Name      string    `json:"name"`
-	IsAdmin   bool      `json:"is_admin"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          uuid.UUID  `json:"id"`
+	Email       string     `json:"email"`
+	Name        string     `json:"name"`
+	IsAdmin     bool       `json:"is_admin"`
+	Status      string     `json:"status"`
+	CreatedAt   time.Time  `json:"created_at"`
+	LockedUntil *time.Time `json:"locked_until,omitempty"`
 }
 
 func toUserResponse(u *domain.User) userResponse {
@@ -123,8 +135,31 @@ func toUserResponse(u *domain.User) userResponse {
 	}
 }
 
+// stampLocked annotates each response with its current restriction, if any.
+func stampLocked(ctx context.Context, locks LockLookup, users []domain.User, out []userResponse) error {
+	usernames := make([]string, 0, len(users))
+	for _, u := range users {
+		if u.Username != "" {
+			usernames = append(usernames, u.Username)
+		}
+	}
+	if len(usernames) == 0 {
+		return nil
+	}
+	locked, err := locks.GetLockedUntil(ctx, usernames)
+	if err != nil {
+		return err
+	}
+	for i := range users {
+		if until, ok := locked[strings.ToLower(users[i].Username)]; ok {
+			out[i].LockedUntil = &until
+		}
+	}
+	return nil
+}
+
 // listUsers returns the members of one organisation.
-func listUsers(users UserAdmin) http.HandlerFunc {
+func listUsers(users UserAdmin, locks LockLookup) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		orgID, err := uuid.Parse(r.URL.Query().Get("org_id"))
 		if err != nil {
@@ -141,7 +176,65 @@ func listUsers(users UserAdmin) http.HandlerFunc {
 		for i := range list {
 			out = append(out, toUserResponse(&list[i]))
 		}
+		if err := stampLocked(r.Context(), locks, list, out); err != nil {
+			slog.ErrorContext(r.Context(), "stamp locked users failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
 		writeJSON(w, http.StatusOK, out)
+	}
+}
+
+// unlockUser clears a user's failed-login restriction, requiring a reason.
+// Unlike suspend/reactivate, this is idempotent: clearing an
+// already-unlocked account is not an error.
+func unlockUser(users UserAdmin, unlocker LoginUnlocker) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		admin, ok := auth.UserFromContext(r.Context())
+		if !ok {
+			writeProblem(w, http.StatusUnauthorized, "unauthorized", "no authenticated user")
+			return
+		}
+
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			writeProblem(w, http.StatusBadRequest, "invalid request", "id must be a uuid")
+			return
+		}
+
+		var req transitionRequest
+		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&req); err != nil {
+			writeProblem(w, http.StatusBadRequest, "invalid request", "body must be valid JSON")
+			return
+		}
+		if strings.TrimSpace(req.Reason) == "" {
+			writeProblem(w, http.StatusBadRequest, "invalid request", "reason is required")
+			return
+		}
+
+		user, err := users.GetByID(r.Context(), id)
+		if errors.Is(err, domain.ErrNotFound) {
+			writeProblem(w, http.StatusNotFound, "not found", "no such user")
+			return
+		}
+		if err != nil {
+			slog.ErrorContext(r.Context(), "load user failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
+		if err := unlocker.AdminUnlock(r.Context(), user.Username); err != nil {
+			slog.ErrorContext(r.Context(), "unlock user failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
+		slog.InfoContext(r.Context(), "account unlocked",
+			"user_id", user.ID,
+			"actor_id", admin.ID,
+			"reason", logSafe(req.Reason),
+		)
+		writeJSON(w, http.StatusOK, toUserResponse(user))
 	}
 }
 

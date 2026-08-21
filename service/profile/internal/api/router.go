@@ -3,6 +3,7 @@ package api
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,6 +21,9 @@ type Deps struct {
 	Auth   func(http.Handler) http.Handler
 	// Browser origins allowed to call the API cross-origin.
 	AllowedOrigins []string
+	// Failed-login lockout configuration.
+	FailedLoginThreshold int
+	RestrictionDuration  time.Duration
 }
 
 func NewRouter(d Deps) http.Handler {
@@ -44,10 +48,17 @@ func NewRouter(d Deps) http.Handler {
 		r.Post("/orgs/register", registerOrg(d.Store.Organisations))
 		r.Get("/orgs/lookup", lookupOrg(d.Store.Organisations))
 
+		// Public: the login form calls these before a session exists.
+		r.Route("/auth", func(r chi.Router) {
+			r.Get("/login-status", loginStatus(d.Store.LoginRestrictions))
+			r.Post("/login-outcome", loginOutcome(d.Store.LoginRestrictions, d.FailedLoginThreshold, d.RestrictionDuration))
+			r.Post("/password-reset-completed", passwordResetCompleted())
+		})
+
 		r.Group(func(r chi.Router) {
 			r.Use(d.Auth)
 			r.Get("/me", getMe(d.Store.Organisations))
-			r.Get("/me/org/members", listMyOrgMembers(d.Store.Users))
+			r.Get("/me/org/members", listMyOrgMembers(d.Store.Users, d.Store.LoginRestrictions))
 
 			r.Route("/admin", func(r chi.Router) {
 				r.Use(requireAdmin)
@@ -63,9 +74,10 @@ func NewRouter(d Deps) http.Handler {
 				})
 
 				r.Route("/users", func(r chi.Router) {
-					r.Get("/", listUsers(users))
+					r.Get("/", listUsers(users, d.Store.LoginRestrictions))
 					r.Post("/{id}/suspend", transitionUser(users, "suspend", domain.UserSuspended))
 					r.Post("/{id}/reactivate", transitionUser(users, "reactivate", domain.UserActive))
+					r.Post("/{id}/unlock", unlockUser(users, d.Store.LoginRestrictions))
 				})
 			})
 		})

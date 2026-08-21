@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAllowedOrigins(t *testing.T) {
@@ -77,4 +78,46 @@ func TestDatabaseURL(t *testing.T) {
 			t.Fatal("want an error when nothing is configured")
 		}
 	})
+}
+
+func TestFailedLoginThreshold(t *testing.T) {
+	cases := map[string]struct {
+		env  string
+		want int
+	}{
+		"unset":       {"", 5},
+		"valid":       {"3", 3},
+		"non-numeric": {"abc", 5},
+		"zero":        {"0", 5},
+		"negative":    {"-1", 5},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("FAILED_LOGIN_THRESHOLD", tc.env)
+			if got := FailedLoginThreshold(); got != tc.want {
+				t.Fatalf("got %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestRestrictionDuration(t *testing.T) {
+	cases := map[string]struct {
+		env  string
+		want time.Duration
+	}{
+		"unset":       {"", 15 * time.Minute},
+		"valid":       {"30m", 30 * time.Minute},
+		"unparsable":  {"abc", 15 * time.Minute},
+		"zero":        {"0s", 15 * time.Minute},
+		"negative":    {"-5m", 15 * time.Minute},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("LOGIN_RESTRICTION_DURATION", tc.env)
+			if got := RestrictionDuration(); got != tc.want {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
 }

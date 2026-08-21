@@ -4,6 +4,7 @@ import {
   ApiError,
   ProfileClient,
   type DomainLookup,
+  type LoginStatus,
   type Me,
   type NewOrganisation,
   type Org,
@@ -33,4 +34,12 @@ export function registerOrganisation(org: NewOrganisation): Promise<Org> {
 
 export function lookupOrganisation(domain: string): Promise<DomainLookup> {
   return client().lookupOrganisation(domain);
+}
+
+export function loginStatus(username: string): Promise<LoginStatus> {
+  return client().loginStatus(username);
+}
+
+export function recordLoginOutcome(username: string, success: boolean): Promise<void> {
+  return client().recordLoginOutcome(username, success);
 }

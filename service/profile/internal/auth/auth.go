@@ -82,7 +82,7 @@ const adminGroup = "admin"
 
 // UserStore resolves verified claims to a profile user row.
 type UserStore interface {
-	UpsertBySub(ctx context.Context, sub, email, name string, isAdmin bool) (*domain.User, error)
+	UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, error)
 }
 
 // Middleware rejects requests without a valid bearer token, provisions
@@ -101,7 +101,7 @@ func Middleware(v *Verifier, users UserStore) func(http.Handler) http.Handler {
 				unauthorized(w, "invalid token")
 				return
 			}
-			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.DisplayName(),
+			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.DisplayName(), claims.Username,
 				slices.Contains(claims.Groups, adminGroup))
 			if err != nil {
 				slog.ErrorContext(r.Context(), "user provisioning failed", "error", err)

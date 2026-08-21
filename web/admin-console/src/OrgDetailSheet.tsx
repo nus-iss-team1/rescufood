@@ -36,7 +36,10 @@ export function OrgDetailSheet({
   onClose: () => void;
 }) {
   const [members, setMembers] = useState<User[] | null>(null);
-  const [pending, setPending] = useState<{ user: User; suspend: boolean } | null>(null);
+  const [pending, setPending] = useState<{
+    user: User;
+    action: "suspend" | "reactivate" | "unlock";
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -52,14 +55,24 @@ export function OrgDetailSheet({
     if (!org || !pending) return;
     setBusy(true);
     try {
-      if (pending.suspend) {
-        await client.suspendUser(pending.user.id, reason);
-      } else {
-        await client.reactivateUser(pending.user.id, reason);
+      switch (pending.action) {
+        case "suspend":
+          await client.suspendUser(pending.user.id, reason);
+          break;
+        case "reactivate":
+          await client.reactivateUser(pending.user.id, reason);
+          break;
+        case "unlock":
+          await client.unlockUser(pending.user.id, reason);
+          break;
       }
-      toast.success(
-        `${pending.user.email || pending.user.name} ${pending.suspend ? "suspended" : "reactivated"}`
-      );
+      const verb =
+        pending.action === "suspend"
+          ? "suspended"
+          : pending.action === "reactivate"
+            ? "reactivated"
+            : "unlocked";
+      toast.success(`${pending.user.email || pending.user.name} ${verb}`);
       setPending(null);
       setMembers(await client.listOrgMembers(org.id));
     } catch (err) {
@@ -68,6 +81,10 @@ export function OrgDetailSheet({
     } finally {
       setBusy(false);
     }
+  }
+
+  function isLocked(m: User) {
+    return !!m.locked_until && new Date(m.locked_until) > new Date();
   }
 
   return (
@@ -132,6 +149,16 @@ export function OrgDetailSheet({
                       {m.status === "suspended" && (
                         <Badge variant="destructive">suspended</Badge>
                       )}
+                      {isLocked(m) && <Badge variant="destructive">locked</Badge>}
+                      {isLocked(m) && (
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => setPending({ user: m, action: "unlock" })}
+                        >
+                          Unlock
+                        </Button>
+                      )}
                       {m.is_admin ? (
                         <Badge variant="outline">admin</Badge>
                       ) : (
@@ -139,7 +166,10 @@ export function OrgDetailSheet({
                           variant="outline"
                           size="xs"
                           onClick={() =>
-                            setPending({ user: m, suspend: m.status === "active" })
+                            setPending({
+                              user: m,
+                              action: m.status === "active" ? "suspend" : "reactivate",
+                            })
                           }
                         >
                           {m.status === "active" ? "Suspend" : "Reactivate"}
@@ -154,7 +184,13 @@ export function OrgDetailSheet({
             <ReasonDialog
               title={
                 pending
-                  ? `${pending.suspend ? "Suspend" : "Reactivate"} ${pending.user.email || pending.user.name}`
+                  ? `${
+                      pending.action === "suspend"
+                        ? "Suspend"
+                        : pending.action === "reactivate"
+                          ? "Reactivate"
+                          : "Unlock"
+                    } ${pending.user.email || pending.user.name}`
                   : ""
               }
               open={pending !== null}
