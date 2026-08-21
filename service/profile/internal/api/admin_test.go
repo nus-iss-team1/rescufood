@@ -278,7 +278,7 @@ func TestTransitionUser(t *testing.T) {
 
 func TestListUsers(t *testing.T) {
 	orgID := uuid.New()
-	user := &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "member@freshmart.sg", Username: "member1"}
+	user := &domain.User{ID: uuid.New(), OrgID: &orgID, Email: "member@freshmart.sg", CognitoSub: "sub-member1"}
 	fake := &fakeUserAdmin{user: user}
 
 	rec := doAdmin(t, userRouter(fake), nil, http.MethodGet, "/?org_id="+orgID.String(), "")
@@ -293,7 +293,7 @@ func TestListUsers(t *testing.T) {
 
 	t.Run("stamps locked_until for restricted members", func(t *testing.T) {
 		until := time.Now().Add(15 * time.Minute).UTC()
-		locks := &fakeLockLookup{locked: map[string]time.Time{"member1": until}}
+		locks := &fakeLockLookup{locked: map[string]time.Time{"sub-member1": until}}
 		r := chi.NewRouter()
 		r.Get("/", listUsers(fake, locks))
 		rec := doAdmin(t, r, nil, http.MethodGet, "/?org_id="+orgID.String(), "")
@@ -311,7 +311,7 @@ func TestUnlockUser(t *testing.T) {
 	admin := &domain.User{ID: uuid.New(), IsAdmin: true}
 	member := func() *domain.User {
 		orgID := uuid.New()
-		return &domain.User{ID: uuid.New(), OrgID: &orgID, Status: domain.UserActive, Username: "member1"}
+		return &domain.User{ID: uuid.New(), OrgID: &orgID, Status: domain.UserActive, CognitoSub: "sub-member1"}
 	}
 
 	t.Run("missing reason", func(t *testing.T) {
@@ -345,8 +345,8 @@ func TestUnlockUser(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
 		}
-		if locks.unlocked != "member1" {
-			t.Fatalf("unlock not applied to expected username: got %q", locks.unlocked)
+		if locks.unlocked != "sub-member1" {
+			t.Fatalf("unlock not applied to expected cognito_sub: got %q", locks.unlocked)
 		}
 	})
 

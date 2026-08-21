@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -24,6 +25,23 @@ func (r *Users) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 
 func (r *Users) GetBySub(ctx context.Context, sub string) (*domain.User, error) {
 	return scanUser(r.db.QueryRow(ctx, userSelect+` WHERE cognito_sub = $1`, sub))
+}
+
+// ResolveCognitoSub maps a login identifier - username or email, since
+// Cognito accepts either - to the account's stable cognito_sub, so
+// failed-login tracking keys on one identity regardless of which form
+// the user typed. Returns domain.ErrNotFound for an identifier this
+// service has never seen (no successful login yet).
+func (r *Users) ResolveCognitoSub(ctx context.Context, identifier string) (string, error) {
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	var sub string
+	err := r.db.QueryRow(ctx,
+		`SELECT cognito_sub FROM users WHERE lower(username) = $1 OR lower(email) = $1 LIMIT 1`,
+		identifier).Scan(&sub)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", domain.ErrNotFound
+	}
+	return sub, err
 }
 
 func (r *Users) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error) {
