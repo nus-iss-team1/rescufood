@@ -106,11 +106,11 @@ func TestRestrictionDuration(t *testing.T) {
 		env  string
 		want time.Duration
 	}{
-		"unset":       {"", 15 * time.Minute},
-		"valid":       {"30m", 30 * time.Minute},
-		"unparsable":  {"abc", 15 * time.Minute},
-		"zero":        {"0s", 15 * time.Minute},
-		"negative":    {"-5m", 15 * time.Minute},
+		"unset":      {"", 15 * time.Minute},
+		"valid":      {"30m", 30 * time.Minute},
+		"unparsable": {"abc", 15 * time.Minute},
+		"zero":       {"0s", 15 * time.Minute},
+		"negative":   {"-5m", 15 * time.Minute},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
