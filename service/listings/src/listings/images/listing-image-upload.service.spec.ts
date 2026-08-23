@@ -15,11 +15,9 @@ function makeS3() {
   return {
     upload: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
-    getSignedUrl: jest
+    getImageUrl: jest
       .fn()
-      .mockImplementation((key: string) =>
-        Promise.resolve(`https://signed.example/${key}`),
-      ),
+      .mockImplementation((key: string) => `https://signed.example/${key}`),
   };
 }
 

@@ -870,6 +870,9 @@ Resources:
             - Name: S3_BUCKET_NAME
               Value:
                 Fn::ImportValue: !Sub ${DataStackName}-BucketName
+            - Name: LISTING_IMAGES_CDN_URL
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-ListingImagesCDNUrl
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"
