@@ -331,7 +331,7 @@ export class ListingsService {
     );
     return {
       ...listing,
-      images: await toListingImageResponses(images, this.s3),
+      images: toListingImageResponses(images, this.s3),
     };
   }
 
@@ -353,15 +353,13 @@ export class ListingsService {
       }
     }
 
-    return Promise.all(
-      listings.map(async (listing) => ({
-        ...listing,
-        images: await toListingImageResponses(
-          imagesByListingId.get(listing.id) ?? [],
-          this.s3,
-        ),
-      })),
-    );
+    return listings.map((listing) => ({
+      ...listing,
+      images: toListingImageResponses(
+        imagesByListingId.get(listing.id) ?? [],
+        this.s3,
+      ),
+    }));
   }
 }
 
