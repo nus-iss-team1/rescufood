@@ -19,7 +19,7 @@ export default defineConfig({
   use: {
     baseURL:
       process.env.BASE_URL ??
-      'http://rescufood-dev-alb-1968524694.ap-southeast-1.elb.amazonaws.com',
+      'https://3f0a17w33l.execute-api.ap-southeast-1.amazonaws.com',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
