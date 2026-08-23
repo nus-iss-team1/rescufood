@@ -27,13 +27,18 @@ All components are accurate to the desired infrastructure drawn in `infra-plan.d
 Run from `infrastructure/cloudformation/`, sequentially:
 
 ```bash
-# Step 1: ECS (internalize ALB, no API Gateway reference yet)
+# Step 1: Data stack (deploy CloudFront CDN + OAC + S3 bucket policy)
+aws cloudformation deploy --stack-name rescufood-dev-data \
+  --template-file data.yaml \
+  --parameter-overrides $(cat parameters/data-dev.json | jq -r '.[]')
+
+# Step 2: ECS (internalize ALB, no API Gateway reference yet)
 aws cloudformation deploy --stack-name rescufood-dev-ecs \
   --template-file ecs.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides $(cat parameters/ecs-dev.json | jq -r 'map(select(. != "ApiGatewayStackName=rescufood-dev-api-gateway")) | .[]')
 
-# Step 2: API Gateway (after ECS completes)
+# Step 3: API Gateway (after ECS completes)
 aws cloudformation deploy --stack-name rescufood-dev-api-gateway \
   --template-file api-gateway.yaml \
   --parameter-overrides ProjectName=rescufood EnvironmentName=dev \
@@ -41,13 +46,13 @@ aws cloudformation deploy --stack-name rescufood-dev-api-gateway \
     EcsStackName=rescufood-dev-ecs \
     SecurityStackName=rescufood-dev-security
 
-# Step 3: ECS update (add API Gateway URL to env vars)
+# Step 4: ECS update (add API Gateway URL to env vars)
 aws cloudformation deploy --stack-name rescufood-dev-ecs \
   --template-file ecs.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides $(cat parameters/ecs-dev.json | jq -r '.[]')
 
-# Step 4: Security groups (tighten ingress to VPC CIDR)
+# Step 5: Security groups (tighten ingress to VPC CIDR)
 aws cloudformation deploy --stack-name rescufood-dev-security \
   --template-file security-groups.yaml \
   --parameter-overrides ProjectName=rescufood EnvironmentName=dev \
@@ -68,18 +73,25 @@ aws cloudformation describe-stacks --stack-name rescufood-dev-data \
   --query "Stacks[0].Outputs[?OutputKey=='ListingImagesCDNUrl'].OutputValue" --output text
 ```
 
-## Next Steps for Engineers
+## Step 6: Update Local `.env` Files
 
-### All Developers (Immediate)
+After all stacks are deployed, update your local `.env` files — the old ALB URL no longer works from outside the VPC:
 
-Update your local `.env` file — the old ALB URL no longer works from outside the VPC:
+```bash
+# Get the new API Gateway URL
+aws cloudformation describe-stacks --stack-name rescufood-dev-api-gateway \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text
+```
+
+Then replace the old ALB URL in `web/.env` (and root `.env` if applicable):
 
 ```env
-# Replace the old ALB URL with the API Gateway URL in these variables:
 PROFILE_API_URL=https://<api-gateway-url>
 LISTINGS_API_URL=https://<api-gateway-url>
 VITE_PROFILE_API_URL=https://<api-gateway-url>
 ```
+
+## Next Steps for Engineers
 
 ### Backend Engineer (Listings Service)
 
