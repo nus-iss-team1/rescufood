@@ -10,5 +10,6 @@
   "ProfileImage=ghcr.io/nus-iss-team1/rescufood/profile:develop",
   "AuthCognitoIssuer=https://cognito-idp.ap-southeast-1.amazonaws.com/ap-southeast-1_4TOruPBJr",
   "ExtraCorsOrigins=http://localhost:5173",
-  "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:develop"
+  "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:develop",
+  "ApiGatewayStackName=rescufood-dev-api-gateway"
 ]
