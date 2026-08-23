@@ -1,1 +1,11 @@
 node_modules/
+.env
+
+# Kiro spec files (local tooling)
+.kiro/
+
+# Local diagrams
+infrastructure/infra-plan.drawio
+
+# Secrets
+infrastructure/cloudformation/secrets

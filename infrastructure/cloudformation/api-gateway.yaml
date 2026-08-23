@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "API Gateway HTTP API with VPC Link to Internal ALB"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+  EnvironmentName:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+  NetworkStackName:
+    Type: String
+    Default: rescufood-core-network
+  EcsStackName:
+    Type: String
+    Description: Name of the ECS stack to import HttpListenerArn from
+  SecurityStackName:
+    Type: String
+    Description: Name of the security-groups stack to import AlbSgId from
+
+Resources:
+  # ----------------------------------------------------------
+  # VPC Link
+  # ----------------------------------------------------------
+
+  VpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-vpc-link
+      SubnetIds: !Split
+        - ","
+        - Fn::ImportValue: !Sub "${NetworkStackName}-AppSubnetIds"
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "${SecurityStackName}-AlbSgId"
+
+  # ----------------------------------------------------------
+  # HTTP API, Integration, Route, Stage
+  # ----------------------------------------------------------
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-api
+      ProtocolType: HTTP
+
+  HttpApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      PayloadFormatVersion: "1.0"
+      ConnectionType: VPC_LINK
+      ConnectionId: !Ref VpcLink
+      IntegrationUri:
+        Fn::ImportValue: !Sub "${EcsStackName}-HttpListenerArn"
+
+  HttpApiDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "$default"
+      Target: !Sub "integrations/${HttpApiIntegration}"
+
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway auto-generated endpoint URL
+    Value: !GetAtt HttpApi.ApiEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
+
+  VpcLinkId:
+    Description: VPC Link ID for API Gateway to ALB connectivity
+    Value: !Ref VpcLink
+    Export:
+      Name: !Sub "${AWS::StackName}-VpcLinkId"

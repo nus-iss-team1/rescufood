@@ -120,6 +120,59 @@ Resources:
         - Key: Environment
           Value: !Ref EnvironmentName
 
+  # ------------------------------------------------- CloudFront CDN for listing images
+  ListingImagesCDNOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${ProjectName}-${EnvironmentName}-listing-images-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  ListingImagesCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub ${ProjectName}-${EnvironmentName} - Listing Images CDN
+        DefaultCacheBehavior:
+          TargetOriginId: S3ListingImagesOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+        Origins:
+          - Id: S3ListingImagesOrigin
+            DomainName: !GetAtt ListingImagesBucket.RegionalDomainName
+            OriginAccessControlId: !Ref ListingImagesCDNOriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        HttpVersion: http2
+        PriceClass: PriceClass_200
+
+  ListingImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ListingImagesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${ListingImagesBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ListingImagesCDN}"
+
   # ------------------------------------------------- Listing images bucket
   ListingImagesBucket:
     Type: AWS::S3::Bucket
@@ -177,3 +230,15 @@ Outputs:
     Value: !GetAtt ListingImagesBucket.Arn
     Export:
       Name: !Sub ${AWS::StackName}-BucketArn
+
+  ListingImagesCDNDomainName:
+    Description: CloudFront distribution domain for listing images
+    Value: !GetAtt ListingImagesCDN.DomainName
+    Export:
+      Name: !Sub ${AWS::StackName}-ListingImagesCDNDomainName
+
+  ListingImagesCDNUrl:
+    Description: CloudFront URL for listing images
+    Value: !Sub https://${ListingImagesCDN.DomainName}
+    Export:
+      Name: !Sub ${AWS::StackName}-ListingImagesCDNUrl

@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   RescuFood per-environment security groups. Strict chain:
-  internet -> ALB (443) -> app containers (web/api ports) -> database (5432).
+  API Gateway VPC Link -> ALB (80) -> app containers (web/api ports) -> database (5432).
   Deployed once per environment (dev, prod) into the shared VPC.
 
 Parameters:
@@ -38,20 +38,15 @@ Resources:
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub ${EnvironmentName} ALB - accepts HTTPS from the internet
+      GroupDescription: !Sub ${EnvironmentName} ALB - accepts HTTP from VPC only (API Gateway VPC Link)
       VpcId:
         Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-          Description: HTTPS from anywhere
-        - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
-          Description: HTTP (redirected to HTTPS at the ALB)
+          CidrIp: 10.0.0.0/16
+          Description: HTTP from VPC only (API Gateway VPC Link)
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-alb-sg
