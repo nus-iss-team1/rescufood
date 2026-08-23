@@ -115,9 +115,9 @@ type passwordResetCompletedRequest struct {
 }
 
 // passwordResetCompleted records the security audit event for a
-// completed password reset (AC9). No password or code ever reaches this
-// handler.
-func passwordResetCompleted() http.HandlerFunc {
+// completed password reset and clears any active failed-login
+// restriction. No password or code ever reaches this handler.
+func passwordResetCompleted(attempts LoginAttempts, resolver SubjectResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req passwordResetCompletedRequest
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&req); err != nil {
@@ -130,7 +130,47 @@ func passwordResetCompleted() http.HandlerFunc {
 			return
 		}
 
+		key := resolveKey(r.Context(), resolver, username)
+		if err := attempts.RecordSuccess(r.Context(), key); err != nil {
+			slog.ErrorContext(r.Context(), "clear lockout after password reset failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
 		slog.InfoContext(r.Context(), "password reset completed", "username", logSafe(username))
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// SuspensionChecker reports whether an identifier belongs to a suspended
+// account.
+type SuspensionChecker interface {
+	IsSuspended(ctx context.Context, identifier string) (bool, error)
+}
+
+type resetEligibilityResponse struct {
+	Eligible bool `json:"eligible"`
+}
+
+// resetEligibility reports whether identifier is allowed to reset its
+// password: blocked only for a deliberate admin suspension, not for a
+// failed-login lockout. Called server-to-server from web/platform, never from a browser,
+// so the response can be a plain boolean without leaking anything to a
+// public caller.
+func resetEligibility(checker SuspensionChecker) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		identifier := strings.TrimSpace(r.URL.Query().Get("identifier"))
+		if identifier == "" {
+			writeProblem(w, http.StatusBadRequest, "invalid request", "identifier is required")
+			return
+		}
+
+		suspended, err := checker.IsSuspended(r.Context(), identifier)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "check reset eligibility failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+		writeJSON(w, http.StatusOK, resetEligibilityResponse{Eligible: !suspended})
 	}
 }

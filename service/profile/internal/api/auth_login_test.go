@@ -64,15 +64,28 @@ func (f *fakeLoginAttempts) RecordSuccess(_ context.Context, username string) er
 	return nil
 }
 
+// fakeSuspensionChecker reports the given identifiers (lowercased) as
+// suspended; anything else is treated as not suspended.
+type fakeSuspensionChecker map[string]bool
+
+func (f fakeSuspensionChecker) IsSuspended(_ context.Context, identifier string) (bool, error) {
+	return f[strings.ToLower(identifier)], nil
+}
+
 func authRouter(attempts *fakeLoginAttempts, threshold int, duration time.Duration) http.Handler {
 	return authRouterWithResolver(attempts, fakeSubjectResolver{}, threshold, duration)
 }
 
 func authRouterWithResolver(attempts *fakeLoginAttempts, resolver fakeSubjectResolver, threshold int, duration time.Duration) http.Handler {
+	return authRouterFull(attempts, resolver, fakeSuspensionChecker{}, threshold, duration)
+}
+
+func authRouterFull(attempts *fakeLoginAttempts, resolver fakeSubjectResolver, suspended fakeSuspensionChecker, threshold int, duration time.Duration) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/login-status", loginStatus(attempts, resolver))
 	r.Post("/login-outcome", loginOutcome(attempts, resolver, threshold, duration))
-	r.Post("/password-reset-completed", passwordResetCompleted())
+	r.Post("/password-reset-completed", passwordResetCompleted(attempts, resolver))
+	r.Get("/reset-eligibility", resetEligibility(suspended))
 	return r
 }
 
@@ -203,11 +216,48 @@ func TestPasswordResetCompleted(t *testing.T) {
 		}
 	})
 
-	t.Run("records the event", func(t *testing.T) {
-		rec := doAuth(t, authRouter(&fakeLoginAttempts{}, 5, 15*time.Minute),
+	t.Run("records the event and clears any lockout", func(t *testing.T) {
+		fake := &fakeLoginAttempts{restricted: true}
+		rec := doAuth(t, authRouter(fake, 5, 15*time.Minute),
 			http.MethodPost, "/password-reset-completed", `{"username":"alice"}`)
 		if rec.Code != http.StatusNoContent {
 			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		if !fake.successes["alice"] {
+			t.Fatal("expected RecordSuccess to be called, clearing the lockout")
+		}
+		if fake.restricted {
+			t.Fatal("expected the lockout to be cleared")
+		}
+	})
+}
+
+func TestResetEligibility(t *testing.T) {
+	suspended := fakeSuspensionChecker{"suspendedbob": true}
+
+	t.Run("missing identifier", func(t *testing.T) {
+		rec := doAuth(t, authRouterFull(&fakeLoginAttempts{}, fakeSubjectResolver{}, suspended, 5, 15*time.Minute),
+			http.MethodGet, "/reset-eligibility", "")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("suspended account is not eligible", func(t *testing.T) {
+		rec := doAuth(t, authRouterFull(&fakeLoginAttempts{}, fakeSubjectResolver{}, suspended, 5, 15*time.Minute),
+			http.MethodGet, "/reset-eligibility?identifier=suspendedBob", "")
+		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"eligible":false`) {
+			t.Fatalf("code=%d body=%s", rec.Code, rec.Body)
+		}
+	})
+
+	t.Run("active and unknown accounts are eligible", func(t *testing.T) {
+		for _, identifier := range []string{"alice", "unknown-person"} {
+			rec := doAuth(t, authRouterFull(&fakeLoginAttempts{}, fakeSubjectResolver{}, suspended, 5, 15*time.Minute),
+				http.MethodGet, "/reset-eligibility?identifier="+identifier, "")
+			if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"eligible":true`) {
+				t.Fatalf("identifier=%s: code=%d body=%s", identifier, rec.Code, rec.Body)
+			}
 		}
 	})
 }
