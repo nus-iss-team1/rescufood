@@ -40,6 +40,10 @@ export interface LoginStatus {
   retry_after?: string | null;
 }
 
+export interface ResetEligibility {
+  eligible: boolean;
+}
+
 export interface NewOrganisation {
   name: string;
   type: string;

@@ -6,6 +6,7 @@ import type {
   Org,
   OrgCounts,
   OrgStatus,
+  ResetEligibility,
   User,
 } from "./types";
 
@@ -87,6 +88,11 @@ export class ProfileClient {
   /** Audit-only: call once a password reset has completed. */
   recordPasswordResetCompleted(username: string): Promise<void> {
     return this.post("/auth/password-reset-completed", { username });
+  }
+
+  /** Whether identifier (username or email) may reset its password. */
+  resetEligibility(identifier: string): Promise<ResetEligibility> {
+    return this.request(`/auth/reset-eligibility?identifier=${encodeURIComponent(identifier)}`);
   }
 
   // ----------------------------------------------------- authenticated

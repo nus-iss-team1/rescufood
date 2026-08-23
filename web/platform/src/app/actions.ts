@@ -6,14 +6,18 @@ import { AuthError, CredentialsSignin } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
 import {
   changePassword,
+  confirmForgotPassword,
   confirmSignUpUser,
   emailInUse,
+  forgotPassword,
   resendConfirmationCode,
   signUpUser,
 } from "@/lib/cognito";
 import {
   lookupOrganisation,
+  recordPasswordResetCompleted,
   registerOrganisation,
+  resetEligibility,
   ProfileApiError,
 } from "@/lib/profile";
 
@@ -35,7 +39,7 @@ export type FormState = {
 
 export async function loginAction(
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -73,7 +77,7 @@ const USERNAME_RULE = /^[a-zA-Z0-9._-]{3,32}$/;
 
 export async function signUpAction(
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const username = String(formData.get("username") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
@@ -119,7 +123,8 @@ export async function signUpAction(
   } catch {
     return {
       step: "details",
-      error: "We couldn't verify your organisation right now. Please try again shortly.",
+      error:
+        "We couldn't verify your organisation right now. Please try again shortly.",
     };
   }
 
@@ -172,7 +177,7 @@ export async function signUpAction(
 
 export async function confirmSignUpAction(
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const username = String(formData.get("username") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim();
@@ -214,7 +219,7 @@ export async function confirmSignUpAction(
 
 export async function resendCodeAction(
   _prev: FormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormState> {
   const username = String(formData.get("username") ?? "").trim();
   if (username) {
@@ -235,7 +240,7 @@ export type OrgFormState = {
 
 export async function registerOrgAction(
   _prev: OrgFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<OrgFormState> {
   const name = String(formData.get("name") ?? "").trim();
   const type = String(formData.get("type") ?? "");
@@ -243,7 +248,8 @@ export async function registerOrgAction(
   const contactEmail = String(formData.get("contact_email") ?? "").trim();
   if (!name || !contactEmail || !domain) {
     return {
-      error: "Please fill in the organisation name, email domain and contact email.",
+      error:
+        "Please fill in the organisation name, email domain and contact email.",
     };
   }
   if (type !== "donor" && type !== "rescue_partner") {
@@ -276,7 +282,7 @@ export type PasswordFormState = {
 
 export async function changePasswordAction(
   _prev: PasswordFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<PasswordFormState> {
   const session = await auth();
   const username = session?.user?.username;
@@ -311,13 +317,120 @@ export async function changePasswordAction(
       case "NotAuthorizedException":
         return { error: "Your current password is incorrect." };
       case "InvalidPasswordException":
-        return { error: "Cognito rejected that password. Try a different one." };
+        return {
+          error: "Cognito rejected that password. Try a different one.",
+        };
       case "LimitExceededException":
-        return { error: "Too many attempts. Please try again in a few minutes." };
+        return {
+          error: "Too many attempts. Please try again in a few minutes.",
+        };
       default:
         return { error: "Could not change your password. Please try again." };
     }
   }
 
   return { done: true };
+}
+
+export type ResetFormState = {
+  error?: string;
+  /** which half of the flow to render */
+  step?: "request" | "confirm";
+  username?: string;
+  /** set once the new password has been confirmed */
+  done?: boolean;
+};
+
+const RESET_REQUESTED_MESSAGE =
+  "If that account exists, we've sent a password-reset code to its registered email.";
+
+export async function requestPasswordResetAction(
+  _prev: ResetFormState,
+  formData: FormData,
+): Promise<ResetFormState> {
+  const username = String(formData.get("username") ?? "").trim();
+  if (!username) {
+    return { step: "request", error: "Please enter your username or email." };
+  }
+
+  // A suspended account or a profile-service hiccup only changes whether
+  // forgotPassword is actually called, never what the caller sees.
+  if (await resetEligibility(username)) {
+    await forgotPassword(username);
+  }
+
+  return { step: "confirm", username, error: RESET_REQUESTED_MESSAGE };
+}
+
+export async function confirmPasswordResetAction(
+  _prev: ResetFormState,
+  formData: FormData,
+): Promise<ResetFormState> {
+  const username = String(formData.get("username") ?? "").trim();
+  const code = String(formData.get("code") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm_password") ?? "");
+
+  if (!username || !code) {
+    return {
+      step: "confirm",
+      username,
+      error: "Please enter the code from your email.",
+    };
+  }
+  if (password !== confirm) {
+    return {
+      step: "confirm",
+      username,
+      error: "The new passwords do not match.",
+    };
+  }
+  if (!PASSWORD_RULE.test(password)) {
+    return {
+      step: "confirm",
+      username,
+      error:
+        "Password must be at least 8 characters with upper- and lowercase letters and a number.",
+    };
+  }
+
+  try {
+    await confirmForgotPassword(username, code, password);
+  } catch (err) {
+    switch ((err as { name?: string }).name) {
+      case "CodeMismatchException":
+      case "ExpiredCodeException":
+      case "UserNotFoundException":
+        return {
+          step: "confirm",
+          username,
+          error:
+            "That reset code is invalid or has expired. Request a new one below.",
+        };
+      case "InvalidPasswordException":
+        return {
+          step: "confirm",
+          username,
+          error: "Cognito rejected that password. Try a different one.",
+        };
+      case "LimitExceededException":
+        return {
+          step: "confirm",
+          username,
+          error: "Too many attempts. Please try again in a few minutes.",
+        };
+      default:
+        return {
+          step: "confirm",
+          username,
+          error: "Could not reset your password. Please try again.",
+        };
+    }
+  }
+
+  // Best-effort: also clears any failed-login lockout server-side. Never
+  // blocks the user-visible success on an audit-log hiccup.
+  recordPasswordResetCompleted(username).catch(() => {});
+
+  return { step: "confirm", username, done: true };
 }

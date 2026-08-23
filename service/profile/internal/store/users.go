@@ -44,6 +44,25 @@ func (r *Users) ResolveCognitoSub(ctx context.Context, identifier string) (strin
 	return sub, err
 }
 
+// IsSuspended reports whether identifier (username or email) belongs to
+// a suspended account. An unmatched identifier is not suspended - a
+// lookup miss must behave identically to an active account, so this
+// never becomes an enumeration channel.
+func (r *Users) IsSuspended(ctx context.Context, identifier string) (bool, error) {
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	var status string
+	err := r.db.QueryRow(ctx,
+		`SELECT status FROM users WHERE lower(username) = $1 OR lower(email) = $1 LIMIT 1`,
+		identifier).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return domain.UserStatus(status) == domain.UserSuspended, nil
+}
+
 func (r *Users) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error) {
 	rows, err := r.db.Query(ctx, userSelect+` WHERE org_id = $1 ORDER BY created_at`, orgID)
 	if err != nil {

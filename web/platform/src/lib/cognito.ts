@@ -5,7 +5,9 @@ import {
   AdminAddUserToGroupCommand,
   ChangePasswordCommand,
   CognitoIdentityProviderClient,
+  ConfirmForgotPasswordCommand,
   ConfirmSignUpCommand,
+  ForgotPasswordCommand,
   InitiateAuthCommand,
   ListUsersCommand,
   ResendConfirmationCodeCommand,
@@ -141,6 +143,42 @@ export async function changePassword(
       AccessToken: result.AccessToken,
       PreviousPassword: current,
       ProposedPassword: next,
+    })
+  );
+}
+
+/**
+ * Requests a password-reset code by email. Never throws: the caller
+ * must show the same generic confirmation whether or not the account
+ * exists, so a genuine failure here is only logged, not surfaced.
+ */
+export async function forgotPassword(username: string) {
+  try {
+    await client.send(
+      new ForgotPasswordCommand({
+        ClientId: clientId,
+        SecretHash: secretHash(username),
+        Username: username,
+      })
+    );
+  } catch (err) {
+    console.error("forgotPassword failed", err);
+  }
+}
+
+/** Completes a password reset with the emailed code. */
+export async function confirmForgotPassword(
+  username: string,
+  code: string,
+  newPassword: string
+) {
+  await client.send(
+    new ConfirmForgotPasswordCommand({
+      ClientId: clientId,
+      SecretHash: secretHash(username),
+      Username: username,
+      ConfirmationCode: code,
+      Password: newPassword,
     })
   );
 }

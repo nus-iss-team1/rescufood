@@ -43,3 +43,19 @@ export function loginStatus(username: string): Promise<LoginStatus> {
 export function recordLoginOutcome(username: string, success: boolean): Promise<void> {
   return client().recordLoginOutcome(username, success);
 }
+
+export function recordPasswordResetCompleted(username: string): Promise<void> {
+  return client().recordPasswordResetCompleted(username);
+}
+
+/**
+ * Whether identifier may reset its password. Fails open (treats a
+ * profile-service hiccup as eligible) so an outage never blocks a
+ * legitimate reset.
+ */
+export function resetEligibility(identifier: string): Promise<boolean> {
+  return client()
+    .resetEligibility(identifier)
+    .then((r) => r.eligible)
+    .catch(() => true);
+}

@@ -8,5 +8,6 @@ export type {
   OrgCounts,
   OrgStatus,
   OrgType,
+  ResetEligibility,
   User,
 } from "./types";
