@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import type { Listing } from "@rescufood/listings-sdk";
 
@@ -5,14 +6,15 @@ import type { Listing } from "@rescufood/listings-sdk";
 export function ListingPhoto({ listing }: { listing?: Listing }) {
   const image = listing?.images[0];
   if (image) {
-    // Presigned urls rotate, so next/image has nothing stable to optimise.
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={image.url}
-        alt=""
-        className="aspect-video w-full rounded-lg object-cover"
-      />
+      <div className="relative aspect-video w-full">
+        <Image
+          src={image.url}
+          alt=""
+          fill
+          className="rounded-lg object-cover"
+        />
+      </div>
     );
   }
   return (
