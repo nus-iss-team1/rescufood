@@ -51,7 +51,7 @@ jobs:
       - name: Run tests
         env:
           # Matches the default dev ALB already used locally in playwright.config.ts.
-          BASE_URL: http://rescufood-dev-alb-1968524694.ap-southeast-1.elb.amazonaws.com
+          BASE_URL: https://3f0a17w33l.execute-api.ap-southeast-1.amazonaws.com
           TEST_DONOR_USERNAME: ${{ secrets.TEST_DONOR_USERNAME }}
           TEST_DONOR_PASSWORD: ${{ secrets.TEST_DONOR_PASSWORD }}
           TEST_RESCUE_PARTNER_USERNAME: ${{ secrets.TEST_RESCUE_PARTNER_USERNAME }}
