@@ -38,7 +38,8 @@ Resources:
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub ${EnvironmentName} ALB - accepts HTTP from VPC only (API Gateway VPC Link)
+      # Kept as-is: changing GroupDescription forces SG replacement, which fails since AlbSgId is imported by ecs/api-gateway.
+      GroupDescription: !Sub ${EnvironmentName} ALB - accepts HTTPS from the internet
       VpcId:
         Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
       SecurityGroupIngress:
