@@ -64,7 +64,12 @@ export function CreateListingForm() {
     {},
   );
 
-  const today = dayjs().format("YYYY-MM-DD");
+  // Dynamic datetime to prevent stale
+  const defaultWindowStart = dayjs()
+    .add(1, "hour")
+    .format("YYYY-MM-DDTHH:mm:ss");
+  const defaultWindowEnd = dayjs().add(4, "hour").format("YYYY-MM-DDTHH:mm:ss");
+  const defaultUseBy = dayjs().add(6, "hour").format("YYYY-MM-DDTHH:mm:ss");
 
   // Controlled form state with sensible defaults
   const [category, setCategory] = useState("produce");
@@ -72,11 +77,12 @@ export function CreateListingForm() {
   const [unit, setUnit] = useState("");
   const [description, setDescription] = useState("");
   const [allergens, setAllergens] = useState("");
-  const [useBy, setUseBy] = useState(`${today}T23:55:00`);
+  const [useBy, setUseBy] = useState(defaultUseBy);
   const [handlingInstructions, setHandlingInstructions] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
-  const [pickupWindowStart, setPickupWindowStart] = useState(`${today}T09:00:00`);
-  const [pickupWindowEnd, setPickupWindowEnd] = useState(`${today}T18:00:00`);
+  const [pickupWindowStart, setPickupWindowStart] =
+    useState(defaultWindowStart);
+  const [pickupWindowEnd, setPickupWindowEnd] = useState(defaultWindowEnd);
 
   // Standardized image state
   const [listingImage, setListingImage] = useState<File | null>(null);
@@ -160,7 +166,11 @@ export function CreateListingForm() {
   }
 
   return (
-    <form action={handleSubmit} noValidate className="grid gap-5 md:grid-cols-2">
+    <form
+      action={handleSubmit}
+      noValidate
+      className="grid gap-5 md:grid-cols-2"
+    >
       {/* Standardized Image Upload Slot */}
       <div data-animate="field" className="flex flex-col gap-2 md:col-span-2">
         <Label>Listing image</Label>
