@@ -42,6 +42,7 @@ then cluster by scope.
 | `rescufood-dev-iam` | `cloudformation/iam.yaml` | Per environment |
 | `rescufood-dev-ecs` | `cloudformation/ecs.yaml` | Per environment |
 | `rescufood-dev-data` | `cloudformation/data.yaml` | Per environment |
+| `rescufood-dev-messaging` | `cloudformation/messaging.yaml` | Per environment |
 
 Planned future stacks follow the same pattern: `rescufood-core-dns`,
 `rescufood-prod-security`, ...
@@ -309,6 +310,35 @@ is the only principal granted access, scoped to `PutObject`/`GetObject`/
 `DeleteObject`. `S3_BUCKET_NAME` in the listings task definition is
 wired to this stack's `BucketName` export.
 
+## Messaging (SQS) stack
+
+`cloudformation/messaging.yaml` provisions the per-environment
+notification queue plus its dead-letter queue:
+
+- **`rescufood-<env>-notifications`** — producers (profile, listings)
+  send one message per notification here; nothing consumes it yet.
+  `VisibilityTimeout` 60s, SQS-managed encryption at rest.
+- **`rescufood-<env>-notifications-dlq`** — messages that fail 5
+  delivery attempts land here instead of retrying forever. 14-day
+  retention (the SQS maximum) to leave room to notice and replay
+  failures.
+
+No VPC dependency, so unlike the ECS/data stacks it can be deployed
+independently of the network and security stacks:
+
+```sh
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-messaging \
+  --template-file cloudformation/messaging.yaml \
+  --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
+  --no-fail-on-empty-changeset
+```
+
+Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack
+name) are consumed by whichever service's task definition/role needs
+to send or receive on the queue — none does yet.
+
 ## Deploying (not yet executed)
 
 All deploy commands are idempotent: `aws cloudformation deploy` creates the
@@ -356,6 +386,14 @@ aws cloudformation deploy \
   --template-file cloudformation/data.yaml \
   --parameter-overrides file://cloudformation/parameters/data-dev.json \
   --no-fail-on-empty-changeset
+
+# 6. Dev environment notification queue (independent of 1-5)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-messaging \
+  --template-file cloudformation/messaging.yaml \
+  --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
+  --no-fail-on-empty-changeset
 ```
 
 `CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
@@ -382,6 +420,7 @@ deleted while imported):
 ```sh
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-ecs
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-data
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-messaging
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-iam
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
