@@ -19,6 +19,8 @@ type Deps struct {
 	Logger *slog.Logger
 	Store  *store.Store
 	Auth   func(http.Handler) http.Handler
+	// Mailer sends org-approval notifications; nil disables them.
+	Mailer Mailer
 	// Browser origins allowed to call the API cross-origin.
 	AllowedOrigins []string
 	// Failed-login lockout configuration.
@@ -69,9 +71,9 @@ func NewRouter(d Deps) http.Handler {
 				r.Route("/orgs", func(r chi.Router) {
 					r.Get("/", listOrgs(orgs))
 					r.Get("/counts", countOrgs(orgs))
-					r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve))
-					r.Post("/{id}/reject", transitionOrg(orgs, "reject", (*domain.Organisation).Reject))
-					r.Post("/{id}/suspend", transitionOrg(orgs, "suspend", (*domain.Organisation).Suspend))
+					r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve, notifyOrgApproved(d.Mailer)))
+					r.Post("/{id}/reject", transitionOrg(orgs, "reject", (*domain.Organisation).Reject, nil))
+					r.Post("/{id}/suspend", transitionOrg(orgs, "suspend", (*domain.Organisation).Suspend, nil))
 				})
 
 				r.Route("/users", func(r chi.Router) {

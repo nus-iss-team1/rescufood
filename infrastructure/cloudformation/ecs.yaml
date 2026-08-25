@@ -594,6 +594,16 @@ Resources:
                   - ssmmessages:OpenControlChannel
                   - ssmmessages:OpenDataChannel
                 Resource: "*"
+        # Publishes org-approval notifications; the notification service
+        # (see below) consumes them and sends the actual email.
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
 
   ProfileTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -648,6 +658,11 @@ Resources:
               Value: !Ref ProfileDbName
             - Name: DB_NAME
               Value: !Ref ProfileDbName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"

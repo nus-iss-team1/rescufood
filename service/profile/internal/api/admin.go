@@ -44,6 +44,21 @@ type LoginUnlocker interface {
 	AdminUnlock(ctx context.Context, username string) error
 }
 
+// Mailer notifies an organisation's contact once it's approved.
+type Mailer interface {
+	SendOrgApproved(ctx context.Context, to, orgName string) error
+}
+
+// notifyOrgApproved returns nil when mailer is nil, so notifications can be disabled without a separate flag.
+func notifyOrgApproved(mailer Mailer) func(context.Context, *domain.Organisation) error {
+	if mailer == nil {
+		return nil
+	}
+	return func(ctx context.Context, o *domain.Organisation) error {
+		return mailer.SendOrgApproved(ctx, o.ContactEmail, o.Name)
+	}
+}
+
 // requireAdmin rejects requests whose authenticated user is not an admin.
 func requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -308,8 +323,11 @@ type transitionRequest struct {
 	Reason string `json:"reason"`
 }
 
-// transitionOrg applies one status transition, requiring a reason.
-func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation) error) http.HandlerFunc {
+// transitionOrg applies one status transition, requiring a reason. If
+// notify is non-nil it runs after the transition is persisted; a
+// notification failure is logged but doesn't fail the request, since
+// the status change already succeeded.
+func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation) error, notify func(context.Context, *domain.Organisation) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		admin, ok := auth.UserFromContext(r.Context())
 		if !ok {
@@ -362,6 +380,14 @@ func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation
 			"actor_id", admin.ID,
 			"reason", logSafe(req.Reason),
 		)
+
+		if notify != nil {
+			if err := notify(r.Context(), org); err != nil {
+				slog.ErrorContext(r.Context(), "organisation notification failed",
+					"org_id", org.ID, "action", action, "error", err)
+			}
+		}
+
 		writeJSON(w, http.StatusOK, toOrgResponse(org))
 	}
 }
