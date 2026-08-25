@@ -255,6 +255,56 @@ principal allowed to call `cloudformation:DescribeStacks`,
 `ecs:ExecuteCommand` and `ssm:StartSession`. Run it before deploying
 code that needs the new schema, same as profile's migration step.
 
+## Notification service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the NestJS notification service,
+gated on `NotificationImage` the same way profile/listings are — leave it
+empty and no notification resources are created. When set it adds a
+Fargate service that long-polls the SQS queue from the messaging stack and
+sends email via SES; there's no ALB target group or listener rule, since it
+has no public routes, and no CORS/browser-facing env vars either.
+
+| Parameter | Notes |
+|---|---|
+| `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
+| `NotificationPort` | Default `3003` — only used for the container's own health check, not routed through the ALB |
+| `MessagingStackName` | Default `rescufood-<env>-messaging` — where `NOTIFICATION_QUEUE_URL` is imported from |
+| `MailFromAddress` | Verified SES sender identity |
+
+Unlike listings, this service gets **its own database role, secret and
+bootstrap task** (`NotificationDbSecret`, `NotificationDbBootstrapTaskDefinition`)
+— a delivery record never needs to join against listings/profile tables, so
+there's no reason to share their database. Bootstrap it the same way as
+profile's (above), substituting the notification bootstrap task definition:
+
+```sh
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-notification-db-bootstrap --launch-type FARGATE \
+  --network-configuration "$net"
+```
+
+The task role carries an inline policy granting `sqs:ReceiveMessage`,
+`sqs:DeleteMessage` and `sqs:GetQueueAttributes` on the messaging stack's
+queue, and `ses:SendEmail` scoped to this account's SES identities — see
+`src/notifications/sqs-consumer.service.ts` and `mailer.service.ts`.
+
+Since there's no ALB in front of it, health is checked with a
+container-level `HealthCheck` (`wget` against `/health` from inside the
+container) rather than a target group.
+
+### Applying migrations
+
+Same approach as listings — no `migrate` binary in the image, so
+migrations run from a developer machine through an SSM tunnel:
+
+```sh
+service/notifications/scripts/migrate-rds.sh dev
+```
+
+Same requirements as listings' migration step (above). Run it after the
+database bootstrap task and before deploying code that needs the new
+schema.
+
 ## Database (data) stack
 
 `cloudformation/data.yaml` provisions the per-environment data tier:

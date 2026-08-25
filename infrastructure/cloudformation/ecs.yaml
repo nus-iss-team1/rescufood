@@ -131,6 +131,37 @@ Parameters:
     Default: 3002
     Description: Port the listings service listens on
 
+  NotificationImage:
+    Type: String
+    Default: ""
+    Description: >-
+      Notification service container image. Empty leaves the service and
+      its database bootstrap undeployed - no ALB target group/listener
+      rule, since it has no public routes (SQS consumer only).
+
+  NotificationPort:
+    Type: Number
+    Default: 3003
+    Description: Port the notification service's health check listens on
+
+  NotificationDbName:
+    Type: String
+    Default: notifications
+    Description: >-
+      Database and role the notification service owns - its own,
+      unlike listings which shares profile's, since a delivery record
+      never needs to join listings/profile tables.
+
+  MessagingStackName:
+    Type: String
+    Default: rescufood-dev-messaging
+    Description: Name of the messaging stack whose queue exports to import
+
+  MailFromAddress:
+    Type: String
+    Default: ""
+    Description: Verified SES sender identity for outbound notification email
+
 Conditions:
   HasApiGateway: !Not [!Equals [!Ref ApiGatewayStackName, ""]]
   HasPullSecret: !Not [!Equals [!Ref GhcrPullSecretArn, ""]]
@@ -138,6 +169,7 @@ Conditions:
   HasAnySecret: !Or [!Condition HasPullSecret, !Condition HasAppSecrets]
   HasProfile: !Not [!Equals [!Ref ProfileImage, ""]]
   HasListings: !Not [!Equals [!Ref ListingsImage, ""]]
+  HasNotification: !Not [!Equals [!Ref NotificationImage, ""]]
 
 Resources:
   # ------------------------------------------------------- Load balancer
@@ -386,6 +418,7 @@ Resources:
                 Resource:
                   - Fn::ImportValue: !Sub ${DataStackName}-DbSecretArn
                   - !Ref ProfileDbSecret
+                  - !If [HasNotification, !Ref NotificationDbSecret, !Ref AWS::NoValue]
 
   DbBootstrapLogGroup:
     Type: AWS::Logs::LogGroup
@@ -921,6 +954,268 @@ Resources:
         # orders service creation after the rule carrying the target group
         - Key: attached-rule
           Value: !Ref ListingsHttpRule
+
+  # --------------------------------------------- Notification service
+  # Own database/bootstrap; no target group - SQS consumer only, health-checked via container HealthCheck instead.
+  NotificationDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: HasNotification
+    Properties:
+      Name: !Sub ${ProjectName}/${EnvironmentName}/notification-db
+      Description: Login for the notification service's database role
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${NotificationDbName}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  NotificationDbBootstrapTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasNotification
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-notification-db-bootstrap
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !GetAtt DbBootstrapExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: bootstrap
+          Image: public.ecr.aws/docker/library/postgres:17-alpine
+          Essential: true
+          EntryPoint: [/bin/sh, -c]
+          Command:
+            - |
+              set -eu
+              admin="postgres://$MASTER_USER:$MASTER_PASSWORD@$DB_HOST:$DB_PORT/$MASTER_DB?sslmode=require"
+              run() { psql "$admin" -v ON_ERROR_STOP=1 -c "$1"; }
+              exists() { psql "$admin" -tAc "$1" | grep -q 1; }
+
+              if exists "SELECT 1 FROM pg_roles WHERE rolname = '$DB_ROLE'"; then
+                run "ALTER ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "updated role $DB_ROLE"
+              else
+                run "CREATE ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "created role $DB_ROLE"
+              fi
+
+              run "GRANT \"$DB_ROLE\" TO \"$MASTER_USER\""
+
+              if exists "SELECT 1 FROM pg_database WHERE datname = '$DB_ROLE'"; then
+                echo "database $DB_ROLE already exists"
+              else
+                run "CREATE DATABASE \"$DB_ROLE\" OWNER \"$DB_ROLE\""
+                echo "created database $DB_ROLE"
+              fi
+              echo bootstrap complete
+          Environment:
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: MASTER_DB
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbName
+            - Name: DB_ROLE
+              Value: !Ref NotificationDbName
+          Secrets:
+            - Name: MASTER_USER
+              ValueFrom: !Sub
+                - "${arn}:username::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: MASTER_PASSWORD
+              ValueFrom: !Sub
+                - "${arn}:password::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${NotificationDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DbBootstrapLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: notification-bootstrap
+
+  NotificationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasNotification
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/notification
+      RetentionInDays: !Ref LogRetentionDays
+
+  NotificationExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: HasNotification
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-notification-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !Ref NotificationDbSecret
+
+  NotificationTaskRole:
+    Type: AWS::IAM::Role
+    Condition: HasNotification
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-notification-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
+        - PolicyName: notification-ses
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ses:SendEmail
+                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
+
+  NotificationTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasNotification
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-notification
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt NotificationExecutionRole.Arn
+      TaskRoleArn: !GetAtt NotificationTaskRole.Arn
+      ContainerDefinitions:
+        - Name: notification
+          Image: !Ref NotificationImage
+          Essential: true
+          # Same DATABASE_URL composition/uselibpqcompat fix as listings -
+          # see ListingsTaskDefinition's Command above for why.
+          EntryPoint: ["/bin/sh", "-c"]
+          Command:
+            - >-
+              export
+              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require&uselibpqcompat=true";
+              exec node dist/main
+          PortMappings:
+            - ContainerPort: !Ref NotificationPort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - !Sub wget -qO- http://localhost:${NotificationPort}/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          Environment:
+            - Name: PORT
+              Value: !Ref NotificationPort
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: MAIL_FROM_ADDRESS
+              Value: !Ref MailFromAddress
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref NotificationDbName
+            - Name: DB_NAME
+              Value: !Ref NotificationDbName
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${NotificationDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref NotificationLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: notification
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  NotificationService:
+    Type: AWS::ECS::Service
+    Condition: HasNotification
+    Properties:
+      ServiceName: notification
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref NotificationTaskDefinition
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
 
 Outputs:
   ClusterName:

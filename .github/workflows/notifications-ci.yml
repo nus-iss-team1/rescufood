@@ -1,0 +1,64 @@
+name: Notifications CI
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "service/notifications/**"
+      - ".github/workflows/notifications-ci.yml"
+      - ".github/workflows/reusable-sast.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: notifications-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, test & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: service/notifications
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: service/notifications/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # eslint directly, not the package script: that one adds --fix, which
+      # rewrites files instead of reporting on them.
+      - name: Lint
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Test
+        run: npm test -- --ci
+
+      - name: Build
+        run: npm run build
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: notifications
+      working-directory: service/notifications
+      codeql-languages: '["javascript-typescript"]'
+      semgrep-configs: p/default p/secrets p/nodejs
+      fail-on-findings: false
