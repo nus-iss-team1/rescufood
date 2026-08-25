@@ -217,9 +217,9 @@ and log group, and one ALB rule routing both `/api/listings/*` and
 | `ListingsPort` | Default `3002` |
 
 Unlike the profile service, listings gets **no database role, secret or
-bootstrap task of its own**. Its tables (listings, requests,
-notifications, audit_log) live in the same `profile` database and
-reference organisations/users via plain FK columns (see
+bootstrap task of its own**. Its tables (listings, requests, audit_log)
+live in the same `profile` database and reference organisations/users
+via plain FK columns (see
 `service/listings/src/db/external.schema.ts`), so the task definition
 reuses `ProfileDbName` for `DB_USER`/`DB_NAME` and reads `DB_PASSWORD`
 from the same `ProfileDbSecret` the profile service uses. Deploying the
