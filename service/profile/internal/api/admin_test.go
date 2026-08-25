@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -101,10 +102,22 @@ func (f *fakeLockLookup) AdminUnlock(_ context.Context, username string) error {
 	return nil
 }
 
-func adminRouter(orgs OrgAdmin) http.Handler {
+type fakeMailer struct {
+	to, orgName string
+	calls       int
+	err         error
+}
+
+func (f *fakeMailer) SendOrgApproved(_ context.Context, to, orgName string) error {
+	f.to, f.orgName = to, orgName
+	f.calls++
+	return f.err
+}
+
+func adminRouter(orgs OrgAdmin, mailer Mailer) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", listOrgs(orgs))
-	r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve))
+	r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve, notifyOrgApproved(mailer)))
 	return r
 }
 
@@ -139,12 +152,13 @@ func TestRequireAdmin(t *testing.T) {
 func TestTransitionOrg(t *testing.T) {
 	admin := &domain.User{ID: uuid.New(), IsAdmin: true}
 	pendingOrg := func() *domain.Organisation {
-		return &domain.Organisation{ID: uuid.New(), Name: "Fresh Mart", Status: domain.OrgPending}
+		return &domain.Organisation{ID: uuid.New(), Name: "Fresh Mart", Status: domain.OrgPending, ContactEmail: "ops@freshmart.sg"}
 	}
 
 	t.Run("approve pending", func(t *testing.T) {
 		fake := &fakeOrgAdmin{org: pendingOrg()}
-		rec := doAdmin(t, adminRouter(fake), admin,
+		mailer := &fakeMailer{}
+		rec := doAdmin(t, adminRouter(fake, mailer), admin,
 			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{"reason":"docs verified"}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
@@ -152,12 +166,28 @@ func TestTransitionOrg(t *testing.T) {
 		if !fake.updated || fake.org.Status != domain.OrgApproved {
 			t.Fatalf("org not persisted as approved: %+v", fake.org)
 		}
+		if mailer.calls != 1 || mailer.to != "ops@freshmart.sg" || mailer.orgName != "Fresh Mart" {
+			t.Fatalf("approval notification not sent as expected: %+v", mailer)
+		}
+	})
+
+	t.Run("approve succeeds even if the notification publish fails", func(t *testing.T) {
+		fake := &fakeOrgAdmin{org: pendingOrg()}
+		mailer := &fakeMailer{err: errors.New("sqs: send message failed")}
+		rec := doAdmin(t, adminRouter(fake, mailer), admin,
+			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{"reason":"docs verified"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if fake.org.Status != domain.OrgApproved {
+			t.Fatalf("org status = %s, want approved despite notify failure", fake.org.Status)
+		}
 	})
 
 	t.Run("approve already approved", func(t *testing.T) {
 		fake := &fakeOrgAdmin{org: pendingOrg()}
 		fake.org.Status = domain.OrgApproved
-		rec := doAdmin(t, adminRouter(fake), admin,
+		rec := doAdmin(t, adminRouter(fake, nil), admin,
 			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{"reason":"again"}`)
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("status = %d, want 409", rec.Code)
@@ -166,7 +196,7 @@ func TestTransitionOrg(t *testing.T) {
 
 	t.Run("missing reason", func(t *testing.T) {
 		fake := &fakeOrgAdmin{org: pendingOrg()}
-		rec := doAdmin(t, adminRouter(fake), admin,
+		rec := doAdmin(t, adminRouter(fake, nil), admin,
 			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{}`)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("status = %d, want 400", rec.Code)
@@ -177,7 +207,7 @@ func TestTransitionOrg(t *testing.T) {
 	})
 
 	t.Run("unknown org", func(t *testing.T) {
-		rec := doAdmin(t, adminRouter(&fakeOrgAdmin{}), admin,
+		rec := doAdmin(t, adminRouter(&fakeOrgAdmin{}, nil), admin,
 			http.MethodPost, "/"+uuid.NewString()+"/approve", `{"reason":"x"}`)
 		if rec.Code != http.StatusNotFound {
 			t.Fatalf("status = %d, want 404", rec.Code)
@@ -185,7 +215,7 @@ func TestTransitionOrg(t *testing.T) {
 	})
 
 	t.Run("bad id", func(t *testing.T) {
-		rec := doAdmin(t, adminRouter(&fakeOrgAdmin{}), admin,
+		rec := doAdmin(t, adminRouter(&fakeOrgAdmin{}, nil), admin,
 			http.MethodPost, "/not-a-uuid/approve", `{"reason":"x"}`)
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("status = %d, want 400", rec.Code)
@@ -382,7 +412,7 @@ func TestListOrgs(t *testing.T) {
 	org := &domain.Organisation{ID: uuid.New(), Name: "Fresh Mart", Status: domain.OrgPending}
 	fake := &fakeOrgAdmin{org: org}
 
-	rec := doAdmin(t, adminRouter(fake), nil, http.MethodGet, "/", "")
+	rec := doAdmin(t, adminRouter(fake, nil), nil, http.MethodGet, "/", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
@@ -391,12 +421,12 @@ func TestListOrgs(t *testing.T) {
 	}
 
 	fake.org.Status = domain.OrgApproved
-	rec = doAdmin(t, adminRouter(fake), nil, http.MethodGet, "/?status=all", "")
+	rec = doAdmin(t, adminRouter(fake, nil), nil, http.MethodGet, "/?status=all", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Fresh Mart") {
 		t.Fatalf("all: code=%d body=%s", rec.Code, rec.Body)
 	}
 
-	rec = doAdmin(t, adminRouter(fake), nil, http.MethodGet, "/?status=bogus", "")
+	rec = doAdmin(t, adminRouter(fake, nil), nil, http.MethodGet, "/?status=bogus", "")
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("bogus status: status = %d, want 400", rec.Code)
 	}

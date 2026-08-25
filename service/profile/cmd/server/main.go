@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
@@ -14,8 +16,28 @@ import (
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/config"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/notify"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
 )
+
+// newMailer builds a queue-backed notifier, or returns nil
+// (notifications disabled) when the queue isn't configured.
+func newMailer(ctx context.Context, logger *slog.Logger) api.Mailer {
+	queueURL := os.Getenv("NOTIFICATION_QUEUE_URL")
+	if queueURL == "" {
+		logger.Warn("NOTIFICATION_QUEUE_URL not set; organisation approval notifications are disabled")
+		return nil
+	}
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		logger.Warn("unable to load AWS config; organisation approval notifications are disabled", "error", err)
+		return nil
+	}
+	return &notify.SQSPublisher{
+		Client:   sqs.NewFromConfig(cfg),
+		QueueURL: queueURL,
+	}
+}
 
 func newLogger(env string) *slog.Logger {
 	if env == "development" {
@@ -62,6 +84,7 @@ func main() {
 		Logger:               logger,
 		Store:                st,
 		Auth:                 auth.Middleware(verifier, st.Users),
+		Mailer:               newMailer(ctx, logger),
 		AllowedOrigins:       config.AllowedOrigins(),
 		FailedLoginThreshold: config.FailedLoginThreshold(),
 		RestrictionDuration:  config.RestrictionDuration(),

@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood notifications queue. Producers (profile, listings) send one
+  message per notification to NotificationQueue; the notification
+  service consumes it and sends the actual email. Deployed once per
+  environment (dev, prod) - no VPC dependency, so it can be deployed
+  independently of the network/security/data stacks.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, prod]
+    Description: Environment this queue belongs to
+
+Resources:
+  NotificationDlq:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${EnvironmentName}-notifications-dlq
+      # Max allowed by SQS - gives time to notice and replay failures
+      # before messages age out for good.
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  NotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${ProjectName}-${EnvironmentName}-notifications
+      # Long enough for a consumer to call SES and delete the message
+      # before SQS makes it visible to another consumer again.
+      VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt NotificationDlq.Arn
+        maxReceiveCount: 5
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  NotificationQueueUrl:
+    Value: !Ref NotificationQueue
+    Export:
+      Name: !Sub ${AWS::StackName}-QueueUrl
+
+  NotificationQueueArn:
+    Value: !GetAtt NotificationQueue.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-QueueArn
+
+  NotificationDlqArn:
+    Value: !GetAtt NotificationDlq.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-DlqArn

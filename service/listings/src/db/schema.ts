@@ -57,30 +57,6 @@ export const requestStatus = pgEnum('request_status', [
   'expired',
 ]);
 
-export const notificationChannel = pgEnum('notification_channel', [
-  'email',
-  'in_app',
-]);
-
-export const notificationType = pgEnum('notification_type', [
-  'claim_requested',
-  'claim_accepted',
-  'claim_declined',
-  'claim_superseded',
-  'claim_cancelled',
-  'listing_material_change',
-  'pickup_reminder',
-  'pickup_completed',
-  'listing_expired',
-]);
-
-export const notificationStatus = pgEnum('notification_status', [
-  'pending',
-  'sent',
-  'failed',
-  'retrying',
-]);
-
 // ---------------------------------------------------------------------------
 // listings (FR2)
 // ---------------------------------------------------------------------------
@@ -268,37 +244,6 @@ export const requests = pgTable(
     index('requests_listing_id_idx').on(table.listingId),
     index('requests_rescue_org_id_idx').on(table.rescueOrgId),
     index('requests_status_idx').on(table.status),
-  ],
-);
-
-// ---------------------------------------------------------------------------
-// notifications (FR5)
-// ---------------------------------------------------------------------------
-
-export const notifications = pgTable(
-  'notifications',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    recipientUserId: uuid('recipient_user_id').notNull(), // FK -> users.id (service/profile)
-    type: notificationType('type').notNull(),
-    channel: notificationChannel('channel').notNull(),
-    listingId: uuid('listing_id').references(() => listings.id),
-    requestId: uuid('request_id').references(() => requests.id),
-    payload: jsonb('payload').notNull().default({}),
-    status: notificationStatus('status').notNull().default('pending'),
-    attemptCount: integer('attempt_count').notNull().default(0),
-    lastAttemptedAt: timestamp('last_attempted_at', { withTimezone: true }),
-    sentAt: timestamp('sent_at', { withTimezone: true }),
-    failureReason: text('failure_reason').notNull().default(''),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index('notifications_retry_queue_idx')
-      .on(table.status, table.createdAt)
-      .where(sql`status in ('pending', 'retrying')`),
-    index('notifications_recipient_idx').on(table.recipientUserId),
   ],
 );
 

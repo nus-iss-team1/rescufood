@@ -11,7 +11,7 @@ verification.
 
 - **Node.js 20+** (developed on Node 24) and **npm**
 - A running Postgres instance with `service/profile`'s schema applied —
-  listings/requests/notifications/audit_log reference `organisations`/`users`
+  listings/requests/audit_log reference `organisations`/`users`
   via plain FK columns (see `src/db/external.schema.ts`), so the profile
   service's migrations must run first.
 - AWS credentials that can reach the target S3 bucket (default AWS SDK

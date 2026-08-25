@@ -1,0 +1,153 @@
+name: Build & Push Notifications Image
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "service/notifications/**"
+      - ".github/workflows/notifications-build.yml"
+
+# One run at a time; the newest queued run supersedes older pending ones.
+concurrency:
+  group: notifications-build-develop
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/notifications
+
+jobs:
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: notifications
+      working-directory: service/notifications
+      codeql-languages: '["javascript-typescript"]'
+      semgrep-configs: p/default p/secrets p/nodejs
+      # Flip to true to stop publishing images that have open findings.
+      fail-on-findings: false
+
+  build-and-push:
+    needs: sast
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=develop-
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: service/notifications
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      AWS_REGION: ap-southeast-1
+      CLUSTER: rescufood-dev
+      SERVICE: notification
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The service exists only once the ecs.yaml stack has a
+      # Notification block deployed with NotificationImage set - see
+      # infrastructure/README.md.
+      - name: Check the service exists
+        id: check
+        run: |
+          set -euo pipefail
+          count=$(aws ecs describe-services \
+            --cluster "$CLUSTER" \
+            --services "$SERVICE" \
+            --query "length(services[?status=='ACTIVE'])" \
+            --output text)
+          echo "exists=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" != "1" ]; then
+            echo "::warning::ECS service '$SERVICE' is not deployed - the image was pushed but nothing was rolled. See infrastructure/README.md."
+          fi
+
+      # The develop tag is mutable; a forced deployment re-pulls it.
+      - name: Roll service onto the new image
+        if: steps.check.outputs.exists == '1'
+        id: roll
+        run: |
+          set -euo pipefail
+          id=$(aws ecs update-service \
+            --cluster "$CLUSTER" \
+            --service "$SERVICE" \
+            --force-new-deployment \
+            --query "service.deployments[?status=='PRIMARY']|[0].id" \
+            --output text)
+          echo "Started deployment $id"
+          echo "deployment-id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for rollout
+        if: steps.check.outputs.exists == '1'
+        env:
+          DEPLOYMENT_ID: ${{ steps.roll.outputs.deployment-id }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            state=$(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query "services[0].deployments[?id=='$DEPLOYMENT_ID']|[0].rolloutState" \
+              --output text)
+            case "$state" in
+              COMPLETED)
+                echo "Rollout completed"
+                exit 0
+                ;;
+              FAILED|None)
+                echo "::error::Rollout failed - the circuit breaker rolled the service back"
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Rollout did not finish within 15 minutes"
+          exit 1
