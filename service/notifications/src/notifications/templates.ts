@@ -24,7 +24,7 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
         : 'Your organisation';
     return {
       subject: 'Your organisation has been approved',
-      body: `Hi,\n\n${orgName} has been approved on RescueFood and can now sign in.\n\n— The RescueFood team\n`,
+      body: `Hi,\n\n${orgName} has been approved on RescuFood and can now sign in.\n\n— The RescuFood Team\n`,
     };
   },
 };
