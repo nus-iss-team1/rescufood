@@ -12,6 +12,5 @@
   "ExtraCorsOrigins=http://localhost:5173",
   "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:develop",
   "ApiGatewayStackName=rescufood-dev-api-gateway",
-  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:develop",
-  "MailFromAddress=rescufood@proton.me"
+  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:develop"
 ]

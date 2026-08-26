@@ -261,15 +261,17 @@ code that needs the new schema, same as profile's migration step.
 gated on `NotificationImage` the same way profile/listings are — leave it
 empty and no notification resources are created. When set it adds a
 Fargate service that long-polls the SQS queue from the messaging stack and
-sends email via SES; there's no ALB target group or listener rule, since it
-has no public routes, and no CORS/browser-facing env vars either.
+sends email via Gmail SMTP (`nodemailer`, not SES — sending "from" a domain
+you don't control fails SPF/DKIM/DMARC at the recipient); there's no ALB
+target group or listener rule, since it has no public routes, and no
+CORS/browser-facing env vars either.
 
 | Parameter | Notes |
 |---|---|
 | `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
 | `NotificationPort` | Default `3003` — only used for the container's own health check, not routed through the ALB |
 | `MessagingStackName` | Default `rescufood-<env>-messaging` — where `NOTIFICATION_QUEUE_URL` is imported from |
-| `MailFromAddress` | Verified SES sender identity |
+| `GmailCredentialsSecretArn` | Secrets Manager secret ARN with `user`/`appPassword` JSON keys - create it by hand (`aws secretsmanager create-secret`), same as `GhcrPullSecretArn` |
 
 Unlike listings, this service gets **its own database role, secret and
 bootstrap task** (`NotificationDbSecret`, `NotificationDbBootstrapTaskDefinition`)
@@ -285,8 +287,10 @@ aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
 
 The task role carries an inline policy granting `sqs:ReceiveMessage`,
 `sqs:DeleteMessage` and `sqs:GetQueueAttributes` on the messaging stack's
-queue, and `ses:SendEmail` scoped to this account's SES identities — see
-`src/notifications/sqs-consumer.service.ts` and `mailer.service.ts`.
+queue — see `src/notifications/sqs-consumer.service.ts`. Gmail credentials
+come from `GmailCredentialsSecretArn` via the execution role's
+`read-secrets` policy, not a task-role AWS permission (see
+`mailer.service.ts`).
 
 Since there's no ALB in front of it, health is checked with a
 container-level `HealthCheck` (`wget` against `/health` from inside the

@@ -6,7 +6,10 @@ calling SES/SMTP themselves - this is the one place that owns mail credentials,
 templates and delivery history.
 
 **Stack:** NestJS 11 · TypeScript · Drizzle ORM · PostgreSQL (own database,
-unlike `service/listings` which shares `profile`'s) · Amazon SQS · Amazon SES.
+unlike `service/listings` which shares `profile`'s) · Amazon SQS · Gmail SMTP
+(via `nodemailer`) - not SES, since sending "from" a domain you don't
+control fails SPF/DKIM/DMARC at the recipient; Gmail's own servers send the
+mail, authenticated as a real account.
 
 No public HTTP API yet - `GET /health` is the only route, for ECS container
 health checks. A `channel: 'in_app'` message is recorded but nothing serves
@@ -19,9 +22,10 @@ it back to a browser yet; that's future work, not this commit.
   database (`compose.yaml` starts one on `localhost:5433`)
 - An SQS queue to poll (`infrastructure/cloudformation/messaging.yaml`
   provisions `rescufood-<env>-notifications`) and AWS credentials that can
-  receive/delete from it and send via SES (default AWS SDK chain - a local
-  profile/env vars in dev, the ECS task role when deployed)
-- A verified SES sender identity for `MAIL_FROM_ADDRESS`
+  receive/delete from it (default AWS SDK chain - a local profile/env vars
+  in dev, the ECS task role when deployed)
+- A Gmail account with 2FA enabled and an app password generated at
+  https://myaccount.google.com/apppasswords
 
 ## Quick start
 
@@ -29,7 +33,7 @@ it back to a browser yet; that's future work, not this commit.
 cd service/notifications
 npm install
 docker compose up -d          # local notifications-db on :5433
-cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, MAIL_FROM_ADDRESS
+cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, GMAIL_USER, GMAIL_APP_PASSWORD
 npm run db:migrate
 npm run start:dev
 ```
@@ -45,8 +49,8 @@ See [`.env.example`](.env.example) for the full list. The notable ones:
 |---|---|
 | `DATABASE_URL` | This service's own database - see `compose.yaml` |
 | `NOTIFICATION_QUEUE_URL` | `QueueUrl` output of the `rescufood-<env>-messaging` stack |
-| `AWS_REGION` | Region for the SQS and SES clients |
-| `MAIL_FROM_ADDRESS` | Verified SES sender identity |
+| `AWS_REGION` | Region for the SQS client |
+| `GMAIL_USER` / `GMAIL_APP_PASSWORD` | Gmail account emails are sent through |
 
 ## Message contract
 
@@ -84,5 +88,5 @@ A message is deleted from the queue (no further retries) when:
   message of a `notification_type` with no template yet
 
 It's left in place (SQS will redeliver it) when the failure looks
-transient - an SES or database error - so a temporary outage doesn't lose
+transient - an SMTP or database error - so a temporary outage doesn't lose
 the notification.

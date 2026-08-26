@@ -1,29 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { createTransport, type Transporter } from 'nodemailer';
 
 @Injectable()
 export class MailerService {
-  private readonly client: SESv2Client;
+  private readonly transport: Transporter;
   private readonly from: string;
 
   constructor(config: ConfigService) {
-    this.client = new SESv2Client({ region: config.getOrThrow('AWS_REGION') });
-    this.from = config.getOrThrow('MAIL_FROM_ADDRESS');
+    this.from = config.getOrThrow('GMAIL_USER');
+    this.transport = createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.from,
+        pass: config.getOrThrow('GMAIL_APP_PASSWORD'),
+      },
+    });
   }
 
   async send(to: string, subject: string, body: string): Promise<void> {
-    await this.client.send(
-      new SendEmailCommand({
-        FromEmailAddress: this.from,
-        Destination: { ToAddresses: [to] },
-        Content: {
-          Simple: {
-            Subject: { Data: subject },
-            Body: { Text: { Data: body } },
-          },
-        },
-      }),
-    );
+    await this.transport.sendMail({ from: this.from, to, subject, text: body });
   }
 }

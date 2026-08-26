@@ -157,10 +157,14 @@ Parameters:
     Default: rescufood-dev-messaging
     Description: Name of the messaging stack whose queue exports to import
 
-  MailFromAddress:
+  GmailCredentialsSecretArn:
     Type: String
     Default: ""
-    Description: Verified SES sender identity for outbound notification email
+    Description: >-
+      Secrets Manager secret ARN holding GMAIL_USER and GMAIL_APP_PASSWORD
+      as JSON keys - the Gmail account outbound notification email is sent
+      through (not SES: sending "from" a domain you don't control fails
+      SPF/DKIM/DMARC at the recipient).
 
 Conditions:
   HasApiGateway: !Not [!Equals [!Ref ApiGatewayStackName, ""]]
@@ -1086,6 +1090,7 @@ Resources:
                 Resource:
                   - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
                   - !Ref NotificationDbSecret
+                  - !Ref GmailCredentialsSecretArn
 
   NotificationTaskRole:
     Type: AWS::IAM::Role
@@ -1122,13 +1127,6 @@ Resources:
                   - sqs:GetQueueAttributes
                 Resource:
                   Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
-        - PolicyName: notification-ses
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: ses:SendEmail
-                Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
 
   NotificationTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -1176,8 +1174,6 @@ Resources:
               Value: !Ref NotificationPort
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: MAIL_FROM_ADDRESS
-              Value: !Ref MailFromAddress
             - Name: NOTIFICATION_QUEUE_URL
               Value:
                 Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
@@ -1194,6 +1190,10 @@ Resources:
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${NotificationDbSecret}:password::"
+            - Name: GMAIL_USER
+              ValueFrom: !Sub "${GmailCredentialsSecretArn}:user::"
+            - Name: GMAIL_APP_PASSWORD
+              ValueFrom: !Sub "${GmailCredentialsSecretArn}:appPassword::"
           LogConfiguration:
             LogDriver: awslogs
             Options:
