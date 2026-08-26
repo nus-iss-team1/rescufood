@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 
+// Gmail's own servers send the mail, authenticated as a real account - unlike SES sending "from" a domain it isn't authorized for.
 @Injectable()
 export class MailerService {
   private readonly transport: Transporter;
