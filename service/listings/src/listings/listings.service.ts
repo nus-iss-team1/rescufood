@@ -309,9 +309,7 @@ export class ListingsService {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
 
-    // Soft delete is a plain UPDATE, so it won't trip a foreign-key
-    // violation the way a hard DELETE used to - check for associated
-    // requests/images up front to keep the same external behaviour.
+    // Reject deletion while the listing still has requests or images.
     const [imageCount, requestCount] = await Promise.all([
       this.listingImagesRepository.countByListingId(id),
       this.listingsRepository.countAssociatedRequests(id),

@@ -5,7 +5,7 @@ export type NotificationType = (typeof notificationType.enumValues)[number];
 export type NotificationChannel =
   (typeof notificationChannel.enumValues)[number];
 
-// Validated on receipt so a malformed message fails fast instead of crashing the consumer loop.
+// Validated on receipt so a malformed message fails fast.
 export class NotificationMessageDto {
   @IsEnum(notificationType.enumValues)
   type!: NotificationType;

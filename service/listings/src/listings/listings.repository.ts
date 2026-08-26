@@ -123,10 +123,7 @@ export class ListingsRepository {
     return deleted;
   }
 
-  // Existence check backing the "can't delete a listing with associated
-  // requests" rule in ListingsService.remove - now that delete is a plain
-  // UPDATE, it no longer trips the requests->listings FK the way a hard
-  // DELETE used to, so this has to be enforced explicitly.
+  // Backs the "no delete while associated requests exist" rule in ListingsService.remove.
   async countAssociatedRequests(listingId: string): Promise<number> {
     const [row] = await this.db
       .select({ value: count() })

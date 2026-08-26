@@ -1,4 +1,4 @@
-// Own database (unlike listings, which shares profile's) - a delivery record never needs to join listings/profile tables.
+// Schema for this service's own notifications database.
 
 import {
   pgTable,
@@ -15,7 +15,6 @@ export const notificationChannel = pgEnum('notification_channel', [
   'in_app',
 ]);
 
-// org_approved plus listings' original (unused) draft types, reserved for later.
 export const notificationType = pgEnum('notification_type', [
   'org_approved',
   'claim_requested',
@@ -29,7 +28,7 @@ export const notificationType = pgEnum('notification_type', [
   'listing_expired',
 ]);
 
-// Outcome of one attempt - SQS owns retries, not this table.
+// Outcome of one delivery attempt.
 export const notificationStatus = pgEnum('notification_status', [
   'sent',
   'failed',
@@ -39,9 +38,9 @@ export const notifications = pgTable(
   'notifications',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    // Always required - a user account may not exist yet (org registration precedes user signup).
+    // Required; the recipient's user account may not exist yet.
     recipientEmail: text('recipient_email').notNull(),
-    // Nullable until in-app notifications need to query by user.
+    // Unused until in-app notifications need per-user lookup.
     recipientUserId: uuid('recipient_user_id'),
     type: notificationType('type').notNull(),
     channel: notificationChannel('channel').notNull(),

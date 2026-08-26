@@ -113,7 +113,7 @@ describe('SqsConsumerService.process', () => {
   });
 
   it('treats a mailer error as transient so the message is left for SQS to retry', async () => {
-    mailer.send.mockRejectedValueOnce(new Error('SES throttled'));
+    mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
 
     const outcome = await service.process(
       message({
@@ -128,16 +128,14 @@ describe('SqsConsumerService.process', () => {
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'failed',
-        failureReason: 'SES throttled',
+        failureReason: 'smtp timeout',
       }),
     );
   });
 
-  // Regression: a real deploy crashed the whole consumer process this
-  // way - the mailer failed, and recording that failure also failed
-  // (DB unreachable), and the second failure went uncaught.
+  // A failing record() during failure handling must not crash the consumer.
   it('does not crash when the repository itself fails to record a failure', async () => {
-    mailer.send.mockRejectedValueOnce(new Error('SES throttled'));
+    mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
     repository.record.mockRejectedValueOnce(
       new Error('password authentication failed'),
     );

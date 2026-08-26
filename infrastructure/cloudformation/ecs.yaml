@@ -162,9 +162,7 @@ Parameters:
     Default: ""
     Description: >-
       Secrets Manager secret ARN holding GMAIL_USER and GMAIL_APP_PASSWORD
-      as JSON keys - the Gmail account outbound notification email is sent
-      through (not SES: sending "from" a domain you don't control fails
-      SPF/DKIM/DMARC at the recipient).
+      as JSON keys, used to send outbound notification email.
 
 Conditions:
   HasApiGateway: !Not [!Equals [!Ref ApiGatewayStackName, ""]]
