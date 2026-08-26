@@ -158,7 +158,7 @@ export async function signUpAction(
     };
   }
 
-  // Dev pools auto-confirm via a pre-sign-up trigger; sign in directly.
+  // Pools with a pre-sign-up auto-confirm trigger skip email verification.
   if (confirmed) {
     try {
       await signIn("credentials", {
