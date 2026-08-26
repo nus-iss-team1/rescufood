@@ -12,5 +12,6 @@
   "ExtraCorsOrigins=http://localhost:5173",
   "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:develop",
   "ApiGatewayStackName=rescufood-dev-api-gateway",
-  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:develop"
+  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:develop",
+  "GmailCredentialsSecretArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/dev/gmail-credentials-92SXpE"
 ]
