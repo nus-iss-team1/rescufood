@@ -114,7 +114,9 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     try {
       const email = renderEmail(dto.type, payload);
       await this.mailer.send(dto.recipientEmail, email.subject, email.body);
-      await this.repository.record({
+      // A DB hiccup here must not turn into a resend: the email is
+      // already out, so this stays 'sent' even if the audit row is lost.
+      await this.safeRecord({
         recipientEmail: dto.recipientEmail,
         type: dto.type,
         channel: dto.channel,
@@ -125,7 +127,7 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const failureReason =
         error instanceof Error ? error.message : String(error);
-      await this.repository.record({
+      await this.safeRecord({
         recipientEmail: dto.recipientEmail,
         type: dto.type,
         channel: dto.channel,
@@ -137,6 +139,22 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
       return error instanceof UnsupportedNotificationTypeError
         ? 'permanent-failure'
         : 'transient-failure';
+    }
+  }
+
+  // A failure to write the audit row must never crash the consumer
+  // (an unhandled rejection here previously took the whole process
+  // down) - it's just logged and the delivery outcome stands regardless.
+  private async safeRecord(
+    entry: Parameters<NotificationsRepository['record']>[0],
+  ): Promise<void> {
+    try {
+      await this.repository.record(entry);
+    } catch (error) {
+      this.logger.error(
+        { err: error },
+        'failed to record notification delivery',
+      );
     }
   }
 }
