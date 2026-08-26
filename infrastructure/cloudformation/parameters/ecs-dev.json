@@ -11,5 +11,7 @@
   "AuthCognitoIssuer=https://cognito-idp.ap-southeast-1.amazonaws.com/ap-southeast-1_4TOruPBJr",
   "ExtraCorsOrigins=http://localhost:5173",
   "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:develop",
-  "ApiGatewayStackName=rescufood-dev-api-gateway"
+  "ApiGatewayStackName=rescufood-dev-api-gateway",
+  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:develop",
+  "MailFromAddress=rescufood@proton.me"
 ]
