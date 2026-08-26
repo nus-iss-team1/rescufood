@@ -132,4 +132,42 @@ describe('SqsConsumerService.process', () => {
       }),
     );
   });
+
+  // Regression: a real deploy crashed the whole consumer process this
+  // way - the mailer failed, and recording that failure also failed
+  // (DB unreachable), and the second failure went uncaught.
+  it('does not crash when the repository itself fails to record a failure', async () => {
+    mailer.send.mockRejectedValueOnce(new Error('SES throttled'));
+    repository.record.mockRejectedValueOnce(
+      new Error('password authentication failed'),
+    );
+
+    const outcome = await service.process(
+      message({
+        type: 'org_approved',
+        channel: 'email',
+        recipientEmail: 'ops@freshmart.sg',
+        payload: { orgName: 'Fresh Mart' },
+      }),
+    );
+
+    expect(outcome).toBe('transient-failure');
+  });
+
+  it('still reports success when the repository fails to record a successful send', async () => {
+    repository.record.mockRejectedValueOnce(
+      new Error('password authentication failed'),
+    );
+
+    const outcome = await service.process(
+      message({
+        type: 'org_approved',
+        channel: 'email',
+        recipientEmail: 'ops@freshmart.sg',
+        payload: { orgName: 'Fresh Mart' },
+      }),
+    );
+
+    expect(outcome).toBe('sent');
+  });
 });
