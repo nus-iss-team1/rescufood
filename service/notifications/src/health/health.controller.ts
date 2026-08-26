@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 
-// Liveness only - doesn't touch the database, SQS or SES.
+// Liveness check; touches no external dependencies.
 @Controller('health')
 export class HealthController {
   @Get()

@@ -5,7 +5,7 @@ export interface RenderedEmail {
   body: string;
 }
 
-// Distinct from a mailer error - retrying an unimplemented template never helps, so the consumer treats it as permanent.
+// Permanent failure; retrying an unimplemented template never helps.
 export class UnsupportedNotificationTypeError extends Error {
   constructor(type: string) {
     super(`no email template for notification type "${type}"`);
@@ -15,7 +15,7 @@ export class UnsupportedNotificationTypeError extends Error {
 
 type Renderer = (payload: Record<string, unknown>) => RenderedEmail;
 
-// Only org_approved is implemented; other types await listings' future events.
+// Only org_approved is implemented.
 const renderers: Partial<Record<NotificationType, Renderer>> = {
   org_approved: (payload) => {
     const orgName =

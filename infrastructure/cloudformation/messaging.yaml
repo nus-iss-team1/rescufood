@@ -33,7 +33,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub ${ProjectName}-${EnvironmentName}-notifications
-      # Long enough for a consumer to call SES and delete the message
+      # Long enough for a consumer to send the email and delete the message
       # before SQS makes it visible to another consumer again.
       VisibilityTimeout: 60
       SqsManagedSseEnabled: true

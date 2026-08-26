@@ -11,10 +11,8 @@
 -- 0001_cross_service_fks.sql). The two rescue-partner organisations the
 -- requests below claim against are referenced by id rather than looked up,
 -- since this batch is scoped to this environment's existing rescue
--- partners (a deliberate choice, not an oversight - see conversation this
--- migration came out of); both existence-checked below all the same, so a
--- database missing either one no-ops cleanly instead of failing the whole
--- migrate run.
+-- partners; both are existence-checked below all the same, so a database
+-- missing either one no-ops cleanly instead of failing the whole migrate run.
 --
 -- All quantity/status math mirrors exactly what
 -- RequestsService.decide/verifyPickupCode would have produced (see
