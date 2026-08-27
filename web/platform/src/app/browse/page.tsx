@@ -9,7 +9,6 @@ import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
 import { ListingCards } from "@/components/listings/listing-cards";
 import { ListingFilters } from "@/components/listings/listing-filters";
-import { RequestDialog } from "@/components/browse/request-dialog";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { buttonVariants } from "@rescufood/ui/components/button";
@@ -196,7 +195,14 @@ export default async function BrowsePage({
                 listings={filteredListings}
                 showStatus={false}
                 empty="Nothing available right now. Check back after the next drop-off."
-                action={(listing) => <RequestDialog listing={listing} />}
+                action={(listing) => (
+                  <Link
+                    href={`/browse/${listing.id}`}
+                    className={cn(buttonVariants({ size: "sm" }), "w-full")}
+                  >
+                    View Details
+                  </Link>
+                )}
               />
             )}
           </div>
