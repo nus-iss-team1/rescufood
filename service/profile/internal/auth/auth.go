@@ -82,12 +82,19 @@ const adminGroup = "admin"
 
 // UserStore resolves verified claims to a profile user row.
 type UserStore interface {
-	UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, error)
+	UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, domain.UserProvisioning, error)
+}
+
+// Welcomer sends a one-time welcome email to a newly provisioned user.
+type Welcomer interface {
+	SendWelcome(ctx context.Context, to, name, orgType string) error
 }
 
 // Middleware rejects requests without a valid bearer token, provisions
-// the user row on first sight and stores the user in the context.
-func Middleware(v *Verifier, users UserStore) func(http.Handler) http.Handler {
+// the user row on first sight and stores the user in the context. When
+// welcomer is non-nil a welcome email is sent the first time a user is
+// seen; a send failure is logged but never blocks the request.
+func Middleware(v *Verifier, users UserStore, welcomer Welcomer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			raw, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -101,12 +108,17 @@ func Middleware(v *Verifier, users UserStore) func(http.Handler) http.Handler {
 				unauthorized(w, "invalid token")
 				return
 			}
-			user, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.DisplayName(), claims.Username,
+			user, prov, err := users.UpsertBySub(r.Context(), claims.Sub, claims.Email, claims.DisplayName(), claims.Username,
 				slices.Contains(claims.Groups, adminGroup))
 			if err != nil {
 				slog.ErrorContext(r.Context(), "user provisioning failed", "error", err)
 				http.Error(w, "internal error", http.StatusInternalServerError)
 				return
+			}
+			if prov.Inserted && welcomer != nil && user.Email != "" {
+				if err := welcomer.SendWelcome(r.Context(), user.Email, user.Name, string(prov.OrgType)); err != nil {
+					slog.ErrorContext(r.Context(), "welcome notification failed", "user_id", user.ID, "error", err)
+				}
 			}
 			if user.Status == domain.UserSuspended {
 				forbidden(w, "user is suspended")

@@ -33,12 +33,27 @@ type notificationMessage struct {
 // SendOrgApproved publishes an org_approved notification; the
 // notification service turns it into the actual email.
 func (p *SQSPublisher) SendOrgApproved(ctx context.Context, to, orgName string) error {
-	body, err := json.Marshal(notificationMessage{
+	return p.publish(ctx, notificationMessage{
 		Type:           "org_approved",
 		Channel:        "email",
 		RecipientEmail: to,
 		Payload:        map[string]any{"orgName": orgName},
 	})
+}
+
+// SendWelcome publishes a user_welcome notification for a newly
+// provisioned account. orgType tailors the copy and may be empty.
+func (p *SQSPublisher) SendWelcome(ctx context.Context, to, name, orgType string) error {
+	return p.publish(ctx, notificationMessage{
+		Type:           "user_welcome",
+		Channel:        "email",
+		RecipientEmail: to,
+		Payload:        map[string]any{"name": name, "orgType": orgType},
+	})
+}
+
+func (p *SQSPublisher) publish(ctx context.Context, msg notificationMessage) error {
+	body, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}

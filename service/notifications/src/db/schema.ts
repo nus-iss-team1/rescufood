@@ -17,6 +17,7 @@ export const notificationChannel = pgEnum('notification_channel', [
 
 export const notificationType = pgEnum('notification_type', [
   'org_approved',
+  'user_welcome',
   'claim_requested',
   'claim_accepted',
   'claim_declined',
