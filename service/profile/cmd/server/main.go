@@ -20,17 +20,17 @@ import (
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
 )
 
-// newMailer builds a queue-backed notifier, or returns nil
+// newPublisher builds a queue-backed notifier, or returns nil
 // (notifications disabled) when the queue isn't configured.
-func newMailer(ctx context.Context, logger *slog.Logger) api.Mailer {
+func newPublisher(ctx context.Context, logger *slog.Logger) *notify.SQSPublisher {
 	queueURL := os.Getenv("NOTIFICATION_QUEUE_URL")
 	if queueURL == "" {
-		logger.Warn("NOTIFICATION_QUEUE_URL not set; organisation approval notifications are disabled")
+		logger.Warn("NOTIFICATION_QUEUE_URL not set; email notifications are disabled")
 		return nil
 	}
 	cfg, err := awsconfig.LoadDefaultConfig(ctx)
 	if err != nil {
-		logger.Warn("unable to load AWS config; organisation approval notifications are disabled", "error", err)
+		logger.Warn("unable to load AWS config; email notifications are disabled", "error", err)
 		return nil
 	}
 	return &notify.SQSPublisher{
@@ -80,11 +80,20 @@ func main() {
 	}
 
 	st := store.New(pool)
+
+	pub := newPublisher(ctx, logger)
+	var mailer api.Mailer
+	var welcomer auth.Welcomer
+	if pub != nil {
+		mailer = pub
+		welcomer = pub
+	}
+
 	router := api.NewRouter(api.Deps{
 		Logger:               logger,
 		Store:                st,
-		Auth:                 auth.Middleware(verifier, st.Users),
-		Mailer:               newMailer(ctx, logger),
+		Auth:                 auth.Middleware(verifier, st.Users, welcomer),
+		Mailer:               mailer,
 		AllowedOrigins:       config.AllowedOrigins(),
 		FailedLoginThreshold: config.FailedLoginThreshold(),
 		RestrictionDuration:  config.RestrictionDuration(),

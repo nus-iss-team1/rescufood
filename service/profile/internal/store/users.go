@@ -97,21 +97,46 @@ func (r *Users) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.Us
 // UpsertBySub creates the user on first sight and refreshes email, name,
 // username and admin standing on later logins. Users without an
 // organisation are attached to the one whose domain matches their email
-// domain.
-func (r *Users) UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, error) {
-	return scanUser(r.db.QueryRow(ctx, `
-		INSERT INTO users (cognito_sub, email, name, username, is_admin, org_id)
-		VALUES ($1, $2, $3, $4, $5,
-			(SELECT id FROM organisations
-			 WHERE domain = $6 AND domain <> '' AND status <> 'rejected'))
-		ON CONFLICT (cognito_sub) DO UPDATE SET
-			email    = CASE WHEN EXCLUDED.email <> '' THEN EXCLUDED.email ELSE users.email END,
-			name     = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE users.name END,
-			username = CASE WHEN EXCLUDED.username <> '' THEN EXCLUDED.username ELSE users.username END,
-			is_admin = EXCLUDED.is_admin,
-			org_id   = COALESCE(users.org_id, EXCLUDED.org_id)
-		RETURNING id, cognito_sub, email, name, username, org_id, is_admin, status, created_at`,
-		sub, email, name, username, isAdmin, domain.EmailDomain(email)))
+// domain. The returned UserProvisioning reports whether this call
+// inserted the row and the resolved organisation's type.
+func (r *Users) UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, domain.UserProvisioning, error) {
+	row := r.db.QueryRow(ctx, `
+		WITH upsert AS (
+			INSERT INTO users (cognito_sub, email, name, username, is_admin, org_id)
+			VALUES ($1, $2, $3, $4, $5,
+				(SELECT id FROM organisations
+				 WHERE domain = $6 AND domain <> '' AND status <> 'rejected'))
+			ON CONFLICT (cognito_sub) DO UPDATE SET
+				email    = CASE WHEN EXCLUDED.email <> '' THEN EXCLUDED.email ELSE users.email END,
+				name     = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE users.name END,
+				username = CASE WHEN EXCLUDED.username <> '' THEN EXCLUDED.username ELSE users.username END,
+				is_admin = EXCLUDED.is_admin,
+				org_id   = COALESCE(users.org_id, EXCLUDED.org_id)
+			RETURNING id, cognito_sub, email, name, username, org_id, is_admin, status, created_at, (xmax = 0) AS inserted
+		)
+		SELECT u.id, u.cognito_sub, u.email, u.name, u.username, u.org_id,
+		       u.is_admin, u.status, u.created_at, u.inserted, o.type
+		FROM upsert u
+		LEFT JOIN organisations o ON o.id = u.org_id`,
+		sub, email, name, username, isAdmin, domain.EmailDomain(email))
+
+	var u domain.User
+	var status string
+	var prov domain.UserProvisioning
+	var orgType *string
+	err := row.Scan(&u.ID, &u.CognitoSub, &u.Email, &u.Name, &u.Username, &u.OrgID,
+		&u.IsAdmin, &status, &u.CreatedAt, &prov.Inserted, &orgType)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.UserProvisioning{}, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, domain.UserProvisioning{}, err
+	}
+	u.Status = domain.UserStatus(status)
+	if orgType != nil {
+		prov.OrgType = domain.OrgType(*orgType)
+	}
+	return &u, prov, nil
 }
 
 func scanUser(row pgx.Row) (*domain.User, error) {

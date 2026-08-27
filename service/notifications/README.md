@@ -67,10 +67,15 @@ One SQS message body = one notification:
 
 `type` and `channel` are validated against the `notification_type`/
 `notification_channel` enums in `src/db/schema.ts` - see
-`src/notifications/notification-message.dto.ts`. Only `org_approved` has an
-email template today (`src/notifications/templates.ts`); every other
-`notification_type` value is reserved for when `service/listings` starts
-publishing claim/pickup events.
+`src/notifications/notification-message.dto.ts`. `org_approved` and
+`user_welcome` have email templates today (`src/notifications/templates.ts`);
+every other `notification_type` value is reserved for when `service/listings`
+starts publishing claim/pickup events.
+
+`user_welcome` is published by `service/profile` the first time it
+provisions a user row (first authenticated request after signup); its
+payload is `{ "name": "Sam", "orgType": "donor" }` (`orgType` is
+`donor`, `rescue_partner` or empty, and tailors the copy).
 
 ## Delivery semantics
 

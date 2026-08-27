@@ -8,6 +8,13 @@
       "when": 1787584219219,
       "tag": "0000_zippy_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787793423557,
+      "tag": "0001_add_user_welcome_notification_type",
+      "breakpoints": true
     }
   ]
 }
