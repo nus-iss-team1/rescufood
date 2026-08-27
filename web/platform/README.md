@@ -78,7 +78,10 @@ printf 'AUTH_SECRET=%s\nAUTH_COGNITO_ID=%s\nAUTH_COGNITO_SECRET=%s\nAUTH_COGNITO
   (food donor / rescue partner). Cognito emails a verification code;
   accounts can't sign in until it's confirmed. Usernames are unique by
   nature; verified emails are unique pool-wide (email alias) with a
-  friendly pre-check at signup.
+  friendly pre-check at signup. Dev signups need a reachable inbox on a
+  registered organisation domain — for throwaway accounts, use the CLI
+  below (email pre-verified) or set `AutoConfirmSignups=true` in
+  `infrastructure/cloudformation/parameters/iam-dev.json`.
 - **Roles** land in the session as `session.user.groups`
   (`donor` / `rescue-partner` / `admin`).
 - A **superadmin** (`admin`) is bootstrapped by the IAM stack itself — the

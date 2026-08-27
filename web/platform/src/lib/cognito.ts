@@ -63,8 +63,8 @@ export async function emailInUse(email: string) {
 }
 
 // signUpUser registers the account and reports whether the pool
-// confirmed it immediately (dev pools auto-confirm via a pre-sign-up
-// trigger; other pools require the emailed code).
+// confirmed it immediately (a pre-sign-up trigger can auto-confirm;
+// otherwise the account needs the emailed verification code).
 export async function signUpUser(
   username: string,
   email: string,
