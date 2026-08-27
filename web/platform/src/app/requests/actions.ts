@@ -48,6 +48,7 @@ export async function createRequestAction(
       requestedQuantity,
       idempotencyKey,
     });
+    revalidatePath(`/browse/${listingId}`);
     revalidatePath("/browse");
     revalidatePath("/requests");
     return { requestedId: created.id };
@@ -65,10 +66,13 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
   if (!id) return;
 
   try {
-    await decideRequest(token, id, {
+    const updated = await decideRequest(token, id, {
       status: "cancelled",
       cancellationReason: String(formData.get("reason") ?? "").trim(),
     });
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+    }
   } catch {
     // The list re-renders with whatever the service still reports.
   }
