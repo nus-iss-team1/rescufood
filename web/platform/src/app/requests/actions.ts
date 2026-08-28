@@ -77,5 +77,79 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
     // The list re-renders with whatever the service still reports.
   }
   revalidatePath("/requests");
+  revalidatePath(`/requests/${id}`);
   revalidatePath("/browse");
+  revalidatePath("/listings");
+  revalidatePath("/dashboard");
+}
+
+export async function acceptRequestAction(
+  prevState: { success?: boolean; error?: string },
+  formData: FormData
+): Promise<{ success?: boolean; error?: string }> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  const id = String(formData.get("requestId") ?? "");
+  if (!id) return { error: "Missing request ID." };
+
+  try {
+    const updated = await decideRequest(token, id, {
+      status: "accepted",
+    });
+    
+    // Revalidate paths as requested
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${id}`);
+    revalidatePath("/browse");
+    revalidatePath("/listings");
+    revalidatePath("/dashboard");
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+      revalidatePath(`/listings/${updated.listingId}`);
+    }
+    
+    return { success: true };
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+}
+
+export async function declineRequestAction(
+  prevState: { success?: boolean; error?: string },
+  formData: FormData
+): Promise<{ success?: boolean; error?: string }> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  const id = String(formData.get("requestId") ?? "");
+  if (!id) return { error: "Missing request ID." };
+
+  const declineReason = String(formData.get("declineReason") ?? "").trim();
+  if (!declineReason) {
+    return { error: "A reason is required to decline a request." };
+  }
+
+  try {
+    const updated = await decideRequest(token, id, {
+      status: "declined",
+      declineReason,
+    });
+    
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${id}`);
+    revalidatePath("/browse");
+    revalidatePath("/listings");
+    revalidatePath("/dashboard");
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+      revalidatePath(`/listings/${updated.listingId}`);
+    }
+    
+    return { success: true };
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
 }

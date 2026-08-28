@@ -229,9 +229,9 @@ export default async function RequestsPage({
         ) : (
           <div data-animate="field">
             {layout === "card" ? (
-              <RequestCards requests={requests} listings={listings} />
+              <RequestCards requests={requests} listings={listings} isDonor={me.org.type === "donor"} />
             ) : (
-              <RequestList requests={requests} />
+              <RequestList requests={requests} isDonor={me.org.type === "donor"} />
             )}
           </div>
         )}
