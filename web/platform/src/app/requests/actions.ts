@@ -6,7 +6,10 @@ import { auth } from "@/auth";
 import {
   createRequest,
   decideRequest,
+  generatePickupCode,
+  verifyPickupCode,
   ListingsApiError,
+  type PickupCode,
 } from "@/lib/listings";
 
 export type RequestFormState = {
@@ -136,6 +139,56 @@ export async function declineRequestAction(
       status: "declined",
       declineReason,
     });
+    
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${id}`);
+    revalidatePath("/browse");
+    revalidatePath("/listings");
+    revalidatePath("/dashboard");
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+      revalidatePath(`/listings/${updated.listingId}`);
+    }
+    
+    return { success: true };
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+}
+
+export async function getPickupCredentialAction(
+  requestId: string
+): Promise<{ data?: PickupCode; error?: string }> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  if (!requestId) return { error: "Missing request ID." };
+
+  try {
+    const data = await generatePickupCode(token, requestId);
+    return { data };
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+}
+
+export async function verifyPickupCodeAction(
+  prevState: { success?: boolean; error?: string },
+  formData: FormData
+): Promise<{ success?: boolean; error?: string }> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  const id = String(formData.get("requestId") ?? "");
+  if (!id) return { error: "Missing request ID." };
+
+  const code = String(formData.get("code") ?? "").trim();
+  if (!code) return { error: "Verification code is required." };
+
+  try {
+    const updated = await verifyPickupCode(token, id, { code });
     
     revalidatePath("/requests");
     revalidatePath(`/requests/${id}`);
