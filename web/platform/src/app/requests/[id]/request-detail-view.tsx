@@ -181,7 +181,7 @@ export function RequestDetailView({
                 </Badge>
               </div>
               <CardDescription>
-                Claimed by {request.rescueOrgName ?? "an organization"} on {shortDate(request.createdAt)}.
+                Claimed on {shortDate(request.requestedAt)}.
               </CardDescription>
             </CardHeader>
             <CardContent>
