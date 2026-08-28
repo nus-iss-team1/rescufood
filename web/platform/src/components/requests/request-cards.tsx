@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
 import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
 
@@ -12,16 +13,18 @@ import {
 import { ListingPhoto } from "@/components/listings/listing-photo";
 import { categoryLabels } from "@/lib/listing-labels";
 import { Badge } from "@rescufood/ui/components/badge";
-import { Button } from "@rescufood/ui/components/button";
+import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
 export function RequestCards({
   requests,
   listings,
+  isDonor = false,
 }: {
   requests: ListingRequest[];
   /** The listings these requests point at, keyed by id. */
   listings?: Map<string, Listing>;
+  isDonor?: boolean;
 }) {
   if (requests.length === 0) {
     return (
@@ -43,13 +46,15 @@ export function RequestCards({
             !isActiveRequest(request.status) && "opacity-60",
           )}
         >
-          <ListingPhoto listing={listings?.get(request.listingId)} />
+          <Link href={`/requests/${request.id}`} className="block group">
+            <ListingPhoto listing={listings?.get(request.listingId)} />
+          </Link>
 
           <div className="flex items-start justify-between gap-2">
-            <span className="font-medium">
+            <Link href={`/requests/${request.id}`} className="font-medium hover:underline">
               {listings?.get(request.listingId)?.description ??
                 quantity(request.requestedQuantity, "requested")}
-            </span>
+            </Link>
             <Badge
               variant={requestStatusVariant[request.status]}
               className="shrink-0"
@@ -102,14 +107,22 @@ export function RequestCards({
             </p>
           )}
 
-          {isActiveRequest(request.status) && (
-            <form action={cancelRequestAction} className="mt-auto pt-1">
-              <input type="hidden" name="requestId" value={request.id} />
-              <Button type="submit" variant="outline" size="sm">
-                Cancel
-              </Button>
-            </form>
-          )}
+          <div className="mt-auto pt-3 flex flex-wrap gap-2 items-center">
+            <Link
+              href={`/requests/${request.id}`}
+              className={cn(buttonVariants({ variant: isDonor && request.status === "pending" ? "default" : "secondary", size: "sm" }))}
+            >
+              {isDonor && request.status === "pending" ? "Review Claim" : "View Details"}
+            </Link>
+            {isActiveRequest(request.status) && (
+              <form action={cancelRequestAction}>
+                <input type="hidden" name="requestId" value={request.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </form>
+            )}
+          </div>
         </li>
       ))}
     </ul>

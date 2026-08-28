@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
 import type { ListingRequest } from "@rescufood/listings-sdk";
 
@@ -10,10 +11,16 @@ import {
   shortDate,
 } from "@/lib/listing-labels";
 import { Badge } from "@rescufood/ui/components/badge";
-import { Button } from "@rescufood/ui/components/button";
+import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
-export function RequestList({ requests }: { requests: ListingRequest[] }) {
+export function RequestList({ 
+  requests,
+  isDonor = false,
+}: { 
+  requests: ListingRequest[];
+  isDonor?: boolean;
+}) {
   if (requests.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -38,9 +45,9 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
         >
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">
+              <Link href={`/requests/${request.id}`} className="font-medium hover:underline">
                 {quantity(request.requestedQuantity, "requested")}
-              </span>
+              </Link>
               <Badge variant={requestStatusVariant[request.status]}>
                 {requestStatusLabels[request.status]}
               </Badge>
@@ -73,14 +80,22 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
             )}
           </div>
 
-          {isActiveRequest(request.status) && (
-            <form action={cancelRequestAction} className="sm:justify-self-end">
-              <input type="hidden" name="requestId" value={request.id} />
-              <Button type="submit" variant="outline" size="sm">
-                Cancel
-              </Button>
-            </form>
-          )}
+          <div className="flex items-center gap-2 sm:justify-end">
+            <Link
+              href={`/requests/${request.id}`}
+              className={cn(buttonVariants({ variant: isDonor && request.status === "pending" ? "default" : "secondary", size: "sm" }))}
+            >
+              {isDonor && request.status === "pending" ? "Review Claim" : "View Details"}
+            </Link>
+            {isActiveRequest(request.status) && (
+              <form action={cancelRequestAction}>
+                <input type="hidden" name="requestId" value={request.id} />
+                <Button type="submit" variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </form>
+            )}
+          </div>
         </li>
       ))}
     </ul>
