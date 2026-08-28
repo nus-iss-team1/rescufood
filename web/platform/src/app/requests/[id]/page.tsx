@@ -7,7 +7,7 @@ import { getRequest, getListing, listRequests, ListingsApiError } from "@/lib/li
 import { PageShell } from "@/components/page-shell";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardDescription } from "@rescufood/ui/components/card";
-import { RequestDetailView } from "./request-detail-view";
+import { RequestDetailView } from "@/components/requests/request-detail-view";
 
 export const metadata: Metadata = {
   title: "Request Details — RescuFood",

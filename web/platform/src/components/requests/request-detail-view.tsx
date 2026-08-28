@@ -34,6 +34,7 @@ import { Badge } from "@rescufood/ui/components/badge";
 import { AnimateIn } from "@/components/animate-in";
 import { Textarea } from "@rescufood/ui/components/textarea";
 import { Label } from "@rescufood/ui/components/label";
+import { PickupCredentialCard } from "./pickup-credential-card";
 
 function SubmitButton({ children, className, variant = "default" }: { children: React.ReactNode, className?: string, variant?: "default" | "destructive" | "outline" }) {
   const { pending } = useFormStatus();
@@ -288,7 +289,7 @@ export function RequestDetailView({
                             name="reason-radio"
                             value={reason}
                             checked={selectedDeclineReason === reason}
-                            onChange={(e) => setSelectedDeclineReason(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedDeclineReason(e.target.value)}
                             className="size-4"
                           />
                           <Label htmlFor={`reason-${reason}`} className="text-sm font-normal cursor-pointer">
@@ -305,7 +306,7 @@ export function RequestDetailView({
                           id="custom-reason"
                           placeholder="Please explain why..."
                           value={customDeclineReason}
-                          onChange={(e) => setCustomDeclineReason(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCustomDeclineReason(e.target.value)}
                           className="min-h-[80px]"
                         />
                       </div>
@@ -324,6 +325,10 @@ export function RequestDetailView({
               </CardFooter>
             </Card>
           </AnimateIn>
+        )}
+
+        {(request.status === "accepted" || request.status === "cancelled" || request.status === "completed") && (
+          <PickupCredentialCard request={request} isDonor={isDonor} />
         )}
       </div>
     </div>
