@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { format } from "date-fns";
+import dayjs from "dayjs";
 import { useFormStatus } from "react-dom";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
 
@@ -114,7 +114,7 @@ export function PickupCredentialCard({
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <Clock className="size-4" />
-                    <span>Expires {format(new Date(credential.expiresAt), "MMM d, h:mm a")}</span>
+                    <span>Expires {dayjs(credential.expiresAt).format("MMM D, h:mm a")}</span>
                   </div>
                 </div>
               ) : (
