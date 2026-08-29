@@ -53,27 +53,33 @@ export class RequestsController {
   ) {}
 
   @ApiOperation({
-    summary: 'Request a listing',
+    summary: 'Claim a listing',
     description:
-      'Rescue-org members only. Idempotent on `idempotencyKey` - retrying with the same key replays the original result.',
+      "First-come-first-served: creates one claim for the whole listing and reserves it for the caller's org in a single transaction. Idempotent per org on `idempotencyKey` - retrying with the same key replays the original claim.",
   })
   @ApiResponse({ status: 201, type: RequestResponseDto })
   @ApiResponse({
     status: 400,
     description:
-      'Validation failed, listing not open for requests, or requesting your own listing.',
+      'Validation failed, listing not available, or its pickup window has closed.',
   })
   @ApiResponse({
     status: 403,
-    description: 'Caller is not a member of a rescue organisation.',
+    description:
+      'Caller is not an organisation member, their account is not active, or their organisation is not an approved rescue partner.',
   })
   @ApiResponse({ status: 404, description: 'Listing not found.' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The listing has already been claimed by another organisation.',
+  })
   @Post()
   @UseGuards(OrgMembershipGuard)
   create(@Body() dto: CreateRequestDto, @Req() req: Request) {
     this.logger.log(
       { userId: req.user!.userId, listingId: dto.listingId },
-      'creating request',
+      'creating claim',
     );
     return this.requestsService.create(dto, req.user!);
   }
@@ -104,26 +110,24 @@ export class RequestsController {
   }
 
   @ApiOperation({
-    summary: 'Accept, decline, cancel, or report a no-show',
+    summary: 'Cancel a claim or report a no-show',
     description:
-      "accepted/declined are the donor org responding to a pending request. cancelled/no_show may be raised by either party. See the request-status transition map for which decisions are valid from the request's current status.",
+      "Either party to an accepted claim may cancel it or report a no-show; both reopen the listing for another org. See the request-status transition map for which decisions are valid from the claim's current status.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, type: RequestResponseDto })
   @ApiResponse({
     status: 400,
-    description: "Decision not valid from the request's current status.",
+    description: "Decision not valid from the claim's current status.",
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Caller is not a party to this request (or not the donor, for accept/decline).',
+    description: 'Caller is not a party to this claim.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
     status: 409,
-    description:
-      'Request was modified since it was read, or the listing no longer has enough remaining quantity to accept.',
+    description: 'Claim was modified since it was read.',
   })
   @Patch(':id')
   @UseGuards(OrgMembershipGuard)
@@ -142,17 +146,17 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Generate a pickup code',
     description:
-      'Either party on an accepted request may (re)generate the shared pickup code. Regenerating immediately invalidates the previous code. The code itself is only ever returned here, never on GET.',
+      'Either party to an active claim may (re)generate the shared pickup code; regenerating invalidates the previous one. The code is only returned here, never on GET.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 201, type: PickupCodeResponseDto })
   @ApiResponse({
     status: 400,
-    description: 'Request is not in the accepted status.',
+    description: 'Claim is not active.',
   })
   @ApiResponse({
     status: 403,
-    description: 'Caller is not a party to this request.',
+    description: 'Caller is not a party to this claim.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
@@ -175,24 +179,24 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Verify a pickup code',
     description:
-      'Must be called by the party that did NOT generate the code. On success, marks the request completed (and the listing collected, if this was its last outstanding request). Five failed attempts against a code force it to be regenerated.',
+      'Must be called by the party that did NOT generate the code. On success, marks the claim completed and the listing collected. Five failed attempts force the code to be regenerated.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 201, type: RequestResponseDto })
   @ApiResponse({
     status: 400,
     description:
-      'Invalid or expired code, too many failed attempts, request not accepted, or collected quantity exceeds what was requested.',
+      'Invalid or expired code, too many failed attempts, claim not active, or collected quantity exceeds what was requested.',
   })
   @ApiResponse({
     status: 403,
     description:
-      'Caller is not a party to this request, or is from the same org that generated the code.',
+      'Caller is not a party to this claim, or is from the same org that generated the code.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
     status: 409,
-    description: 'Request is no longer accepted (concurrently modified).',
+    description: 'Claim is no longer active (concurrently modified).',
   })
   @ApiResponse({
     status: 429,

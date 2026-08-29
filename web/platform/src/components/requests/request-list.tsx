@@ -14,13 +14,7 @@ import { Badge } from "@rescufood/ui/components/badge";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
-export function RequestList({ 
-  requests,
-  isDonor = false,
-}: { 
-  requests: ListingRequest[];
-  isDonor?: boolean;
-}) {
+export function RequestList({ requests }: { requests: ListingRequest[] }) {
   if (requests.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -68,11 +62,6 @@ export function RequestList({
               </p>
             )}
 
-            {request.declineReason && (
-              <p className="text-xs text-muted-foreground">
-                Donor said: {request.declineReason}
-              </p>
-            )}
             {request.cancellationReason && (
               <p className="text-xs text-muted-foreground">
                 Reason: {request.cancellationReason}
@@ -83,9 +72,9 @@ export function RequestList({
           <div className="flex items-center gap-2 sm:justify-end">
             <Link
               href={`/requests/${request.id}`}
-              className={cn(buttonVariants({ variant: isDonor && request.status === "pending" ? "default" : "secondary", size: "sm" }))}
+              className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
             >
-              {isDonor && request.status === "pending" ? "Review Claim" : "View Details"}
+              View Details
             </Link>
             {isActiveRequest(request.status) && (
               <form action={cancelRequestAction}>

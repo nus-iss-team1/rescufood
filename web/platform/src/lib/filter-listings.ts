@@ -82,7 +82,7 @@ export function filterListings(
       }
     }
 
-    // 4. Minimum quantity match (remainingQuantity >= minQty)
+    // 4. Minimum quantity match (quantity >= minQty)
     if (
       filters.minQty !== undefined &&
       filters.minQty !== null &&
@@ -91,7 +91,7 @@ export function filterListings(
       const min = Number(filters.minQty);
       if (!Number.isNaN(min) && min > 0) {
         // Non-null: the status gate above already confirmed 'available'.
-        const remaining = parseFloat(listing.remainingQuantity!);
+        const remaining = parseFloat(listing.quantity!);
         if (Number.isNaN(remaining) || remaining < min) {
           return false;
         }

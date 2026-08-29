@@ -7,12 +7,11 @@ export class VerifyPickupCodeDto {
   @Matches(/^\d{6}$/, { message: 'code must be a 6-digit numeric code' })
   code!: string;
 
-  // Defaults to the full requestedQuantity when omitted (see
-  // RequestsService.verifyPickupCode) - only needed when less than what was
-  // accepted actually changed hands.
+  // Defaults to the full requestedQuantity - only needed when less than the
+  // whole lot changed hands.
   @ApiPropertyOptional({
     description:
-      'Defaults to the full requestedQuantity when omitted - only needed when less than what was accepted actually changed hands.',
+      'Defaults to the full requestedQuantity when omitted - only needed when less than the whole lot changed hands.',
   })
   @IsOptional()
   @Type(() => Number)

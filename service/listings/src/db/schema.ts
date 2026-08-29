@@ -47,10 +47,7 @@ export const listingStatus = pgEnum('listing_status', [
 ]);
 
 export const requestStatus = pgEnum('request_status', [
-  'pending',
-  'accepted',
-  'declined',
-  'superseded',
+  'active',
   'cancelled',
   'completed',
   'no_show',
@@ -73,11 +70,9 @@ export const listings = pgTable(
     // util.ts).
     category: listingCategory('category'),
     description: text('description'),
-    // The only quantity column on listings - no separate "original total".
-    // Seeded to the donor's specified amount at creation; decremented on
-    // accept, incremented back when an accepted request ends in
-    // cancelled/no_show/expired. See requests table below.
-    remainingQuantity: numeric('remaining_quantity', {
+    // The size of the whole lot. A claim never changes it - the whole
+    // listing is claimed at once.
+    quantity: numeric('quantity', {
       precision: 10,
       scale: 2,
     }),
@@ -117,24 +112,15 @@ export const listings = pgTable(
       'pickup_window_valid',
       sql`${table.pickupWindowEnd} > ${table.pickupWindowStart}`,
     ),
-    // Hard backstop against overselling under concurrent accepts (see
-    // `requests` below): an atomic
-    // `remaining_quantity = remaining_quantity - $accepted` UPDATE can
-    // never commit past zero.
-    check(
-      'remaining_quantity_non_negative',
-      sql`${table.remainingQuantity} >= 0`,
-    ),
-    // Backstop for the publish gate in ListingsService.update() - so status
-    // can never become 'available' with a still-incomplete Draft's fields,
-    // even via a raw SQL path (see e.g. requests.repository.ts's direct
-    // status writes on accept/cancel).
+    check('quantity_non_negative', sql`${table.quantity} >= 0`),
+    // Backstop for the publish gate in ListingsService.update() - status
+    // can't become 'available' with an incomplete Draft, even via raw SQL.
     check(
       'available_listing_is_complete',
       sql`${table.status} <> 'available' or (
         ${table.category} is not null and
         ${table.description} is not null and
-        ${table.remainingQuantity} is not null and
+        ${table.quantity} is not null and
         ${table.unit} is not null and
         ${table.useBy} is not null and
         ${table.pickupLocation} is not null and
@@ -184,8 +170,11 @@ export const listingImages = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// requests (FR3, FR4) - the "claim" of the proposal, modeled as
-// request -> accept -> pickup, with partial/split fulfillment.
+// requests (FR3, FR4) - a rescue org's "claim" on a listing. First-come-
+// first-served: creating a claim reserves the whole listing in one
+// transaction (listing available -> reserved), then it runs to pickup.
+// Born 'active', ends completed/cancelled/no_show/expired. At most one
+// 'active' claim per listing (see requests_active_claim_per_listing_uq).
 // ---------------------------------------------------------------------------
 
 export const requests = pgTable(
@@ -196,9 +185,10 @@ export const requests = pgTable(
       .notNull()
       .references(() => listings.id),
     rescueOrgId: uuid('rescue_org_id').notNull(), // FK -> organisations.id (service/profile)
-    claimedBy: uuid('claimed_by').notNull(), // FK -> users.id (service/profile) - rescue-partner user who sent the request
-    idempotencyKey: text('idempotency_key').notNull().unique(),
-    status: requestStatus('status').notNull().default('pending'),
+    claimedBy: uuid('claimed_by').notNull(), // FK -> users.id (service/profile) - the rescue-partner user
+    // Unique per rescue org - see requests_rescue_org_idempotency_key_uq.
+    idempotencyKey: text('idempotency_key').notNull(),
+    status: requestStatus('status').notNull().default('active'),
     requestedQuantity: numeric('requested_quantity', {
       precision: 10,
       scale: 2,
@@ -207,24 +197,17 @@ export const requests = pgTable(
       .notNull()
       .defaultNow(),
 
-    // Donor's accept/decline decision
-    respondedBy: uuid('responded_by'), // FK -> users.id (service/profile), nullable until decided
-    respondedAt: timestamp('responded_at', { withTimezone: true }),
-    declineReason: text('decline_reason').notNull().default(''),
-
-    // Cancellation (by either party, before or after acceptance)
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     cancellationReason: text('cancellation_reason').notNull().default(''),
 
-    // Pickup verification - single shared code, rendered as QR or typed as OTP
+    // Pickup verification - one shared code, shown as QR or typed as OTP.
     pickupCodeHash: text('pickup_code_hash'),
     codeExpiresAt: timestamp('code_expires_at', { withTimezone: true }),
-    codeGeneratedBy: uuid('code_generated_by'), // FK -> users.id, whichever party generates it
-    // Failed verify attempts against the current pickupCodeHash. Reset to 0
-    // whenever a new code is generated (or the current one is invalidated
-    // after hitting the attempt cap) - never carries over between codes.
+    codeGeneratedBy: uuid('code_generated_by'), // FK -> users.id
+    // Failed verify attempts against the current code; reset to 0 on each
+    // new code.
     pickupCodeAttempts: integer('pickup_code_attempts').notNull().default(0),
-    verifiedBy: uuid('verified_by'), // FK -> users.id, whichever party scans/enters it
+    verifiedBy: uuid('verified_by'), // FK -> users.id
     collectedQuantity: numeric('collected_quantity', {
       precision: 10,
       scale: 2,
@@ -244,6 +227,15 @@ export const requests = pgTable(
     index('requests_listing_id_idx').on(table.listingId),
     index('requests_rescue_org_id_idx').on(table.rescueOrgId),
     index('requests_status_idx').on(table.status),
+    // Idempotency is scoped to the claiming org, so two orgs can reuse a key.
+    uniqueIndex('requests_rescue_org_idempotency_key_uq').on(
+      table.rescueOrgId,
+      table.idempotencyKey,
+    ),
+    // At most one 'active' claim per listing; ending a claim frees the listing.
+    uniqueIndex('requests_active_claim_per_listing_uq')
+      .on(table.listingId)
+      .where(sql`status = 'active'`),
   ],
 );
 

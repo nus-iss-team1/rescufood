@@ -139,12 +139,15 @@ export class ListingsClient implements ListingsApi {
     return this.request(`/requests/${id}`);
   }
 
-  /** Rescue-org members only. Idempotent on the request's idempotencyKey. */
+  /**
+   * Claims the whole listing first-come-first-served. Idempotent per org on
+   * the claim's idempotencyKey.
+   */
   createRequest(request: NewRequest): Promise<ListingRequest> {
     return this.send("POST", "/requests", request);
   }
 
-  /** Accept, decline, cancel, or report a no-show. */
+  /** Cancel a claim or report a no-show. */
   decideRequest(
     id: string,
     decision: RequestDecisionInput
@@ -152,7 +155,7 @@ export class ListingsClient implements ListingsApi {
     return this.send("PATCH", `/requests/${id}`, decision);
   }
 
-  /** Either party on an accepted request; invalidates any previous code. */
+  /** Either party to an active claim; invalidates any previous code. */
   generatePickupCode(id: string): Promise<PickupCode> {
     return this.send("POST", `/requests/${id}/pickup-code`, {});
   }

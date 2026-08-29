@@ -19,12 +19,10 @@ import { cn } from "@/lib/utils";
 export function RequestCards({
   requests,
   listings,
-  isDonor = false,
 }: {
   requests: ListingRequest[];
   /** The listings these requests point at, keyed by id. */
   listings?: Map<string, Listing>;
-  isDonor?: boolean;
 }) {
   if (requests.length === 0) {
     return (
@@ -91,11 +89,6 @@ export function RequestCards({
             </p>
           )}
 
-          {request.declineReason && (
-            <p className="text-xs text-muted-foreground">
-              Donor said: {request.declineReason}
-            </p>
-          )}
           {request.cancellationReason && (
             <p className="text-xs text-muted-foreground">
               Reason: {request.cancellationReason}
@@ -110,9 +103,9 @@ export function RequestCards({
           <div className="mt-auto pt-3 flex flex-wrap gap-2 items-center">
             <Link
               href={`/requests/${request.id}`}
-              className={cn(buttonVariants({ variant: isDonor && request.status === "pending" ? "default" : "secondary", size: "sm" }))}
+              className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
             >
-              {isDonor && request.status === "pending" ? "Review Claim" : "View Details"}
+              View Details
             </Link>
             {isActiveRequest(request.status) && (
               <form action={cancelRequestAction}>

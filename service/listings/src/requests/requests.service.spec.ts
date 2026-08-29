@@ -21,16 +21,20 @@ const mockResolveOrgId = resolveOrgIdByUserId as jest.Mock;
 function makeRepository() {
   return {
     create: jest.fn(),
-    findByIdempotencyKey: jest.fn(),
+    findByIdempotencyKey: jest.fn().mockResolvedValue(undefined),
     findById: jest.fn(),
     findMany: jest.fn(),
     countMany: jest.fn().mockResolvedValue(0),
     findListingById: jest.fn(),
+    findClaimantContext: jest.fn().mockResolvedValue({
+      userStatus: 'active',
+      orgType: 'rescue_partner',
+      orgStatus: 'approved',
+    }),
+    reserveListingForClaim: jest.fn(),
     updateStatus: jest.fn(),
-    decrementListingQuantity: jest.fn(),
-    incrementListingQuantity: jest.fn(),
+    reopenListingAfterClaimEnded: jest.fn(),
     incrementPickupCodeAttempts: jest.fn(),
-    supersedeOtherPending: jest.fn().mockResolvedValue(0),
     markListingCollectedIfDone: jest.fn().mockResolvedValue(false),
   };
 }
@@ -81,8 +85,14 @@ const availableListing = {
   id: 'listing-1',
   donorOrgId: 'org-donor',
   status: 'available' as const,
-  remainingQuantity: '10.00',
+  quantity: '10.00',
   unit: 'kg',
+  pickupWindowEnd: new Date('2099-01-01T00:00:00Z'),
+};
+
+const reservedListing = {
+  ...availableListing,
+  status: 'reserved' as const,
 };
 
 const baseRequest = {
@@ -91,8 +101,8 @@ const baseRequest = {
   rescueOrgId: 'org-rescue',
   claimedBy: 'user-rescue',
   idempotencyKey: 'idem-1',
-  status: 'pending' as const,
-  requestedQuantity: '5.00',
+  status: 'active' as const,
+  requestedQuantity: '10.00',
 };
 
 describe('RequestsService', () => {
@@ -101,29 +111,33 @@ describe('RequestsService', () => {
   });
 
   describe('create', () => {
-    const dto = {
-      listingId: 'listing-1',
-      requestedQuantity: 5,
-      idempotencyKey: 'idem-1',
-    };
+    const dto = { listingId: 'listing-1', idempotencyKey: 'idem-1' };
 
-    it('creates a request against an available listing', async () => {
+    it('reserves the listing and creates one full-lot claim in a transaction', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
       repository.create.mockResolvedValue(baseRequest);
-      const { service } = makeService(repository);
+      const { service, db } = makeService(repository);
 
       const result = await service.create(dto, rescueUser);
 
       expect(result).toEqual(baseRequest);
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(repository.reserveListingForClaim).toHaveBeenCalledWith(
+        'listing-1',
+        TX_TOKEN,
+      );
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           listingId: 'listing-1',
           rescueOrgId: 'org-rescue',
           claimedBy: 'user-rescue',
           idempotencyKey: 'idem-1',
-          requestedQuantity: '5',
+          status: 'active',
+          requestedQuantity: '10.00',
         }),
+        TX_TOKEN,
       );
     });
 
@@ -142,43 +156,132 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue({
         ...availableListing,
-        status: 'draft',
+        status: 'reserved',
       });
       const { service } = makeService(repository);
 
       await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
         BadRequestException,
       );
-      expect(repository.create).not.toHaveBeenCalled();
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
-    it('rejects a donor org requesting its own listing', async () => {
+    it('rejects a listing whose pickup window has already closed', async () => {
       const repository = makeRepository();
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findListingById.mockResolvedValue({
+        ...availableListing,
+        pickupWindowEnd: new Date('2000-01-01T00:00:00Z'),
+      });
       const { service } = makeService(repository);
 
-      await expect(service.create(dto, donorUser)).rejects.toBeInstanceOf(
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
         BadRequestException,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('rejects a claimant whose account is not active', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findClaimantContext.mockResolvedValue({
+        userStatus: 'suspended',
+        orgType: 'rescue_partner',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('rejects a claimant whose organisation is not a rescue partner', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findClaimantContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'donor',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('rejects a claimant whose organisation is not approved', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findClaimantContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'rescue_partner',
+        orgStatus: 'pending',
+      });
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('replays the original claim when the same key was already used', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findByIdempotencyKey.mockResolvedValue(baseRequest);
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).resolves.toEqual(
+        baseRequest,
+      );
+      expect(repository.findByIdempotencyKey).toHaveBeenCalledWith(
+        'org-rescue',
+        'idem-1',
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('409s when another org claimed the listing first (reserve returns nothing)', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(undefined);
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ConflictException,
       );
       expect(repository.create).not.toHaveBeenCalled();
     });
 
-    it('rejects a requested quantity greater than what remains', async () => {
+    it('409s when the active-claim unique index rejects a concurrent insert', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockRejectedValue({
+        code: '23505',
+        constraint: 'requests_active_claim_per_listing_uq',
+      });
       const { service } = makeService(repository);
 
-      await expect(
-        service.create({ ...dto, requestedQuantity: 50 }, rescueUser),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.create).not.toHaveBeenCalled();
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
-    it('replays the existing request when the idempotency key was already used', async () => {
+    it('replays the original when a concurrent retry trips the idempotency index', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
-      repository.create.mockRejectedValue({ code: '23505' });
-      repository.findByIdempotencyKey.mockResolvedValue(baseRequest);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockRejectedValue({
+        code: '23505',
+        constraint: 'requests_rescue_org_idempotency_key_uq',
+      });
+      repository.findByIdempotencyKey
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(baseRequest);
       const { service } = makeService(repository);
 
       await expect(service.create(dto, rescueUser)).resolves.toEqual(
@@ -186,21 +289,38 @@ describe('RequestsService', () => {
       );
     });
 
-    it('rethrows when the unique violation does not resolve to an existing row', async () => {
+    it('replays the original when a concurrent retry loses the reserve race', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
-      repository.create.mockRejectedValue({ code: '23505' });
-      repository.findByIdempotencyKey.mockResolvedValue(undefined);
+      repository.reserveListingForClaim.mockResolvedValue(undefined);
+      repository.findByIdempotencyKey
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(baseRequest);
       const { service } = makeService(repository);
 
-      await expect(service.create(dto, rescueUser)).rejects.toEqual({
+      await expect(service.create(dto, rescueUser)).resolves.toEqual(
+        baseRequest,
+      );
+    });
+
+    it('rethrows an unexpected unique violation', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockRejectedValue({
+        code: '23505',
+        constraint: 'some_other_constraint',
+      });
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toMatchObject({
         code: '23505',
       });
     });
   });
 
   describe('findOne', () => {
-    it('returns the request when the viewer is the rescue org', async () => {
+    it('returns the claim when the viewer is the rescue org', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
       repository.findListingById.mockResolvedValue(availableListing);
@@ -211,7 +331,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('returns the request when the viewer is the donor org', async () => {
+    it('returns the claim when the viewer is the donor org', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
       repository.findListingById.mockResolvedValue(availableListing);
@@ -233,7 +353,7 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('404s when the request does not exist', async () => {
+    it('404s when the claim does not exist', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(undefined);
       const { service } = makeService(repository);
@@ -244,228 +364,45 @@ describe('RequestsService', () => {
     });
   });
 
-  describe('decide - accept', () => {
-    const dto = { status: 'accepted' as const };
-
-    it('decrements the listing quantity and marks the request accepted', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockResolvedValue({
-        ...availableListing,
-        remainingQuantity: '5.00',
-      });
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      const { service, db } = makeService(repository);
-
-      const result = await service.decide('request-1', dto, donorUser);
-
-      expect(result.status).toBe('accepted');
-      expect(repository.decrementListingQuantity).toHaveBeenCalledWith(
-        'listing-1',
-        '5.00',
-        expect.anything(),
-      );
-      expect(repository.updateStatus).toHaveBeenCalledWith(
-        'request-1',
-        'pending',
-        expect.objectContaining({
-          status: 'accepted',
-          respondedBy: donorUser.userId,
-        }),
-        expect.anything(),
-      );
-      expect(db.transaction).toHaveBeenCalledTimes(1);
-      expect(repository.supersedeOtherPending).not.toHaveBeenCalled();
-    });
-
-    it('supersedes other pending requests on the listing when this accept fully reserves it', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockResolvedValue({
-        ...availableListing,
-        status: 'reserved',
-        remainingQuantity: '0.00',
-      });
-      repository.supersedeOtherPending.mockResolvedValue(2);
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      const { service, logger } = makeService(repository);
-
-      await service.decide('request-1', dto, donorUser);
-
-      expect(repository.supersedeOtherPending).toHaveBeenCalledWith(
-        'listing-1',
-        'request-1',
-        expect.anything(),
-      );
-      expect(logger.log).toHaveBeenCalledWith(
-        { listingId: 'listing-1', supersededCount: 2 },
-        expect.stringContaining('superseded'),
-      );
-    });
-
-    it('does not log when nothing else was pending to supersede', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockResolvedValue({
-        ...availableListing,
-        status: 'reserved',
-        remainingQuantity: '0.00',
-      });
-      repository.supersedeOtherPending.mockResolvedValue(0);
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      const { service, logger } = makeService(repository);
-
-      await service.decide('request-1', dto, donorUser);
-
-      expect(logger.log).not.toHaveBeenCalled();
-    });
-
-    it('rejects when a rescue org tries to accept its own request', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, rescueUser),
-      ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(repository.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it('409s when the listing no longer has enough remaining quantity', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockResolvedValue(undefined);
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, donorUser),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(repository.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it('translates a check-constraint violation into a ConflictException', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockRejectedValue({
-        code: '23514',
-      });
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, donorUser),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('409s when the request was decided concurrently between the read and the write', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.decrementListingQuantity.mockResolvedValue(availableListing);
-      repository.updateStatus.mockResolvedValue(undefined);
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, donorUser),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('rejects re-accepting a request that is not pending', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      repository.findListingById.mockResolvedValue(availableListing);
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, donorUser),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.decrementListingQuantity).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('decide - decline', () => {
-    const dto = { status: 'declined' as const, declineReason: 'out of stock' };
-
-    it('marks the request declined without touching listing quantity', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'declined',
-      });
-      const { service } = makeService(repository);
-
-      const result = await service.decide('request-1', dto, donorUser);
-
-      expect(result.status).toBe('declined');
-      expect(repository.decrementListingQuantity).not.toHaveBeenCalled();
-      expect(repository.updateStatus).toHaveBeenCalledWith(
-        'request-1',
-        'pending',
-        expect.objectContaining({
-          status: 'declined',
-          declineReason: 'out of stock',
-        }),
-        expect.anything(),
-      );
-    });
-
-    it('rejects when the caller is not the donor org', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      const { service } = makeService(repository);
-
-      await expect(
-        service.decide('request-1', dto, outsider),
-      ).rejects.toBeInstanceOf(ForbiddenException);
-    });
-  });
-
   describe('decide - cancel', () => {
     const dto = {
       status: 'cancelled' as const,
       cancellationReason: 'no longer needed',
     };
 
-    it('allows the rescue org to cancel its own pending request', async () => {
+    it('reopens the listing and marks the claim cancelled', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findListingById.mockResolvedValue(reservedListing);
       repository.updateStatus.mockResolvedValue({
         ...baseRequest,
         status: 'cancelled',
       });
-      const { service } = makeService(repository);
+      const { service, db } = makeService(repository);
 
       const result = await service.decide('request-1', dto, rescueUser);
 
       expect(result.status).toBe('cancelled');
-      expect(repository.incrementListingQuantity).not.toHaveBeenCalled();
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(repository.reopenListingAfterClaimEnded).toHaveBeenCalledWith(
+        'listing-1',
+        TX_TOKEN,
+      );
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'active',
+        expect.objectContaining({
+          status: 'cancelled',
+          cancellationReason: 'no longer needed',
+        }),
+        TX_TOKEN,
+      );
     });
 
     it('allows the donor org to cancel too', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findListingById.mockResolvedValue(reservedListing);
       repository.updateStatus.mockResolvedValue({
         ...baseRequest,
         status: 'cancelled',
@@ -480,59 +417,40 @@ describe('RequestsService', () => {
     it('rejects an outsider', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findListingById.mockResolvedValue(reservedListing);
       const { service } = makeService(repository);
 
       await expect(
         service.decide('request-1', dto, outsider),
       ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
     });
 
-    it('restores the listing quantity when cancelling an accepted request', async () => {
+    it('rejects cancelling a claim that is not accepted', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseRequest,
-        status: 'accepted',
+        status: 'completed',
       });
-      repository.findListingById.mockResolvedValue({
-        ...availableListing,
-        status: 'reserved',
-        remainingQuantity: '0.00',
-      });
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'cancelled',
-      });
+      repository.findListingById.mockResolvedValue(reservedListing);
       const { service } = makeService(repository);
 
-      await service.decide('request-1', dto, rescueUser);
-
-      expect(repository.incrementListingQuantity).toHaveBeenCalledWith(
-        'listing-1',
-        '5.00',
-        expect.anything(),
-      );
-      expect(repository.updateStatus).toHaveBeenCalledWith(
-        'request-1',
-        'accepted',
-        expect.anything(),
-        expect.anything(),
-      );
+      await expect(
+        service.decide('request-1', dto, rescueUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.reopenListingAfterClaimEnded).not.toHaveBeenCalled();
     });
 
-    it('does not restore quantity when cancelling a still-pending request', async () => {
+    it('409s when the claim was modified between the read and the write', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest); // status: pending
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'cancelled',
-      });
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(reservedListing);
+      repository.updateStatus.mockResolvedValue(undefined);
       const { service } = makeService(repository);
 
-      await service.decide('request-1', dto, rescueUser);
-
-      expect(repository.incrementListingQuantity).not.toHaveBeenCalled();
+      await expect(
+        service.decide('request-1', dto, rescueUser),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 
@@ -542,17 +460,10 @@ describe('RequestsService', () => {
       noShowReason: 'nobody came to collect it',
     };
 
-    it('allows either party to report a no-show on an accepted request', async () => {
+    it('allows either party to report a no-show and reopens the listing', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      repository.findListingById.mockResolvedValue({
-        ...availableListing,
-        status: 'reserved',
-        remainingQuantity: '0.00',
-      });
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(reservedListing);
       repository.updateStatus.mockResolvedValue({
         ...baseRequest,
         status: 'no_show',
@@ -562,50 +473,25 @@ describe('RequestsService', () => {
       const result = await service.decide('request-1', dto, donorUser);
 
       expect(result.status).toBe('no_show');
+      expect(repository.reopenListingAfterClaimEnded).toHaveBeenCalledWith(
+        'listing-1',
+        TX_TOKEN,
+      );
       expect(repository.updateStatus).toHaveBeenCalledWith(
         'request-1',
-        'accepted',
+        'active',
         expect.objectContaining({
           status: 'no_show',
           noShowReason: 'nobody came to collect it',
         }),
-        expect.anything(),
-      );
-    });
-
-    it('restores the listing quantity, same as a cancelled accepted request', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      repository.findListingById.mockResolvedValue({
-        ...availableListing,
-        status: 'reserved',
-        remainingQuantity: '0.00',
-      });
-      repository.updateStatus.mockResolvedValue({
-        ...baseRequest,
-        status: 'no_show',
-      });
-      const { service } = makeService(repository);
-
-      await service.decide('request-1', dto, rescueUser);
-
-      expect(repository.incrementListingQuantity).toHaveBeenCalledWith(
-        'listing-1',
-        '5.00',
-        expect.anything(),
+        TX_TOKEN,
       );
     });
 
     it('rejects an outsider', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseRequest,
-        status: 'accepted',
-      });
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(reservedListing);
       const { service } = makeService(repository);
 
       await expect(
@@ -613,10 +499,13 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('rejects reporting a no-show on a request that is still pending', async () => {
+    it('rejects reporting a no-show on a claim that is not accepted', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest); // status: pending
-      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'cancelled',
+      });
+      repository.findListingById.mockResolvedValue(reservedListing);
       const { service } = makeService(repository);
 
       await expect(
@@ -627,17 +516,14 @@ describe('RequestsService', () => {
   });
 
   describe('generatePickupCode', () => {
-    const acceptedRequest = {
-      ...baseRequest,
-      status: 'accepted' as const,
-    };
+    const activeRequest = { ...baseRequest, status: 'active' as const };
 
     it('generates a 6-digit code, hashes it for storage, and returns the raw code once', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         pickupCodeHash: 'irrelevant-to-the-caller',
       });
       const { service } = makeService(repository);
@@ -662,9 +548,9 @@ describe('RequestsService', () => {
 
     it('allows either party to generate a code', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      repository.updateStatus.mockResolvedValue(acceptedRequest);
+      repository.updateStatus.mockResolvedValue(activeRequest);
       const { service } = makeService(repository);
 
       await expect(
@@ -674,7 +560,7 @@ describe('RequestsService', () => {
 
     it('rejects an outsider', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
 
@@ -683,9 +569,12 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('rejects generating a code for a request that is not accepted', async () => {
+    it('rejects generating a code for a claim that is not accepted', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest); // status: pending
+      repository.findById.mockResolvedValue({
+        ...baseRequest,
+        status: 'completed',
+      });
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
 
@@ -694,9 +583,9 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('409s when the request was modified since it was read', async () => {
+    it('409s when the claim was modified since it was read', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       repository.updateStatus.mockResolvedValue(undefined);
       const { service } = makeService(repository);
@@ -710,9 +599,9 @@ describe('RequestsService', () => {
   describe('verifyPickupCode', () => {
     const code = '123456';
     const now = new Date('2026-08-06T01:00:00Z');
-    const acceptedRequest = {
+    const activeRequest = {
       ...baseRequest,
-      status: 'accepted' as const,
+      status: 'active' as const,
       pickupCodeHash: hashPickupCode(code),
       codeExpiresAt: new Date(now.getTime() + 60_000),
       codeGeneratedBy: 'user-rescue',
@@ -727,14 +616,13 @@ describe('RequestsService', () => {
       jest.useRealTimers();
     });
 
-    it('completes the request when the code matches and is unexpired', async () => {
+    it('completes the claim when the code matches and is unexpired', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      // Generated by the rescue org, so the donor org must be the one to verify.
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         status: 'completed',
       });
       const { service } = makeService(repository);
@@ -748,11 +636,11 @@ describe('RequestsService', () => {
       expect(result.status).toBe('completed');
       expect(repository.updateStatus).toHaveBeenCalledWith(
         'request-1',
-        'accepted',
+        'active',
         expect.objectContaining({
           status: 'completed',
           verifiedBy: donorUser.userId,
-          collectedQuantity: '5',
+          collectedQuantity: '10',
         }),
         expect.anything(),
       );
@@ -760,11 +648,11 @@ describe('RequestsService', () => {
 
     it('defaults collectedQuantity to the full requestedQuantity when omitted', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         status: 'completed',
       });
       const { service } = makeService(repository);
@@ -773,19 +661,19 @@ describe('RequestsService', () => {
 
       expect(repository.updateStatus).toHaveBeenCalledWith(
         'request-1',
-        'accepted',
-        expect.objectContaining({ collectedQuantity: '5' }),
+        'active',
+        expect.objectContaining({ collectedQuantity: '10' }),
         expect.anything(),
       );
     });
 
-    it('checks whether the listing can now be marked collected', async () => {
+    it('marks the listing collected once the claim is verified', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         status: 'completed',
       });
       repository.markListingCollectedIfDone.mockResolvedValue(true);
@@ -803,26 +691,9 @@ describe('RequestsService', () => {
       );
     });
 
-    it('does not log when other accepted requests are still outstanding', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
-      repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
-      repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
-        status: 'completed',
-      });
-      repository.markListingCollectedIfDone.mockResolvedValue(false);
-      const { service, logger } = makeService(repository);
-
-      await service.verifyPickupCode('request-1', { code }, donorUser);
-
-      expect(logger.log).not.toHaveBeenCalled();
-    });
-
     it('rejects a collectedQuantity greater than what was requested', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       const { service } = makeService(repository);
@@ -839,7 +710,7 @@ describe('RequestsService', () => {
 
     it('rejects when the same org generated and is trying to verify the code', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       const { service } = makeService(repository);
@@ -852,7 +723,7 @@ describe('RequestsService', () => {
 
     it('rejects an outsider entirely', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
 
@@ -865,7 +736,7 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseRequest,
-        status: 'accepted',
+        status: 'active',
       });
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
@@ -875,10 +746,10 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('rejects verifying a request that is not accepted', async () => {
+    it('rejects verifying a claim that is not accepted', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         status: 'completed',
       });
       repository.findListingById.mockResolvedValue(availableListing);
@@ -895,7 +766,7 @@ describe('RequestsService', () => {
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(1);
 
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       const { service: wrongCodeService } = makeService(repository);
       let wrongCodeError: unknown;
       try {
@@ -909,7 +780,7 @@ describe('RequestsService', () => {
       }
 
       repository.findById.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         codeExpiresAt: new Date(now.getTime() - 1),
       });
       const { service: expiredCodeService } = makeService(repository);
@@ -931,9 +802,9 @@ describe('RequestsService', () => {
       );
     });
 
-    it('counts a failed attempt and does not complete the request', async () => {
+    it('counts a failed attempt and does not complete the claim', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(2);
@@ -951,7 +822,7 @@ describe('RequestsService', () => {
 
     it('force-invalidates the code after hitting the attempt cap', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(5);
@@ -962,7 +833,7 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(repository.updateStatus).toHaveBeenCalledWith(
         'request-1',
-        'accepted',
+        'active',
         expect.objectContaining({
           pickupCodeHash: null,
           codeExpiresAt: null,
@@ -972,9 +843,9 @@ describe('RequestsService', () => {
       );
     });
 
-    it('409s when the request stopped being accepted mid-verify', async () => {
+    it('409s when the claim stopped being accepted mid-verify', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(undefined);
@@ -985,9 +856,9 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('409s when the request was modified since it was read on a successful verify', async () => {
+    it('409s when the claim was modified since it was read on a successful verify', async () => {
       const repository = makeRepository();
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue(undefined);
@@ -1003,12 +874,12 @@ describe('RequestsService', () => {
       const admin: AuthenticatedUser = {
         userId: 'admin-1',
         role: 'admin',
-        orgId: 'org-rescue', // same org as the generator - would fail the check for a non-admin
+        orgId: 'org-rescue',
       };
-      repository.findById.mockResolvedValue(acceptedRequest);
+      repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       repository.updateStatus.mockResolvedValue({
-        ...acceptedRequest,
+        ...activeRequest,
         status: 'completed',
       });
       const { service } = makeService(repository);

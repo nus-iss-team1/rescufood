@@ -26,7 +26,7 @@ async function idToken() {
 const expired = "Your session has expired. Please sign in again.";
 const unreachable = "Could not reach the listings service. Please try again.";
 
-/** Claims part or all of a listing. Idempotent on the key the form mints. */
+/** Claims the whole listing, first-come-first-served. Idempotent on the key the form mints. */
 export async function createRequestAction(
   _prev: RequestFormState,
   formData: FormData
@@ -36,27 +36,26 @@ export async function createRequestAction(
 
   const listingId = String(formData.get("listingId") ?? "");
   const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
-  const requestedQuantity = Number(formData.get("requestedQuantity") ?? "");
 
   if (!listingId || !idempotencyKey) {
     return { error: "Something went wrong. Please reload and try again." };
   }
-  if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
-    return { error: "Enter how much you can collect." };
-  }
 
   try {
-    const created = await createRequest(token, {
-      listingId,
-      requestedQuantity,
-      idempotencyKey,
-    });
+    const created = await createRequest(token, { listingId, idempotencyKey });
     revalidatePath(`/browse/${listingId}`);
     revalidatePath("/browse");
     revalidatePath("/requests");
     return { requestedId: created.id };
   } catch (err) {
-    if (err instanceof ListingsApiError) return { error: err.message };
+    if (err instanceof ListingsApiError) {
+      if (err.status === 409) {
+        return {
+          error: "Another partner has already claimed this listing.",
+        };
+      }
+      return { error: err.message };
+    }
     return { error: unreachable };
   }
 }
@@ -84,77 +83,6 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
   revalidatePath("/browse");
   revalidatePath("/listings");
   revalidatePath("/dashboard");
-}
-
-export async function acceptRequestAction(
-  prevState: { success?: boolean; error?: string },
-  formData: FormData
-): Promise<{ success?: boolean; error?: string }> {
-  const token = await idToken();
-  if (!token) return { error: expired };
-
-  const id = String(formData.get("requestId") ?? "");
-  if (!id) return { error: "Missing request ID." };
-
-  try {
-    const updated = await decideRequest(token, id, {
-      status: "accepted",
-    });
-    
-    // Revalidate paths as requested
-    revalidatePath("/requests");
-    revalidatePath(`/requests/${id}`);
-    revalidatePath("/browse");
-    revalidatePath("/listings");
-    revalidatePath("/dashboard");
-    if (updated.listingId) {
-      revalidatePath(`/browse/${updated.listingId}`);
-      revalidatePath(`/listings/${updated.listingId}`);
-    }
-    
-    return { success: true };
-  } catch (err) {
-    if (err instanceof ListingsApiError) return { error: err.message };
-    return { error: unreachable };
-  }
-}
-
-export async function declineRequestAction(
-  prevState: { success?: boolean; error?: string },
-  formData: FormData
-): Promise<{ success?: boolean; error?: string }> {
-  const token = await idToken();
-  if (!token) return { error: expired };
-
-  const id = String(formData.get("requestId") ?? "");
-  if (!id) return { error: "Missing request ID." };
-
-  const declineReason = String(formData.get("declineReason") ?? "").trim();
-  if (!declineReason) {
-    return { error: "A reason is required to decline a request." };
-  }
-
-  try {
-    const updated = await decideRequest(token, id, {
-      status: "declined",
-      declineReason,
-    });
-    
-    revalidatePath("/requests");
-    revalidatePath(`/requests/${id}`);
-    revalidatePath("/browse");
-    revalidatePath("/listings");
-    revalidatePath("/dashboard");
-    if (updated.listingId) {
-      revalidatePath(`/browse/${updated.listingId}`);
-      revalidatePath(`/listings/${updated.listingId}`);
-    }
-    
-    return { success: true };
-  } catch (err) {
-    if (err instanceof ListingsApiError) return { error: err.message };
-    return { error: unreachable };
-  }
 }
 
 export async function getPickupCredentialAction(

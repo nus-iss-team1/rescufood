@@ -29,10 +29,7 @@ export const listingStatusVariant: Record<
 
 /** The service's own status names; only the underscore is formatted away. */
 export const requestStatusLabels: Record<RequestStatus, string> = {
-  pending: "Pending",
-  accepted: "Accepted",
-  declined: "Declined",
-  superseded: "Superseded",
+  active: "Active",
   cancelled: "Cancelled",
   completed: "Completed",
   no_show: "No show",
@@ -43,23 +40,16 @@ export const requestStatusVariant: Record<
   RequestStatus,
   "info" | "success" | "destructive" | "outline"
 > = {
-  pending: "info",
-  accepted: "success",
-  declined: "destructive",
-  superseded: "outline",
+  active: "success",
   cancelled: "outline",
   completed: "success",
   no_show: "destructive",
   expired: "outline",
 };
 
-/**
- * Still in play. Every other status is terminal in the service - no
- * outgoing transitions - so nothing can act on it. See
- * request-status.util.ts.
- */
+/** Still in play; every other status is terminal. */
 export function isActiveRequest(status: RequestStatus) {
-  return status === "pending" || status === "accepted";
+  return status === "active";
 }
 
 /** Trims the trailing zeros the service's decimal strings carry. */

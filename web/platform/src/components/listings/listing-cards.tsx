@@ -65,8 +65,8 @@ export function ListingCards({
                 : "No category yet"}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {listing.remainingQuantity != null && listing.unit
-                ? quantity(listing.remainingQuantity, listing.unit)
+              {listing.quantity != null && listing.unit
+                ? quantity(listing.quantity, listing.unit)
                 : "Quantity not set"}
             </span>
           </div>

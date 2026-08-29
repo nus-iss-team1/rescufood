@@ -73,7 +73,7 @@ export function CreateListingForm() {
 
   // Controlled form state with sensible defaults
   const [category, setCategory] = useState("produce");
-  const [remainingQuantity, setRemainingQuantity] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [description, setDescription] = useState("");
   const [allergens, setAllergens] = useState("");
@@ -257,16 +257,16 @@ export function CreateListingForm() {
       </Field>
 
       <div data-animate="field" className="grid gap-4 grid-cols-[2fr_1fr]">
-        <Field label="Quantity" htmlFor="remainingQuantity">
+        <Field label="Quantity" htmlFor="quantity">
           <Input
-            id="remainingQuantity"
-            name="remainingQuantity"
+            id="quantity"
+            name="quantity"
             type="number"
             min="0.01"
             step="0.01"
             placeholder="24"
-            value={remainingQuantity}
-            onChange={(e) => setRemainingQuantity(e.target.value)}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
             required
           />
         </Field>

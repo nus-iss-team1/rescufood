@@ -23,7 +23,7 @@ export class ListingResponseDto {
     nullable: true,
     description: 'Decimal string, e.g. "12.50".',
   })
-  remainingQuantity!: string | null;
+  quantity!: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   unit!: string | null;

@@ -86,8 +86,8 @@ export function PickupCredentialCard({
     );
   }
 
-  // Not completed or cancelled, but not accepted/reserved either
-  if (request.status !== "accepted") {
+  // Only an active claim has a live pickup code.
+  if (request.status !== "active") {
     return null;
   }
 

@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
-import { Calendar, MapPin, Package, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Calendar, MapPin, Package, AlertTriangle } from "lucide-react";
 
 import { type Listing, type ListingRequest } from "@rescufood/listings-sdk";
 import {
@@ -15,13 +14,8 @@ import {
   pickupWindow,
   shortDate,
 } from "@/lib/listing-labels";
-import {
-  acceptRequestAction,
-  declineRequestAction,
-  cancelRequestAction,
-} from "@/app/requests/actions";
+import { cancelRequestAction } from "@/app/requests/actions";
 
-import { Button } from "@rescufood/ui/components/button";
 import {
   Card,
   CardContent,
@@ -32,8 +26,7 @@ import {
 } from "@rescufood/ui/components/card";
 import { Badge } from "@rescufood/ui/components/badge";
 import { AnimateIn } from "@/components/animate-in";
-import { Textarea } from "@rescufood/ui/components/textarea";
-import { Label } from "@rescufood/ui/components/label";
+import { Button } from "@rescufood/ui/components/button";
 import { PickupCredentialCard } from "./pickup-credential-card";
 
 function SubmitButton({ children, className, variant = "default" }: { children: React.ReactNode, className?: string, variant?: "default" | "destructive" | "outline" }) {
@@ -49,31 +42,11 @@ export function RequestDetailView({
   request,
   listing,
   isDonor,
-  competingClaimsCount,
 }: {
   request: ListingRequest;
   listing: Listing;
   isDonor: boolean;
-  competingClaimsCount: number;
 }) {
-  const [declineOpen, setDeclineOpen] = useState(false);
-  const [selectedDeclineReason, setSelectedDeclineReason] = useState("");
-  const [customDeclineReason, setCustomDeclineReason] = useState("");
-  
-  const [acceptState, acceptFormAction] = useActionState(acceptRequestAction, {});
-  const [declineState, declineFormAction] = useActionState(declineRequestAction, {});
-
-  const finalDeclineReason = selectedDeclineReason === "Other" 
-    ? customDeclineReason 
-    : selectedDeclineReason;
-
-  const handleDeclineSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    if (!finalDeclineReason.trim()) {
-      e.preventDefault();
-      alert("Please provide a reason for declining.");
-    }
-  };
-
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-6">
@@ -107,8 +80,8 @@ export function RequestDetailView({
                   <div className="text-right whitespace-nowrap bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20">
                     <div className="text-xs font-semibold uppercase tracking-wider mb-0.5 opacity-80">Full Lot</div>
                     <div className="text-xl font-bold">
-                      {listing.remainingQuantity && listing.unit 
-                        ? quantity(listing.remainingQuantity, listing.unit) 
+                      {listing.quantity && listing.unit 
+                        ? quantity(listing.quantity, listing.unit) 
                         : "Unknown quantity"}
                     </div>
                   </div>
@@ -186,20 +159,14 @@ export function RequestDetailView({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {request.status === "accepted" && (
+              {request.status === "active" && (
                 <div className="rounded-md bg-success/15 p-4 text-sm text-success-foreground">
-                  <p className="font-medium">This request is accepted.</p>
+                  <p className="font-medium">This lot is reserved for your organisation.</p>
                   <p className="mt-1">
                     {isDonor
-                      ? "You have reserved this lot for the rescue partner. They will arrive to collect it."
-                      : "Your request was approved. Please prepare for collection according to the pickup window."}
+                      ? "A rescue partner has claimed the full lot. They will arrive to collect it within the pickup window."
+                      : "You have claimed the full lot. Please collect it within the pickup window."}
                   </p>
-                </div>
-              )}
-              {request.status === "declined" && (
-                <div className="rounded-md bg-destructive/15 p-4 text-sm text-destructive">
-                  <p className="font-medium">This request was declined.</p>
-                  <p className="mt-1">Reason: {request.declineReason}</p>
                 </div>
               )}
               {request.status === "cancelled" && (
@@ -211,12 +178,12 @@ export function RequestDetailView({
                 </div>
               )}
             </CardContent>
-            {isActiveRequest(request.status) && (!isDonor || request.status === "accepted") && (
+            {isActiveRequest(request.status) && (
               <CardFooter className="border-t pt-4">
                 <form action={cancelRequestAction} className="w-full">
                   <input type="hidden" name="requestId" value={request.id} />
                   <SubmitButton variant="outline" className="w-full">
-                    Cancel Request
+                    Cancel Claim
                   </SubmitButton>
                 </form>
               </CardFooter>
@@ -224,110 +191,7 @@ export function RequestDetailView({
           </Card>
         </AnimateIn>
 
-        {isDonor && request.status === "pending" && (
-          <AnimateIn>
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShieldCheck className="size-5 text-primary" />
-                  Review Claim
-                </CardTitle>
-                <CardDescription>
-                  This rescue partner has requested the full lot.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-md bg-background/50 border p-4 text-sm text-muted-foreground flex gap-3">
-                  <AlertTriangle className="size-5 shrink-0 text-warning" />
-                  <p>
-                    Accepting this claim will immediately transition the listing to RESERVED and automatically supersede any other pending claims for this lot.
-                  </p>
-                </div>
-                {competingClaimsCount > 0 && (
-                  <p className="text-sm font-medium">
-                    Note: There {competingClaimsCount === 1 ? "is" : "are"} {competingClaimsCount} other pending claim{competingClaimsCount === 1 ? "" : "s"} for this lot.
-                  </p>
-                )}
-                
-                {acceptState.error && (
-                  <p className="text-sm text-destructive">{acceptState.error}</p>
-                )}
-                {declineState.error && (
-                  <p className="text-sm text-destructive">{declineState.error}</p>
-                )}
-              </CardContent>
-              <CardFooter className="flex flex-col items-stretch gap-3">
-                {!declineOpen ? (
-                  <div className="flex gap-3">
-                    <form action={acceptFormAction} className="flex-1">
-                      <input type="hidden" name="requestId" value={request.id} />
-                      <SubmitButton className="w-full">Accept Request</SubmitButton>
-                    </form>
-                    <Button variant="outline" onClick={() => setDeclineOpen(true)} className="flex-1">
-                      Decline
-                    </Button>
-                  </div>
-                ) : (
-                  <form action={declineFormAction} onSubmit={handleDeclineSubmit} className="space-y-4 w-full rounded-md border p-4 bg-background">
-                    <input type="hidden" name="requestId" value={request.id} />
-                    <input type="hidden" name="declineReason" value={finalDeclineReason} />
-                    
-                    <h4 className="font-medium text-sm">Provide a decline reason</h4>
-                    
-                    <div className="space-y-2">
-                      {[
-                        "Food already allocated",
-                        "Cannot accommodate pickup window",
-                        "Food damaged / quality issue",
-                        "Logistical constraint",
-                        "Other"
-                      ].map((reason) => (
-                        <div key={reason} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            id={`reason-${reason}`}
-                            name="reason-radio"
-                            value={reason}
-                            checked={selectedDeclineReason === reason}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedDeclineReason(e.target.value)}
-                            className="size-4"
-                          />
-                          <Label htmlFor={`reason-${reason}`} className="text-sm font-normal cursor-pointer">
-                            {reason}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-
-                    {selectedDeclineReason === "Other" && (
-                      <div className="mt-3">
-                        <Label htmlFor="custom-reason" className="sr-only">Custom Reason</Label>
-                        <Textarea
-                          id="custom-reason"
-                          placeholder="Please explain why..."
-                          value={customDeclineReason}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCustomDeclineReason(e.target.value)}
-                          className="min-h-[80px]"
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                      <Button type="button" variant="ghost" onClick={() => setDeclineOpen(false)}>
-                        Cancel
-                      </Button>
-                      <SubmitButton variant="destructive" className="flex-1">
-                        Confirm Decline
-                      </SubmitButton>
-                    </div>
-                  </form>
-                )}
-              </CardFooter>
-            </Card>
-          </AnimateIn>
-        )}
-
-        {(request.status === "accepted" || request.status === "cancelled" || request.status === "completed") && (
+        {(request.status === "active" || request.status === "cancelled" || request.status === "completed") && (
           <PickupCredentialCard request={request} isDonor={isDonor} />
         )}
       </div>

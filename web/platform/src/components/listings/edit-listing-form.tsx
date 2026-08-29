@@ -77,8 +77,8 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   // any of these unset, so each falls back to an empty/unselected state
   // rather than trusting the field to always be filled in.
   const [category, setCategory] = useState<string>(listing.category ?? "");
-  const [remainingQuantity, setRemainingQuantity] = useState<string>(
-    listing.remainingQuantity != null ? String(listing.remainingQuantity) : "",
+  const [quantity, setQuantity] = useState<string>(
+    listing.quantity != null ? String(listing.quantity) : "",
   );
   const [unit, setUnit] = useState<string>(listing.unit ?? "");
   const [description, setDescription] = useState<string>(
@@ -403,16 +403,16 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           </Select>
         </Field>
 
-        <Field label="Quantity" htmlFor="remainingQuantity">
+        <Field label="Quantity" htmlFor="quantity">
           <Input
-            id="remainingQuantity"
-            name="remainingQuantity"
+            id="quantity"
+            name="quantity"
             type="number"
             min="0.01"
             step="0.01"
             placeholder="24"
-            value={remainingQuantity}
-            onChange={(e) => setRemainingQuantity(e.target.value)}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
             disabled={isLocked || pending}
             required
           />

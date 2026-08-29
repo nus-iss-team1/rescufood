@@ -3,11 +3,9 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Logger } from 'nestjs-pino';
 import { ListingsRepository } from './listings.repository';
 
-// Nobody claimed these in time: sweeps listings still `available` once
-// their pickup window has closed and flips them to `expired`, along with
-// any of their requests still `pending`/`accepted`. See
-// listings_expiry_scan_idx in db/schema.ts, which is built for exactly this
-// query, and ListingsRepository.expireOverdue for the update itself.
+// Once a minute, expires any `available` listing past its pickup window
+// (nobody claimed it in time) and its `active` claim, if any. See
+// ListingsRepository.expireOverdue.
 @Injectable()
 export class ListingExpiryService {
   constructor(

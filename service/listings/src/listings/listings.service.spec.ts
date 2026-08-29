@@ -19,7 +19,6 @@ function makeRepository() {
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
-    supersedeRequestsForListing: jest.fn().mockResolvedValue(0),
   };
 }
 
@@ -120,7 +119,7 @@ const baseListing = {
   createdBy: 'user-1',
   category: 'produce' as const,
   description: 'Fresh vegetables',
-  remainingQuantity: '10.00',
+  quantity: '10.00',
   unit: 'kg',
   allergens: [],
   handlingInstructions: '',
@@ -187,7 +186,7 @@ const imageResponse = {
 const validCreateDto = {
   category: 'produce' as const,
   description: 'Fresh vegetables',
-  remainingQuantity: 10,
+  quantity: 10,
   unit: 'kg',
   useBy: '2026-08-10T00:00:00Z',
   pickupLocation: '123 Main St',
@@ -273,7 +272,7 @@ describe('ListingsService', () => {
       const incompleteDraft = {
         ...baseListing,
         description: null,
-        remainingQuantity: null,
+        quantity: null,
         unit: null,
         useBy: null,
         pickupLocation: null,
@@ -290,7 +289,7 @@ describe('ListingsService', () => {
         expect.objectContaining({
           category: 'produce',
           description: undefined,
-          remainingQuantity: undefined,
+          quantity: undefined,
           unit: undefined,
           useBy: undefined,
           pickupLocation: undefined,
@@ -453,7 +452,7 @@ describe('ListingsService', () => {
       repository.findById.mockResolvedValue(baseListing);
       repository.updateWithVersion.mockRejectedValue({
         code: '23514',
-        detail: 'remaining_quantity_non_negative',
+        detail: 'quantity_non_negative',
       });
       const { service } = makeService(repository);
 
@@ -839,7 +838,7 @@ describe('ListingsService', () => {
       repository.findById.mockResolvedValue({
         ...baseListing,
         ...publishableFields(),
-        remainingQuantity: '0.00',
+        quantity: '0.00',
       });
       const { service } = makeService(repository);
 
@@ -970,7 +969,7 @@ describe('ListingsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseListing,
-        remainingQuantity: '0.00',
+        quantity: '0.00',
         allergens: [],
         pickupWindowStart: new Date('2026-08-09T09:00:00Z'),
         pickupWindowEnd: new Date('2026-08-09T17:00:00Z'),
@@ -997,7 +996,7 @@ describe('ListingsService', () => {
         ...baseListing,
         ...publishableFields(),
         status: 'available',
-        remainingQuantity: '0.00',
+        quantity: '0.00',
       });
       const { service } = makeService(repository);
 
@@ -1014,8 +1013,8 @@ describe('ListingsService', () => {
     });
   });
 
-  describe('update - cancelling a listing supersedes its requests', () => {
-    it('supersedes the pending/accepted requests in the same transaction', async () => {
+  describe('update - cancelling a listing', () => {
+    it('cancels the listing in one transaction', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseListing,
@@ -1026,73 +1025,17 @@ describe('ListingsService', () => {
         status: 'cancelled',
         version: 2,
       });
-      repository.supersedeRequestsForListing.mockResolvedValue(2);
-      const { service, db, logger } = makeService(repository);
+      const { service, db } = makeService(repository);
 
-      await service.update(
+      const result = await service.update(
         'listing-1',
         { version: 1, status: 'cancelled' },
         [],
         owner,
       );
 
-      expect(repository.supersedeRequestsForListing).toHaveBeenCalledWith(
-        'listing-1',
-        expect.anything(),
-      );
+      expect(result.status).toBe('cancelled');
       expect(db.transaction).toHaveBeenCalledTimes(1);
-      expect(logger.log).toHaveBeenCalledWith(
-        { listingId: 'listing-1', supersededCount: 2 },
-        expect.stringContaining('superseded'),
-      );
-    });
-
-    it('does not log when there was nothing to supersede', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseListing,
-        status: 'available',
-      });
-      repository.updateWithVersion.mockResolvedValue({
-        ...baseListing,
-        status: 'cancelled',
-        version: 2,
-      });
-      repository.supersedeRequestsForListing.mockResolvedValue(0);
-      const { service, logger } = makeService(repository);
-
-      await service.update(
-        'listing-1',
-        { version: 1, status: 'cancelled' },
-        [],
-        owner,
-      );
-
-      expect(logger.log).not.toHaveBeenCalled();
-    });
-
-    it('does not cascade for a non-cancelling status update', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue({
-        ...baseListing,
-        ...publishableFields(),
-        status: 'draft',
-      });
-      repository.updateWithVersion.mockResolvedValue({
-        ...baseListing,
-        status: 'available',
-        version: 2,
-      });
-      const { service } = makeService(repository);
-
-      await service.update(
-        'listing-1',
-        { version: 1, status: 'available' },
-        [],
-        owner,
-      );
-
-      expect(repository.supersedeRequestsForListing).not.toHaveBeenCalled();
     });
   });
 });

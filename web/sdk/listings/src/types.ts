@@ -27,10 +27,7 @@ export const listingStatuses = [
 export type ListingStatus = (typeof listingStatuses)[number];
 
 export const requestStatuses = [
-  "pending",
-  "accepted",
-  "declined",
-  "superseded",
+  "active",
   "cancelled",
   "completed",
   "no_show",
@@ -40,12 +37,7 @@ export const requestStatuses = [
 export type RequestStatus = (typeof requestStatuses)[number];
 
 /** The subset of statuses a client may set; the rest are system-driven. */
-export const requestDecisions = [
-  "accepted",
-  "declined",
-  "cancelled",
-  "no_show",
-] as const;
+export const requestDecisions = ["cancelled", "no_show"] as const;
 
 export type RequestDecision = (typeof requestDecisions)[number];
 
@@ -53,7 +45,7 @@ export const listingSortFields = [
   "useBy",
   "pickupWindowStart",
   "pickupWindowEnd",
-  "remainingQuantity",
+  "quantity",
   "createdAt",
 ] as const;
 
@@ -88,7 +80,7 @@ export interface Listing {
   category: ListingCategory | null;
   description: string | null;
   /** Decimal string, e.g. "12.50", or null on an incomplete Draft. */
-  remainingQuantity: string | null;
+  quantity: string | null;
   unit: string | null;
   allergens: string[];
   handlingInstructions: string;
@@ -112,7 +104,7 @@ export interface Listing {
 export interface NewListing {
   category?: ListingCategory;
   description?: string;
-  remainingQuantity?: number;
+  quantity?: number;
   unit?: string;
   allergens?: string[];
   handlingInstructions?: string;
@@ -163,9 +155,6 @@ export interface ListingRequest {
   /** Decimal string, e.g. "5.00". */
   requestedQuantity: string;
   requestedAt: string;
-  respondedBy: string | null;
-  respondedAt: string | null;
-  declineReason: string;
   cancelledAt: string | null;
   cancellationReason: string;
   codeExpiresAt: string | null;
@@ -180,15 +169,12 @@ export interface ListingRequest {
 
 export interface NewRequest {
   listingId: string;
-  requestedQuantity: number;
-  /** Mint once per submit; retrying replays the original result. */
+  /** Mint once per submit; retrying replays the original claim. */
   idempotencyKey: string;
 }
 
 export interface RequestDecisionInput {
   status: RequestDecision;
-  /** Only used when status is "declined". */
-  declineReason?: string;
   /** Only used when status is "cancelled". */
   cancellationReason?: string;
   /** Only used when status is "no_show". */

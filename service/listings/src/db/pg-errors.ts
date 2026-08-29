@@ -8,7 +8,7 @@ export const PG_UNIQUE_VIOLATION = '23505';
 export function isPgError(
   err: unknown,
   code: string,
-): err is { code: string; detail?: string } {
+): err is { code: string; detail?: string; constraint?: string } {
   return (
     typeof err === 'object' &&
     err !== null &&

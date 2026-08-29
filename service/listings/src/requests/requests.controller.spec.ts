@@ -55,7 +55,6 @@ describe('RequestsController', () => {
       const { controller } = makeController(service);
       const dto = {
         listingId: 'listing-1',
-        requestedQuantity: 5,
         idempotencyKey: 'idem-1',
       } as never;
 
@@ -96,14 +95,17 @@ describe('RequestsController', () => {
   describe('decide', () => {
     it('delegates to the service with the id, dto and caller', async () => {
       const service = makeService();
-      service.decide.mockResolvedValue({ id: 'request-1', status: 'accepted' });
+      service.decide.mockResolvedValue({
+        id: 'request-1',
+        status: 'cancelled',
+      });
       const { controller } = makeController(service);
-      const dto = { status: 'accepted' } as never;
+      const dto = { status: 'cancelled' } as never;
 
       const result = await controller.decide('request-1', dto, makeRequest());
 
       expect(service.decide).toHaveBeenCalledWith('request-1', dto, user);
-      expect(result).toEqual({ id: 'request-1', status: 'accepted' });
+      expect(result).toEqual({ id: 'request-1', status: 'cancelled' });
     });
   });
 
