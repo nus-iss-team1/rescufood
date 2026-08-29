@@ -185,7 +185,7 @@ test.describe.serial('Listing claim lifecycle', () => {
       .getByRole('listitem')
       .filter({ hasText: 'requested' })
       .first();
-    await expect(request.getByText('Pending')).toBeVisible();
+    await expect(request.getByText('Active')).toBeVisible();
 
     await request.getByRole('button', { name: 'Cancel' }).click();
 
