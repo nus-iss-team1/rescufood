@@ -12,15 +12,10 @@ import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
   isPgError,
-  PG_CHECK_VIOLATION,
   PG_FOREIGN_KEY_VIOLATION,
   PG_UNIQUE_VIOLATION,
 } from '../db/pg-errors';
-import {
-  assertCanRespond,
-  assertIsParty,
-  isRequestVisible,
-} from './common/request-access.util';
+import { assertIsParty, isRequestVisible } from './common/request-access.util';
 import {
   PublicListingRequest,
   toPublicRequest,
@@ -43,6 +38,9 @@ import {
   RequestsRepository,
 } from './requests.repository';
 
+const IDEMPOTENCY_KEY_CONSTRAINT = 'requests_rescue_org_idempotency_key_uq';
+const ACTIVE_CLAIM_CONSTRAINT = 'requests_active_claim_per_listing_uq';
+
 @Injectable()
 export class RequestsService {
   constructor(
@@ -51,6 +49,10 @@ export class RequestsService {
     private readonly logger: Logger,
   ) {}
 
+  // First-come-first-served: claim the whole listing and reserve it for the
+  // caller's org in one transaction. Idempotent on (rescueOrgId,
+  // idempotencyKey) - a retry replays the original claim; a losing race gets
+  // a 409.
   async create(
     dto: CreateRequestDto,
     user: AuthenticatedUser,
@@ -63,38 +65,88 @@ export class RequestsService {
     }
     if (listing.status !== 'available') {
       throw new BadRequestException(
-        `listing ${dto.listingId} is not available for requests`,
+        `listing ${dto.listingId} is not available to claim`,
       );
     }
-    // Guaranteed by OrgMembershipGuard, not client input.
-    if (listing.donorOrgId === user.orgId) {
-      throw new BadRequestException('you cannot request your own listing');
-    }
-    // Non-null: guaranteed by the available_listing_is_complete CHECK now
-    // that status is confirmed 'available' above.
-    if (dto.requestedQuantity > Number(listing.remainingQuantity!)) {
+    if (
+      listing.pickupWindowEnd &&
+      listing.pickupWindowEnd.getTime() <= Date.now()
+    ) {
       throw new BadRequestException(
-        `requested quantity exceeds the ${listing.remainingQuantity} ${listing.unit} remaining`,
+        `listing ${dto.listingId} can no longer be claimed - its pickup window has closed`,
+      );
+    }
+    const eligibility = await this.requestsRepository.findClaimantContext(
+      user.userId,
+    );
+    if (!eligibility || eligibility.userStatus !== 'active') {
+      throw new ForbiddenException('your account is not active');
+    }
+    if (eligibility.orgType !== 'rescue_partner') {
+      throw new ForbiddenException(
+        'only rescue-partner organisations can claim listings',
+      );
+    }
+    if (eligibility.orgStatus !== 'approved') {
+      throw new ForbiddenException(
+        'your organisation is not approved to claim listings',
       );
     }
 
+    const replay = await this.requestsRepository.findByIdempotencyKey(
+      user.orgId!,
+      dto.idempotencyKey,
+    );
+    if (replay) return toPublicRequest(replay);
+
     try {
-      const created = await this.requestsRepository.create({
-        listingId: dto.listingId,
-        rescueOrgId: user.orgId!,
-        claimedBy: user.userId,
-        idempotencyKey: dto.idempotencyKey,
-        requestedQuantity: dto.requestedQuantity.toString(),
+      const created = await this.db.transaction(async (tx) => {
+        const reserved = await this.requestsRepository.reserveListingForClaim(
+          dto.listingId,
+          tx,
+        );
+        if (!reserved) {
+          throw new ConflictException(
+            `listing ${dto.listingId} is no longer available to claim`,
+          );
+        }
+        return this.requestsRepository.create(
+          {
+            listingId: dto.listingId,
+            rescueOrgId: user.orgId!,
+            claimedBy: user.userId,
+            idempotencyKey: dto.idempotencyKey,
+            status: 'active',
+            requestedQuantity: reserved.quantity!,
+          },
+          tx,
+        );
       });
       return toPublicRequest(created);
     } catch (err) {
-      if (isPgError(err, PG_UNIQUE_VIOLATION)) {
-        // A retried submit with the same key - replay the original result
-        // instead of erroring on the double-claim.
-        const existing = await this.requestsRepository.findByIdempotencyKey(
+      // A retry landing just after the original committed replays it rather
+      // than erroring on the lost race.
+      if (err instanceof ConflictException) {
+        const raced = await this.requestsRepository.findByIdempotencyKey(
+          user.orgId!,
           dto.idempotencyKey,
         );
-        if (existing) return toPublicRequest(existing);
+        if (raced) return toPublicRequest(raced);
+        throw err;
+      }
+      if (isPgError(err, PG_UNIQUE_VIOLATION)) {
+        if (err.constraint === IDEMPOTENCY_KEY_CONSTRAINT) {
+          const existing = await this.requestsRepository.findByIdempotencyKey(
+            user.orgId!,
+            dto.idempotencyKey,
+          );
+          if (existing) return toPublicRequest(existing);
+        }
+        if (err.constraint === ACTIVE_CLAIM_CONSTRAINT) {
+          throw new ConflictException(
+            `listing ${dto.listingId} has already been claimed`,
+          );
+        }
       }
       throw err;
     }
@@ -123,6 +175,8 @@ export class RequestsService {
     return toPublicRequest(request);
   }
 
+  // Either party to an active claim may cancel it or report a no-show; both
+  // reopen the listing for another org.
   async decide(
     id: string,
     dto: UpdateRequestDto,
@@ -131,49 +185,13 @@ export class RequestsService {
     const existing = await this.getOrThrow(id);
     const listing = await this.getListingOrThrow(existing.listingId);
     assertValidRequestStatusTransition(existing.status, dto.status);
-
-    const releasesQuantity =
-      dto.status === 'cancelled' || dto.status === 'no_show';
-    if (releasesQuantity) {
-      assertIsParty(existing, listing, user);
-    } else {
-      assertCanRespond(listing, user);
-    }
+    assertIsParty(existing, listing, user);
 
     try {
       return await this.db.transaction(async (tx) => {
-        if (dto.status === 'accepted') {
-          const updatedListing =
-            await this.requestsRepository.decrementListingQuantity(
-              existing.listingId,
-              existing.requestedQuantity,
-              tx,
-            );
-          if (!updatedListing) {
-            throw new ConflictException(
-              `listing ${existing.listingId} is no longer available to accept this request`,
-            );
-          }
-          // This accept just claimed the last of it - nobody else's
-          // pending request on this listing can ever be fulfilled now.
-          if (updatedListing.status === 'reserved') {
-            const supersededCount =
-              await this.requestsRepository.supersedeOtherPending(
-                existing.listingId,
-                id,
-                tx,
-              );
-            if (supersededCount > 0) {
-              this.logger.log(
-                { listingId: existing.listingId, supersededCount },
-                'superseded other pending requests - listing fully reserved',
-              );
-            }
-          }
-        } else if (releasesQuantity && existing.status === 'accepted') {
-          await this.requestsRepository.incrementListingQuantity(
+        if (existing.status === 'active') {
+          await this.requestsRepository.reopenListingAfterClaimEnded(
             existing.listingId,
-            existing.requestedQuantity,
             tx,
           );
         }
@@ -183,13 +201,6 @@ export class RequestsService {
           existing.status,
           {
             status: dto.status,
-            ...((dto.status === 'accepted' || dto.status === 'declined') && {
-              respondedBy: user.userId,
-              respondedAt: new Date(),
-            }),
-            ...(dto.status === 'declined' && {
-              declineReason: dto.declineReason ?? '',
-            }),
             ...(dto.status === 'cancelled' && {
               cancelledAt: new Date(),
               cancellationReason: dto.cancellationReason ?? '',
@@ -210,11 +221,6 @@ export class RequestsService {
         return toPublicRequest(updated);
       });
     } catch (err) {
-      if (isPgError(err, PG_CHECK_VIOLATION)) {
-        throw new ConflictException(
-          `listing ${existing.listingId} no longer has enough remaining quantity for this request`,
-        );
-      }
       if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
         throw new NotFoundException(`listing ${existing.listingId} not found`);
       }
@@ -222,10 +228,8 @@ export class RequestsService {
     }
   }
 
-  // Either party on an accepted request may (re)generate a pickup code -
-  // calling this again immediately invalidates whatever code existed before
-  // (new hash overwrites the old one, attempts reset to 0), so a stale QR
-  // that failed to scan is never a dead end.
+  // Either party may (re)generate the pickup code; regenerating invalidates
+  // the previous one.
   async generatePickupCode(
     id: string,
     user: AuthenticatedUser,
@@ -234,16 +238,16 @@ export class RequestsService {
     const listing = await this.getListingOrThrow(existing.listingId);
     assertIsParty(existing, listing, user);
 
-    if (existing.status !== 'accepted') {
+    if (existing.status !== 'active') {
       throw new BadRequestException(
-        `cannot generate a pickup code for a request that is ${existing.status}`,
+        `cannot generate a pickup code for a claim that is ${existing.status}`,
       );
     }
 
     const code = createPickupCode();
     const expiresAt = new Date(Date.now() + PICKUP_CODE_TTL_MINUTES * 60_000);
 
-    const updated = await this.requestsRepository.updateStatus(id, 'accepted', {
+    const updated = await this.requestsRepository.updateStatus(id, 'active', {
       pickupCodeHash: hashPickupCode(code),
       codeExpiresAt: expiresAt,
       codeGeneratedBy: user.userId,
@@ -259,12 +263,9 @@ export class RequestsService {
     return { code, expiresAt };
   }
 
-  // Redeems a code generated by generatePickupCode. A wrong guess and an
-  // expired code produce the exact same error - distinguishing them would
-  // tell a guesser their timing is the only thing standing between them and
-  // a valid-looking code. Five wrong guesses (right or wrong reason) force
-  // the code to be regenerated, bounding how much an online guesser can try
-  // against the 6-digit space per code.
+  // Redeems a pickup code. A wrong guess and an expired code give the same
+  // error so timing leaks nothing. MAX_PICKUP_CODE_ATTEMPTS wrong guesses
+  // force a new code, bounding online guessing of the 6-digit space.
   async verifyPickupCode(
     id: string,
     dto: VerifyPickupCodeDto,
@@ -274,19 +275,18 @@ export class RequestsService {
     const listing = await this.getListingOrThrow(existing.listingId);
     assertIsParty(existing, listing, user);
 
-    if (existing.status !== 'accepted') {
+    if (existing.status !== 'active') {
       throw new BadRequestException(
-        `cannot verify a pickup code for a request that is ${existing.status}`,
+        `cannot verify a pickup code for a claim that is ${existing.status}`,
       );
     }
     if (!existing.pickupCodeHash) {
       throw new BadRequestException(
-        'no pickup code has been generated for this request',
+        'no pickup code has been generated for this claim',
       );
     }
-    // Requires the verifier to belong to the *other* org from whoever
-    // generated the code - otherwise one org could generate and verify by
-    // itself, which defeats the point of a shared handshake.
+    // The verifier must be from the other org - otherwise one org could
+    // generate and verify by itself.
     if (user.role !== 'admin' && existing.codeGeneratedBy) {
       const generatorOrgId = await resolveOrgIdByUserId(
         this.db,
@@ -308,10 +308,10 @@ export class RequestsService {
       const attempts =
         await this.requestsRepository.incrementPickupCodeAttempts(id, now);
       if (attempts === undefined) {
-        throw new ConflictException(`request ${id} is no longer accepted`);
+        throw new ConflictException(`request ${id} is no longer active`);
       }
       if (attempts >= MAX_PICKUP_CODE_ATTEMPTS) {
-        await this.requestsRepository.updateStatus(id, 'accepted', {
+        await this.requestsRepository.updateStatus(id, 'active', {
           pickupCodeHash: null,
           codeExpiresAt: null,
           codeGeneratedBy: null,
@@ -337,7 +337,7 @@ export class RequestsService {
     return this.db.transaction(async (tx) => {
       const updated = await this.requestsRepository.updateStatus(
         id,
-        'accepted',
+        'active',
         {
           status: 'completed',
           verifiedBy: user.userId,
@@ -354,8 +354,6 @@ export class RequestsService {
         );
       }
 
-      // Was this the last accepted request on the listing still awaiting
-      // pickup? If so, the listing itself is now fully collected.
       const collected =
         await this.requestsRepository.markListingCollectedIfDone(
           existing.listingId,
@@ -364,7 +362,7 @@ export class RequestsService {
       if (collected) {
         this.logger.log(
           { listingId: existing.listingId },
-          'listing fully collected - every accepted request has been verified',
+          'listing collected - claim verified at pickup',
         );
       }
 

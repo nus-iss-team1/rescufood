@@ -41,7 +41,7 @@ export class CreateListingDto {
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
-  remainingQuantity?: number;
+  quantity?: number;
 
   @ApiPropertyOptional({ example: 'kg' })
   @IsOptional()

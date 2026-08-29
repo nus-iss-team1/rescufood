@@ -64,7 +64,7 @@ export class ListingsService {
       createdBy: user.userId,
       category: dto.category,
       description: dto.description,
-      remainingQuantity: dto.remainingQuantity?.toString(),
+      quantity: dto.quantity?.toString(),
       unit: dto.unit,
       allergens: dto.allergens,
       handlingInstructions: dto.handlingInstructions,
@@ -168,7 +168,7 @@ export class ListingsService {
         pickupLocation: dto.pickupLocation ?? existing.pickupLocation,
         unit: dto.unit ?? existing.unit,
         allergens: dto.allergens ?? existing.allergens,
-        remainingQuantity: dto.remainingQuantity ?? existing.remainingQuantity,
+        quantity: dto.quantity ?? existing.quantity,
         pickupWindowStart: start,
         pickupWindowEnd: end,
         useBy: dto.useBy ?? existing.useBy,
@@ -229,8 +229,8 @@ export class ListingsService {
               ...(dto.description !== undefined && {
                 description: dto.description,
               }),
-              ...(dto.remainingQuantity !== undefined && {
-                remainingQuantity: dto.remainingQuantity.toString(),
+              ...(dto.quantity !== undefined && {
+                quantity: dto.quantity.toString(),
               }),
               ...(dto.unit !== undefined && { unit: dto.unit }),
               ...(dto.allergens !== undefined && {
@@ -263,20 +263,6 @@ export class ListingsService {
             throw new ConflictException(
               `listing ${id} was modified since version ${dto.version} was read`,
             );
-          }
-
-          // The donor isn't giving this out anymore - every request still
-          // in play on it (pending, or accepted and awaiting pickup) is
-          // moot now.
-          if (dto.status === 'cancelled') {
-            const supersededCount =
-              await this.listingsRepository.supersedeRequestsForListing(id, tx);
-            if (supersededCount > 0) {
-              this.logger.log(
-                { listingId: id, supersededCount },
-                'superseded requests on a cancelled listing',
-              );
-            }
           }
 
           return { updated, deletedImages };

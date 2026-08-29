@@ -3,11 +3,8 @@ import { assertValidRequestStatusTransition } from './request-status.util';
 
 describe('assertValidRequestStatusTransition', () => {
   it.each([
-    ['pending', 'accepted'],
-    ['pending', 'declined'],
-    ['pending', 'cancelled'],
-    ['accepted', 'cancelled'],
-    ['accepted', 'no_show'],
+    ['active', 'cancelled'],
+    ['active', 'no_show'],
   ] as const)('allows %s -> %s', (current, next) => {
     expect(() =>
       assertValidRequestStatusTransition(current, next),
@@ -15,17 +12,10 @@ describe('assertValidRequestStatusTransition', () => {
   });
 
   it.each([
-    ['pending', 'pending'],
-    ['pending', 'completed'],
-    ['pending', 'expired'],
-    ['accepted', 'accepted'],
-    ['accepted', 'accepted'],
-    ['accepted', 'declined'],
-    ['accepted', 'completed'],
-    ['pending', 'no_show'],
-    ['declined', 'accepted'],
-    ['declined', 'cancelled'],
-    ['cancelled', 'pending'],
+    ['active', 'active'],
+    ['active', 'completed'],
+    ['active', 'expired'],
+    ['cancelled', 'no_show'],
     ['completed', 'cancelled'],
     ['no_show', 'cancelled'],
     ['expired', 'cancelled'],

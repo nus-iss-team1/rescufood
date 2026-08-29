@@ -1,10 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../common/types/express';
-import {
-  assertIsParty,
-  assertCanRespond,
-  isRequestVisible,
-} from './request-access.util';
+import { assertIsParty, isRequestVisible } from './request-access.util';
 
 const donorUser: AuthenticatedUser = {
   userId: 'user-donor',
@@ -29,28 +25,6 @@ const admin: AuthenticatedUser = {
 
 const listing = { donorOrgId: 'org-donor' };
 const request = { rescueOrgId: 'org-rescue' };
-
-describe('assertCanRespond', () => {
-  it('allows the donor org', () => {
-    expect(() => assertCanRespond(listing, donorUser)).not.toThrow();
-  });
-
-  it('allows an admin regardless of org', () => {
-    expect(() => assertCanRespond(listing, admin)).not.toThrow();
-  });
-
-  it('rejects the rescue org', () => {
-    expect(() => assertCanRespond(listing, rescueUser)).toThrow(
-      ForbiddenException,
-    );
-  });
-
-  it('rejects an outsider', () => {
-    expect(() => assertCanRespond(listing, outsider)).toThrow(
-      ForbiddenException,
-    );
-  });
-});
 
 describe('assertIsParty', () => {
   it('allows the rescue org that filed the request', () => {

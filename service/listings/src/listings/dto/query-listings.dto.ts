@@ -16,7 +16,7 @@ export const listingSortFields = [
   'useBy',
   'pickupWindowStart',
   'pickupWindowEnd',
-  'remainingQuantity',
+  'quantity',
   'createdAt',
 ] as const;
 export type ListingSortField = (typeof listingSortFields)[number];

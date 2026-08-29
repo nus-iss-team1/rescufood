@@ -31,15 +31,6 @@ export class RequestResponseDto {
   @ApiProperty()
   requestedAt!: Date;
 
-  @ApiProperty({ type: String, nullable: true, format: 'uuid' })
-  respondedBy!: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  respondedAt!: Date | null;
-
-  @ApiProperty()
-  declineReason!: string;
-
   @ApiProperty({ type: String, nullable: true })
   cancelledAt!: Date | null;
 

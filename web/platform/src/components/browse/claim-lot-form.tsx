@@ -46,8 +46,8 @@ export function ClaimLotForm({ listing }: ClaimLotFormProps) {
 
   const isAvailable = listing.status === "available";
   const lotQuantity =
-    listing.remainingQuantity != null && listing.unit
-      ? quantity(listing.remainingQuantity, listing.unit)
+    listing.quantity != null && listing.unit
+      ? quantity(listing.quantity, listing.unit)
       : null;
 
   // Status gating messages for unavailable lots
@@ -156,11 +156,6 @@ export function ClaimLotForm({ listing }: ClaimLotFormProps) {
 
         <form action={action} className="flex flex-col gap-4">
           <input type="hidden" name="listingId" value={listing.id} />
-          <input
-            type="hidden"
-            name="requestedQuantity"
-            value={listing.remainingQuantity ?? "1"}
-          />
           <input
             type="hidden"
             name="idempotencyKey"

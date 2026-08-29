@@ -56,8 +56,8 @@ export function ListingDetailView({ listing }: ListingDetailViewProps) {
     : Layers;
 
   const lotQuantity =
-    listing.remainingQuantity != null && listing.unit
-      ? quantity(listing.remainingQuantity, listing.unit)
+    listing.quantity != null && listing.unit
+      ? quantity(listing.quantity, listing.unit)
       : "Quantity not specified";
 
   const hasAllergens = listing.allergens && listing.allergens.length > 0;

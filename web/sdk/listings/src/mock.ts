@@ -32,10 +32,7 @@ const LISTING_TRANSITIONS: Record<ListingStatus, readonly ListingStatus[]> = {
 };
 
 const REQUEST_TRANSITIONS: Record<RequestStatus, readonly RequestStatus[]> = {
-  pending: ["accepted", "declined", "cancelled"],
-  accepted: ["cancelled", "no_show"],
-  declined: [],
-  superseded: [],
+  active: ["cancelled", "no_show"],
   cancelled: [],
   completed: [],
   no_show: [],
@@ -116,9 +113,9 @@ export class MockListingsClient implements ListingsApi {
       // Listing's are all nullable, so an absent field becomes null here.
       category: listing.category ?? null,
       description: listing.description ?? null,
-      remainingQuantity:
-        listing.remainingQuantity != null
-          ? listing.remainingQuantity.toFixed(2)
+      quantity:
+        listing.quantity != null
+          ? listing.quantity.toFixed(2)
           : null,
       unit: listing.unit ?? null,
       allergens: listing.allergens ?? [],
@@ -158,8 +155,8 @@ export class MockListingsClient implements ListingsApi {
     if (update.category !== undefined) listing.category = update.category;
     if (update.description !== undefined)
       listing.description = update.description;
-    if (update.remainingQuantity !== undefined)
-      listing.remainingQuantity = update.remainingQuantity.toFixed(2);
+    if (update.quantity !== undefined)
+      listing.quantity = update.quantity.toFixed(2);
     if (update.unit !== undefined) listing.unit = update.unit;
     if (update.allergens !== undefined) listing.allergens = update.allergens;
     if (update.handlingInstructions !== undefined)
@@ -212,14 +209,14 @@ export class MockListingsClient implements ListingsApi {
 
     const listing = this.listingOr404(request.listingId);
     if (listing.status !== "available") {
-      throw new ApiError(
-        400,
-        `listing ${listing.id} is not available for requests`
-      );
+      throw new ApiError(409, `listing ${listing.id} has already been claimed`);
     }
-    if (request.requestedQuantity > Number(listing.remainingQuantity)) {
-      throw new ApiError(400, "requested quantity exceeds what is left");
-    }
+
+    // First-come-first-served: the claim takes the whole lot and reserves
+    // the listing.
+    listing.status = "reserved";
+    listing.version += 1;
+    listing.updatedAt = now();
 
     const stamp = now();
     const created: ListingRequest = {
@@ -228,12 +225,9 @@ export class MockListingsClient implements ListingsApi {
       rescueOrgId: sampleRequests[0].rescueOrgId,
       claimedBy: sampleRequests[0].claimedBy,
       idempotencyKey: request.idempotencyKey,
-      status: "pending",
-      requestedQuantity: request.requestedQuantity.toFixed(2),
+      status: "active",
+      requestedQuantity: listing.quantity ?? "0.00",
       requestedAt: stamp,
-      respondedBy: null,
-      respondedAt: null,
-      declineReason: "",
       cancelledAt: null,
       cancellationReason: "",
       codeExpiresAt: null,
@@ -261,20 +255,9 @@ export class MockListingsClient implements ListingsApi {
       );
     }
 
+    const wasActive = request.status === "active";
     request.status = decision.status;
     request.updatedAt = now();
-    if (decision.status === "declined") {
-      request.declineReason = decision.declineReason ?? "";
-      request.respondedAt = now();
-    }
-    if (decision.status === "accepted") {
-      request.respondedAt = now();
-      const listing = this.listingOr404(request.listingId);
-      listing.remainingQuantity = Math.max(
-        0,
-        Number(listing.remainingQuantity) - Number(request.requestedQuantity)
-      ).toFixed(2);
-    }
     if (decision.status === "cancelled") {
       request.cancelledAt = now();
       request.cancellationReason = decision.cancellationReason ?? "";
@@ -282,13 +265,22 @@ export class MockListingsClient implements ListingsApi {
     if (decision.status === "no_show") {
       request.noShowReason = decision.noShowReason ?? "";
     }
+    // Both outcomes reopen the listing for another org to claim.
+    if (wasActive) {
+      const listing = this.listings.find((l) => l.id === request.listingId);
+      if (listing && listing.status === "reserved") {
+        listing.status = "available";
+        listing.version += 1;
+        listing.updatedAt = now();
+      }
+    }
     return request;
   }
 
   async generatePickupCode(id: string): Promise<PickupCode> {
     const request = this.requestOr404(id);
-    if (request.status !== "accepted") {
-      throw new ApiError(400, "request is not accepted");
+    if (request.status !== "active") {
+      throw new ApiError(400, "claim is not active");
     }
     const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
     request.codeExpiresAt = expiresAt;
@@ -301,8 +293,8 @@ export class MockListingsClient implements ListingsApi {
     verify: VerifyPickup
   ): Promise<ListingRequest> {
     const request = this.requestOr404(id);
-    if (request.status !== "accepted") {
-      throw new ApiError(409, "request is no longer accepted");
+    if (request.status !== "active") {
+      throw new ApiError(409, "claim is no longer active");
     }
     if (verify.code !== "123456") {
       throw new ApiError(400, "invalid or expired code");
@@ -313,6 +305,13 @@ export class MockListingsClient implements ListingsApi {
     ).toFixed(2);
     request.collectedAt = now();
     request.updatedAt = now();
+
+    const listing = this.listings.find((l) => l.id === request.listingId);
+    if (listing && listing.status === "reserved") {
+      listing.status = "collected";
+      listing.version += 1;
+      listing.updatedAt = now();
+    }
     return request;
   }
 }

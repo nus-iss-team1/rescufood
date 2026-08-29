@@ -1,26 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../common/types/express';
 
-// Only the donor org that owns the listing (or an admin) decides a pending
-// request - the rescue org that filed it has no say in accept/decline.
-export function assertCanRespond(
-  listing: { donorOrgId: string },
-  user: AuthenticatedUser,
-): void {
-  if (user.role === 'admin') return;
-  if (listing.donorOrgId !== user.orgId) {
-    throw new ForbiddenException(
-      'only the donor organisation can respond to this request',
-    );
-  }
-}
-
-// Symmetric access: either the rescue org that filed the request or the
-// donor org that owns the listing may act - cancellation, no-show
-// reporting, and pickup-code generation/verification all use this. Neither
-// side unilaterally decides the *outcome* of a pending request (that's
-// assertCanRespond's job), but either can back out, report a failed
-// handoff, or take part in one.
+// Either party to the claim (rescue org or donor org) may act - used by
+// cancel, no-show, and the pickup-code flow.
 export function assertIsParty(
   request: { rescueOrgId: string },
   listing: { donorOrgId: string },
@@ -32,8 +14,8 @@ export function assertIsParty(
   }
 }
 
-// Requests aren't publicly browsable like listings - only the two orgs
-// involved (and admins) can see one exists at all.
+// Claims aren't publicly browsable - only the two orgs involved (and
+// admins) can see one exists.
 export function isRequestVisible(
   request: { rescueOrgId: string },
   listing: { donorOrgId: string },

@@ -14,7 +14,7 @@ function validCandidate(
     pickupLocation: '123 Main St',
     unit: 'kg',
     allergens: ['gluten'],
-    remainingQuantity: 10,
+    quantity: 10,
     pickupWindowStart: new Date('2026-08-18T09:00:00Z'),
     pickupWindowEnd: new Date('2026-08-18T17:00:00Z'),
     useBy: new Date('2026-08-19T00:00:00Z'),
@@ -66,7 +66,7 @@ describe('validateForPublication', () => {
       'description',
       'pickupLocation',
       'unit',
-      'remainingQuantity',
+      'quantity',
       'pickupWindowStart',
       'pickupWindowEnd',
       'useBy',
@@ -88,7 +88,7 @@ describe('validateForPublication', () => {
       'description',
       'pickupLocation',
       'unit',
-      'remainingQuantity',
+      'quantity',
       'pickupWindowStart',
       'pickupWindowEnd',
       'useBy',
@@ -107,13 +107,13 @@ describe('validateForPublication', () => {
 
     it('reports a missing quantity as REQUIRED, not QUANTITY_INVALID (the NaN trap)', () => {
       const errors = validateForPublication(
-        validCandidate({ remainingQuantity: undefined }),
+        validCandidate({ quantity: undefined }),
         NOW,
       );
       expect(errors).toContainEqual({
-        field: 'remainingQuantity',
+        field: 'quantity',
         code: 'REQUIRED',
-        message: 'remainingQuantity is required',
+        message: 'quantity is required',
       });
       expect(errors.some((e) => e.code === 'QUANTITY_INVALID')).toBe(false);
     });
@@ -152,12 +152,12 @@ describe('validateForPublication', () => {
   describe('AC2 - quantity', () => {
     it('rejects a zero quantity (boundary)', () => {
       const errors = validateForPublication(
-        validCandidate({ remainingQuantity: 0 }),
+        validCandidate({ quantity: 0 }),
         NOW,
       );
       expect(errors).toContainEqual(
         expect.objectContaining({
-          field: 'remainingQuantity',
+          field: 'quantity',
           code: 'QUANTITY_INVALID',
         }),
       );
@@ -165,17 +165,17 @@ describe('validateForPublication', () => {
 
     it('rejects a negative quantity', () => {
       const errors = validateForPublication(
-        validCandidate({ remainingQuantity: -1 }),
+        validCandidate({ quantity: -1 }),
         NOW,
       );
       expect(errors).toContainEqual(
-        expect.objectContaining({ field: 'remainingQuantity' }),
+        expect.objectContaining({ field: 'quantity' }),
       );
     });
 
     it('accepts the smallest positive quantity (boundary)', () => {
       const errors = validateForPublication(
-        validCandidate({ remainingQuantity: 0.01 }),
+        validCandidate({ quantity: 0.01 }),
         NOW,
       );
       expect(errors).toEqual([]);
@@ -183,7 +183,7 @@ describe('validateForPublication', () => {
 
     it('handles a numeric-string quantity, as stored on the DB row', () => {
       const errors = validateForPublication(
-        validCandidate({ remainingQuantity: '10.00' }),
+        validCandidate({ quantity: '10.00' }),
         NOW,
       );
       expect(errors).toEqual([]);
@@ -316,7 +316,7 @@ describe('validateForPublication', () => {
     it('reports every failing rule in a single call', () => {
       const errors = validateForPublication(
         validCandidate({
-          remainingQuantity: 0,
+          quantity: 0,
           pickupWindowStart: new Date('2026-08-16T09:00:00Z'),
           pickupWindowEnd: new Date('2026-08-16T17:00:00Z'),
           allergens: [],

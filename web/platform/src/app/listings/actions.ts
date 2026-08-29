@@ -19,7 +19,7 @@ import {
 
 export type ListingFormValues = {
   category?: string;
-  remainingQuantity?: string;
+  quantity?: string;
   unit?: string;
   description?: string;
   allergens?: string;
@@ -54,7 +54,7 @@ function isoOrNull(value: string): string | null {
 function extractValues(form: FormData): ListingFormValues {
   return {
     category: text(form, "category"),
-    remainingQuantity: text(form, "remainingQuantity"),
+    quantity: text(form, "quantity"),
     unit: text(form, "unit"),
     description: text(form, "description"),
     allergens: text(form, "allergens"),
@@ -73,7 +73,7 @@ function readListing(
 ): NewListing | string {
   const categoryRaw = text(form, "category");
   const descriptionRaw = text(form, "description");
-  const quantityRaw = Number(text(form, "remainingQuantity"));
+  const quantityRaw = Number(text(form, "quantity"));
   const unitRaw = text(form, "unit");
   const pickupLocationRaw = text(form, "pickupLocation");
   const useByRaw = isoOrNull(text(form, "useBy"));
@@ -119,7 +119,7 @@ function readListing(
     return {
       category: categoryRaw as NewListing["category"],
       description: descriptionRaw,
-      remainingQuantity: quantityRaw,
+      quantity: quantityRaw,
       unit: unitRaw,
       allergens,
       handlingInstructions,
@@ -140,7 +140,7 @@ function readListing(
       ? (categoryRaw as ListingCategory)
       : undefined,
     description: descriptionRaw || undefined,
-    remainingQuantity:
+    quantity:
       Number.isFinite(quantityRaw) && quantityRaw > 0 ? quantityRaw : undefined,
     unit: unitRaw || undefined,
     allergens,
@@ -298,7 +298,7 @@ export async function updateListingAction(
     version,
     category: listingData.category,
     description: listingData.description,
-    remainingQuantity: listingData.remainingQuantity,
+    quantity: listingData.quantity,
     unit: listingData.unit,
     allergens: listingData.allergens,
     handlingInstructions: listingData.handlingInstructions,

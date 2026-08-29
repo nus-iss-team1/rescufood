@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { requireSession } from "@/lib/session";
 import { getMe } from "@/lib/profile";
-import { getRequest, getListing, listRequests, ListingsApiError } from "@/lib/listings";
+import { getRequest, getListing, ListingsApiError } from "@/lib/listings";
 import { PageShell } from "@/components/page-shell";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardDescription } from "@rescufood/ui/components/card";
@@ -114,19 +114,6 @@ export default async function RequestDetailsPage({
   }
 
   const isDonor = listing.donorOrgId === me.org.id;
-  let competingClaimsCount = 0;
-
-  if (isDonor && request.status === "pending") {
-    try {
-      const page = await listRequests(idToken, {
-        listingId: listing.id,
-        status: "pending",
-      });
-      competingClaimsCount = Math.max(0, page.items.length - 1);
-    } catch {
-      // Just ignore failure to fetch competing claims
-    }
-  }
 
   return (
     <PageShell>
@@ -143,7 +130,6 @@ export default async function RequestDetailsPage({
           request={request}
           listing={listing}
           isDonor={isDonor}
-          competingClaimsCount={competingClaimsCount}
         />
       </div>
     </PageShell>

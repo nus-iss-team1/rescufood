@@ -25,7 +25,7 @@ export interface PublicationCandidate {
   pickupLocation: string | null | undefined;
   unit: string | null | undefined;
   allergens: string[];
-  remainingQuantity: number | string | null | undefined;
+  quantity: number | string | null | undefined;
   pickupWindowStart: Date | string | null | undefined;
   pickupWindowEnd: Date | string | null | undefined;
   useBy: Date | string | null | undefined;
@@ -69,17 +69,17 @@ export function validateForPublication(
     });
   }
 
-  if (listing.remainingQuantity == null) {
+  if (listing.quantity == null) {
     errors.push({
-      field: 'remainingQuantity',
+      field: 'quantity',
       code: 'REQUIRED',
-      message: 'remainingQuantity is required',
+      message: 'quantity is required',
     });
-  } else if (Number(listing.remainingQuantity) <= 0) {
+  } else if (Number(listing.quantity) <= 0) {
     errors.push({
-      field: 'remainingQuantity',
+      field: 'quantity',
       code: 'QUANTITY_INVALID',
-      message: 'remainingQuantity must be greater than zero',
+      message: 'quantity must be greater than zero',
     });
   }
 
