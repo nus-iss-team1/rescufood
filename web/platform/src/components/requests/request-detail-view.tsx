@@ -164,8 +164,8 @@ export function RequestDetailView({
                   <p className="font-medium">This lot is reserved for your organisation.</p>
                   <p className="mt-1">
                     {isDonor
-                      ? "A rescue partner has claimed the full lot. They will arrive to collect it within the pickup window."
-                      : "You have claimed the full lot. Please collect it within the pickup window."}
+                      ? "A rescue partner has claimed this lot. They will arrive to collect it within the pickup window."
+                      : "You have claimed this lot. Please collect it within the pickup window."}
                   </p>
                 </div>
               )}
