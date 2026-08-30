@@ -20,6 +20,7 @@ function makeRepository() {
     delete: jest.fn(),
     cancelActiveClaim: jest.fn().mockResolvedValue(undefined),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
+    findOrgContacts: jest.fn().mockResolvedValue([]),
     findCreatorContext: jest.fn().mockResolvedValue({
       userStatus: 'active',
       orgType: 'donor',
@@ -90,10 +91,20 @@ function makeAudit() {
   return { record: jest.fn().mockResolvedValue(undefined) };
 }
 
+function makeNotifications() {
+  return {
+    claimCreated: jest.fn().mockResolvedValue(undefined),
+    claimEnded: jest.fn().mockResolvedValue(undefined),
+    pickupCompleted: jest.fn().mockResolvedValue(undefined),
+    listingExpired: jest.fn().mockResolvedValue(undefined),
+  };
+}
+
 function makeService(repository: ReturnType<typeof makeRepository>) {
   const imagesRepository = makeImagesRepository();
   const uploadService = makeUploadService();
   const audit = makeAudit();
+  const notifications = makeNotifications();
   const s3 = makeS3();
   const logger = makeLogger();
   const db = makeDb();
@@ -102,11 +113,21 @@ function makeService(repository: ReturnType<typeof makeRepository>) {
     imagesRepository as unknown as ListingImagesRepository,
     uploadService as unknown as ListingImageUploadService,
     audit as never,
+    notifications as never,
     s3 as never,
     logger as never,
     db as never,
   );
-  return { service, imagesRepository, uploadService, audit, s3, logger, db };
+  return {
+    service,
+    imagesRepository,
+    uploadService,
+    audit,
+    notifications,
+    s3,
+    logger,
+    db,
+  };
 }
 
 const owner: AuthenticatedUser = {
@@ -1195,8 +1216,14 @@ describe('ListingsService', () => {
         status: 'cancelled',
         version: 2,
       });
-      repository.cancelActiveClaim.mockResolvedValue('claim-1');
-      const { service, audit } = makeService(repository);
+      repository.cancelActiveClaim.mockResolvedValue({
+        id: 'claim-1',
+        rescueOrgId: 'org-rescue',
+      });
+      repository.findOrgContacts.mockResolvedValue([
+        { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
+      ]);
+      const { service, audit, notifications } = makeService(repository);
 
       const result = await service.update(
         'listing-1',
@@ -1226,6 +1253,10 @@ describe('ListingsService', () => {
           metadata: { previousStatus: 'reserved', withdrawal: true },
         }),
         expect.anything(),
+      );
+      expect(notifications.claimEnded).toHaveBeenCalledWith(
+        'r@x.com',
+        expect.objectContaining({ endedBy: 'donor', reason: 'Van broke down' }),
       );
     });
 

@@ -50,6 +50,79 @@ describe('renderEmail', () => {
     );
   });
 
+  it('renders claim_created with the partner name and pickup details', () => {
+    const email = renderEmail('claim_created', {
+      listingDescription: 'Crate of bananas',
+      rescueOrgName: 'City Harvest',
+      pickupLocation: '88 Market St',
+      pickupWindow: 'Tue 3-7pm',
+    });
+    expect(email.subject).toBe('Your listing has been claimed');
+    expect(email.body).toContain('City Harvest has claimed "Crate of bananas"');
+    expect(email.body).toContain('Pickup location: 88 Market St');
+    expect(email.body).toContain('Pickup window: Tue 3-7pm');
+  });
+
+  it('renders claim_created without a details block when pickup fields are missing', () => {
+    const email = renderEmail('claim_created', {
+      listingDescription: 'Bread',
+      rescueOrgName: 'City Harvest',
+    });
+    expect(email.body).not.toContain('Pickup location');
+  });
+
+  it('renders claim_cancelled differently per endedBy', () => {
+    expect(
+      renderEmail('claim_cancelled', {
+        listingDescription: 'Milk',
+        endedBy: 'donor',
+        reason: 'fridge broke',
+      }).body,
+    ).toContain('The donor has withdrawn "Milk"');
+    expect(
+      renderEmail('claim_cancelled', {
+        listingDescription: 'Milk',
+        endedBy: 'no_show',
+      }).body,
+    ).toContain('closed as a no-show');
+    expect(
+      renderEmail('claim_cancelled', {
+        listingDescription: 'Milk',
+        endedBy: 'rescue_partner',
+      }).body,
+    ).toContain('available for other partners again');
+  });
+
+  it('includes the reason in claim_cancelled when given', () => {
+    const email = renderEmail('claim_cancelled', {
+      listingDescription: 'Milk',
+      endedBy: 'donor',
+      reason: 'fridge broke',
+    });
+    expect(email.body).toContain('Reason: fridge broke');
+  });
+
+  it('renders pickup_completed with the collected quantity', () => {
+    const email = renderEmail('pickup_completed', {
+      listingDescription: 'Rice',
+      collectedQuantity: '25 kg',
+    });
+    expect(email.subject).toBe('Pickup confirmed');
+    expect(email.body).toContain('"Rice" has been confirmed (25 kg collected)');
+  });
+
+  it('renders listing_expired, noting the closed claim only when it was claimed', () => {
+    expect(
+      renderEmail('listing_expired', {
+        listingDescription: 'Fish',
+        wasClaimed: true,
+      }).body,
+    ).toContain('The active claim on it was closed.');
+    expect(
+      renderEmail('listing_expired', { listingDescription: 'Fish' }).body,
+    ).not.toContain('claim on it was closed');
+  });
+
   it('throws UnsupportedNotificationTypeError for a type with no template', () => {
     expect(() => renderEmail('pickup_reminder', {})).toThrow(
       UnsupportedNotificationTypeError,

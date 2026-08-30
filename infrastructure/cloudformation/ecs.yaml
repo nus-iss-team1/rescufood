@@ -308,20 +308,15 @@ Resources:
             - ContainerPort: !Ref ContainerPort
               Protocol: tcp
           Environment:
-            # Canonical base URL Auth.js uses for redirects and callbacks.
-            # Uses the API Gateway URL when available (browser-facing),
-            # falls back to internal ALB DNS on first deploy.
+            # Base URL Auth.js uses for redirects; API Gateway URL if set, else ALB DNS.
             - Name: AUTH_URL
               Value: !If
                 - HasApiGateway
                 - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
                 - !Sub http://${LoadBalancer.DNSName}
-            # Server-side calls to the profile service stay on the
-            # internal ALB — no need to route through API Gateway.
+            # Server-side calls to the other services stay on the internal ALB.
             - Name: PROFILE_API_URL
               Value: !Sub http://${LoadBalancer.DNSName}
-            # Server-side calls to the listings service stay on the
-            # internal ALB — no need to route through API Gateway.
             - Name: LISTINGS_API_URL
               Value: !Sub http://${LoadBalancer.DNSName}
           RepositoryCredentials: !If
@@ -428,8 +423,7 @@ Resources:
       LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/db-bootstrap
       RetentionInDays: !Ref LogRetentionDays
 
-  # Run once per environment (and again after a password rotation):
-  #   aws ecs run-task --cluster <cluster> --task-definition <family> ...
+  # Run once per environment (and after a password rotation) via aws ecs run-task.
   DbBootstrapTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -445,8 +439,7 @@ Resources:
           Essential: true
           EntryPoint: [/bin/sh, -c]
           Command:
-            # The generated password excludes punctuation, so it is safe
-            # to interpolate into these statements.
+            # Password has no punctuation, so interpolating it here is safe.
             - |
               set -eu
               admin="postgres://$MASTER_USER:$MASTER_PASSWORD@$DB_HOST:$DB_PORT/$MASTER_DB?sslmode=require"
@@ -461,8 +454,7 @@ Resources:
                 echo "created role $DB_ROLE"
               fi
 
-              # The rds master is not a superuser: it must belong to the
-              # role to create a database owned by it.
+              # The rds master isn't a superuser - it must be in the role to own the db.
               run "GRANT \"$DB_ROLE\" TO \"$MASTER_USER\""
 
               if exists "SELECT 1 FROM pg_database WHERE datname = '$DB_ROLE'"; then
@@ -596,8 +588,7 @@ Resources:
                   - ssmmessages:OpenControlChannel
                   - ssmmessages:OpenDataChannel
                 Resource: "*"
-        # Publishes org-approval notifications; the notification service
-        # (see below) consumes them and sends the actual email.
+        # Publishes org-approval notifications for service/notifications.
         - PolicyName: notification-queue
           PolicyDocument:
             Version: "2012-10-17"
@@ -637,8 +628,7 @@ Resources:
               Value: !Ref ProfilePort
             - Name: AUTH_COGNITO_ISSUER
               Value: !Ref AuthCognitoIssuer
-            # Browser origin allowed to call the api: uses the API
-            # Gateway URL when available, falls back to ALB DNS.
+            # Browser origins allowed to call the api: API Gateway URL if set, else ALB DNS.
             - Name: CORS_ALLOWED_ORIGINS
               Value: !If
                 - HasApiGateway
@@ -715,11 +705,8 @@ Resources:
           Value: !Ref ProfileHttpRule
 
   # ------------------------------------------------- Listings service
-  # Shares the profile service's database (ProfileDbSecret, ProfileDbName)
-  # rather than getting its own role/secret: listings/requests tables live
-  # in the same "profile" database and reference organisations/users via
-  # plain FK columns (see service/listings/src/db/external.schema.ts). One
-  # role, one password, one secret.
+  # Shares profile's database, role and secret: listings/requests tables live
+  # in the "profile" db and FK to organisations/users (see external.schema.ts).
   ListingsTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Condition: HasListings
@@ -750,10 +737,8 @@ Resources:
       Priority: 11
       Conditions:
         - Field: path-pattern
-          # Both the bare and /* forms are needed: /api/listings and
-          # /api/requests themselves are routes (POST/GET on the
-          # collection), not just prefixes - path-pattern /api/listings/*
-          # does not match a path with nothing after the slash.
+          # /api/listings and /api/requests are themselves routes, not just
+          # prefixes, so both the bare path and /* are needed.
           Values:
             [
               /api/listings,
@@ -821,12 +806,8 @@ Resources:
                   - ssmmessages:OpenControlChannel
                   - ssmmessages:OpenDataChannel
                 Resource: "*"
-        # The actual point of this stage: PutObject/GetObject for uploads
-        # and presigned GET URLs, DeleteObject for the cleanup-on-failure
-        # and delete paths in ListingImageUploadService. Object-level
-        # actions need the /* suffix - the bare bucket ARN only covers
-        # bucket-level actions like ListBucket, which this service never
-        # calls (see service/listings/src/storage/s3.service.ts).
+        # PutObject/GetObject for uploads and presigned URLs, DeleteObject for
+        # the cleanup/delete paths. Object actions need /*, not the bare ARN.
         - PolicyName: listing-images-s3
           PolicyDocument:
             Version: "2012-10-17"
@@ -840,6 +821,15 @@ Resources:
                   - ${BucketArn}/*
                   - BucketArn:
                       Fn::ImportValue: !Sub ${DataStackName}-BucketArn
+        # Publishes claim/pickup/expiry notifications for service/notifications.
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
 
   ListingsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -859,21 +849,9 @@ Resources:
         - Name: listings
           Image: !Ref ListingsImage
           Essential: true
-          # The app reads a single DATABASE_URL (see src/db/db.module.ts),
-          # unlike profile's Go code which composes its own DSN from
-          # discrete DB_* vars. Composed here instead of passed as one
-          # secret so DB_PASSWORD still flows through the standard ECS
-          # Secrets mechanism - never resolved into the task definition
-          # itself, only into the running container's environment.
-          #
-          # uselibpqcompat restores the classic libpq meaning of
-          # sslmode=require (encrypt, don't verify the chain) - newer
-          # pg-connection-string otherwise treats require as an alias for
-          # verify-full, which rejects RDS's cert chain since nothing here
-          # bundles AWS's CA bundle. Without it every DB query fails with
-          # "self-signed certificate in certificate chain" - the health
-          # check doesn't touch the DB, so this can look deployed and
-          # healthy while every real request 500s.
+          # DATABASE_URL is composed from the DB_* secrets to keep DB_PASSWORD in
+          # ECS secrets. uselibpqcompat makes sslmode=require encrypt-not-verify;
+          # without it every query 500s (RDS chain untrusted) while health stays up.
           EntryPoint: ["/bin/sh", "-c"]
           Command:
             - >-
@@ -892,8 +870,7 @@ Resources:
               Value: !Ref ListingsPort
             - Name: AUTH_COGNITO_ISSUER
               Value: !Ref AuthCognitoIssuer
-            # Browser origin allowed to call the api: uses the API
-            # Gateway URL when available, falls back to ALB DNS.
+            # Browser origins allowed to call the api: API Gateway URL if set, else ALB DNS.
             - Name: CORS_ALLOWED_ORIGINS
               Value: !If
                 - HasApiGateway
@@ -923,6 +900,9 @@ Resources:
             - Name: LISTING_IMAGES_CDN_URL
               Value:
                 Fn::ImportValue: !Sub ${DataStackName}-ListingImagesCDNUrl
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"
@@ -973,7 +953,7 @@ Resources:
           Value: !Ref ListingsHttpRule
 
   # --------------------------------------------- Notification service
-  # Own database/bootstrap; no target group - SQS consumer only, health-checked via container HealthCheck instead.
+  # Own db/bootstrap; no target group - SQS consumer, health-checked via container.
   NotificationDbSecret:
     Type: AWS::SecretsManager::Secret
     Condition: HasNotification
@@ -1144,8 +1124,7 @@ Resources:
         - Name: notification
           Image: !Ref NotificationImage
           Essential: true
-          # Same DATABASE_URL composition/uselibpqcompat fix as listings -
-          # see ListingsTaskDefinition's Command above for why.
+          # Same DATABASE_URL / uselibpqcompat handling as ListingsTaskDefinition.
           EntryPoint: ["/bin/sh", "-c"]
           Command:
             - >-

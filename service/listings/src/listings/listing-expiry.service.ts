@@ -4,6 +4,7 @@ import { Logger } from 'nestjs-pino';
 import { AuditAction } from '../audit/audit.actions';
 import { AuditRepository, SYSTEM_ACTOR } from '../audit/audit.repository';
 import { DATABASE, type Database } from '../db/db.module';
+import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { ListingsRepository } from './listings.repository';
 
 // Once a minute, expires any listing past its pickup window - unclaimed, or
@@ -14,6 +15,7 @@ export class ListingExpiryService {
   constructor(
     private readonly listingsRepository: ListingsRepository,
     private readonly auditRepository: AuditRepository,
+    private readonly notifications: NotificationsPublisher,
     @Inject(DATABASE) private readonly db: Database,
     private readonly logger: Logger,
   ) {}
@@ -50,11 +52,41 @@ export class ListingExpiryService {
       return result;
     });
 
-    if (listingIds.length > 0) {
-      this.logger.log(
-        { expiredListings: listingIds.length, expiredClaims: claimIds.length },
-        'expired overdue listings',
-      );
+    if (listingIds.length === 0) return;
+
+    this.logger.log(
+      { expiredListings: listingIds.length, expiredClaims: claimIds.length },
+      'expired overdue listings',
+    );
+    await this.notifyExpired(listingIds, claimIds);
+  }
+
+  // Best-effort: emails each expired listing's donor and each stranded claimant.
+  private async notifyExpired(
+    listingIds: string[],
+    claimIds: string[],
+  ): Promise<void> {
+    try {
+      const [listingTargets, claimTargets] = await Promise.all([
+        this.listingsRepository.findExpiredListingTargets(listingIds),
+        this.listingsRepository.findExpiredClaimTargets(claimIds),
+      ]);
+      await Promise.all([
+        ...listingTargets.map((t) =>
+          this.notifications.listingExpired(t.donorEmail, {
+            listingDescription: t.description,
+            wasClaimed: claimIds.length > 0,
+          }),
+        ),
+        ...claimTargets.map((t) =>
+          this.notifications.listingExpired(t.rescueEmail, {
+            listingDescription: t.listingDescription,
+            wasClaimed: true,
+          }),
+        ),
+      ]);
+    } catch (err) {
+      this.logger.error({ err }, 'expiry notifications failed');
     }
   }
 }

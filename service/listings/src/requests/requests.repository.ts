@@ -29,10 +29,16 @@ export type RequestedListing = {
   id: string;
   donorOrgId: string;
   status: (typeof listings.$inferSelect)['status'];
+  description: string | null;
   quantity: string | null;
   unit: string | null;
+  pickupLocation: string | null;
+  pickupWindowStart: Date | null;
   pickupWindowEnd: Date | null;
 };
+
+// An org's contact details, for addressing notifications.
+export type OrgContact = { id: string; name: string; contactEmail: string };
 
 // The claimant's current eligibility, from service/profile's tables.
 export type ClaimantContext = {
@@ -118,13 +124,29 @@ export class RequestsRepository {
         id: listings.id,
         donorOrgId: listings.donorOrgId,
         status: listings.status,
+        description: listings.description,
         quantity: listings.quantity,
         unit: listings.unit,
+        pickupLocation: listings.pickupLocation,
+        pickupWindowStart: listings.pickupWindowStart,
         pickupWindowEnd: listings.pickupWindowEnd,
       })
       .from(listings)
       .where(and(eq(listings.id, id), isNull(listings.deletedAt)));
     return listing;
+  }
+
+  // Contact details for the given org ids, for addressing notifications.
+  async findOrgContacts(ids: string[]): Promise<OrgContact[]> {
+    if (ids.length === 0) return [];
+    return this.db
+      .select({
+        id: organisations.id,
+        name: organisations.name,
+        contactEmail: organisations.contactEmail,
+      })
+      .from(organisations)
+      .where(inArray(organisations.id, ids));
   }
 
   // Whether the caller may claim now: active account, approved rescue-partner
@@ -174,8 +196,11 @@ export class RequestsRepository {
         id: listings.id,
         donorOrgId: listings.donorOrgId,
         status: listings.status,
+        description: listings.description,
         quantity: listings.quantity,
         unit: listings.unit,
+        pickupLocation: listings.pickupLocation,
+        pickupWindowStart: listings.pickupWindowStart,
         pickupWindowEnd: listings.pickupWindowEnd,
       });
     return updated;

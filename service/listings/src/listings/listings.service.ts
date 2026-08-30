@@ -11,6 +11,7 @@ import { AuditAction } from '../audit/audit.actions';
 import { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
+import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import {
   isPgError,
   PG_CHECK_VIOLATION,
@@ -63,6 +64,7 @@ export class ListingsService {
     private readonly listingImagesRepository: ListingImagesRepository,
     private readonly listingImageUploadService: ListingImageUploadService,
     private readonly auditRepository: AuditRepository,
+    private readonly notifications: NotificationsPublisher,
     private readonly s3: S3Service,
     private readonly logger: Logger,
     @Inject(DATABASE) private readonly db: Database,
@@ -278,6 +280,8 @@ export class ListingsService {
       );
     }
 
+    let cancelledClaim: { id: string; rescueOrgId: string } | undefined;
+
     try {
       // Deletions, new-image inserts and the field update all land in one
       // transaction: if the version check (or anything else here) fails,
@@ -345,19 +349,18 @@ export class ListingsService {
           const actor = { userId: user.userId, orgId: user.orgId ?? null };
 
           if (isWithdrawingReserved) {
-            const cancelledClaimId =
-              await this.listingsRepository.cancelActiveClaim(
-                id,
-                dto.cancelledReason ?? '',
-                tx,
-              );
-            if (cancelledClaimId) {
+            cancelledClaim = await this.listingsRepository.cancelActiveClaim(
+              id,
+              dto.cancelledReason ?? '',
+              tx,
+            );
+            if (cancelledClaim) {
               await this.auditRepository.record(
                 {
                   actor,
                   action: AuditAction.ClaimCancelled,
                   entityType: 'claim',
-                  entityId: cancelledClaimId,
+                  entityId: cancelledClaim.id,
                   reason: dto.cancelledReason ?? '',
                   metadata: { listingId: id, byDonorWithdrawal: true },
                 },
@@ -387,6 +390,13 @@ export class ListingsService {
       // Only safe to remove the old objects from S3 once the transaction
       // that dropped their DB rows has actually committed.
       await this.listingImageUploadService.deleteS3Objects(deletedImages);
+      if (cancelledClaim) {
+        await this.notifyClaimWithdrawn(
+          cancelledClaim.rescueOrgId,
+          existing,
+          dto.cancelledReason,
+        );
+      }
       return this.attachImages(updated);
     } catch (err) {
       // Transaction didn't commit - clean up anything uploaded to S3 for
@@ -434,6 +444,27 @@ export class ListingsService {
         tx,
       );
     });
+  }
+
+  // Best-effort: tells the rescue partner the donor withdrew the listing.
+  private async notifyClaimWithdrawn(
+    rescueOrgId: string,
+    listing: Listing,
+    reason: string | undefined,
+  ): Promise<void> {
+    try {
+      const [org] = await this.listingsRepository.findOrgContacts([
+        rescueOrgId,
+      ]);
+      if (!org) return;
+      await this.notifications.claimEnded(org.contactEmail, {
+        listingDescription: listing.description,
+        endedBy: 'donor',
+        reason,
+      });
+    } catch (err) {
+      this.logger.error({ err }, 'withdrawal notification failed');
+    }
   }
 
   private async attachImages(listing: Listing): Promise<ListingWithImages> {

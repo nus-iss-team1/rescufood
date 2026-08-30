@@ -23,6 +23,7 @@ import {
   toPublicRequest,
 } from './common/request-response.util';
 import { assertValidRequestStatusTransition } from './common/request-status.util';
+import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
@@ -48,6 +49,7 @@ export class RequestsService {
   constructor(
     private readonly requestsRepository: RequestsRepository,
     private readonly auditRepository: AuditRepository,
+    private readonly notifications: NotificationsPublisher,
     @Inject(DATABASE) private readonly db: Database,
     private readonly logger: Logger,
   ) {}
@@ -139,6 +141,7 @@ export class RequestsService {
         );
         return claim;
       });
+      await this.notifyClaimCreated(listing, user);
       return toPublicRequest(created);
     } catch (err) {
       // A retry landing just after the original committed replays it rather
@@ -205,7 +208,7 @@ export class RequestsService {
     assertIsParty(existing, listing, user);
 
     try {
-      return await this.db.transaction(async (tx) => {
+      const result = await this.db.transaction(async (tx) => {
         if (existing.status === 'active') {
           await this.requestsRepository.reopenListingAfterClaimEnded(
             existing.listingId,
@@ -260,6 +263,8 @@ export class RequestsService {
 
         return toPublicRequest(updated);
       });
+      await this.notifyClaimEnded(existing, listing, dto, user);
+      return result;
     } catch (err) {
       if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
         throw new NotFoundException(`listing ${existing.listingId} not found`);
@@ -390,7 +395,7 @@ export class RequestsService {
       );
     }
 
-    return this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       const updated = await this.requestsRepository.updateStatus(
         id,
         'active',
@@ -445,6 +450,95 @@ export class RequestsService {
 
       return toPublicRequest(updated);
     });
+
+    await this.notifyPickupCompleted(existing, listing, collectedQuantity);
+    return result;
+  }
+
+  // Notifications below are best-effort: run after commit, failures logged.
+
+  private async notifyClaimCreated(
+    listing: RequestedListing,
+    claimant: AuthenticatedUser,
+  ): Promise<void> {
+    try {
+      const orgs = await this.requestsRepository.findOrgContacts([
+        listing.donorOrgId,
+        claimant.orgId ?? '',
+      ]);
+      const donor = orgs.find((o) => o.id === listing.donorOrgId);
+      if (!donor) return;
+      const rescue = orgs.find((o) => o.id === claimant.orgId);
+      await this.notifications.claimCreated(donor.contactEmail, {
+        listingDescription: listing.description,
+        rescueOrgName: rescue?.name ?? 'A rescue partner',
+        pickupLocation: listing.pickupLocation,
+        pickupWindow: formatWindow(
+          listing.pickupWindowStart,
+          listing.pickupWindowEnd,
+        ),
+      });
+    } catch (err) {
+      this.logger.error({ err }, 'claim_created notification failed');
+    }
+  }
+
+  private async notifyClaimEnded(
+    claim: ListingRequest,
+    listing: RequestedListing,
+    dto: UpdateRequestDto,
+    actor: AuthenticatedUser,
+  ): Promise<void> {
+    try {
+      const actorIsDonor = actor.orgId === listing.donorOrgId;
+      const recipientOrgId = actorIsDonor
+        ? claim.rescueOrgId
+        : listing.donorOrgId;
+      const [org] = await this.requestsRepository.findOrgContacts([
+        recipientOrgId,
+      ]);
+      if (!org) return;
+      await this.notifications.claimEnded(org.contactEmail, {
+        listingDescription: listing.description,
+        endedBy:
+          dto.status === 'no_show'
+            ? 'no_show'
+            : actorIsDonor
+              ? 'donor'
+              : 'rescue_partner',
+        reason:
+          dto.status === 'no_show' ? dto.noShowReason : dto.cancellationReason,
+      });
+    } catch (err) {
+      this.logger.error({ err }, 'claim_cancelled notification failed');
+    }
+  }
+
+  private async notifyPickupCompleted(
+    claim: ListingRequest,
+    listing: RequestedListing,
+    collectedQuantity: string,
+  ): Promise<void> {
+    try {
+      const orgs = await this.requestsRepository.findOrgContacts([
+        listing.donorOrgId,
+        claim.rescueOrgId,
+      ]);
+      const qty =
+        listing.unit != null
+          ? `${collectedQuantity} ${listing.unit}`
+          : undefined;
+      await Promise.all(
+        orgs.map((o) =>
+          this.notifications.pickupCompleted(o.contactEmail, {
+            listingDescription: listing.description,
+            collectedQuantity: qty,
+          }),
+        ),
+      );
+    } catch (err) {
+      this.logger.error({ err }, 'pickup_completed notification failed');
+    }
   }
 
   private async getOrThrow(id: string): Promise<ListingRequest> {
@@ -462,4 +556,18 @@ export class RequestsService {
     }
     return listing;
   }
+}
+
+const WINDOW_FORMAT = new Intl.DateTimeFormat('en-SG', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'Asia/Singapore',
+});
+
+function formatWindow(
+  start: Date | null,
+  end: Date | null,
+): string | undefined {
+  if (!start || !end) return undefined;
+  return `${WINDOW_FORMAT.format(start)} – ${WINDOW_FORMAT.format(end)}`;
 }

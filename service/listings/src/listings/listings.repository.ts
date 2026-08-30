@@ -163,13 +163,12 @@ export class ListingsRepository {
     };
   }
 
-  // Ends the active claim on a listing the donor is withdrawing. Returns the
-  // cancelled claim id, if there was one.
+  // Ends the active claim on a listing the donor is withdrawing.
   async cancelActiveClaim(
     listingId: string,
     donorReason: string,
     executor: Database = this.db,
-  ): Promise<string | undefined> {
+  ): Promise<{ id: string; rescueOrgId: string } | undefined> {
     const now = new Date();
     const [cancelled] = await executor
       .update(requests)
@@ -184,8 +183,55 @@ export class ListingsRepository {
       .where(
         and(eq(requests.listingId, listingId), eq(requests.status, 'active')),
       )
-      .returning({ id: requests.id });
-    return cancelled?.id;
+      .returning({ id: requests.id, rescueOrgId: requests.rescueOrgId });
+    return cancelled;
+  }
+
+  // Contact details for the given org ids, for addressing notifications.
+  async findOrgContacts(
+    ids: string[],
+  ): Promise<{ id: string; name: string; contactEmail: string }[]> {
+    if (ids.length === 0) return [];
+    return this.db
+      .select({
+        id: organisations.id,
+        name: organisations.name,
+        contactEmail: organisations.contactEmail,
+      })
+      .from(organisations)
+      .where(inArray(organisations.id, ids));
+  }
+
+  // Per just-expired listing: its description and its donor's contact email.
+  async findExpiredListingTargets(
+    listingIds: string[],
+  ): Promise<{ id: string; description: string | null; donorEmail: string }[]> {
+    if (listingIds.length === 0) return [];
+    return this.db
+      .select({
+        id: listings.id,
+        description: listings.description,
+        donorEmail: organisations.contactEmail,
+      })
+      .from(listings)
+      .innerJoin(organisations, eq(organisations.id, listings.donorOrgId))
+      .where(inArray(listings.id, listingIds));
+  }
+
+  // Per just-expired claim: the listing description + rescue partner's email.
+  async findExpiredClaimTargets(
+    claimIds: string[],
+  ): Promise<{ listingDescription: string | null; rescueEmail: string }[]> {
+    if (claimIds.length === 0) return [];
+    return this.db
+      .select({
+        listingDescription: listings.description,
+        rescueEmail: organisations.contactEmail,
+      })
+      .from(requests)
+      .innerJoin(listings, eq(listings.id, requests.listingId))
+      .innerJoin(organisations, eq(organisations.id, requests.rescueOrgId))
+      .where(inArray(requests.id, claimIds));
   }
 
   // Backs the "no delete while associated requests exist" rule in ListingsService.remove.
