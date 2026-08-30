@@ -17,13 +17,20 @@ import {
 } from 'drizzle-orm';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
-import { organisations } from '../db/external.schema';
+import { organisations, users } from '../db/external.schema';
 import { listings, requests } from '../db/schema';
 import type { QueryListingsDto } from './dto/query-listings.dto';
 
 export type Listing = typeof listings.$inferSelect;
 export type NewListing = typeof listings.$inferInsert;
 export type ListingUpdate = Partial<NewListing>;
+
+// The poster's current eligibility, from service/profile's tables.
+export type CreatorContext = {
+  userStatus: string;
+  orgType: string;
+  orgStatus: string;
+};
 
 @Injectable()
 export class ListingsRepository {
@@ -123,6 +130,29 @@ export class ListingsRepository {
     return deleted;
   }
 
+  // Mirrors RequestsRepository.findClaimantContext: the caller's account
+  // status plus their org's type and approval status, for the POST /listings
+  // donor-eligibility check.
+  async findCreatorContext(
+    userId: string,
+  ): Promise<CreatorContext | undefined> {
+    const [row] = await this.db
+      .select({
+        userStatus: users.status,
+        orgType: organisations.type,
+        orgStatus: organisations.status,
+      })
+      .from(users)
+      .leftJoin(organisations, eq(users.orgId, organisations.id))
+      .where(eq(users.id, userId));
+    if (!row) return undefined;
+    return {
+      userStatus: row.userStatus,
+      orgType: row.orgType ?? '',
+      orgStatus: row.orgStatus ?? '',
+    };
+  }
+
   // Backs the "no delete while associated requests exist" rule in ListingsService.remove.
   async countAssociatedRequests(listingId: string): Promise<number> {
     const [row] = await this.db
@@ -132,12 +162,12 @@ export class ListingsRepository {
     return row.value;
   }
 
-  // Expiry sweep: any listing still `available` past its pickup window goes
-  // `expired`, and any `active` claim on it goes `expired` too. Scoped to
-  // `available` to match listings_expiry_scan_idx; bumps `version` so a
-  // racing donor edit 409s instead of overwriting `expired`.
-  // TODO: a `reserved` listing whose pickup window (or use-by) has passed
-  // is not swept yet - it should be closed out (cancelled/expired) too.
+  // Expiry sweep: any listing past its pickup window goes `expired`, along
+  // with any `active` claim on it. Covers both an `available` listing
+  // nobody claimed in time and a `reserved` one whose window closed before
+  // the claim was collected. Scoped to match listings_expiry_scan_idx;
+  // bumps `version` so a racing donor edit 409s instead of overwriting
+  // `expired`.
   async expireOverdue(
     now: Date = new Date(),
   ): Promise<{ expiredListings: number; expiredRequests: number }> {
@@ -151,7 +181,7 @@ export class ListingsRepository {
         })
         .where(
           and(
-            eq(listings.status, 'available'),
+            inArray(listings.status, ['available', 'reserved']),
             lte(listings.pickupWindowEnd, now),
             isNull(listings.deletedAt),
           ),

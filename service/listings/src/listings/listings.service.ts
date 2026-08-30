@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -55,6 +56,25 @@ export class ListingsService {
     files: Express.Multer.File[],
     user: AuthenticatedUser,
   ): Promise<ListingWithImages> {
+    // Symmetric to the rescue-partner-only claim check in RequestsService:
+    // only an active user in an approved donor org can post a listing.
+    const eligibility = await this.listingsRepository.findCreatorContext(
+      user.userId,
+    );
+    if (!eligibility || eligibility.userStatus !== 'active') {
+      throw new ForbiddenException('your account is not active');
+    }
+    if (eligibility.orgType !== 'donor') {
+      throw new ForbiddenException(
+        'only donor organisations can post listings',
+      );
+    }
+    if (eligibility.orgStatus !== 'approved') {
+      throw new ForbiddenException(
+        'your organisation is not approved to post listings',
+      );
+    }
+
     assertPickupWindowValid(dto.pickupWindowStart, dto.pickupWindowEnd);
 
     const created = await this.listingsRepository.create({

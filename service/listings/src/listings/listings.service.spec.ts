@@ -19,6 +19,11 @@ function makeRepository() {
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
+    findCreatorContext: jest.fn().mockResolvedValue({
+      userStatus: 'active',
+      orgType: 'donor',
+      orgStatus: 'approved',
+    }),
   };
 }
 
@@ -247,6 +252,51 @@ describe('ListingsService', () => {
         baseListing.id,
         baseListing.version + 1,
       );
+    });
+
+    it('rejects a caller whose account is not active', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'suspended',
+        orgType: 'donor',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a caller whose org is not a donor', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'rescue_partner',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a caller whose donor org is not approved', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'donor',
+        orgStatus: 'pending',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
     });
 
     it('rejects when the pickup window is inverted', async () => {
