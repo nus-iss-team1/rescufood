@@ -153,6 +153,28 @@ export class ListingsRepository {
     };
   }
 
+  // Ends the active claim on a listing the donor is withdrawing.
+  async cancelActiveClaim(
+    listingId: string,
+    donorReason: string,
+    executor: Database = this.db,
+  ): Promise<void> {
+    const now = new Date();
+    await executor
+      .update(requests)
+      .set({
+        status: 'cancelled',
+        cancelledAt: now,
+        cancellationReason: donorReason
+          ? `Listing withdrawn by the donor: ${donorReason}`
+          : 'Listing withdrawn by the donor',
+        updatedAt: now,
+      })
+      .where(
+        and(eq(requests.listingId, listingId), eq(requests.status, 'active')),
+      );
+  }
+
   // Backs the "no delete while associated requests exist" rule in ListingsService.remove.
   async countAssociatedRequests(listingId: string): Promise<number> {
     const [row] = await this.db

@@ -40,6 +40,20 @@ import { Listing, ListingsRepository } from './listings.repository';
 
 export type ListingWithImages = Listing & { images: ListingImageResponse[] };
 
+// The editable listing fields, for the "reserved listings can't be edited" check.
+const LISTING_CONTENT_FIELDS = [
+  'category',
+  'description',
+  'quantity',
+  'unit',
+  'allergens',
+  'handlingInstructions',
+  'useBy',
+  'pickupLocation',
+  'pickupWindowStart',
+  'pickupWindowEnd',
+] as const satisfies readonly (keyof UpdateListingDto)[];
+
 @Injectable()
 export class ListingsService {
   constructor(
@@ -167,7 +181,24 @@ export class ListingsService {
   ): Promise<ListingWithImages> {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
-    assertListingIsEditable(existing.status);
+
+    // A donor withdrawing a reserved listing skips the editable-status guard,
+    // but may change nothing else - the terms are frozen for the partner.
+    const isWithdrawingReserved =
+      existing.status === 'reserved' && dto.status === 'cancelled';
+    if (isWithdrawingReserved) {
+      const editsContent =
+        files.length > 0 ||
+        (dto.deleteImageIds?.length ?? 0) > 0 ||
+        LISTING_CONTENT_FIELDS.some((f) => dto[f] !== undefined);
+      if (editsContent) {
+        throw new BadRequestException(
+          'a reserved listing can only be withdrawn, not edited',
+        );
+      }
+    } else {
+      assertListingIsEditable(existing.status);
+    }
 
     if (dto.status !== undefined) {
       assertValidStatusTransition(existing.status, dto.status);
@@ -282,6 +313,14 @@ export class ListingsService {
           if (!updated) {
             throw new ConflictException(
               `listing ${id} was modified since version ${dto.version} was read`,
+            );
+          }
+
+          if (isWithdrawingReserved) {
+            await this.listingsRepository.cancelActiveClaim(
+              id,
+              dto.cancelledReason ?? '',
+              tx,
             );
           }
 

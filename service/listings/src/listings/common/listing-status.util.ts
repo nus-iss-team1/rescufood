@@ -3,21 +3,19 @@ import type { listingStatus } from '../../db/schema';
 
 type ListingStatus = (typeof listingStatus.enumValues)[number];
 
-// Transitions a donor can trigger directly via PATCH .../listings/:id.
-// `reserved` and `collected` are driven by the request/pickup flow (see the
-// `requests` table in db/schema.ts) and `expired` by the automatic sweep
-// (see listing-expiry.service.ts) - none of the three are reachable through
-// this map, so setting them via the update endpoint is always rejected.
-// Once a listing lands in a terminal state (reserved/collected/expired/
-// cancelled all have no outgoing edges here), nothing can move it again.
+// Status changes a donor can make via PATCH. reserved/collected/expired are
+// entered by other flows, not here; a donor may still cancel a reserved one.
 const ALLOWED_TRANSITIONS: Record<ListingStatus, readonly ListingStatus[]> = {
   draft: ['available', 'cancelled'],
   available: ['draft', 'cancelled'],
-  reserved: [],
+  reserved: ['cancelled'],
   collected: [],
   expired: [],
   cancelled: [],
 };
+
+// Statuses whose fields a donor may still edit.
+const EDITABLE_STATUSES: readonly ListingStatus[] = ['draft', 'available'];
 
 export function assertValidStatusTransition(
   current: ListingStatus,
@@ -31,12 +29,9 @@ export function assertValidStatusTransition(
   }
 }
 
-// A status with no outgoing edges above is terminal from the donor's side -
-// block editing any field on it here, not just `status`, so a PATCH that
-// omits `status` can't sneak past assertValidStatusTransition (which only
-// runs when the caller sends one).
+// Rejects field edits on a listing past draft/available.
 export function assertListingIsEditable(status: ListingStatus): void {
-  if (ALLOWED_TRANSITIONS[status].length === 0) {
+  if (!EDITABLE_STATUSES.includes(status)) {
     throw new BadRequestException(
       `listing is ${status} and can no longer be modified`,
     );

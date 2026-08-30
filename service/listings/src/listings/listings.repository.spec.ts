@@ -210,6 +210,45 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('cancelActiveClaim', () => {
+    it('cancels only the active claim on the listing, folding in the donor reason', async () => {
+      const db = makeDb();
+      const updateChain = chain([]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await repository.cancelActiveClaim('listing-1', 'Van broke down');
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { status: string; cancellationReason: string; cancelledAt: unknown },
+      ];
+      expect(setArg.status).toBe('cancelled');
+      expect(setArg.cancellationReason).toBe(
+        'Listing withdrawn by the donor: Van broke down',
+      );
+      expect(setArg.cancelledAt).toBeInstanceOf(Date);
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"listing_id" =');
+      expect(sql).toContain('"status" =');
+      expect(params).toEqual(expect.arrayContaining(['listing-1', 'active']));
+    });
+
+    it('uses a plain reason when the donor gave none', async () => {
+      const db = makeDb();
+      const updateChain = chain([]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await repository.cancelActiveClaim('listing-1', '');
+
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { cancellationReason: string },
+      ];
+      expect(setArg.cancellationReason).toBe('Listing withdrawn by the donor');
+    });
+  });
+
   describe('countMany', () => {
     it('returns the row count for the same filters findMany would use', async () => {
       const db = makeDb();
