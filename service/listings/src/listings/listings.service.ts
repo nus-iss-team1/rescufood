@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -39,6 +40,20 @@ import { Listing, ListingsRepository } from './listings.repository';
 
 export type ListingWithImages = Listing & { images: ListingImageResponse[] };
 
+// The editable listing fields, for the "reserved listings can't be edited" check.
+const LISTING_CONTENT_FIELDS = [
+  'category',
+  'description',
+  'quantity',
+  'unit',
+  'allergens',
+  'handlingInstructions',
+  'useBy',
+  'pickupLocation',
+  'pickupWindowStart',
+  'pickupWindowEnd',
+] as const satisfies readonly (keyof UpdateListingDto)[];
+
 @Injectable()
 export class ListingsService {
   constructor(
@@ -55,6 +70,25 @@ export class ListingsService {
     files: Express.Multer.File[],
     user: AuthenticatedUser,
   ): Promise<ListingWithImages> {
+    // Symmetric to the rescue-partner-only claim check in RequestsService:
+    // only an active user in an approved donor org can post a listing.
+    const eligibility = await this.listingsRepository.findCreatorContext(
+      user.userId,
+    );
+    if (!eligibility || eligibility.userStatus !== 'active') {
+      throw new ForbiddenException('your account is not active');
+    }
+    if (eligibility.orgType !== 'donor') {
+      throw new ForbiddenException(
+        'only donor organisations can post listings',
+      );
+    }
+    if (eligibility.orgStatus !== 'approved') {
+      throw new ForbiddenException(
+        'your organisation is not approved to post listings',
+      );
+    }
+
     assertPickupWindowValid(dto.pickupWindowStart, dto.pickupWindowEnd);
 
     const created = await this.listingsRepository.create({
@@ -147,7 +181,24 @@ export class ListingsService {
   ): Promise<ListingWithImages> {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
-    assertListingIsEditable(existing.status);
+
+    // A donor withdrawing a reserved listing skips the editable-status guard,
+    // but may change nothing else - the terms are frozen for the partner.
+    const isWithdrawingReserved =
+      existing.status === 'reserved' && dto.status === 'cancelled';
+    if (isWithdrawingReserved) {
+      const editsContent =
+        files.length > 0 ||
+        (dto.deleteImageIds?.length ?? 0) > 0 ||
+        LISTING_CONTENT_FIELDS.some((f) => dto[f] !== undefined);
+      if (editsContent) {
+        throw new BadRequestException(
+          'a reserved listing can only be withdrawn, not edited',
+        );
+      }
+    } else {
+      assertListingIsEditable(existing.status);
+    }
 
     if (dto.status !== undefined) {
       assertValidStatusTransition(existing.status, dto.status);
@@ -262,6 +313,14 @@ export class ListingsService {
           if (!updated) {
             throw new ConflictException(
               `listing ${id} was modified since version ${dto.version} was read`,
+            );
+          }
+
+          if (isWithdrawingReserved) {
+            await this.listingsRepository.cancelActiveClaim(
+              id,
+              dto.cancelledReason ?? '',
+              tx,
             );
           }
 

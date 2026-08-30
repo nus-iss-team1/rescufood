@@ -57,6 +57,13 @@
       "when": 1787963279853,
       "tag": "0007_first_come_first_served_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788051137548,
+      "tag": "0008_first_come_first_served_reserved_expiry",
+      "breakpoints": true
     }
   ]
 }

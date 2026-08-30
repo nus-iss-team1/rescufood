@@ -18,7 +18,13 @@ function makeRepository() {
     findById: jest.fn(),
     updateWithVersion: jest.fn(),
     delete: jest.fn(),
+    cancelActiveClaim: jest.fn().mockResolvedValue(undefined),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
+    findCreatorContext: jest.fn().mockResolvedValue({
+      userStatus: 'active',
+      orgType: 'donor',
+      orgStatus: 'approved',
+    }),
   };
 }
 
@@ -247,6 +253,51 @@ describe('ListingsService', () => {
         baseListing.id,
         baseListing.version + 1,
       );
+    });
+
+    it('rejects a caller whose account is not active', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'suspended',
+        orgType: 'donor',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a caller whose org is not a donor', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'rescue_partner',
+        orgStatus: 'approved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a caller whose donor org is not approved', async () => {
+      const repository = makeRepository();
+      repository.findCreatorContext.mockResolvedValue({
+        userStatus: 'active',
+        orgType: 'donor',
+        orgStatus: 'pending',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.create(validCreateDto, [], owner),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.create).not.toHaveBeenCalled();
     });
 
     it('rejects when the pickup window is inverted', async () => {
@@ -1036,6 +1087,125 @@ describe('ListingsService', () => {
 
       expect(result.status).toBe('cancelled');
       expect(db.transaction).toHaveBeenCalledTimes(1);
+      // No claim to end on an available listing.
+      expect(repository.cancelActiveClaim).not.toHaveBeenCalled();
+    });
+
+    it('lets a donor withdraw a reserved listing, ending the active claim', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'cancelled',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      const result = await service.update(
+        'listing-1',
+        { version: 1, status: 'cancelled', cancelledReason: 'Van broke down' },
+        [],
+        owner,
+      );
+
+      expect(result.status).toBe('cancelled');
+      expect(repository.cancelActiveClaim).toHaveBeenCalledWith(
+        'listing-1',
+        'Van broke down',
+        expect.anything(),
+      );
+    });
+
+    it('does not end the claim when the reserved listing moved on before the write', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      repository.updateWithVersion.mockResolvedValue(undefined); // version raced
+
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'cancelled' },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(repository.cancelActiveClaim).not.toHaveBeenCalled();
+    });
+
+    it('still refuses any other status change out of reserved', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      const { service } = makeService(repository);
+
+      for (const status of ['draft', 'available', 'collected'] as const) {
+        await expect(
+          service.update('listing-1', { version: 1, status }, [], owner),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      }
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+    });
+
+    it('refuses a withdrawal that also edits a field', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'cancelled', description: 'sneaky edit' },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
+      expect(repository.cancelActiveClaim).not.toHaveBeenCalled();
+    });
+
+    it('refuses a withdrawal that also attaches or removes an image', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'reserved',
+      });
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update(
+          'listing-1',
+          { version: 1, status: 'cancelled' },
+          [makeFile()],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      await expect(
+        service.update(
+          'listing-1',
+          {
+            version: 1,
+            status: 'cancelled',
+            deleteImageIds: ['11111111-1111-4111-8111-111111111111'],
+          },
+          [],
+          owner,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
   });
 });

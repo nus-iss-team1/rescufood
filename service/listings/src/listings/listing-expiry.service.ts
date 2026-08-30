@@ -3,8 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Logger } from 'nestjs-pino';
 import { ListingsRepository } from './listings.repository';
 
-// Once a minute, expires any `available` listing past its pickup window
-// (nobody claimed it in time) and its `active` claim, if any. See
+// Once a minute, expires any listing past its pickup window - unclaimed, or
+// claimed but never collected - along with its `active` claim, if any. See
 // ListingsRepository.expireOverdue.
 @Injectable()
 export class ListingExpiryService {

@@ -11,12 +11,15 @@ describe('assertValidStatusTransition', () => {
     ).not.toThrow();
   });
 
-  it('allows cancelling from draft or available', () => {
+  it('allows cancelling from draft, available or reserved', () => {
     expect(() =>
       assertValidStatusTransition('draft', 'cancelled'),
     ).not.toThrow();
     expect(() =>
       assertValidStatusTransition('available', 'cancelled'),
+    ).not.toThrow();
+    expect(() =>
+      assertValidStatusTransition('reserved', 'cancelled'),
     ).not.toThrow();
   });
 
@@ -45,13 +48,21 @@ describe('assertValidStatusTransition', () => {
   });
 
   it('rejects any transition out of a terminal state', () => {
-    for (const terminal of [
-      'reserved',
+    for (const terminal of ['collected', 'expired', 'cancelled'] as const) {
+      expect(() => assertValidStatusTransition(terminal, 'available')).toThrow(
+        BadRequestException,
+      );
+    }
+  });
+
+  it('rejects reserved -> anything but cancelled', () => {
+    for (const next of [
+      'draft',
+      'available',
       'collected',
       'expired',
-      'cancelled',
     ] as const) {
-      expect(() => assertValidStatusTransition(terminal, 'available')).toThrow(
+      expect(() => assertValidStatusTransition('reserved', next)).toThrow(
         BadRequestException,
       );
     }
@@ -64,14 +75,14 @@ describe('assertListingIsEditable', () => {
     expect(() => assertListingIsEditable('available')).not.toThrow();
   });
 
-  it('rejects every terminal status', () => {
-    for (const terminal of [
+  it('rejects reserved and every terminal status', () => {
+    for (const locked of [
       'reserved',
       'collected',
       'expired',
       'cancelled',
     ] as const) {
-      expect(() => assertListingIsEditable(terminal)).toThrow(
+      expect(() => assertListingIsEditable(locked)).toThrow(
         BadRequestException,
       );
     }

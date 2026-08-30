@@ -48,6 +48,7 @@ function chain(result: unknown) {
     'values',
     'returning',
     'from',
+    'leftJoin',
     'where',
     'orderBy',
     'limit',
@@ -209,6 +210,45 @@ describe('ListingsRepository', () => {
     });
   });
 
+  describe('cancelActiveClaim', () => {
+    it('cancels only the active claim on the listing, folding in the donor reason', async () => {
+      const db = makeDb();
+      const updateChain = chain([]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await repository.cancelActiveClaim('listing-1', 'Van broke down');
+
+      expect(db.update).toHaveBeenCalledWith(requests);
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { status: string; cancellationReason: string; cancelledAt: unknown },
+      ];
+      expect(setArg.status).toBe('cancelled');
+      expect(setArg.cancellationReason).toBe(
+        'Listing withdrawn by the donor: Van broke down',
+      );
+      expect(setArg.cancelledAt).toBeInstanceOf(Date);
+      const { sql, params } = renderWhere(updateChain.where as jest.Mock);
+      expect(sql).toContain('"listing_id" =');
+      expect(sql).toContain('"status" =');
+      expect(params).toEqual(expect.arrayContaining(['listing-1', 'active']));
+    });
+
+    it('uses a plain reason when the donor gave none', async () => {
+      const db = makeDb();
+      const updateChain = chain([]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await repository.cancelActiveClaim('listing-1', '');
+
+      const [setArg] = (updateChain.set as jest.Mock).mock.calls[0] as [
+        { cancellationReason: string },
+      ];
+      expect(setArg.cancellationReason).toBe('Listing withdrawn by the donor');
+    });
+  });
+
   describe('countMany', () => {
     it('returns the row count for the same filters findMany would use', async () => {
       const db = makeDb();
@@ -229,7 +269,7 @@ describe('ListingsRepository', () => {
   });
 
   describe('expireOverdue', () => {
-    it('flips available listings past their pickup window to expired and bumps their version', async () => {
+    it('flips available and reserved listings past their pickup window to expired and bumps their version', async () => {
       const db = makeDb();
       const listingsChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
       const requestsChain = chain([{ id: 'request-1' }]);
@@ -246,10 +286,11 @@ describe('ListingsRepository', () => {
         expect.objectContaining({ status: 'expired', updatedAt: now }),
       );
       const { sql, params } = renderWhere(listingsChain.where as jest.Mock);
-      expect(sql).toContain('"status" =');
+      expect(sql).toContain('"status" in');
       expect(sql).toContain('"pickup_window_end" <=');
-      expect(params).toContain('available');
-      expect(params).toContain(now.toISOString());
+      expect(params).toEqual(
+        expect.arrayContaining(['available', 'reserved', now.toISOString()]),
+      );
 
       // Same sweep expires that listing's still-active claim too, scoped to
       // the ids just expired and to the 'active' claim (not already
@@ -279,6 +320,48 @@ describe('ListingsRepository', () => {
         expiredRequests: 0,
       });
       expect(db.update).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findCreatorContext', () => {
+    it('returns the user status and the org type and status', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(
+        chain([
+          { userStatus: 'active', orgType: 'donor', orgStatus: 'approved' },
+        ]),
+      );
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.findCreatorContext('user-donor'),
+      ).resolves.toEqual({
+        userStatus: 'active',
+        orgType: 'donor',
+        orgStatus: 'approved',
+      });
+    });
+
+    it('returns undefined when the user row is missing', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.findCreatorContext('missing'),
+      ).resolves.toBeUndefined();
+    });
+
+    it('coerces a missing org type/status to empty strings', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(
+        chain([{ userStatus: 'active', orgType: null, orgStatus: null }]),
+      );
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.findCreatorContext('user-donor'),
+      ).resolves.toEqual({ userStatus: 'active', orgType: '', orgStatus: '' });
     });
   });
 

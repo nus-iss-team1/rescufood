@@ -136,7 +136,7 @@ export const listings = pgTable(
     ),
     index('listings_expiry_scan_idx')
       .on(table.pickupWindowEnd)
-      .where(sql`status = 'available'`),
+      .where(sql`status in ('available', 'reserved')`),
     index('listings_donor_org_id_idx').on(table.donorOrgId),
   ],
 );
