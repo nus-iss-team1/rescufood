@@ -99,10 +99,19 @@ describe('ListingExpiryService', () => {
       claimIds: ['c1'],
     });
     repository.findExpiredListingTargets.mockResolvedValue([
-      { id: 'l1', description: 'Milk', donorEmail: 'donor@x.com' },
+      {
+        id: 'l1',
+        description: 'Milk',
+        donorName: 'Priya Nair',
+        donorEmail: 'donor@x.com',
+      },
     ]);
     repository.findExpiredClaimTargets.mockResolvedValue([
-      { listingDescription: 'Milk', rescueEmail: 'rescue@x.com' },
+      {
+        listingDescription: 'Milk',
+        rescueName: 'Alex Tan',
+        rescueEmail: 'rescue@x.com',
+      },
     ]);
     const { service, notifications } = make(repository);
 
@@ -110,11 +119,15 @@ describe('ListingExpiryService', () => {
 
     expect(notifications.listingExpired).toHaveBeenCalledWith(
       'donor@x.com',
-      expect.objectContaining({ listingDescription: 'Milk', wasClaimed: true }),
+      expect.objectContaining({
+        recipientName: 'Priya Nair',
+        listingDescription: 'Milk',
+        wasClaimed: true,
+      }),
     );
     expect(notifications.listingExpired).toHaveBeenCalledWith(
       'rescue@x.com',
-      expect.objectContaining({ wasClaimed: true }),
+      expect.objectContaining({ recipientName: 'Alex Tan', wasClaimed: true }),
     );
   });
 

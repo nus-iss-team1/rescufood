@@ -20,46 +20,61 @@ const str = (v: unknown, fallback: string): string =>
 
 const signoff = '\n\n— The RescuFood Team\n';
 
+// "Dear <name>," when the recipient's name is known, else a plain "Hello,".
+const greeting = (payload: Record<string, unknown>): string => {
+  const name = str(payload.recipientName, '');
+  return name ? `Dear ${name},` : 'Hello,';
+};
+
+// "Alex Tan from City Harvest SG", or just whichever part is known.
+const party = (name: string, org: string, fallback: string): string => {
+  if (name && org) return `${name} from ${org}`;
+  return name || org || fallback;
+};
+
 const renderers: Partial<Record<NotificationType, Renderer>> = {
   org_approved: (payload) => {
-    const orgName =
-      typeof payload.orgName === 'string'
-        ? payload.orgName
-        : 'Your organisation';
+    const orgName = str(payload.orgName, '');
     return {
-      subject: 'Your organisation has been approved',
-      body: `Hi,\n\n${orgName} has been approved on RescuFood and can now sign in.\n\n— The RescuFood Team\n`,
+      subject: 'Your Organisation Has Been Approved',
+      body: `${
+        orgName ? `Dear ${orgName},` : 'Hello,'
+      }\n\nYour organisation has been approved on RescuFood. You can now sign in and start using your account.${signoff}`,
     };
   },
+
   user_welcome: (payload) => {
-    const name =
-      typeof payload.name === 'string' && payload.name.trim() !== ''
-        ? payload.name
-        : 'there';
+    const name = str(payload.name, '');
     let action: string;
     switch (payload.orgType) {
       case 'donor':
         action =
-          'You can now post surplus food listings for rescue partners to claim.';
+          'You can now post surplus food listings for rescue partners to reserve.';
         break;
       case 'rescue_partner':
         action =
-          'You can now browse and claim surplus food listings from donors.';
+          'You can now browse and reserve surplus food listings from donors.';
         break;
       default:
         action =
-          'You can now sign in to browse and claim surplus food listings.';
+          'You can now sign in to browse and reserve surplus food listings.';
     }
     return {
       subject: 'Welcome to RescuFood',
-      body: `Hi ${name},\n\nYour RescuFood account is ready. ${action}\n\n— The RescuFood Team\n`,
+      body: `${
+        name ? `Dear ${name},` : 'Hello,'
+      }\n\nYour RescuFood account is ready. ${action}${signoff}`,
     };
   },
 
-  // To the donor: their listing was claimed.
+  // To the donor: a rescue partner reserved their listing.
   claim_created: (payload) => {
     const listing = str(payload.listingDescription, 'your listing');
-    const partner = str(payload.rescueOrgName, 'A rescue partner');
+    const partner = party(
+      str(payload.rescuePartnerName, ''),
+      str(payload.rescueOrgName, ''),
+      'A rescue partner',
+    );
     const where = str(payload.pickupLocation, '');
     const when = str(payload.pickupWindow, '');
     const details = [
@@ -69,31 +84,48 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
       .filter(Boolean)
       .join('\n');
     return {
-      subject: 'Your listing has been claimed',
-      body: `Hi,\n\n${partner} has claimed "${listing}" and will collect it within the pickup window.${
-        details ? `\n\n${details}` : ''
-      }${signoff}`,
+      subject: 'Your Listing Has Been Reserved',
+      body: `${greeting(payload)}\n\n${partner} has reserved your listing "${listing}" and will collect it during the pickup window${
+        details ? ' below' : ''
+      }.${details ? `\n\n${details}` : ''}${signoff}`,
     };
   },
 
-  // To the other party: a claim ended before pickup.
+  // To the other party: a reservation ended before pickup.
   claim_cancelled: (payload) => {
     const listing = str(payload.listingDescription, 'a listing');
     const reason = str(payload.reason, '');
+    const other = party(
+      str(payload.counterpartyName, ''),
+      str(payload.counterpartyOrgName, ''),
+      '',
+    );
     let line: string;
+    let tail: string;
     switch (payload.endedBy) {
       case 'donor':
-        line = `The donor has withdrawn "${listing}", so your claim on it has been cancelled.`;
+        line = `${
+          other || 'The donor'
+        } has withdrawn "${listing}", so your reservation for it has been cancelled.`;
+        tail =
+          '\n\nThe listing is no longer available, and no further action is needed from you.';
         break;
       case 'no_show':
-        line = `The claim on "${listing}" was closed as a no-show.`;
+        line = `Your reservation for "${listing}" has been cancelled because the pickup was not completed in time (recorded as a no-show).`;
+        tail = '';
         break;
       default:
-        line = `The rescue partner has cancelled their claim on "${listing}". It is available for other partners again.`;
+        line = `${
+          other || 'The rescue partner'
+        } has cancelled their reservation for "${listing}".`;
+        tail =
+          '\n\nNo action is needed from you. The listing has automatically been made available again for other rescue partners to reserve.';
     }
     return {
-      subject: 'A claim was cancelled',
-      body: `Hi,\n\n${line}${reason ? `\n\nReason: ${reason}` : ''}${signoff}`,
+      subject: 'A Reservation Has Been Cancelled',
+      body: `${greeting(payload)}\n\n${line}${
+        reason ? `\n\nReason: ${reason}` : ''
+      }${tail}${signoff}`,
     };
   },
 
@@ -101,17 +133,18 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
   pickup_reminder: (payload) => {
     const listing = str(payload.listingDescription, 'a listing');
     const where = str(payload.pickupLocation, '');
-    const when = str(payload.pickupWindow, 'the scheduled window');
     const location = where ? `\n\nPickup location: ${where}` : '';
     if (payload.phase === 'closing') {
+      const ends = str(payload.pickupWindowEnd, 'within a day');
       return {
-        subject: 'Pickup window closing soon',
-        body: `Hi,\n\nThe pickup window for "${listing}" closes within a day (${when}). Please collect it before it ends.${location}${signoff}`,
+        subject: 'Pickup Window Closing Soon',
+        body: `${greeting(payload)}\n\nThe pickup window for "${listing}" closes within a day — it ends ${ends}. Please collect the food before the window closes.${location}${signoff}`,
       };
     }
+    const when = str(payload.pickupWindow, 'the scheduled window');
     return {
-      subject: 'Pickup window opening soon',
-      body: `Hi,\n\nThe pickup window for "${listing}" opens soon.\n\nPickup window: ${when}${location}${signoff}`,
+      subject: 'Pickup Window Opening Soon',
+      body: `${greeting(payload)}\n\nThe pickup window for "${listing}" opens soon.\n\nPickup window: ${when}${location}${signoff}`,
     };
   },
 
@@ -120,9 +153,9 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
     const listing = str(payload.listingDescription, 'a listing');
     const qty = str(payload.collectedQuantity, '');
     return {
-      subject: 'Pickup confirmed',
-      body: `Hi,\n\nThe pickup for "${listing}" has been confirmed${
-        qty ? ` (${qty} collected)` : ''
+      subject: 'Pickup Confirmed',
+      body: `${greeting(payload)}\n\nThe pickup for "${listing}" has been confirmed${
+        qty ? `, with ${qty} collected` : ''
       }.${signoff}`,
     };
   },
@@ -132,9 +165,11 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
     const listing = str(payload.listingDescription, 'a listing');
     const wasClaimed = payload.wasClaimed === true;
     return {
-      subject: 'A listing has expired',
-      body: `Hi,\n\n"${listing}" has passed its pickup window and expired.${
-        wasClaimed ? ' The active claim on it was closed.' : ''
+      subject: 'A Listing Has Expired',
+      body: `${greeting(payload)}\n\n"${listing}" has passed its pickup window and has expired.${
+        wasClaimed
+          ? ' The active reservation for it has been cancelled automatically, and no further action is needed.'
+          : ' No further action is needed.'
       }${signoff}`,
     };
   },

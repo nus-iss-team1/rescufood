@@ -168,7 +168,9 @@ export class ListingsRepository {
     listingId: string,
     donorReason: string,
     executor: Database = this.db,
-  ): Promise<{ id: string; rescueOrgId: string } | undefined> {
+  ): Promise<
+    { id: string; rescueOrgId: string; claimedBy: string } | undefined
+  > {
     const now = new Date();
     const [cancelled] = await executor
       .update(requests)
@@ -183,7 +185,11 @@ export class ListingsRepository {
       .where(
         and(eq(requests.listingId, listingId), eq(requests.status, 'active')),
       )
-      .returning({ id: requests.id, rescueOrgId: requests.rescueOrgId });
+      .returning({
+        id: requests.id,
+        rescueOrgId: requests.rescueOrgId,
+        claimedBy: requests.claimedBy,
+      });
     return cancelled;
   }
 
@@ -202,36 +208,61 @@ export class ListingsRepository {
       .where(inArray(organisations.id, ids));
   }
 
-  // Per just-expired listing: its description and its donor's contact email.
-  async findExpiredListingTargets(
-    listingIds: string[],
-  ): Promise<{ id: string; description: string | null; donorEmail: string }[]> {
+  // Per just-expired listing: its description and its donor user's name + email.
+  async findExpiredListingTargets(listingIds: string[]): Promise<
+    {
+      id: string;
+      description: string | null;
+      donorName: string;
+      donorEmail: string;
+    }[]
+  > {
     if (listingIds.length === 0) return [];
     return this.db
       .select({
         id: listings.id,
         description: listings.description,
-        donorEmail: organisations.contactEmail,
+        donorName: users.name,
+        donorEmail: users.email,
       })
       .from(listings)
-      .innerJoin(organisations, eq(organisations.id, listings.donorOrgId))
+      .innerJoin(users, eq(users.id, listings.createdBy))
       .where(inArray(listings.id, listingIds));
   }
 
-  // Per just-expired claim: the listing description + rescue partner's email.
-  async findExpiredClaimTargets(
-    claimIds: string[],
-  ): Promise<{ listingDescription: string | null; rescueEmail: string }[]> {
+  // Per just-expired claim: the listing description + rescue-partner user's
+  // name and email.
+  async findExpiredClaimTargets(claimIds: string[]): Promise<
+    {
+      listingDescription: string | null;
+      rescueName: string;
+      rescueEmail: string;
+    }[]
+  > {
     if (claimIds.length === 0) return [];
     return this.db
       .select({
         listingDescription: listings.description,
-        rescueEmail: organisations.contactEmail,
+        rescueName: users.name,
+        rescueEmail: users.email,
       })
       .from(requests)
       .innerJoin(listings, eq(listings.id, requests.listingId))
-      .innerJoin(organisations, eq(organisations.id, requests.rescueOrgId))
+      .innerJoin(users, eq(users.id, requests.claimedBy))
       .where(inArray(requests.id, claimIds));
+  }
+
+  // Name + email for the given user ids, for addressing notifications to the
+  // individual rather than their organisation.
+  async findUserContacts(
+    ids: string[],
+  ): Promise<{ id: string; name: string; email: string }[]> {
+    const unique = [...new Set(ids.filter(Boolean))];
+    if (unique.length === 0) return [];
+    return this.db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(inArray(users.id, unique));
   }
 
   // Backs the "no delete while associated requests exist" rule in ListingsService.remove.

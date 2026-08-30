@@ -29,7 +29,9 @@ export type PickupReminderTarget = {
   pickupLocation: string | null;
   pickupWindowStart: Date | null;
   pickupWindowEnd: Date | null;
+  rescueName: string;
   rescueEmail: string;
+  donorName: string;
   donorEmail: string;
 };
 
@@ -43,6 +45,7 @@ export type ListingRequestUpdate = Partial<NewListingRequest>;
 export type RequestedListing = {
   id: string;
   donorOrgId: string;
+  createdBy: string;
   status: (typeof listings.$inferSelect)['status'];
   description: string | null;
   quantity: string | null;
@@ -54,6 +57,9 @@ export type RequestedListing = {
 
 // An org's contact details, for addressing notifications.
 export type OrgContact = { id: string; name: string; contactEmail: string };
+
+// A user's contact details, for addressing notifications to the person.
+export type UserContact = { id: string; name: string; email: string };
 
 // The claimant's current eligibility, from service/profile's tables.
 export type ClaimantContext = {
@@ -138,6 +144,7 @@ export class RequestsRepository {
       .select({
         id: listings.id,
         donorOrgId: listings.donorOrgId,
+        createdBy: listings.createdBy,
         status: listings.status,
         description: listings.description,
         quantity: listings.quantity,
@@ -162,6 +169,17 @@ export class RequestsRepository {
       })
       .from(organisations)
       .where(inArray(organisations.id, ids));
+  }
+
+  // Name + email for the given user ids, for addressing notifications to the
+  // individual rather than their organisation.
+  async findUserContacts(ids: string[]): Promise<UserContact[]> {
+    const unique = [...new Set(ids.filter(Boolean))];
+    if (unique.length === 0) return [];
+    return this.db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(inArray(users.id, unique));
   }
 
   // Atomically claims the active claims due a one-shot pickup reminder and
@@ -210,26 +228,28 @@ export class RequestsRepository {
       .returning({ id: requests.id, listingId: requests.listingId });
   }
 
-  // Listing + both parties' contact emails for the given claim ids.
+  // Listing + both parties' names and personal emails for the given claim ids.
   async findPickupReminderTargets(
     claimIds: string[],
   ): Promise<PickupReminderTarget[]> {
     if (claimIds.length === 0) return [];
-    const donor = alias(organisations, 'donor');
-    const rescue = alias(organisations, 'rescue');
+    const donor = alias(users, 'donor_user');
+    const rescue = alias(users, 'rescue_user');
     return this.db
       .select({
         listingDescription: listings.description,
         pickupLocation: listings.pickupLocation,
         pickupWindowStart: listings.pickupWindowStart,
         pickupWindowEnd: listings.pickupWindowEnd,
-        rescueEmail: rescue.contactEmail,
-        donorEmail: donor.contactEmail,
+        rescueName: rescue.name,
+        rescueEmail: rescue.email,
+        donorName: donor.name,
+        donorEmail: donor.email,
       })
       .from(requests)
       .innerJoin(listings, eq(listings.id, requests.listingId))
-      .innerJoin(donor, eq(donor.id, listings.donorOrgId))
-      .innerJoin(rescue, eq(rescue.id, requests.rescueOrgId))
+      .innerJoin(donor, eq(donor.id, listings.createdBy))
+      .innerJoin(rescue, eq(rescue.id, requests.claimedBy))
       .where(inArray(requests.id, claimIds));
   }
 
@@ -279,6 +299,7 @@ export class RequestsRepository {
       .returning({
         id: listings.id,
         donorOrgId: listings.donorOrgId,
+        createdBy: listings.createdBy,
         status: listings.status,
         description: listings.description,
         quantity: listings.quantity,

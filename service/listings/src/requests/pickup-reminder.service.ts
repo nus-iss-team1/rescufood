@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Logger } from 'nestjs-pino';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
-import { formatWindow } from './common/pickup-window.util';
+import { formatInstant, formatWindow } from './common/pickup-window.util';
 import {
   RequestsRepository,
   type PickupReminderPhase,
@@ -50,13 +50,22 @@ export class PickupReminderService {
             pickupWindow:
               formatWindow(t.pickupWindowStart, t.pickupWindowEnd) ??
               'the scheduled window',
+            pickupWindowEnd: t.pickupWindowEnd
+              ? formatInstant(t.pickupWindowEnd)
+              : undefined,
           };
           const sends = [
-            this.notifications.pickupReminder(t.rescueEmail, payload),
+            this.notifications.pickupReminder(t.rescueEmail, {
+              ...payload,
+              recipientName: t.rescueName,
+            }),
           ];
           if (phase === 'opening') {
             sends.push(
-              this.notifications.pickupReminder(t.donorEmail, payload),
+              this.notifications.pickupReminder(t.donorEmail, {
+                ...payload,
+                recipientName: t.donorName,
+              }),
             );
           }
           return sends;

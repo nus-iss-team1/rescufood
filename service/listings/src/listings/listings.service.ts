@@ -280,7 +280,8 @@ export class ListingsService {
       );
     }
 
-    let cancelledClaim: { id: string; rescueOrgId: string } | undefined;
+    let cancelledClaim:
+      { id: string; rescueOrgId: string; claimedBy: string } | undefined;
 
     try {
       // Deletions, new-image inserts and the field update all land in one
@@ -392,7 +393,7 @@ export class ListingsService {
       await this.listingImageUploadService.deleteS3Objects(deletedImages);
       if (cancelledClaim) {
         await this.notifyClaimWithdrawn(
-          cancelledClaim.rescueOrgId,
+          cancelledClaim.claimedBy,
           existing,
           dto.cancelledReason,
         );
@@ -446,20 +447,30 @@ export class ListingsService {
     });
   }
 
-  // Best-effort: tells the rescue partner the donor withdrew the listing.
+  // Best-effort: tells the rescue-partner user the donor withdrew the listing.
   private async notifyClaimWithdrawn(
-    rescueOrgId: string,
+    rescueUserId: string,
     listing: Listing,
     reason: string | undefined,
   ): Promise<void> {
     try {
-      const [org] = await this.listingsRepository.findOrgContacts([
-        rescueOrgId,
+      const [contacts, orgs] = await Promise.all([
+        this.listingsRepository.findUserContacts([
+          rescueUserId,
+          listing.createdBy,
+        ]),
+        this.listingsRepository.findOrgContacts([listing.donorOrgId]),
       ]);
-      if (!org) return;
-      await this.notifications.claimEnded(org.contactEmail, {
+      const recipient = contacts.find((c) => c.id === rescueUserId);
+      if (!recipient) return;
+      const donor = contacts.find((c) => c.id === listing.createdBy);
+      const donorOrg = orgs.find((o) => o.id === listing.donorOrgId);
+      await this.notifications.claimEnded(recipient.email, {
+        recipientName: recipient.name,
         listingDescription: listing.description,
         endedBy: 'donor',
+        counterpartyName: donor?.name ?? null,
+        counterpartyOrgName: donorOrg?.name ?? null,
         reason,
       });
     } catch (err) {

@@ -37,6 +37,7 @@ function makeRepository() {
     incrementPickupCodeAttempts: jest.fn(),
     markListingCollectedIfDone: jest.fn().mockResolvedValue(false),
     findOrgContacts: jest.fn().mockResolvedValue([]),
+    findUserContacts: jest.fn().mockResolvedValue([]),
   };
 }
 
@@ -102,6 +103,7 @@ const outsider: AuthenticatedUser = {
 const availableListing = {
   id: 'listing-1',
   donorOrgId: 'org-donor',
+  createdBy: 'user-donor',
   status: 'available' as const,
   description: 'Surplus food',
   quantity: '10.00',
@@ -172,7 +174,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('notifies the donor after the claim commits', async () => {
+    it('notifies the donor user after the claim commits', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue({
         ...availableListing,
@@ -180,18 +182,27 @@ describe('RequestsService', () => {
       });
       repository.reserveListingForClaim.mockResolvedValue(reservedListing);
       repository.create.mockResolvedValue(baseRequest);
+      repository.findUserContacts.mockResolvedValue([
+        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
+        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
+      ]);
       repository.findOrgContacts.mockResolvedValue([
-        { id: 'org-donor', name: 'Fresh Mart', contactEmail: 'donor@x.com' },
         { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
       ]);
       const { service, notifications } = makeService(repository);
 
       await service.create(dto, rescueUser);
 
+      expect(repository.findUserContacts).toHaveBeenCalledWith([
+        'user-donor',
+        'user-rescue',
+      ]);
       expect(notifications.claimCreated).toHaveBeenCalledWith(
         'donor@x.com',
         expect.objectContaining({
+          recipientName: 'Priya Nair',
           listingDescription: 'Crate of bananas',
+          rescuePartnerName: 'Alex Tan',
           rescueOrgName: 'City Harvest',
         }),
       );
@@ -469,7 +480,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('notifies the donor when the rescue partner cancels', async () => {
+    it('notifies the donor user when the rescue partner cancels', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
       repository.findListingById.mockResolvedValue(reservedListing);
@@ -477,17 +488,29 @@ describe('RequestsService', () => {
         ...baseRequest,
         status: 'cancelled',
       });
+      repository.findUserContacts.mockResolvedValue([
+        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
+        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
+      ]);
       repository.findOrgContacts.mockResolvedValue([
-        { id: 'org-donor', name: 'Fresh Mart', contactEmail: 'donor@x.com' },
+        { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
       ]);
       const { service, notifications } = makeService(repository);
 
       await service.decide('request-1', dto, rescueUser);
 
-      expect(repository.findOrgContacts).toHaveBeenCalledWith(['org-donor']);
+      expect(repository.findUserContacts).toHaveBeenCalledWith([
+        'user-donor',
+        'user-rescue',
+      ]);
       expect(notifications.claimEnded).toHaveBeenCalledWith(
         'donor@x.com',
-        expect.objectContaining({ endedBy: 'rescue_partner' }),
+        expect.objectContaining({
+          recipientName: 'Priya Nair',
+          endedBy: 'rescue_partner',
+          counterpartyName: 'Alex Tan',
+          counterpartyOrgName: 'City Harvest',
+        }),
       );
     });
 
@@ -746,13 +769,9 @@ describe('RequestsService', () => {
         status: 'completed',
       });
       repository.markListingCollectedIfDone.mockResolvedValue(false);
-      repository.findOrgContacts.mockResolvedValue([
-        { id: 'org-donor', name: 'Fresh Mart', contactEmail: 'donor@x.com' },
-        {
-          id: 'org-rescue',
-          name: 'City Harvest',
-          contactEmail: 'rescue@x.com',
-        },
+      repository.findUserContacts.mockResolvedValue([
+        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
+        { id: 'user-rescue', name: 'Alex Tan', email: 'rescue@x.com' },
       ]);
       const { service, audit, notifications } = makeService(repository);
 
@@ -785,7 +804,10 @@ describe('RequestsService', () => {
       // Both parties are told once the pickup is verified.
       expect(notifications.pickupCompleted).toHaveBeenCalledWith(
         'donor@x.com',
-        expect.objectContaining({ collectedQuantity: '10 kg' }),
+        expect.objectContaining({
+          recipientName: 'Priya Nair',
+          collectedQuantity: '10 kg',
+        }),
       );
       expect(notifications.pickupCompleted).toHaveBeenCalledWith(
         'rescue@x.com',

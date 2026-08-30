@@ -21,6 +21,7 @@ function makeRepository() {
     cancelActiveClaim: jest.fn().mockResolvedValue(undefined),
     countAssociatedRequests: jest.fn().mockResolvedValue(0),
     findOrgContacts: jest.fn().mockResolvedValue([]),
+    findUserContacts: jest.fn().mockResolvedValue([]),
     findCreatorContext: jest.fn().mockResolvedValue({
       userStatus: 'active',
       orgType: 'donor',
@@ -1219,9 +1220,14 @@ describe('ListingsService', () => {
       repository.cancelActiveClaim.mockResolvedValue({
         id: 'claim-1',
         rescueOrgId: 'org-rescue',
+        claimedBy: 'user-rescue',
       });
+      repository.findUserContacts.mockResolvedValue([
+        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
+        { id: 'user-1', name: 'Priya Nair', email: 'donor@x.com' },
+      ]);
       repository.findOrgContacts.mockResolvedValue([
-        { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
+        { id: 'org-1', name: 'Green Grocer Co', contactEmail: 'donor@x.com' },
       ]);
       const { service, audit, notifications } = makeService(repository);
 
@@ -1256,7 +1262,13 @@ describe('ListingsService', () => {
       );
       expect(notifications.claimEnded).toHaveBeenCalledWith(
         'r@x.com',
-        expect.objectContaining({ endedBy: 'donor', reason: 'Van broke down' }),
+        expect.objectContaining({
+          recipientName: 'Alex Tan',
+          endedBy: 'donor',
+          counterpartyName: 'Priya Nair',
+          counterpartyOrgName: 'Green Grocer Co',
+          reason: 'Van broke down',
+        }),
       );
     });
 
