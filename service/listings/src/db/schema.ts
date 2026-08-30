@@ -215,6 +215,14 @@ export const requests = pgTable(
     collectedAt: timestamp('collected_at', { withTimezone: true }),
     noShowReason: text('no_show_reason').notNull().default(''),
 
+    // Set when each one-shot pickup reminder has been queued.
+    pickupOpenReminderSentAt: timestamp('pickup_open_reminder_sent_at', {
+      withTimezone: true,
+    }),
+    pickupCloseReminderSentAt: timestamp('pickup_close_reminder_sent_at', {
+      withTimezone: true,
+    }),
+
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

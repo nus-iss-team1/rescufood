@@ -64,6 +64,13 @@
       "when": 1788051137548,
       "tag": "0008_first_come_first_served_reserved_expiry",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788088011997,
+      "tag": "0009_pickup_reminder_markers",
+      "breakpoints": true
     }
   ]
 }

@@ -5,18 +5,33 @@ import {
   count,
   desc,
   eq,
+  gt,
   inArray,
   isNull,
+  isNotNull,
+  lte,
   notExists,
   or,
   sql,
   type SQL,
 } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { organisations, users } from '../db/external.schema';
 import { listings, requests } from '../db/schema';
 import type { QueryRequestsDto } from './dto/query-requests.dto';
+
+export type PickupReminderPhase = 'opening' | 'closing';
+
+export type PickupReminderTarget = {
+  listingDescription: string | null;
+  pickupLocation: string | null;
+  pickupWindowStart: Date | null;
+  pickupWindowEnd: Date | null;
+  rescueEmail: string;
+  donorEmail: string;
+};
 
 export type ListingRequest = typeof requests.$inferSelect;
 export type NewListingRequest = typeof requests.$inferInsert;
@@ -147,6 +162,75 @@ export class RequestsRepository {
       })
       .from(organisations)
       .where(inArray(organisations.id, ids));
+  }
+
+  // Atomically claims the active claims due a one-shot pickup reminder and
+  // stamps the marker, so a concurrent tick can't double-send. `opening`:
+  // window opens within `leadMs` and hasn't yet. `closing`: window is open
+  // and closes within `leadMs`.
+  async markDuePickupReminders(
+    phase: PickupReminderPhase,
+    now: Date,
+    leadMs: number,
+  ): Promise<{ id: string; listingId: string }[]> {
+    const horizon = new Date(now.getTime() + leadMs);
+    const sentCol =
+      phase === 'opening'
+        ? requests.pickupOpenReminderSentAt
+        : requests.pickupCloseReminderSentAt;
+    const due =
+      phase === 'opening'
+        ? and(
+            isNotNull(listings.pickupWindowStart),
+            gt(listings.pickupWindowStart, now),
+            lte(listings.pickupWindowStart, horizon),
+          )
+        : and(
+            isNotNull(listings.pickupWindowStart),
+            isNotNull(listings.pickupWindowEnd),
+            lte(listings.pickupWindowStart, now),
+            gt(listings.pickupWindowEnd, now),
+            lte(listings.pickupWindowEnd, horizon),
+          );
+
+    const dueIds = this.db
+      .select({ id: requests.id })
+      .from(requests)
+      .innerJoin(listings, eq(listings.id, requests.listingId))
+      .where(and(eq(requests.status, 'active'), isNull(sentCol), due));
+
+    return this.db
+      .update(requests)
+      .set(
+        phase === 'opening'
+          ? { pickupOpenReminderSentAt: now, updatedAt: now }
+          : { pickupCloseReminderSentAt: now, updatedAt: now },
+      )
+      .where(and(inArray(requests.id, dueIds), isNull(sentCol)))
+      .returning({ id: requests.id, listingId: requests.listingId });
+  }
+
+  // Listing + both parties' contact emails for the given claim ids.
+  async findPickupReminderTargets(
+    claimIds: string[],
+  ): Promise<PickupReminderTarget[]> {
+    if (claimIds.length === 0) return [];
+    const donor = alias(organisations, 'donor');
+    const rescue = alias(organisations, 'rescue');
+    return this.db
+      .select({
+        listingDescription: listings.description,
+        pickupLocation: listings.pickupLocation,
+        pickupWindowStart: listings.pickupWindowStart,
+        pickupWindowEnd: listings.pickupWindowEnd,
+        rescueEmail: rescue.contactEmail,
+        donorEmail: donor.contactEmail,
+      })
+      .from(requests)
+      .innerJoin(listings, eq(listings.id, requests.listingId))
+      .innerJoin(donor, eq(donor.id, listings.donorOrgId))
+      .innerJoin(rescue, eq(rescue.id, requests.rescueOrgId))
+      .where(inArray(requests.id, claimIds));
   }
 
   // Whether the caller may claim now: active account, approved rescue-partner

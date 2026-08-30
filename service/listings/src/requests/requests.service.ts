@@ -22,6 +22,7 @@ import {
   PublicListingRequest,
   toPublicRequest,
 } from './common/request-response.util';
+import { formatWindow } from './common/pickup-window.util';
 import { assertValidRequestStatusTransition } from './common/request-status.util';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { CreateRequestDto } from './dto/create-request.dto';
@@ -556,18 +557,4 @@ export class RequestsService {
     }
     return listing;
   }
-}
-
-const WINDOW_FORMAT = new Intl.DateTimeFormat('en-SG', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Asia/Singapore',
-});
-
-function formatWindow(
-  start: Date | null,
-  end: Date | null,
-): string | undefined {
-  if (!start || !end) return undefined;
-  return `${WINDOW_FORMAT.format(start)} – ${WINDOW_FORMAT.format(end)}`;
 }

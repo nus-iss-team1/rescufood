@@ -63,6 +63,7 @@ function chain(result: unknown) {
     'offset',
     'set',
     'leftJoin',
+    'innerJoin',
   ]) {
     self[method] = jest.fn(() => self);
   }
@@ -96,6 +97,8 @@ const baseRequest = {
   collectedQuantity: null,
   collectedAt: null,
   noShowReason: '',
+  pickupOpenReminderSentAt: null,
+  pickupCloseReminderSentAt: null,
   createdAt: new Date('2026-08-06T00:00:00Z'),
   updatedAt: new Date('2026-08-06T00:00:00Z'),
 };
@@ -534,6 +537,91 @@ describe('RequestsRepository', () => {
       await expect(
         repository.countMany({ limit: 20, offset: 0 }, adminViewer),
       ).resolves.toBe(4);
+    });
+  });
+
+  describe('markDuePickupReminders', () => {
+    const now = new Date('2026-08-10T12:00:00Z');
+    const lead = 24 * 60 * 60 * 1000;
+
+    it('opening: guards on active + unsent + window opening within the lead', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([]));
+      const updateChain = chain([{ id: 'r1', listingId: 'l1' }]);
+      db.update.mockReturnValue(updateChain);
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      const result = await repository.markDuePickupReminders(
+        'opening',
+        now,
+        lead,
+      );
+
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ pickupOpenReminderSentAt: now }),
+      );
+      const inner = renderWhere(
+        (db.select.mock.results[0].value as { where: jest.Mock }).where,
+      );
+      expect(inner.params).toEqual(
+        expect.arrayContaining(['active', now.toISOString()]),
+      );
+      // window opens after now, and no later than now + lead
+      expect(inner.sql).toContain('"pickup_window_start" >');
+      expect(inner.sql).toContain('"pickup_window_start" <=');
+      expect(result).toEqual([{ id: 'r1', listingId: 'l1' }]);
+    });
+
+    it('closing: window already open and ending within the lead', async () => {
+      const db = makeDb();
+      db.select.mockReturnValue(chain([]));
+      db.update.mockReturnValue(chain([]));
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      await repository.markDuePickupReminders('closing', now, lead);
+
+      const inner = renderWhere(
+        (db.select.mock.results[0].value as { where: jest.Mock }).where,
+      );
+      expect(inner.sql).toContain('"pickup_window_start" <=');
+      expect(inner.sql).toContain('"pickup_window_end" >');
+      expect(inner.sql).toContain('"pickup_window_end" <=');
+    });
+  });
+
+  describe('findPickupReminderTargets', () => {
+    it('returns [] for no ids without querying', async () => {
+      const db = makeDb();
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      await expect(repository.findPickupReminderTargets([])).resolves.toEqual(
+        [],
+      );
+      expect(db.select).not.toHaveBeenCalled();
+    });
+
+    it('joins the listing and both orgs', async () => {
+      const db = makeDb();
+      const queryChain = chain([
+        {
+          listingDescription: 'Bread',
+          pickupLocation: 'Loc',
+          pickupWindowStart: new Date('2026-08-11T00:00:00Z'),
+          pickupWindowEnd: new Date('2026-08-11T04:00:00Z'),
+          rescueEmail: 'r@x.com',
+          donorEmail: 'd@x.com',
+        },
+      ]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new RequestsRepository(db as unknown as Database);
+
+      const rows = await repository.findPickupReminderTargets(['r1']);
+
+      expect(queryChain.innerJoin).toHaveBeenCalledTimes(3);
+      expect(rows[0]).toMatchObject({
+        rescueEmail: 'r@x.com',
+        donorEmail: 'd@x.com',
+      });
     });
   });
 });

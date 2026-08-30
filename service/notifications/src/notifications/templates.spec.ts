@@ -123,8 +123,32 @@ describe('renderEmail', () => {
     ).not.toContain('claim on it was closed');
   });
 
+  it('renders the opening pickup_reminder with the window and location', () => {
+    const email = renderEmail('pickup_reminder', {
+      phase: 'opening',
+      listingDescription: 'Bread',
+      pickupWindow: 'Tue 3-7pm',
+      pickupLocation: '88 Market St',
+    });
+    expect(email.subject).toBe('Pickup window opening soon');
+    expect(email.body).toContain('opens soon');
+    expect(email.body).toContain('Pickup window: Tue 3-7pm');
+    expect(email.body).toContain('Pickup location: 88 Market St');
+  });
+
+  it('renders the closing pickup_reminder as a last-chance nudge', () => {
+    const email = renderEmail('pickup_reminder', {
+      phase: 'closing',
+      listingDescription: 'Bread',
+      pickupWindow: 'Tue 3-7pm',
+    });
+    expect(email.subject).toBe('Pickup window closing soon');
+    expect(email.body).toContain('closes within a day');
+    expect(email.body).toContain('collect it before it ends');
+  });
+
   it('throws UnsupportedNotificationTypeError for a type with no template', () => {
-    expect(() => renderEmail('pickup_reminder', {})).toThrow(
+    expect(() => renderEmail('listing_material_change', {})).toThrow(
       UnsupportedNotificationTypeError,
     );
   });

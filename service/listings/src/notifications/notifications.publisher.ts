@@ -4,7 +4,11 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { Logger } from 'nestjs-pino';
 
 type NotificationType =
-  'claim_created' | 'claim_cancelled' | 'pickup_completed' | 'listing_expired';
+  | 'claim_created'
+  | 'claim_cancelled'
+  | 'pickup_reminder'
+  | 'pickup_completed'
+  | 'listing_expired';
 
 // Publishes notification events to the queue service/notifications consumes.
 // Nil-safe (no queue url = disabled) and best-effort (send failures logged).
@@ -37,6 +41,11 @@ export class NotificationsPublisher {
   // Tells the other party a claim ended before pickup.
   claimEnded(to: string, payload: ClaimEndedPayload): Promise<void> {
     return this.publish('claim_cancelled', to, payload);
+  }
+
+  // Reminds a party that a pickup window is opening or closing soon.
+  pickupReminder(to: string, payload: PickupReminderPayload): Promise<void> {
+    return this.publish('pickup_reminder', to, payload);
   }
 
   // Tells both parties a pickup was verified.
@@ -87,6 +96,13 @@ export type ClaimEndedPayload = {
   listingDescription: string | null;
   endedBy: 'donor' | 'rescue_partner' | 'no_show';
   reason?: string;
+};
+
+export type PickupReminderPayload = {
+  phase: 'opening' | 'closing';
+  listingDescription: string | null;
+  pickupLocation?: string | null;
+  pickupWindow: string;
 };
 
 export type PickupCompletedPayload = {
