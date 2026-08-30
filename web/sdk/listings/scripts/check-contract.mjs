@@ -20,7 +20,9 @@ function broken(message) {
   process.exit(2);
 }
 
-const read = (path) => readFileSync(path, "utf8").split("\n");
+// Split on \r?\n so a CRLF checkout doesn't leave a trailing \r that breaks
+// the bare "}" match in body() and the $ anchor in members().
+const read = (path) => readFileSync(path, "utf8").split(/\r?\n/);
 
 /** Body lines of an exported class or interface, to its closing brace. */
 function body(path, name) {
