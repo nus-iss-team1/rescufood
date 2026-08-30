@@ -600,7 +600,7 @@ describe('RequestsRepository', () => {
       expect(db.select).not.toHaveBeenCalled();
     });
 
-    it('joins the listing and both orgs', async () => {
+    it('joins the listing and both parties users', async () => {
       const db = makeDb();
       const queryChain = chain([
         {
@@ -608,7 +608,9 @@ describe('RequestsRepository', () => {
           pickupLocation: 'Loc',
           pickupWindowStart: new Date('2026-08-11T00:00:00Z'),
           pickupWindowEnd: new Date('2026-08-11T04:00:00Z'),
+          rescueName: 'Alex Tan',
           rescueEmail: 'r@x.com',
+          donorName: 'Priya Nair',
           donorEmail: 'd@x.com',
         },
       ]);
@@ -619,7 +621,9 @@ describe('RequestsRepository', () => {
 
       expect(queryChain.innerJoin).toHaveBeenCalledTimes(3);
       expect(rows[0]).toMatchObject({
+        rescueName: 'Alex Tan',
         rescueEmail: 'r@x.com',
+        donorName: 'Priya Nair',
         donorEmail: 'd@x.com',
       });
     });

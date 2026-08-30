@@ -74,12 +74,14 @@ export class ListingExpiryService {
       await Promise.all([
         ...listingTargets.map((t) =>
           this.notifications.listingExpired(t.donorEmail, {
+            recipientName: t.donorName,
             listingDescription: t.description,
             wasClaimed: claimIds.length > 0,
           }),
         ),
         ...claimTargets.map((t) =>
           this.notifications.listingExpired(t.rescueEmail, {
+            recipientName: t.rescueName,
             listingDescription: t.listingDescription,
             wasClaimed: true,
           }),

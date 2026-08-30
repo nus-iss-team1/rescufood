@@ -86,31 +86,40 @@ export class NotificationsPublisher {
 }
 
 export type ClaimCreatedPayload = {
+  recipientName?: string | null;
   listingDescription: string | null;
+  rescuePartnerName?: string | null;
   rescueOrgName: string;
   pickupLocation?: string | null;
   pickupWindow?: string;
 };
 
 export type ClaimEndedPayload = {
+  recipientName?: string | null;
   listingDescription: string | null;
   endedBy: 'donor' | 'rescue_partner' | 'no_show';
+  counterpartyName?: string | null;
+  counterpartyOrgName?: string | null;
   reason?: string;
 };
 
 export type PickupReminderPayload = {
   phase: 'opening' | 'closing';
+  recipientName?: string | null;
   listingDescription: string | null;
   pickupLocation?: string | null;
   pickupWindow: string;
+  pickupWindowEnd?: string;
 };
 
 export type PickupCompletedPayload = {
+  recipientName?: string | null;
   listingDescription: string | null;
   collectedQuantity?: string;
 };
 
 export type ListingExpiredPayload = {
+  recipientName?: string | null;
   listingDescription: string | null;
   wasClaimed: boolean;
 };

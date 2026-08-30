@@ -463,16 +463,22 @@ export class RequestsService {
     claimant: AuthenticatedUser,
   ): Promise<void> {
     try {
-      const orgs = await this.requestsRepository.findOrgContacts([
-        listing.donorOrgId,
-        claimant.orgId ?? '',
+      const [contacts, orgs] = await Promise.all([
+        this.requestsRepository.findUserContacts([
+          listing.createdBy,
+          claimant.userId,
+        ]),
+        this.requestsRepository.findOrgContacts([claimant.orgId ?? '']),
       ]);
-      const donor = orgs.find((o) => o.id === listing.donorOrgId);
+      const donor = contacts.find((c) => c.id === listing.createdBy);
       if (!donor) return;
-      const rescue = orgs.find((o) => o.id === claimant.orgId);
-      await this.notifications.claimCreated(donor.contactEmail, {
+      const partner = contacts.find((c) => c.id === claimant.userId);
+      const rescueOrg = orgs.find((o) => o.id === claimant.orgId);
+      await this.notifications.claimCreated(donor.email, {
+        recipientName: donor.name,
         listingDescription: listing.description,
-        rescueOrgName: rescue?.name ?? 'A rescue partner',
+        rescuePartnerName: partner?.name ?? null,
+        rescueOrgName: rescueOrg?.name ?? 'A rescue partner',
         pickupLocation: listing.pickupLocation,
         pickupWindow: formatWindow(
           listing.pickupWindowStart,
@@ -492,14 +498,25 @@ export class RequestsService {
   ): Promise<void> {
     try {
       const actorIsDonor = actor.orgId === listing.donorOrgId;
-      const recipientOrgId = actorIsDonor
-        ? claim.rescueOrgId
-        : listing.donorOrgId;
-      const [org] = await this.requestsRepository.findOrgContacts([
-        recipientOrgId,
+      const recipientUserId = actorIsDonor
+        ? claim.claimedBy
+        : listing.createdBy;
+      const counterpartyOrgId = actorIsDonor
+        ? listing.donorOrgId
+        : claim.rescueOrgId;
+      const [contacts, orgs] = await Promise.all([
+        this.requestsRepository.findUserContacts([
+          recipientUserId,
+          actor.userId,
+        ]),
+        this.requestsRepository.findOrgContacts([counterpartyOrgId]),
       ]);
-      if (!org) return;
-      await this.notifications.claimEnded(org.contactEmail, {
+      const recipient = contacts.find((c) => c.id === recipientUserId);
+      if (!recipient) return;
+      const counterparty = contacts.find((c) => c.id === actor.userId);
+      const counterpartyOrg = orgs.find((o) => o.id === counterpartyOrgId);
+      await this.notifications.claimEnded(recipient.email, {
+        recipientName: recipient.name,
         listingDescription: listing.description,
         endedBy:
           dto.status === 'no_show'
@@ -507,6 +524,8 @@ export class RequestsService {
             : actorIsDonor
               ? 'donor'
               : 'rescue_partner',
+        counterpartyName: counterparty?.name ?? null,
+        counterpartyOrgName: counterpartyOrg?.name ?? null,
         reason:
           dto.status === 'no_show' ? dto.noShowReason : dto.cancellationReason,
       });
@@ -521,17 +540,18 @@ export class RequestsService {
     collectedQuantity: string,
   ): Promise<void> {
     try {
-      const orgs = await this.requestsRepository.findOrgContacts([
-        listing.donorOrgId,
-        claim.rescueOrgId,
+      const contacts = await this.requestsRepository.findUserContacts([
+        listing.createdBy,
+        claim.claimedBy,
       ]);
       const qty =
         listing.unit != null
           ? `${collectedQuantity} ${listing.unit}`
           : undefined;
       await Promise.all(
-        orgs.map((o) =>
-          this.notifications.pickupCompleted(o.contactEmail, {
+        contacts.map((c) =>
+          this.notifications.pickupCompleted(c.email, {
+            recipientName: c.name,
             listingDescription: listing.description,
             collectedQuantity: qty,
           }),

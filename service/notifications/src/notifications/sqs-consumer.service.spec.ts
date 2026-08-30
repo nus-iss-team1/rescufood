@@ -62,7 +62,7 @@ describe('SqsConsumerService.process', () => {
     expect(outcome).toBe('sent');
     expect(mailer.send).toHaveBeenCalledWith(
       'ops@freshmart.sg',
-      'Your organisation has been approved',
+      'Your Organisation Has Been Approved',
       expect.stringContaining('Fresh Mart'),
     );
     expect(repository.record).toHaveBeenCalledWith(

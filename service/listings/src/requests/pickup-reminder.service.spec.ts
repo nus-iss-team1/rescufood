@@ -33,7 +33,9 @@ const target = {
   pickupLocation: 'Loc A',
   pickupWindowStart: new Date('2026-08-11T07:00:00Z'),
   pickupWindowEnd: new Date('2026-08-11T11:00:00Z'),
+  rescueName: 'Alex Tan',
   rescueEmail: 'rescue@x.com',
+  donorName: 'Priya Nair',
   donorEmail: 'donor@x.com',
 };
 
@@ -74,11 +76,15 @@ describe('PickupReminderService', () => {
       expect.objectContaining({
         phase: 'opening',
         listingDescription: 'Bread',
+        recipientName: 'Alex Tan',
       }),
     );
     expect(notifications.pickupReminder).toHaveBeenCalledWith(
       'donor@x.com',
-      expect.objectContaining({ phase: 'opening' }),
+      expect.objectContaining({
+        phase: 'opening',
+        recipientName: 'Priya Nair',
+      }),
     );
   });
 
