@@ -2,12 +2,15 @@ import type { ListingRequest } from '../requests.repository';
 
 export type PublicListingRequest = Omit<
   ListingRequest,
-  'pickupCodeHash' | 'pickupCodeAttempts'
+  | 'pickupCodeHash'
+  | 'pickupCodeAttempts'
+  | 'pickupOpenReminderSentAt'
+  | 'pickupCloseReminderSentAt'
 >;
 
-// Strips the pickup-code hash and attempt counter - returning the hash
-// would let a reader brute-force the code offline. Explicit allowlist so a
-// new sensitive column doesn't leak by default.
+// Strips the pickup-code hash/attempt counter (returning the hash would let
+// a reader brute-force the code offline) and the internal reminder markers.
+// Explicit allowlist so a new sensitive column doesn't leak by default.
 export function toPublicRequest(request: ListingRequest): PublicListingRequest {
   return {
     id: request.id,

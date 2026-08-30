@@ -20,6 +20,8 @@ const fullRequest: ListingRequest = {
   collectedQuantity: null,
   collectedAt: null,
   noShowReason: '',
+  pickupOpenReminderSentAt: null,
+  pickupCloseReminderSentAt: null,
   createdAt: new Date('2026-08-06T00:00:00Z'),
   updatedAt: new Date('2026-08-06T01:00:00Z'),
 };
@@ -33,9 +35,17 @@ describe('toPublicRequest', () => {
   });
 
   it('keeps every other field intact', () => {
-    const { pickupCodeHash, pickupCodeAttempts, ...expected } = fullRequest;
+    const {
+      pickupCodeHash,
+      pickupCodeAttempts,
+      pickupOpenReminderSentAt,
+      pickupCloseReminderSentAt,
+      ...expected
+    } = fullRequest;
     void pickupCodeHash;
     void pickupCodeAttempts;
+    void pickupOpenReminderSentAt;
+    void pickupCloseReminderSentAt;
 
     expect(toPublicRequest(fullRequest)).toEqual(expected);
   });

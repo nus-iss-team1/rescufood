@@ -66,6 +66,28 @@ describe('NotificationsPublisher', () => {
     });
   });
 
+  it('maps pickupReminder to the pickup_reminder type, carrying the phase', async () => {
+    const publisher = new NotificationsPublisher(
+      makeConfig({ NOTIFICATION_QUEUE_URL: QUEUE, AWS_REGION: 'x' }),
+      makeLogger() as never,
+    );
+
+    await publisher.pickupReminder('p@x.com', {
+      phase: 'closing',
+      listingDescription: 'Milk',
+      pickupWindow: 'Tue 3-7pm',
+    });
+
+    const [input] = (SendMessageCommand as unknown as jest.Mock).mock
+      .calls[0] as [{ MessageBody: string }];
+    const body = JSON.parse(input.MessageBody) as {
+      type: string;
+      payload: { phase: string };
+    };
+    expect(body.type).toBe('pickup_reminder');
+    expect(body.payload.phase).toBe('closing');
+  });
+
   it('maps claimEnded to the claim_cancelled type', async () => {
     const publisher = new NotificationsPublisher(
       makeConfig({ NOTIFICATION_QUEUE_URL: QUEUE, AWS_REGION: 'x' }),

@@ -98,7 +98,7 @@ describe('SqsConsumerService.process', () => {
   it('records and permanently fails a well-formed message of an unimplemented type', async () => {
     const outcome = await service.process(
       message({
-        type: 'pickup_reminder',
+        type: 'listing_material_change',
         channel: 'email',
         recipientEmail: 'donor@example.com',
       }),
@@ -109,7 +109,7 @@ describe('SqsConsumerService.process', () => {
     expect(repository.record).toHaveBeenCalledTimes(1);
     const recorded = repository.record.mock.calls[0][0];
     expect(recorded.status).toBe('failed');
-    expect(recorded.failureReason).toContain('pickup_reminder');
+    expect(recorded.failureReason).toContain('listing_material_change');
   });
 
   it('treats a mailer error as transient so the message is left for SQS to retry', async () => {

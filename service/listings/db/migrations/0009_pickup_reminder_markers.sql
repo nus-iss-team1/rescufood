@@ -1,0 +1,2 @@
+ALTER TABLE "requests" ADD COLUMN "pickup_open_reminder_sent_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "requests" ADD COLUMN "pickup_close_reminder_sent_at" timestamp with time zone;

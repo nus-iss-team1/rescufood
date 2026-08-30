@@ -97,6 +97,24 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
     };
   },
 
+  // A pickup window is opening (to both parties) or closing (to the claimant).
+  pickup_reminder: (payload) => {
+    const listing = str(payload.listingDescription, 'a listing');
+    const where = str(payload.pickupLocation, '');
+    const when = str(payload.pickupWindow, 'the scheduled window');
+    const location = where ? `\n\nPickup location: ${where}` : '';
+    if (payload.phase === 'closing') {
+      return {
+        subject: 'Pickup window closing soon',
+        body: `Hi,\n\nThe pickup window for "${listing}" closes within a day (${when}). Please collect it before it ends.${location}${signoff}`,
+      };
+    }
+    return {
+      subject: 'Pickup window opening soon',
+      body: `Hi,\n\nThe pickup window for "${listing}" opens soon.\n\nPickup window: ${when}${location}${signoff}`,
+    };
+  },
+
   // To both parties: the pickup was verified.
   pickup_completed: (payload) => {
     const listing = str(payload.listingDescription, 'a listing');
