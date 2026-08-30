@@ -36,8 +36,14 @@ export type CreatorContext = {
 export class ListingsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async create(values: NewListing): Promise<Listing> {
-    const [created] = await this.db.insert(listings).values(values).returning();
+  async create(
+    values: NewListing,
+    executor: Database = this.db,
+  ): Promise<Listing> {
+    const [created] = await executor
+      .insert(listings)
+      .values(values)
+      .returning();
     return created;
   }
 
@@ -117,8 +123,12 @@ export class ListingsRepository {
   // silently reviving the listing. Scoped to `deletedAt IS NULL` so a
   // double-delete is a no-op (returns undefined) rather than clobbering the
   // original deletedAt/version.
-  async delete(id: string, nextVersion: number): Promise<Listing | undefined> {
-    const [deleted] = await this.db
+  async delete(
+    id: string,
+    nextVersion: number,
+    executor: Database = this.db,
+  ): Promise<Listing | undefined> {
+    const [deleted] = await executor
       .update(listings)
       .set({
         deletedAt: new Date(),
@@ -153,14 +163,15 @@ export class ListingsRepository {
     };
   }
 
-  // Ends the active claim on a listing the donor is withdrawing.
+  // Ends the active claim on a listing the donor is withdrawing. Returns the
+  // cancelled claim id, if there was one.
   async cancelActiveClaim(
     listingId: string,
     donorReason: string,
     executor: Database = this.db,
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const now = new Date();
-    await executor
+    const [cancelled] = await executor
       .update(requests)
       .set({
         status: 'cancelled',
@@ -172,7 +183,9 @@ export class ListingsRepository {
       })
       .where(
         and(eq(requests.listingId, listingId), eq(requests.status, 'active')),
-      );
+      )
+      .returning({ id: requests.id });
+    return cancelled?.id;
   }
 
   // Backs the "no delete while associated requests exist" rule in ListingsService.remove.
@@ -189,50 +202,45 @@ export class ListingsRepository {
   // nobody claimed in time and a `reserved` one whose window closed before
   // the claim was collected. Scoped to match listings_expiry_scan_idx;
   // bumps `version` so a racing donor edit 409s instead of overwriting
-  // `expired`.
+  // `expired`. Runs on the caller's executor so the sweep's audit writes
+  // land in the same transaction.
   async expireOverdue(
-    now: Date = new Date(),
-  ): Promise<{ expiredListings: number; expiredRequests: number }> {
-    return this.db.transaction(async (tx) => {
-      const expired = await tx
-        .update(listings)
-        .set({
-          status: 'expired',
-          version: sql`${listings.version} + 1`,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            inArray(listings.status, ['available', 'reserved']),
-            lte(listings.pickupWindowEnd, now),
-            isNull(listings.deletedAt),
-          ),
-        )
-        .returning({ id: listings.id });
+    now: Date,
+    executor: Database,
+  ): Promise<{ listingIds: string[]; claimIds: string[] }> {
+    const expired = await executor
+      .update(listings)
+      .set({
+        status: 'expired',
+        version: sql`${listings.version} + 1`,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          inArray(listings.status, ['available', 'reserved']),
+          lte(listings.pickupWindowEnd, now),
+          isNull(listings.deletedAt),
+        ),
+      )
+      .returning({ id: listings.id });
 
-      if (expired.length === 0) {
-        return { expiredListings: 0, expiredRequests: 0 };
-      }
+    if (expired.length === 0) {
+      return { listingIds: [], claimIds: [] };
+    }
+    const listingIds = expired.map((row) => row.id);
 
-      const expiredRequests = await tx
-        .update(requests)
-        .set({ status: 'expired', updatedAt: now })
-        .where(
-          and(
-            inArray(
-              requests.listingId,
-              expired.map((listing) => listing.id),
-            ),
-            eq(requests.status, 'active'),
-          ),
-        )
-        .returning({ id: requests.id });
+    const expiredClaims = await executor
+      .update(requests)
+      .set({ status: 'expired', updatedAt: now })
+      .where(
+        and(
+          inArray(requests.listingId, listingIds),
+          eq(requests.status, 'active'),
+        ),
+      )
+      .returning({ id: requests.id });
 
-      return {
-        expiredListings: expired.length,
-        expiredRequests: expiredRequests.length,
-      };
-    });
+    return { listingIds, claimIds: expiredClaims.map((row) => row.id) };
   }
 
   private buildConditions(

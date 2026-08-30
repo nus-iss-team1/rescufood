@@ -86,9 +86,14 @@ function makeFile(overrides: Partial<Express.Multer.File> = {}) {
   } as Express.Multer.File;
 }
 
+function makeAudit() {
+  return { record: jest.fn().mockResolvedValue(undefined) };
+}
+
 function makeService(repository: ReturnType<typeof makeRepository>) {
   const imagesRepository = makeImagesRepository();
   const uploadService = makeUploadService();
+  const audit = makeAudit();
   const s3 = makeS3();
   const logger = makeLogger();
   const db = makeDb();
@@ -96,11 +101,12 @@ function makeService(repository: ReturnType<typeof makeRepository>) {
     repository as unknown as ListingsRepository,
     imagesRepository as unknown as ListingImagesRepository,
     uploadService as unknown as ListingImageUploadService,
+    audit as never,
     s3 as never,
     logger as never,
     db as never,
   );
-  return { service, imagesRepository, uploadService, s3, logger, db };
+  return { service, imagesRepository, uploadService, audit, s3, logger, db };
 }
 
 const owner: AuthenticatedUser = {
@@ -205,7 +211,7 @@ describe('ListingsService', () => {
     it('inserts and returns the created listing with no images when no files are given', async () => {
       const repository = makeRepository();
       repository.create.mockResolvedValue(baseListing);
-      const { service, imagesRepository, uploadService } =
+      const { service, imagesRepository, uploadService, audit } =
         makeService(repository);
 
       const result = await service.create(validCreateDto, [], owner);
@@ -218,6 +224,15 @@ describe('ListingsService', () => {
       // see OrgMembershipGuard.
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ donorOrgId: 'org-1', createdBy: 'user-1' }),
+        expect.anything(),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.created',
+          entityType: 'listing',
+          entityId: baseListing.id,
+        }),
+        expect.anything(),
       );
     });
 
@@ -347,6 +362,7 @@ describe('ListingsService', () => {
           pickupWindowStart: undefined,
           pickupWindowEnd: undefined,
         }),
+        expect.anything(),
       );
     });
   });
@@ -692,13 +708,22 @@ describe('ListingsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing);
       repository.delete.mockResolvedValue(undefined);
-      const { service } = makeService(repository);
+      const { service, audit } = makeService(repository);
 
       await service.remove('listing-1', owner);
 
       expect(repository.delete).toHaveBeenCalledWith(
         'listing-1',
         baseListing.version + 1,
+        expect.anything(),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.deleted',
+          entityType: 'listing',
+          entityId: 'listing-1',
+        }),
+        expect.anything(),
       );
     });
 
@@ -805,7 +830,7 @@ describe('ListingsService', () => {
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
-    it('allows a status transition reachable from the current one', async () => {
+    it('allows a status transition reachable from the current one, auditing it', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseListing,
@@ -816,7 +841,7 @@ describe('ListingsService', () => {
         status: 'available',
         version: 2,
       });
-      const { service } = makeService(repository);
+      const { service, audit } = makeService(repository);
 
       const result = await service.update(
         'listing-1',
@@ -826,20 +851,80 @@ describe('ListingsService', () => {
       );
 
       expect(result.status).toBe('available');
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.published',
+          entityType: 'listing',
+          entityId: 'listing-1',
+        }),
+        expect.anything(),
+      );
     });
 
-    it('allows leaving the status unchanged', async () => {
+    it('audits unpublishing back to draft', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'draft',
+        version: 2,
+      });
+      const { service, audit } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'draft' },
+        [],
+        owner,
+      );
+
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'listing.unpublished' }),
+        expect.anything(),
+      );
+    });
+
+    it('audits a field-only edit with the changed field names', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing);
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        version: 2,
+      });
+      const { service, audit } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, description: 'new', quantity: 5 },
+        [],
+        owner,
+      );
+
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.updated',
+          metadata: { fields: ['description', 'quantity'] },
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('leaves the status unchanged and writes no audit row for a no-op touch', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing); // status: draft
       repository.updateWithVersion.mockResolvedValue({
         ...baseListing,
         version: 2,
       });
-      const { service } = makeService(repository);
+      const { service, audit } = makeService(repository);
 
       await expect(
         service.update('listing-1', { version: 1, status: 'draft' }, [], owner),
       ).resolves.toMatchObject({ status: 'draft' });
+      expect(audit.record).not.toHaveBeenCalled();
     });
   });
 
@@ -1076,7 +1161,7 @@ describe('ListingsService', () => {
         status: 'cancelled',
         version: 2,
       });
-      const { service, db } = makeService(repository);
+      const { service, db, audit } = makeService(repository);
 
       const result = await service.update(
         'listing-1',
@@ -1089,6 +1174,14 @@ describe('ListingsService', () => {
       expect(db.transaction).toHaveBeenCalledTimes(1);
       // No claim to end on an available listing.
       expect(repository.cancelActiveClaim).not.toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.cancelled',
+          entityId: 'listing-1',
+          metadata: { previousStatus: 'available', withdrawal: false },
+        }),
+        expect.anything(),
+      );
     });
 
     it('lets a donor withdraw a reserved listing, ending the active claim', async () => {
@@ -1102,7 +1195,8 @@ describe('ListingsService', () => {
         status: 'cancelled',
         version: 2,
       });
-      const { service } = makeService(repository);
+      repository.cancelActiveClaim.mockResolvedValue('claim-1');
+      const { service, audit } = makeService(repository);
 
       const result = await service.update(
         'listing-1',
@@ -1115,6 +1209,22 @@ describe('ListingsService', () => {
       expect(repository.cancelActiveClaim).toHaveBeenCalledWith(
         'listing-1',
         'Van broke down',
+        expect.anything(),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.cancelled',
+          entityType: 'claim',
+          entityId: 'claim-1',
+          metadata: { listingId: 'listing-1', byDonorWithdrawal: true },
+        }),
+        expect.anything(),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.cancelled',
+          metadata: { previousStatus: 'reserved', withdrawal: true },
+        }),
         expect.anything(),
       );
     });

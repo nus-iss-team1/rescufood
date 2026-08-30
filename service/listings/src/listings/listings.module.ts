@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { DbModule } from '../db/db.module';
 import { StorageModule } from '../storage/storage.module';
@@ -10,7 +11,7 @@ import { ListingsRepository } from './listings.repository';
 import { ListingsService } from './listings.service';
 
 @Module({
-  imports: [AuthModule, DbModule, StorageModule],
+  imports: [AuditModule, AuthModule, DbModule, StorageModule],
   controllers: [ListingsController],
   providers: [
     ListingsService,

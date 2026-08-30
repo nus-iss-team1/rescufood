@@ -279,7 +279,7 @@ describe('ListingsRepository', () => {
       const repository = new ListingsRepository(db as unknown as Database);
       const now = new Date('2026-08-10T00:00:00Z');
 
-      const result = await repository.expireOverdue(now);
+      const result = await repository.expireOverdue(now, db as never);
 
       expect(db.update).toHaveBeenNthCalledWith(1, listings);
       expect(listingsChain.set).toHaveBeenCalledWith(
@@ -307,17 +307,22 @@ describe('ListingsRepository', () => {
         expect.arrayContaining(['listing-1', 'listing-2', 'active']),
       );
 
-      expect(result).toEqual({ expiredListings: 2, expiredRequests: 1 });
+      expect(result).toEqual({
+        listingIds: ['listing-1', 'listing-2'],
+        claimIds: ['request-1'],
+      });
     });
 
-    it('returns zero counts and never touches requests when nothing is overdue', async () => {
+    it('returns empty id lists and never touches requests when nothing is overdue', async () => {
       const db = makeDb();
       db.update.mockReturnValueOnce(chain([]));
       const repository = new ListingsRepository(db as unknown as Database);
 
-      await expect(repository.expireOverdue()).resolves.toEqual({
-        expiredListings: 0,
-        expiredRequests: 0,
+      await expect(
+        repository.expireOverdue(new Date(), db as never),
+      ).resolves.toEqual({
+        listingIds: [],
+        claimIds: [],
       });
       expect(db.update).toHaveBeenCalledTimes(1);
     });
