@@ -7,6 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import { AuditAction } from '../audit/audit.actions';
+import { AuditRepository } from '../audit/audit.repository';
 import { resolveOrgIdByUserId } from '../auth/org-membership.guard';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
@@ -45,6 +47,7 @@ const ACTIVE_CLAIM_CONSTRAINT = 'requests_active_claim_per_listing_uq';
 export class RequestsService {
   constructor(
     private readonly requestsRepository: RequestsRepository,
+    private readonly auditRepository: AuditRepository,
     @Inject(DATABASE) private readonly db: Database,
     private readonly logger: Logger,
   ) {}
@@ -110,7 +113,7 @@ export class RequestsService {
             `listing ${dto.listingId} is no longer available to claim`,
           );
         }
-        return this.requestsRepository.create(
+        const claim = await this.requestsRepository.create(
           {
             listingId: dto.listingId,
             rescueOrgId: user.orgId!,
@@ -121,6 +124,20 @@ export class RequestsService {
           },
           tx,
         );
+        await this.auditRepository.record(
+          {
+            actor: { userId: user.userId, orgId: user.orgId ?? null },
+            action: AuditAction.ClaimCreated,
+            entityType: 'claim',
+            entityId: claim.id,
+            metadata: {
+              listingId: dto.listingId,
+              donorOrgId: reserved.donorOrgId,
+            },
+          },
+          tx,
+        );
+        return claim;
       });
       return toPublicRequest(created);
     } catch (err) {
@@ -218,6 +235,29 @@ export class RequestsService {
             `request ${id} was modified since it was read`,
           );
         }
+
+        await this.auditRepository.record(
+          {
+            actor: { userId: user.userId, orgId: user.orgId ?? null },
+            action:
+              dto.status === 'no_show'
+                ? AuditAction.ClaimNoShow
+                : AuditAction.ClaimCancelled,
+            entityType: 'claim',
+            entityId: id,
+            reason:
+              dto.status === 'no_show'
+                ? (dto.noShowReason ?? '')
+                : (dto.cancellationReason ?? ''),
+            metadata: {
+              previousStatus: existing.status,
+              listingId: existing.listingId,
+              listingReopened: existing.status === 'active',
+            },
+          },
+          tx,
+        );
+
         return toPublicRequest(updated);
       });
     } catch (err) {
@@ -247,18 +287,34 @@ export class RequestsService {
     const code = createPickupCode();
     const expiresAt = new Date(Date.now() + PICKUP_CODE_TTL_MINUTES * 60_000);
 
-    const updated = await this.requestsRepository.updateStatus(id, 'active', {
-      pickupCodeHash: hashPickupCode(code),
-      codeExpiresAt: expiresAt,
-      codeGeneratedBy: user.userId,
-      pickupCodeAttempts: 0,
-      updatedAt: new Date(),
-    });
-    if (!updated) {
-      throw new ConflictException(
-        `request ${id} was modified since it was read`,
+    await this.db.transaction(async (tx) => {
+      const updated = await this.requestsRepository.updateStatus(
+        id,
+        'active',
+        {
+          pickupCodeHash: hashPickupCode(code),
+          codeExpiresAt: expiresAt,
+          codeGeneratedBy: user.userId,
+          pickupCodeAttempts: 0,
+          updatedAt: new Date(),
+        },
+        tx,
       );
-    }
+      if (!updated) {
+        throw new ConflictException(
+          `request ${id} was modified since it was read`,
+        );
+      }
+      await this.auditRepository.record(
+        {
+          actor: { userId: user.userId, orgId: user.orgId ?? null },
+          action: AuditAction.PickupCodeGenerated,
+          entityType: 'claim',
+          entityId: id,
+        },
+        tx,
+      );
+    });
 
     return { code, expiresAt };
   }
@@ -359,7 +415,28 @@ export class RequestsService {
           existing.listingId,
           tx,
         );
+
+      const actor = { userId: user.userId, orgId: user.orgId ?? null };
+      await this.auditRepository.record(
+        {
+          actor,
+          action: AuditAction.ClaimCompleted,
+          entityType: 'claim',
+          entityId: id,
+          metadata: { collectedQuantity, listingId: existing.listingId },
+        },
+        tx,
+      );
       if (collected) {
+        await this.auditRepository.record(
+          {
+            actor,
+            action: AuditAction.ListingCollected,
+            entityType: 'listing',
+            entityId: existing.listingId,
+          },
+          tx,
+        );
         this.logger.log(
           { listingId: existing.listingId },
           'listing collected - claim verified at pickup',

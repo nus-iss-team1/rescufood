@@ -54,15 +54,21 @@ function makeLogger() {
   return { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
 }
 
+function makeAudit() {
+  return { record: jest.fn().mockResolvedValue(undefined) };
+}
+
 function makeService(repository: ReturnType<typeof makeRepository>) {
   const db = makeDb();
   const logger = makeLogger();
+  const audit = makeAudit();
   const service = new RequestsService(
     repository as unknown as RequestsRepository,
+    audit as never,
     db as never,
     logger as never,
   );
-  return { service, db, logger };
+  return { service, db, logger, audit };
 }
 
 const rescueUser: AuthenticatedUser = {
@@ -118,7 +124,7 @@ describe('RequestsService', () => {
       repository.findListingById.mockResolvedValue(availableListing);
       repository.reserveListingForClaim.mockResolvedValue(reservedListing);
       repository.create.mockResolvedValue(baseRequest);
-      const { service, db } = makeService(repository);
+      const { service, db, audit } = makeService(repository);
 
       const result = await service.create(dto, rescueUser);
 
@@ -136,6 +142,16 @@ describe('RequestsService', () => {
           idempotencyKey: 'idem-1',
           status: 'active',
           requestedQuantity: '10.00',
+        }),
+        TX_TOKEN,
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actor: { userId: 'user-rescue', orgId: 'org-rescue' },
+          action: 'claim.created',
+          entityType: 'claim',
+          entityId: 'request-1',
+          metadata: { listingId: 'listing-1', donorOrgId: 'org-donor' },
         }),
         TX_TOKEN,
       );
@@ -378,7 +394,7 @@ describe('RequestsService', () => {
         ...baseRequest,
         status: 'cancelled',
       });
-      const { service, db } = makeService(repository);
+      const { service, db, audit } = makeService(repository);
 
       const result = await service.decide('request-1', dto, rescueUser);
 
@@ -394,6 +410,20 @@ describe('RequestsService', () => {
         expect.objectContaining({
           status: 'cancelled',
           cancellationReason: 'no longer needed',
+        }),
+        TX_TOKEN,
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.cancelled',
+          entityType: 'claim',
+          entityId: 'request-1',
+          reason: 'no longer needed',
+          metadata: {
+            previousStatus: 'active',
+            listingId: 'listing-1',
+            listingReopened: true,
+          },
         }),
         TX_TOKEN,
       );
@@ -468,7 +498,7 @@ describe('RequestsService', () => {
         ...baseRequest,
         status: 'no_show',
       });
-      const { service } = makeService(repository);
+      const { service, audit } = makeService(repository);
 
       const result = await service.decide('request-1', dto, donorUser);
 
@@ -483,6 +513,14 @@ describe('RequestsService', () => {
         expect.objectContaining({
           status: 'no_show',
           noShowReason: 'nobody came to collect it',
+        }),
+        TX_TOKEN,
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.no_show',
+          entityId: 'request-1',
+          reason: 'nobody came to collect it',
         }),
         TX_TOKEN,
       );
@@ -544,6 +582,26 @@ describe('RequestsService', () => {
       expect(values.pickupCodeHash).toBe(hashPickupCode(result.code));
       expect(values.codeGeneratedBy).toBe(rescueUser.userId);
       expect(values.pickupCodeAttempts).toBe(0);
+    });
+
+    it('audits the code generation in the same transaction', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(activeRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue(activeRequest);
+      const { service, db, audit } = makeService(repository);
+
+      await service.generatePickupCode('request-1', rescueUser);
+
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'pickup_code.generated',
+          entityType: 'claim',
+          entityId: 'request-1',
+        }),
+        TX_TOKEN,
+      );
     });
 
     it('allows either party to generate a code', async () => {
@@ -625,7 +683,8 @@ describe('RequestsService', () => {
         ...activeRequest,
         status: 'completed',
       });
-      const { service } = makeService(repository);
+      repository.markListingCollectedIfDone.mockResolvedValue(false);
+      const { service, audit } = makeService(repository);
 
       const result = await service.verifyPickupCode(
         'request-1',
@@ -641,6 +700,15 @@ describe('RequestsService', () => {
           status: 'completed',
           verifiedBy: donorUser.userId,
           collectedQuantity: '10',
+        }),
+        expect.anything(),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.completed',
+          entityType: 'claim',
+          entityId: 'request-1',
+          metadata: { collectedQuantity: '10', listingId: 'listing-1' },
         }),
         expect.anything(),
       );
@@ -677,7 +745,7 @@ describe('RequestsService', () => {
         status: 'completed',
       });
       repository.markListingCollectedIfDone.mockResolvedValue(true);
-      const { service, logger } = makeService(repository);
+      const { service, logger, audit } = makeService(repository);
 
       await service.verifyPickupCode('request-1', { code }, donorUser);
 
@@ -688,6 +756,14 @@ describe('RequestsService', () => {
       expect(logger.log).toHaveBeenCalledWith(
         { listingId: 'listing-1' },
         expect.stringContaining('collected'),
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'listing.collected',
+          entityType: 'listing',
+          entityId: 'listing-1',
+        }),
+        expect.anything(),
       );
     });
 

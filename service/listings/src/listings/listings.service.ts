@@ -7,6 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import { AuditAction } from '../audit/audit.actions';
+import { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
@@ -60,6 +62,7 @@ export class ListingsService {
     private readonly listingsRepository: ListingsRepository,
     private readonly listingImagesRepository: ListingImagesRepository,
     private readonly listingImageUploadService: ListingImageUploadService,
+    private readonly auditRepository: AuditRepository,
     private readonly s3: S3Service,
     private readonly logger: Logger,
     @Inject(DATABASE) private readonly db: Database,
@@ -91,25 +94,41 @@ export class ListingsService {
 
     assertPickupWindowValid(dto.pickupWindowStart, dto.pickupWindowEnd);
 
-    const created = await this.listingsRepository.create({
-      // Guaranteed by OrgMembershipGuard, not client input - a listing
-      // is always attributed to the caller's own organisation.
-      donorOrgId: user.orgId!,
-      createdBy: user.userId,
-      category: dto.category,
-      description: dto.description,
-      quantity: dto.quantity?.toString(),
-      unit: dto.unit,
-      allergens: dto.allergens,
-      handlingInstructions: dto.handlingInstructions,
-      useBy: dto.useBy ? new Date(dto.useBy) : undefined,
-      pickupLocation: dto.pickupLocation,
-      pickupWindowStart: dto.pickupWindowStart
-        ? new Date(dto.pickupWindowStart)
-        : undefined,
-      pickupWindowEnd: dto.pickupWindowEnd
-        ? new Date(dto.pickupWindowEnd)
-        : undefined,
+    const created = await this.db.transaction(async (tx) => {
+      const listing = await this.listingsRepository.create(
+        {
+          // Guaranteed by OrgMembershipGuard, not client input - a listing
+          // is always attributed to the caller's own organisation.
+          donorOrgId: user.orgId!,
+          createdBy: user.userId,
+          category: dto.category,
+          description: dto.description,
+          quantity: dto.quantity?.toString(),
+          unit: dto.unit,
+          allergens: dto.allergens,
+          handlingInstructions: dto.handlingInstructions,
+          useBy: dto.useBy ? new Date(dto.useBy) : undefined,
+          pickupLocation: dto.pickupLocation,
+          pickupWindowStart: dto.pickupWindowStart
+            ? new Date(dto.pickupWindowStart)
+            : undefined,
+          pickupWindowEnd: dto.pickupWindowEnd
+            ? new Date(dto.pickupWindowEnd)
+            : undefined,
+        },
+        tx,
+      );
+      await this.auditRepository.record(
+        {
+          actor: { userId: user.userId, orgId: user.orgId! },
+          action: AuditAction.ListingCreated,
+          entityType: 'listing',
+          entityId: listing.id,
+          metadata: { status: listing.status },
+        },
+        tx,
+      );
+      return listing;
     });
 
     if (files.length === 0) {
@@ -236,6 +255,13 @@ export class ListingsService {
       deleteImageIds,
     );
 
+    const audit = deriveUpdateAudit(
+      existing.status,
+      dto,
+      files.length > 0 || deleteImageIds.length > 0,
+      isWithdrawingReserved,
+    );
+
     // S3 upload has to happen outside the DB transaction below - never hold
     // a transaction open across a network call. The per-listing image cap
     // is checked against the count *after* the deletions above (already
@@ -316,10 +342,40 @@ export class ListingsService {
             );
           }
 
+          const actor = { userId: user.userId, orgId: user.orgId ?? null };
+
           if (isWithdrawingReserved) {
-            await this.listingsRepository.cancelActiveClaim(
-              id,
-              dto.cancelledReason ?? '',
+            const cancelledClaimId =
+              await this.listingsRepository.cancelActiveClaim(
+                id,
+                dto.cancelledReason ?? '',
+                tx,
+              );
+            if (cancelledClaimId) {
+              await this.auditRepository.record(
+                {
+                  actor,
+                  action: AuditAction.ClaimCancelled,
+                  entityType: 'claim',
+                  entityId: cancelledClaimId,
+                  reason: dto.cancelledReason ?? '',
+                  metadata: { listingId: id, byDonorWithdrawal: true },
+                },
+                tx,
+              );
+            }
+          }
+
+          if (audit) {
+            await this.auditRepository.record(
+              {
+                actor,
+                action: audit.action,
+                entityType: 'listing',
+                entityId: id,
+                reason: audit.reason,
+                metadata: audit.metadata,
+              },
               tx,
             );
           }
@@ -365,7 +421,19 @@ export class ListingsService {
       );
     }
 
-    await this.listingsRepository.delete(id, existing.version + 1);
+    await this.db.transaction(async (tx) => {
+      await this.listingsRepository.delete(id, existing.version + 1, tx);
+      await this.auditRepository.record(
+        {
+          actor: { userId: user.userId, orgId: user.orgId ?? null },
+          action: AuditAction.ListingDeleted,
+          entityType: 'listing',
+          entityId: id,
+          metadata: { previousStatus: existing.status },
+        },
+        tx,
+      );
+    });
   }
 
   private async attachImages(listing: Listing): Promise<ListingWithImages> {
@@ -404,6 +472,52 @@ export class ListingsService {
       ),
     }));
   }
+}
+
+type ListingStatus = Listing['status'];
+
+// The audit event for one update() call, or null when nothing auditable changed.
+function deriveUpdateAudit(
+  currentStatus: ListingStatus,
+  dto: UpdateListingDto,
+  imageChange: boolean,
+  isWithdrawingReserved: boolean,
+): {
+  action: string;
+  reason: string;
+  metadata: Record<string, unknown>;
+} | null {
+  const fields = LISTING_CONTENT_FIELDS.filter((f) => dto[f] !== undefined);
+  const statusChanged =
+    dto.status !== undefined && dto.status !== currentStatus;
+
+  if (statusChanged && dto.status === 'available') {
+    return { action: AuditAction.ListingPublished, reason: '', metadata: {} };
+  }
+  if (statusChanged && dto.status === 'draft') {
+    return { action: AuditAction.ListingUnpublished, reason: '', metadata: {} };
+  }
+  if (statusChanged && dto.status === 'cancelled') {
+    return {
+      action: AuditAction.ListingCancelled,
+      reason: dto.cancelledReason ?? '',
+      metadata: {
+        previousStatus: currentStatus,
+        withdrawal: isWithdrawingReserved,
+      },
+    };
+  }
+  if (fields.length > 0 || imageChange) {
+    return {
+      action: AuditAction.ListingUpdated,
+      reason: '',
+      metadata: {
+        ...(fields.length > 0 && { fields }),
+        ...(imageChange && { images: true }),
+      },
+    };
+  }
+  return null;
 }
 
 // A missing pair isn't an invalid *sequence*, just not filled in yet -
