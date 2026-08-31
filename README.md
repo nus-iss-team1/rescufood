@@ -15,7 +15,8 @@ A NUS-ISS Team 1 project.
 | `web/ui/`                                           | Shared shadcn/ui components used by both web apps                             |
 | [`service/profile/`](service/profile)               | Go profile service — users, organisations, approval                           |
 | [`service/listings/`](service/listings/README.md)   | NestJS listings service — listings CRUD, requests/claims, pickup verification |
-| [`infrastructure/`](infrastructure/README.md)       | AWS CloudFormation stacks (network, security, identity, ECS, data)            |
+| [`service/notifications/`](service/notifications/README.md) | NestJS notifications service — consumes the queue, sends email and serves the in-app notification feed |
+| [`infrastructure/`](infrastructure/README.md)       | AWS CloudFormation stacks (network, security, identity, ECS, data, messaging) |
 | [`docs/adr/`](docs/adr/README.md)                   | Architecture decision records                                                 |
 
 ## Quick start

@@ -54,7 +54,7 @@ shorter until the next notification arrives.
 cd service/notifications
 npm install
 docker compose up -d          # local notifications-db on :5433
-cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, GMAIL_USER, GMAIL_APP_PASSWORD
+cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, AUTH_COGNITO_ISSUER, GMAIL_USER, GMAIL_APP_PASSWORD
 npm run db:migrate
 npm run start:dev
 ```
@@ -111,10 +111,11 @@ One SQS message body = one notification for one recipient:
 **In-app is the primary channel, email is secondary.** For each message the
 consumer (`SqsConsumerService.process`):
 
-1. Creates the in-app row (`INSERT ... ON CONFLICT DO NOTHING` on the
-   `(event_id, recipient_user_id)` partial unique index). A DB failure here
-   leaves the message on the queue to be redelivered - the in-app record
-   *must* land.
+1. Creates the in-app row, treating a unique-violation on the
+   `(event_id, recipient_user_id)` partial index as a duplicate (no-op), and
+   trims the recipient's feed back to the newest `IN_APP_FEED_LIMIT`. A DB
+   failure here leaves the message on the queue to be redelivered - the
+   in-app record *must* land.
 2. Sends the email. A prior successful send for the same `(event_id,
    recipient_email)` is skipped. A send failure is logged and written as a
    `status = 'failed'` row, but does **not** redeliver the message or reverse

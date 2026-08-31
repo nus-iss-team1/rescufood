@@ -24,7 +24,7 @@ per-environment security groups, ECS services, and databases, tagged with
 Security group chain per environment:
 
 ```
-internet → alb-sg (80/443) → app-sg (3000 web, 3001 profile, 3002 listings) → db-sg (5432)
+internet → alb-sg (80/443) → app-sg (3000 web, 3001 profile, 3002 listings, 3003 notification) → db-sg (5432)
 ```
 
 ## Stacks
