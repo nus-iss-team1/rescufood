@@ -2,6 +2,7 @@ import type { Message } from '@aws-sdk/client-sqs';
 import type { ConfigService } from '@nestjs/config';
 import type { MailerService } from './mailer.service';
 import type {
+  InAppNotificationInput,
   NotificationRecord,
   NotificationsRepository,
 } from './notifications.repository';
@@ -32,6 +33,11 @@ describe('SqsConsumerService.process', () => {
   let mailer: { send: jest.Mock };
   let repository: {
     record: jest.Mock<Promise<void>, [NotificationRecord]>;
+    alreadyDelivered: jest.Mock<Promise<boolean>, [string, string, string]>;
+    createInApp: jest.Mock<
+      Promise<'created' | 'duplicate'>,
+      [InAppNotificationInput]
+    >;
   };
   let service: SqsConsumerService;
 
@@ -41,12 +47,28 @@ describe('SqsConsumerService.process', () => {
       record: jest
         .fn<Promise<void>, [NotificationRecord]>()
         .mockResolvedValue(undefined),
+      alreadyDelivered: jest
+        .fn<Promise<boolean>, [string, string, string]>()
+        .mockResolvedValue(false),
+      createInApp: jest
+        .fn<Promise<'created' | 'duplicate'>, [InAppNotificationInput]>()
+        .mockResolvedValue('created'),
     };
     service = new SqsConsumerService(
       fakeConfig(),
       mailer as unknown as MailerService,
       repository as unknown as NotificationsRepository,
     );
+  });
+
+  const claimCreated = (overrides: Record<string, unknown> = {}) => ({
+    type: 'claim_created',
+    channel: 'email',
+    recipientEmail: 'donor@example.com',
+    recipientUserId: 'sub-donor',
+    eventId: 'claim:abc:created',
+    payload: { listingDescription: 'Bread', rescueOrgName: 'City Harvest' },
+    ...overrides,
   });
 
   it('sends the email and records success for a well-formed org_approved message', async () => {
@@ -65,12 +87,78 @@ describe('SqsConsumerService.process', () => {
       'Your Organisation Has Been Approved',
       expect.stringContaining('Fresh Mart'),
     );
+    expect(repository.createInApp).not.toHaveBeenCalled();
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({
         recipientEmail: 'ops@freshmart.sg',
+        channel: 'email',
         status: 'sent',
       }),
     );
+  });
+
+  it('creates an in-app notification and sends the email for a claim_created message', async () => {
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('sent');
+    expect(repository.createInApp).toHaveBeenCalledTimes(1);
+    const inApp = repository.createInApp.mock.calls[0][0];
+    expect(inApp.recipientUserId).toBe('sub-donor');
+    expect(inApp.type).toBe('claim_created');
+    expect(inApp.eventId).toBe('claim:abc:created');
+    expect(inApp.body).toContain('City Harvest');
+    expect(mailer.send).toHaveBeenCalledTimes(1);
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: 'email', status: 'sent' }),
+    );
+  });
+
+  it('is idempotent: a duplicate in-app event still resolves as sent', async () => {
+    repository.createInApp.mockResolvedValueOnce('duplicate');
+    repository.alreadyDelivered.mockResolvedValueOnce(true);
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('sent');
+    expect(mailer.send).not.toHaveBeenCalled();
+    expect(repository.record).not.toHaveBeenCalled();
+  });
+
+  it('redelivers when the in-app write fails, without sending the email', async () => {
+    repository.createInApp.mockRejectedValueOnce(new Error('db down'));
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('transient-failure');
+    expect(mailer.send).not.toHaveBeenCalled();
+  });
+
+  it('still resolves as sent when the in-app row is created but the email fails', async () => {
+    mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('sent');
+    expect(repository.createInApp).toHaveBeenCalledTimes(1);
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: 'email',
+        status: 'failed',
+        failureReason: 'smtp timeout',
+      }),
+    );
+  });
+
+  it('skips the email when it was already delivered for this event', async () => {
+    repository.alreadyDelivered.mockResolvedValueOnce(true);
+
+    const outcome = await service.process(
+      message(claimCreated({ recipientUserId: undefined })),
+    );
+
+    expect(outcome).toBe('sent');
+    expect(mailer.send).not.toHaveBeenCalled();
+    expect(repository.createInApp).not.toHaveBeenCalled();
   });
 
   it('treats invalid JSON as a permanent failure without touching the mailer or repository', async () => {
@@ -95,7 +183,7 @@ describe('SqsConsumerService.process', () => {
     expect(repository.record).not.toHaveBeenCalled();
   });
 
-  it('records and permanently fails a well-formed message of an unimplemented type', async () => {
+  it('records and permanently fails an email-only message of an unimplemented type', async () => {
     const outcome = await service.process(
       message({
         type: 'listing_material_change',
@@ -112,7 +200,7 @@ describe('SqsConsumerService.process', () => {
     expect(recorded.failureReason).toContain('listing_material_change');
   });
 
-  it('treats a mailer error as transient so the message is left for SQS to retry', async () => {
+  it('treats a mailer error as transient for an email-only message', async () => {
     mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
 
     const outcome = await service.process(
@@ -133,7 +221,6 @@ describe('SqsConsumerService.process', () => {
     );
   });
 
-  // A failing record() during failure handling must not crash the consumer.
   it('does not crash when the repository itself fails to record a failure', async () => {
     mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
     repository.record.mockRejectedValueOnce(

@@ -1,4 +1,10 @@
-import { IsEmail, IsEnum, IsObject, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { notificationChannel, notificationType } from '../db/schema';
 
 export type NotificationType = (typeof notificationType.enumValues)[number];
@@ -15,6 +21,16 @@ export class NotificationMessageDto {
 
   @IsEmail()
   recipientEmail!: string;
+
+  // Cognito sub of the recipient; required for the in-app notification.
+  @IsOptional()
+  @IsString()
+  recipientUserId?: string;
+
+  // Stable per-recipient identifier for the domain event; drives de-duplication.
+  @IsOptional()
+  @IsString()
+  eventId?: string;
 
   @IsOptional()
   @IsObject()

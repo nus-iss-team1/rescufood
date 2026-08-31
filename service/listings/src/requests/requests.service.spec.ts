@@ -220,8 +220,18 @@ describe('RequestsService', () => {
       repository.reserveListingForClaim.mockResolvedValue(reservedListing);
       repository.create.mockResolvedValue(baseRequest);
       repository.findUserContacts.mockResolvedValue([
-        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
-        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
+        {
+          id: 'user-donor',
+          cognitoSub: 'sub-donor',
+          name: 'Priya Nair',
+          email: 'donor@x.com',
+        },
+        {
+          id: 'user-rescue',
+          cognitoSub: 'sub-rescue',
+          name: 'Alex Tan',
+          email: 'r@x.com',
+        },
       ]);
       repository.findOrgContacts.mockResolvedValue([
         { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
@@ -234,6 +244,7 @@ describe('RequestsService', () => {
         'user-donor',
         'user-rescue',
       ]);
+      // AC1: the donor is notified...
       expect(notifications.claimCreated).toHaveBeenCalledWith(
         'donor@x.com',
         expect.objectContaining({
@@ -241,7 +252,15 @@ describe('RequestsService', () => {
           listingDescription: 'Crate of bananas',
           rescuePartnerName: 'Alex Tan',
           rescueOrgName: 'City Harvest',
+          audience: 'donor',
         }),
+        { eventId: 'claim:request-1:created', recipientUserId: 'sub-donor' },
+      );
+      // ...and so is the claiming rescue organisation.
+      expect(notifications.claimCreated).toHaveBeenCalledWith(
+        'r@x.com',
+        expect.objectContaining({ audience: 'rescue_partner' }),
+        { eventId: 'claim:request-1:created', recipientUserId: 'sub-rescue' },
       );
     });
 
@@ -488,6 +507,19 @@ describe('RequestsService', () => {
       expect(idempotency.release).toHaveBeenCalledWith('slot-1');
     });
 
+    it('does not notify when the claim transaction rolls back (AC5)', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(undefined);
+      const idempotency = makeIdempotency();
+      const { service, notifications } = makeService(repository, idempotency);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(notifications.claimCreated).not.toHaveBeenCalled();
+    });
+
     it('409s when the active-claim unique index rejects a concurrent insert', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
@@ -624,8 +656,18 @@ describe('RequestsService', () => {
         status: 'cancelled',
       });
       repository.findUserContacts.mockResolvedValue([
-        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
-        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
+        {
+          id: 'user-donor',
+          cognitoSub: 'sub-donor',
+          name: 'Priya Nair',
+          email: 'donor@x.com',
+        },
+        {
+          id: 'user-rescue',
+          cognitoSub: 'sub-rescue',
+          name: 'Alex Tan',
+          email: 'r@x.com',
+        },
       ]);
       repository.findOrgContacts.mockResolvedValue([
         { id: 'org-rescue', name: 'City Harvest', contactEmail: 'r@x.com' },
@@ -646,6 +688,7 @@ describe('RequestsService', () => {
           counterpartyName: 'Alex Tan',
           counterpartyOrgName: 'City Harvest',
         }),
+        { eventId: 'claim:request-1:cancelled', recipientUserId: 'sub-donor' },
       );
     });
 
@@ -905,8 +948,18 @@ describe('RequestsService', () => {
       });
       repository.markListingCollectedIfDone.mockResolvedValue(false);
       repository.findUserContacts.mockResolvedValue([
-        { id: 'user-donor', name: 'Priya Nair', email: 'donor@x.com' },
-        { id: 'user-rescue', name: 'Alex Tan', email: 'rescue@x.com' },
+        {
+          id: 'user-donor',
+          cognitoSub: 'sub-donor',
+          name: 'Priya Nair',
+          email: 'donor@x.com',
+        },
+        {
+          id: 'user-rescue',
+          cognitoSub: 'sub-rescue',
+          name: 'Alex Tan',
+          email: 'rescue@x.com',
+        },
       ]);
       const { service, audit, notifications } = makeService(repository);
 
@@ -943,10 +996,12 @@ describe('RequestsService', () => {
           recipientName: 'Priya Nair',
           collectedQuantity: '10 kg',
         }),
+        { eventId: 'claim:request-1:completed', recipientUserId: 'sub-donor' },
       );
       expect(notifications.pickupCompleted).toHaveBeenCalledWith(
         'rescue@x.com',
         expect.anything(),
+        { eventId: 'claim:request-1:completed', recipientUserId: 'sub-rescue' },
       );
     });
 

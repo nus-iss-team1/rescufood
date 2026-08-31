@@ -187,7 +187,7 @@ export class RequestsService {
         );
         return claim;
       });
-      await this.notifyClaimCreated(listing, user);
+      await this.notifyClaimCreated(created.id, listing, user);
       return toPublicRequest(created);
     } catch (err) {
       // The claim never committed - free the slot so a genuine retry isn't
@@ -528,6 +528,7 @@ export class RequestsService {
   // Notifications below are best-effort: run after commit, failures logged.
 
   private async notifyClaimCreated(
+    claimId: string,
     listing: RequestedListing,
     claimant: AuthenticatedUser,
   ): Promise<void> {
@@ -540,11 +541,10 @@ export class RequestsService {
         this.requestsRepository.findOrgContacts([claimant.orgId ?? '']),
       ]);
       const donor = contacts.find((c) => c.id === listing.createdBy);
-      if (!donor) return;
       const partner = contacts.find((c) => c.id === claimant.userId);
       const rescueOrg = orgs.find((o) => o.id === claimant.orgId);
-      await this.notifications.claimCreated(donor.email, {
-        recipientName: donor.name,
+      const eventId = `claim:${claimId}:created`;
+      const base = {
         listingDescription: listing.description,
         rescuePartnerName: partner?.name ?? null,
         rescueOrgName: rescueOrg?.name ?? 'A rescue partner',
@@ -553,7 +553,22 @@ export class RequestsService {
           listing.pickupWindowStart,
           listing.pickupWindowEnd,
         ),
-      });
+      };
+      // AC1: notify both the donor and the claiming rescue organisation.
+      if (donor) {
+        await this.notifications.claimCreated(
+          donor.email,
+          { ...base, recipientName: donor.name, audience: 'donor' },
+          { eventId, recipientUserId: donor.cognitoSub },
+        );
+      }
+      if (partner) {
+        await this.notifications.claimCreated(
+          partner.email,
+          { ...base, recipientName: partner.name, audience: 'rescue_partner' },
+          { eventId, recipientUserId: partner.cognitoSub },
+        );
+      }
     } catch (err) {
       this.logger.error({ err }, 'claim_created notification failed');
     }
@@ -584,20 +599,30 @@ export class RequestsService {
       if (!recipient) return;
       const counterparty = contacts.find((c) => c.id === actor.userId);
       const counterpartyOrg = orgs.find((o) => o.id === counterpartyOrgId);
-      await this.notifications.claimEnded(recipient.email, {
-        recipientName: recipient.name,
-        listingDescription: listing.description,
-        endedBy:
-          dto.status === 'no_show'
-            ? 'no_show'
-            : actorIsDonor
-              ? 'donor'
-              : 'rescue_partner',
-        counterpartyName: counterparty?.name ?? null,
-        counterpartyOrgName: counterpartyOrg?.name ?? null,
-        reason:
-          dto.status === 'no_show' ? dto.noShowReason : dto.cancellationReason,
-      });
+      const suffix = dto.status === 'no_show' ? 'no-show' : 'cancelled';
+      await this.notifications.claimEnded(
+        recipient.email,
+        {
+          recipientName: recipient.name,
+          listingDescription: listing.description,
+          endedBy:
+            dto.status === 'no_show'
+              ? 'no_show'
+              : actorIsDonor
+                ? 'donor'
+                : 'rescue_partner',
+          counterpartyName: counterparty?.name ?? null,
+          counterpartyOrgName: counterpartyOrg?.name ?? null,
+          reason:
+            dto.status === 'no_show'
+              ? dto.noShowReason
+              : dto.cancellationReason,
+        },
+        {
+          eventId: `claim:${claim.id}:${suffix}`,
+          recipientUserId: recipient.cognitoSub,
+        },
+      );
     } catch (err) {
       this.logger.error({ err }, 'claim_cancelled notification failed');
     }
@@ -619,11 +644,18 @@ export class RequestsService {
           : undefined;
       await Promise.all(
         contacts.map((c) =>
-          this.notifications.pickupCompleted(c.email, {
-            recipientName: c.name,
-            listingDescription: listing.description,
-            collectedQuantity: qty,
-          }),
+          this.notifications.pickupCompleted(
+            c.email,
+            {
+              recipientName: c.name,
+              listingDescription: listing.description,
+              collectedQuantity: qty,
+            },
+            {
+              eventId: `claim:${claim.id}:completed`,
+              recipientUserId: c.cognitoSub,
+            },
+          ),
         ),
       );
     } catch (err) {

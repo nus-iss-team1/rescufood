@@ -85,9 +85,9 @@ type UserStore interface {
 	UpsertBySub(ctx context.Context, sub, email, name, username string, isAdmin bool) (*domain.User, domain.UserProvisioning, error)
 }
 
-// Welcomer sends a one-time welcome email to a newly provisioned user.
+// Welcomer sends a one-time welcome notification to a newly provisioned user.
 type Welcomer interface {
-	SendWelcome(ctx context.Context, to, name, orgType string) error
+	SendWelcome(ctx context.Context, to, name, orgType, cognitoSub string) error
 }
 
 // Middleware rejects requests without a valid bearer token, provisions
@@ -116,7 +116,7 @@ func Middleware(v *Verifier, users UserStore, welcomer Welcomer) func(http.Handl
 				return
 			}
 			if prov.Inserted && welcomer != nil && user.Email != "" {
-				if err := welcomer.SendWelcome(r.Context(), user.Email, user.Name, string(prov.OrgType)); err != nil {
+				if err := welcomer.SendWelcome(r.Context(), user.Email, user.Name, string(prov.OrgType), user.CognitoSub); err != nil {
 					slog.ErrorContext(r.Context(), "welcome notification failed", "user_id", user.ID, "error", err)
 				}
 			}

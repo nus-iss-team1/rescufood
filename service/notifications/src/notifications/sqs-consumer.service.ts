@@ -13,6 +13,7 @@ import {
 } from '@aws-sdk/client-sqs';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { renderInApp } from './in-app-templates';
 import { MailerService } from './mailer.service';
 import { NotificationMessageDto } from './notification-message.dto';
 import { NotificationsRepository } from './notifications.repository';
@@ -86,7 +87,9 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Handles one message: parse, validate, render, send, record the outcome.
+  // Handles one message. In-app is the primary channel: its creation must
+  // succeed (a failure redelivers the message). Email is secondary - a failure
+  // is recorded and logged but never redelivers or reverses anything.
   async process(message: Message): Promise<Outcome> {
     const body = message.Body;
     if (!body) {
@@ -110,17 +113,69 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
 
     const payload = dto.payload ?? {};
+    const inAppBody = dto.recipientUserId
+      ? renderInApp(dto.type, payload)
+      : null;
+
+    // 1. In-app (primary).
+    if (inAppBody !== null && dto.recipientUserId) {
+      try {
+        const result = await this.repository.createInApp({
+          recipientUserId: dto.recipientUserId,
+          recipientEmail: dto.recipientEmail,
+          type: dto.type,
+          eventId: dto.eventId,
+          body: inAppBody,
+          payload,
+        });
+        if (result === 'duplicate') {
+          this.logger.log(
+            { eventId: dto.eventId, type: dto.type },
+            'in-app notification already exists, skipping',
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          { err: error },
+          'in-app notification creation failed',
+        );
+        return 'transient-failure';
+      }
+    }
+
+    // 2. Email (secondary).
+    const emailOutcome = await this.deliverEmail(dto, payload);
+
+    // In-app landed (or there was none) - the email is best-effort from here.
+    if (inAppBody !== null) return 'sent';
+    return emailOutcome;
+  }
+
+  private async deliverEmail(
+    dto: NotificationMessageDto,
+    payload: Record<string, unknown>,
+  ): Promise<Outcome> {
+    if (
+      dto.eventId &&
+      (await this.repository.alreadyDelivered(
+        dto.eventId,
+        'email',
+        dto.recipientEmail,
+      ))
+    ) {
+      return 'sent';
+    }
 
     try {
       const email = renderEmail(dto.type, payload);
       await this.mailer.send(dto.recipientEmail, email.subject, email.body);
-      // Email already sent; stays 'sent' even if the audit write fails.
       await this.safeRecord({
         recipientEmail: dto.recipientEmail,
         type: dto.type,
-        channel: dto.channel,
+        channel: 'email',
         payload,
         status: 'sent',
+        eventId: dto.eventId,
       });
       return 'sent';
     } catch (error) {
@@ -129,12 +184,13 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
       await this.safeRecord({
         recipientEmail: dto.recipientEmail,
         type: dto.type,
-        channel: dto.channel,
+        channel: 'email',
         payload,
         status: 'failed',
         failureReason,
+        eventId: dto.eventId,
       });
-      this.logger.error({ err: error }, 'notification delivery failed');
+      this.logger.error({ err: error }, 'notification email delivery failed');
       return error instanceof UnsupportedNotificationTypeError
         ? 'permanent-failure'
         : 'transient-failure';

@@ -54,18 +54,21 @@ export class PickupReminderService {
               ? formatInstant(t.pickupWindowEnd)
               : undefined,
           };
+          const eventId = `claim:${t.claimId}:pickup-${phase}`;
           const sends = [
-            this.notifications.pickupReminder(t.rescueEmail, {
-              ...payload,
-              recipientName: t.rescueName,
-            }),
+            this.notifications.pickupReminder(
+              t.rescueEmail,
+              { ...payload, recipientName: t.rescueName },
+              { eventId, recipientUserId: t.rescueSub },
+            ),
           ];
           if (phase === 'opening') {
             sends.push(
-              this.notifications.pickupReminder(t.donorEmail, {
-                ...payload,
-                recipientName: t.donorName,
-              }),
+              this.notifications.pickupReminder(
+                t.donorEmail,
+                { ...payload, recipientName: t.donorName },
+                { eventId, recipientUserId: t.donorSub },
+              ),
             );
           }
           return sends;

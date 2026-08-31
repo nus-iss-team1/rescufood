@@ -67,14 +67,10 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
     };
   },
 
-  // To the donor: a rescue partner reserved their listing.
+  // To the donor: a rescue partner reserved their listing. To the rescue
+  // partner: confirmation of the reservation they just made.
   claim_created: (payload) => {
-    const listing = str(payload.listingDescription, 'your listing');
-    const partner = party(
-      str(payload.rescuePartnerName, ''),
-      str(payload.rescueOrgName, ''),
-      'A rescue partner',
-    );
+    const listing = str(payload.listingDescription, 'the listing');
     const where = str(payload.pickupLocation, '');
     const when = str(payload.pickupWindow, '');
     const details = [
@@ -83,11 +79,27 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
     ]
       .filter(Boolean)
       .join('\n');
+    const detailsBlock = details ? `\n\n${details}` : '';
+
+    if (payload.audience === 'rescue_partner') {
+      return {
+        subject: 'Reservation Confirmed',
+        body: `${greeting(payload)}\n\nYou have reserved "${listing}". Please collect it during the pickup window${
+          details ? ' below' : ''
+        }.${detailsBlock}${signoff}`,
+      };
+    }
+
+    const partner = party(
+      str(payload.rescuePartnerName, ''),
+      str(payload.rescueOrgName, ''),
+      'A rescue partner',
+    );
     return {
       subject: 'Your Listing Has Been Reserved',
       body: `${greeting(payload)}\n\n${partner} has reserved your listing "${listing}" and will collect it during the pickup window${
         details ? ' below' : ''
-      }.${details ? `\n\n${details}` : ''}${signoff}`,
+      }.${detailsBlock}${signoff}`,
     };
   },
 

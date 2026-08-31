@@ -70,6 +70,18 @@ describe('renderEmail', () => {
     );
   });
 
+  it('renders claim_created for the rescue partner as a reservation confirmation', () => {
+    const email = renderEmail('claim_created', {
+      recipientName: 'Alex Tan',
+      listingDescription: 'Crate of bananas',
+      audience: 'rescue_partner',
+      pickupLocation: '88 Market St',
+    });
+    expect(email.subject).toBe('Reservation Confirmed');
+    expect(email.body).toContain('You have reserved "Crate of bananas"');
+    expect(email.body).toContain('Pickup location: 88 Market St');
+  });
+
   it('renders claim_created without a details block when pickup fields are missing', () => {
     const email = renderEmail('claim_created', {
       listingDescription: 'Bread',

@@ -393,6 +393,7 @@ export class ListingsService {
       await this.listingImageUploadService.deleteS3Objects(deletedImages);
       if (cancelledClaim) {
         await this.notifyClaimWithdrawn(
+          cancelledClaim.id,
           cancelledClaim.claimedBy,
           existing,
           dto.cancelledReason,
@@ -449,6 +450,7 @@ export class ListingsService {
 
   // Best-effort: tells the rescue-partner user the donor withdrew the listing.
   private async notifyClaimWithdrawn(
+    claimId: string,
     rescueUserId: string,
     listing: Listing,
     reason: string | undefined,
@@ -465,14 +467,21 @@ export class ListingsService {
       if (!recipient) return;
       const donor = contacts.find((c) => c.id === listing.createdBy);
       const donorOrg = orgs.find((o) => o.id === listing.donorOrgId);
-      await this.notifications.claimEnded(recipient.email, {
-        recipientName: recipient.name,
-        listingDescription: listing.description,
-        endedBy: 'donor',
-        counterpartyName: donor?.name ?? null,
-        counterpartyOrgName: donorOrg?.name ?? null,
-        reason,
-      });
+      await this.notifications.claimEnded(
+        recipient.email,
+        {
+          recipientName: recipient.name,
+          listingDescription: listing.description,
+          endedBy: 'donor',
+          counterpartyName: donor?.name ?? null,
+          counterpartyOrgName: donorOrg?.name ?? null,
+          reason,
+        },
+        {
+          eventId: `claim:${claimId}:cancelled`,
+          recipientUserId: recipient.cognitoSub,
+        },
+      );
     } catch (err) {
       this.logger.error({ err }, 'withdrawal notification failed');
     }

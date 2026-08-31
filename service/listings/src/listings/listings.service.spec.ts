@@ -1223,8 +1223,18 @@ describe('ListingsService', () => {
         claimedBy: 'user-rescue',
       });
       repository.findUserContacts.mockResolvedValue([
-        { id: 'user-rescue', name: 'Alex Tan', email: 'r@x.com' },
-        { id: 'user-1', name: 'Priya Nair', email: 'donor@x.com' },
+        {
+          id: 'user-rescue',
+          cognitoSub: 'sub-rescue',
+          name: 'Alex Tan',
+          email: 'r@x.com',
+        },
+        {
+          id: 'user-1',
+          cognitoSub: 'sub-donor',
+          name: 'Priya Nair',
+          email: 'donor@x.com',
+        },
       ]);
       repository.findOrgContacts.mockResolvedValue([
         { id: 'org-1', name: 'Green Grocer Co', contactEmail: 'donor@x.com' },
@@ -1269,6 +1279,7 @@ describe('ListingsService', () => {
           counterpartyOrgName: 'Green Grocer Co',
           reason: 'Van broke down',
         }),
+        { eventId: 'claim:claim-1:cancelled', recipientUserId: 'sub-rescue' },
       );
     });
 

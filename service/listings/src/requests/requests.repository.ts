@@ -25,14 +25,17 @@ import type { QueryRequestsDto } from './dto/query-requests.dto';
 export type PickupReminderPhase = 'opening' | 'closing';
 
 export type PickupReminderTarget = {
+  claimId: string;
   listingDescription: string | null;
   pickupLocation: string | null;
   pickupWindowStart: Date | null;
   pickupWindowEnd: Date | null;
   rescueName: string;
   rescueEmail: string;
+  rescueSub: string;
   donorName: string;
   donorEmail: string;
+  donorSub: string;
 };
 
 export type ListingRequest = typeof requests.$inferSelect;
@@ -59,7 +62,12 @@ export type RequestedListing = {
 export type OrgContact = { id: string; name: string; contactEmail: string };
 
 // A user's contact details, for addressing notifications to the person.
-export type UserContact = { id: string; name: string; email: string };
+export type UserContact = {
+  id: string;
+  cognitoSub: string;
+  name: string;
+  email: string;
+};
 
 // The claimant's current eligibility, from service/profile's tables.
 export type ClaimantContext = {
@@ -160,7 +168,12 @@ export class RequestsRepository {
     const unique = [...new Set(ids.filter(Boolean))];
     if (unique.length === 0) return [];
     return this.db
-      .select({ id: users.id, name: users.name, email: users.email })
+      .select({
+        id: users.id,
+        cognitoSub: users.cognitoSub,
+        name: users.name,
+        email: users.email,
+      })
       .from(users)
       .where(inArray(users.id, unique));
   }
@@ -220,14 +233,17 @@ export class RequestsRepository {
     const rescue = alias(users, 'rescue_user');
     return this.db
       .select({
+        claimId: requests.id,
         listingDescription: listings.description,
         pickupLocation: listings.pickupLocation,
         pickupWindowStart: listings.pickupWindowStart,
         pickupWindowEnd: listings.pickupWindowEnd,
         rescueName: rescue.name,
         rescueEmail: rescue.email,
+        rescueSub: rescue.cognitoSub,
         donorName: donor.name,
         donorEmail: donor.email,
+        donorSub: donor.cognitoSub,
       })
       .from(requests)
       .innerJoin(listings, eq(listings.id, requests.listingId))

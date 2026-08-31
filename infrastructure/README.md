@@ -262,14 +262,16 @@ gated on `NotificationImage` the same way profile/listings are — leave it
 empty and no notification resources are created. When set it adds a
 Fargate service that long-polls the SQS queue from the messaging stack and
 sends email via Gmail SMTP (`nodemailer`, not SES — sending "from" a domain
-you don't control fails SPF/DKIM/DMARC at the recipient); there's no ALB
-target group or listener rule, since it has no public routes, and no
-CORS/browser-facing env vars either.
+you don't control fails SPF/DKIM/DMARC at the recipient). It also serves an
+authenticated read API for in-app notifications at `/api/notifications*`,
+behind its own target group and listener rule (priority 12); the app
+security group opens `NotificationPort` to the ALB, and the task gets
+`AUTH_COGNITO_ISSUER` + `CORS_ALLOWED_ORIGINS` like profile/listings.
 
 | Parameter | Notes |
 |---|---|
 | `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
-| `NotificationPort` | Default `3003` — only used for the container's own health check, not routed through the ALB |
+| `NotificationPort` | Default `3003` — container health check (`/health`) and the ALB target group for `/api/notifications*` |
 | `MessagingStackName` | Default `rescufood-<env>-messaging` — where `NOTIFICATION_QUEUE_URL` is imported from |
 | `GmailCredentialsSecretArn` | Secrets Manager secret ARN with `user`/`appPassword` JSON keys - create it by hand (`aws secretsmanager create-secret`), same as `GhcrPullSecretArn` |
 
@@ -370,7 +372,8 @@ wired to this stack's `BucketName` export.
 notification queue plus its dead-letter queue:
 
 - **`rescufood-<env>-notifications`** — producers (profile, listings)
-  send one message per notification here; nothing consumes it yet.
+  send one message per notification here; the notification service
+  consumes it, sends the email and creates the in-app record.
   `VisibilityTimeout` 60s, SQS-managed encryption at rest.
 - **`rescufood-<env>-notifications-dlq`** — messages that fail 5
   delivery attempts land here instead of retrying forever. 14-day

@@ -25,29 +25,41 @@ function makeConfig(values: Record<string, string | undefined>) {
 }
 
 const QUEUE = 'https://sqs.local/queue';
+const ID = { eventId: 'claim:c1:created', recipientUserId: 'sub-1' };
 
 beforeEach(() => {
   send.mockReset().mockResolvedValue({});
   (SendMessageCommand as unknown as jest.Mock).mockClear();
 });
 
-describe('NotificationsPublisher', () => {
-  it('publishes a well-formed email message', async () => {
-    const logger = makeLogger();
-    const publisher = new NotificationsPublisher(
-      makeConfig({
-        NOTIFICATION_QUEUE_URL: QUEUE,
-        AWS_REGION: 'ap-southeast-1',
-      }),
-      logger as never,
-    );
+function makePublisher(
+  values: Record<string, string | undefined> = {
+    NOTIFICATION_QUEUE_URL: QUEUE,
+    AWS_REGION: 'x',
+  },
+) {
+  return new NotificationsPublisher(makeConfig(values), makeLogger() as never);
+}
 
-    await publisher.claimCreated('donor@x.com', {
-      listingDescription: 'Bread',
-      rescueOrgName: 'City Harvest',
-      pickupLocation: 'Loc A',
-      pickupWindow: 'Tue 3-7pm',
-    });
+function lastBody(): Record<string, unknown> {
+  const [input] = (SendMessageCommand as unknown as jest.Mock).mock
+    .calls[0] as [{ MessageBody: string }];
+  return JSON.parse(input.MessageBody) as Record<string, unknown>;
+}
+
+describe('NotificationsPublisher', () => {
+  it('publishes a well-formed email message carrying the event identity', async () => {
+    await makePublisher().claimCreated(
+      'donor@x.com',
+      {
+        listingDescription: 'Bread',
+        rescueOrgName: 'City Harvest',
+        pickupLocation: 'Loc A',
+        pickupWindow: 'Tue 3-7pm',
+        audience: 'donor',
+      },
+      ID,
+    );
 
     expect(send).toHaveBeenCalledTimes(1);
     const [input] = (SendMessageCommand as unknown as jest.Mock).mock
@@ -57,52 +69,50 @@ describe('NotificationsPublisher', () => {
       type: 'claim_created',
       channel: 'email',
       recipientEmail: 'donor@x.com',
+      recipientUserId: 'sub-1',
+      eventId: 'claim:c1:created',
       payload: {
         listingDescription: 'Bread',
         rescueOrgName: 'City Harvest',
         pickupLocation: 'Loc A',
         pickupWindow: 'Tue 3-7pm',
+        audience: 'donor',
       },
     });
   });
 
-  it('maps pickupReminder to the pickup_reminder type, carrying the phase', async () => {
-    const publisher = new NotificationsPublisher(
-      makeConfig({ NOTIFICATION_QUEUE_URL: QUEUE, AWS_REGION: 'x' }),
-      makeLogger() as never,
+  it('omits recipientUserId when there is no in-app recipient', async () => {
+    await makePublisher().listingExpired(
+      'x@x.com',
+      { listingDescription: 'X', wasClaimed: false },
+      { eventId: 'listing:l1:expired', recipientUserId: null },
     );
+    expect(lastBody()).not.toHaveProperty('recipientUserId');
+    expect(lastBody().eventId).toBe('listing:l1:expired');
+  });
 
-    await publisher.pickupReminder('p@x.com', {
-      phase: 'closing',
-      listingDescription: 'Milk',
-      pickupWindow: 'Tue 3-7pm',
-    });
-
-    const [input] = (SendMessageCommand as unknown as jest.Mock).mock
-      .calls[0] as [{ MessageBody: string }];
-    const body = JSON.parse(input.MessageBody) as {
-      type: string;
-      payload: { phase: string };
-    };
+  it('maps pickupReminder to the pickup_reminder type, carrying the phase', async () => {
+    await makePublisher().pickupReminder(
+      'p@x.com',
+      {
+        phase: 'closing',
+        listingDescription: 'Milk',
+        pickupWindow: 'Tue 3-7pm',
+      },
+      { eventId: 'claim:c1:pickup-closing', recipientUserId: 'sub-1' },
+    );
+    const body = lastBody() as { type: string; payload: { phase: string } };
     expect(body.type).toBe('pickup_reminder');
     expect(body.payload.phase).toBe('closing');
   });
 
   it('maps claimEnded to the claim_cancelled type', async () => {
-    const publisher = new NotificationsPublisher(
-      makeConfig({ NOTIFICATION_QUEUE_URL: QUEUE, AWS_REGION: 'x' }),
-      makeLogger() as never,
+    await makePublisher().claimEnded(
+      'p@x.com',
+      { listingDescription: 'Milk', endedBy: 'donor' },
+      { eventId: 'claim:c1:cancelled', recipientUserId: 'sub-1' },
     );
-
-    await publisher.claimEnded('p@x.com', {
-      listingDescription: 'Milk',
-      endedBy: 'donor',
-    });
-
-    const [input] = (SendMessageCommand as unknown as jest.Mock).mock
-      .calls[0] as [{ MessageBody: string }];
-    const body = JSON.parse(input.MessageBody) as { type: string };
-    expect(body.type).toBe('claim_cancelled');
+    expect((lastBody() as { type: string }).type).toBe('claim_cancelled');
   });
 
   it('is a no-op when NOTIFICATION_QUEUE_URL is unset, and warns once', () => {
@@ -114,20 +124,22 @@ describe('NotificationsPublisher', () => {
 
     expect(logger.warn).toHaveBeenCalledTimes(1);
     return publisher
-      .listingExpired('x@x.com', { listingDescription: 'X', wasClaimed: false })
+      .listingExpired(
+        'x@x.com',
+        { listingDescription: 'X', wasClaimed: false },
+        { eventId: 'listing:l1:expired' },
+      )
       .then(() => {
         expect(send).not.toHaveBeenCalled();
       });
   });
 
   it('skips a publish with no recipient email', async () => {
-    const publisher = new NotificationsPublisher(
-      makeConfig({ NOTIFICATION_QUEUE_URL: QUEUE, AWS_REGION: 'x' }),
-      makeLogger() as never,
+    await makePublisher().pickupCompleted(
+      '',
+      { listingDescription: 'X' },
+      { eventId: 'claim:c1:completed' },
     );
-
-    await publisher.pickupCompleted('', { listingDescription: 'X' });
-
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -140,10 +152,11 @@ describe('NotificationsPublisher', () => {
     );
 
     await expect(
-      publisher.listingExpired('x@x.com', {
-        listingDescription: 'X',
-        wasClaimed: true,
-      }),
+      publisher.listingExpired(
+        'x@x.com',
+        { listingDescription: 'X', wasClaimed: true },
+        { eventId: 'listing:l1:expired', recipientUserId: 'sub-1' },
+      ),
     ).resolves.toBeUndefined();
     expect(logger.error).toHaveBeenCalled();
   });
