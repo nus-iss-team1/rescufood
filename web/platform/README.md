@@ -134,21 +134,26 @@ that touches `web/platform/**` — see
 ```text
 src/
 ├── app/
-│   ├── page.tsx              # Landing page
-│   ├── login/ · signup/      # Auth pages (forms in components/auth/)
-│   ├── dashboard/            # Signed-in landing page
-│   ├── api/auth/[...nextauth]/ # Auth.js route handlers
-│   └── actions.ts            # Server actions (login, signup, sign-out)
-├── auth.ts                   # Auth.js config (Cognito OAuth + Credentials)
-├── lib/cognito.ts            # Cognito SDK helpers (server-only)
+│   ├── page.tsx · layout.tsx       # Landing page, root layout (SiteHeader + Toaster)
+│   ├── login/ · signup/ · forgot-password/
+│   ├── dashboard/                  # Signed-in landing page
+│   ├── browse/ · listings/ · requests/ · settings/ · register-organisation/
+│   ├── notifications/feed/route.ts # Same-origin proxy the bell polls
+│   ├── api/auth/[...nextauth]/     # Auth.js route handlers
+│   └── */actions.ts                # Server actions per feature
+├── auth.ts                         # Auth.js config (Cognito OAuth + Credentials)
+├── lib/                            # server-only service clients: profile.ts,
+│                                   #   listings.ts, notifications.ts, cognito.ts, session.ts
 └── components/
-    ├── ui/                   # shadcn components (restyled to house theme)
-    ├── auth/                 # Login / signup form components
-    ├── site-header.tsx       # Fixed header + responsive nav
-    ├── header-menu.tsx       # Mobile drawer menu (signed-in)
-    ├── smooth-scroll.tsx     # GSAP ScrollSmoother wrapper
-    └── animate-in.tsx        # Calm entrance animation helper
+    ├── auth/ · browse/ · dashboard/ · listings/ · requests/ · notifications/
+    ├── site-header.tsx             # Fixed header + responsive nav + notification bell
+    ├── header-menu.tsx             # Mobile drawer menu (signed-in)
+    ├── smooth-scroll.tsx           # GSAP ScrollSmoother wrapper
+    └── animate-in.tsx              # Calm entrance animation helper
 ```
+
+Shared UI primitives (buttons, dialog, popover, …) come from the
+`@rescufood/ui` package (`web/ui/`), not a local `components/ui/`.
 
 ## Design conventions
 

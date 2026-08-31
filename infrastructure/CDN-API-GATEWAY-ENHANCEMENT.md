@@ -1,5 +1,11 @@
 # CDN + API Gateway Infrastructure Enhancement
 
+> Historical writeup of the migration that internalised the ALB. The
+> architecture and stack list in [`README.md`](README.md) are now the
+> authoritative reference; the "Next Steps for Engineers" below are done
+> (the listings service serves CDN image URLs as of the CDN commit). Kept
+> for the deploy-ordering detail (the `ApiGatewayStackName` chicken-and-egg).
+
 ## Summary
 
 This PR migrates the RescuFood AWS infrastructure from a publicly-exposed internet-facing ALB to a hardened architecture:
