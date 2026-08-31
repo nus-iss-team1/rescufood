@@ -23,8 +23,17 @@ identified by the token `sub`, matched against `recipient_user_id`):
 | `GET /api/notifications/unread-count` | `{ count }` for the unread dot |
 | `POST /api/notifications/:id/read` | mark one read (404 if not the caller's) |
 | `POST /api/notifications/read-all` | mark all read, returns `{ updated }` |
+| `DELETE /api/notifications/:id` | dismiss one from the feed, 204 (404 if not the caller's) |
 
 `GET /health` stays unauthenticated for container / ALB health checks.
+
+The in-app feed is **capped at the newest 10** per recipient
+(`IN_APP_FEED_LIMIT`). Dismissed notifications, and ones that fall past the
+cap when a newer one arrives, are **soft-deleted** (`deleted_at`), not
+removed - so the `(event_id, recipient_user_id)` dedupe index keeps blocking
+duplicates if an event is reprocessed. The read API only ever returns
+non-deleted rows, and there is no back-fill: dismissing one leaves the feed
+shorter until the next notification arrives.
 
 ## Prerequisites
 

@@ -55,6 +55,9 @@ export const notifications = pgTable(
     body: text('body'),
     // In-app read state; null while unread.
     readAt: timestamp('read_at', { withTimezone: true }),
+    // In-app soft delete: set when the recipient dismisses it or it falls
+    // out of the capped feed. Excluded from the read API.
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

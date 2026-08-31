@@ -38,6 +38,7 @@ describe('SqsConsumerService.process', () => {
       Promise<'created' | 'duplicate'>,
       [InAppNotificationInput]
     >;
+    trimInAppFeed: jest.Mock<Promise<number>, [string]>;
   };
   let service: SqsConsumerService;
 
@@ -53,6 +54,7 @@ describe('SqsConsumerService.process', () => {
       createInApp: jest
         .fn<Promise<'created' | 'duplicate'>, [InAppNotificationInput]>()
         .mockResolvedValue('created'),
+      trimInAppFeed: jest.fn<Promise<number>, [string]>().mockResolvedValue(0),
     };
     service = new SqsConsumerService(
       fakeConfig(),
@@ -107,10 +109,19 @@ describe('SqsConsumerService.process', () => {
     expect(inApp.type).toBe('claim_created');
     expect(inApp.eventId).toBe('claim:abc:created');
     expect(inApp.body).toContain('City Harvest');
+    expect(repository.trimInAppFeed).toHaveBeenCalledWith('sub-donor');
     expect(mailer.send).toHaveBeenCalledTimes(1);
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({ channel: 'email', status: 'sent' }),
     );
+  });
+
+  it('does not fail the message when the feed trim errors', async () => {
+    repository.trimInAppFeed.mockRejectedValueOnce(new Error('db blip'));
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('sent');
   });
 
   it('is idempotent: a duplicate in-app event still resolves as sent', async () => {
@@ -120,6 +131,7 @@ describe('SqsConsumerService.process', () => {
     const outcome = await service.process(message(claimCreated()));
 
     expect(outcome).toBe('sent');
+    expect(repository.trimInAppFeed).not.toHaveBeenCalled();
     expect(mailer.send).not.toHaveBeenCalled();
     expect(repository.record).not.toHaveBeenCalled();
   });

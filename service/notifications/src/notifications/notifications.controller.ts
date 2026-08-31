@@ -1,6 +1,8 @@
 import {
   Controller,
+  Delete,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -59,5 +61,17 @@ export class NotificationsController {
   @Post('read-all')
   async markAllRead(@Req() req: Request): Promise<{ updated: number }> {
     return { updated: await this.repository.markAllRead(req.user!.userId) };
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    const removed = await this.repository.deleteForUser(req.user!.userId, id);
+    if (!removed) {
+      throw new NotFoundException(`notification ${id} not found`);
+    }
   }
 }
