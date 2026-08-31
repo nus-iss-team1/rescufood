@@ -23,8 +23,18 @@ identified by the token `sub`, matched against `recipient_user_id`):
 | `GET /api/notifications/unread-count` | `{ count }` for the unread dot |
 | `POST /api/notifications/:id/read` | mark one read (404 if not the caller's) |
 | `POST /api/notifications/read-all` | mark all read, returns `{ updated }` |
+| `DELETE /api/notifications/:id` | dismiss one from the feed, 204 (404 if not the caller's) |
+| `DELETE /api/notifications` | dismiss the whole feed, returns `{ deleted }` |
 
 `GET /health` stays unauthenticated for container / ALB health checks.
+
+The in-app feed is **capped at the newest 10** per recipient
+(`IN_APP_FEED_LIMIT`). Dismissed notifications, and ones that fall past the
+cap when a newer one arrives, are **soft-deleted** (`deleted_at`), not
+removed - so the `(event_id, recipient_user_id)` dedupe index keeps blocking
+duplicates if an event is reprocessed. The read API only ever returns
+non-deleted rows, and there is no back-fill: dismissing one leaves the feed
+shorter until the next notification arrives.
 
 ## Prerequisites
 
@@ -44,7 +54,7 @@ identified by the token `sub`, matched against `recipient_user_id`):
 cd service/notifications
 npm install
 docker compose up -d          # local notifications-db on :5433
-cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, GMAIL_USER, GMAIL_APP_PASSWORD
+cp .env.example .env          # fill in NOTIFICATION_QUEUE_URL, AUTH_COGNITO_ISSUER, GMAIL_USER, GMAIL_APP_PASSWORD
 npm run db:migrate
 npm run start:dev
 ```
@@ -101,10 +111,11 @@ One SQS message body = one notification for one recipient:
 **In-app is the primary channel, email is secondary.** For each message the
 consumer (`SqsConsumerService.process`):
 
-1. Creates the in-app row (`INSERT ... ON CONFLICT DO NOTHING` on the
-   `(event_id, recipient_user_id)` partial unique index). A DB failure here
-   leaves the message on the queue to be redelivered - the in-app record
-   *must* land.
+1. Creates the in-app row, treating a unique-violation on the
+   `(event_id, recipient_user_id)` partial index as a duplicate (no-op), and
+   trims the recipient's feed back to the newest `IN_APP_FEED_LIMIT`. A DB
+   failure here leaves the message on the queue to be redelivered - the
+   in-app record *must* land.
 2. Sends the email. A prior successful send for the same `(event_id,
    recipient_email)` is skipped. A send failure is logged and written as a
    `status = 'failed'` row, but does **not** redeliver the message or reverse

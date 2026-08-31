@@ -133,6 +133,13 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
             { eventId: dto.eventId, type: dto.type },
             'in-app notification already exists, skipping',
           );
+        } else {
+          // Keep the feed capped; a trim failure doesn't fail the message.
+          await this.repository
+            .trimInAppFeed(dto.recipientUserId)
+            .catch((err: unknown) =>
+              this.logger.error({ err }, 'in-app feed trim failed'),
+            );
         }
       } catch (error) {
         this.logger.error(

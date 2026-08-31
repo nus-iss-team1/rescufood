@@ -21,10 +21,21 @@ Environment separation (dev vs prod) inside the shared VPC is logical:
 per-environment security groups, ECS services, and databases, tagged with
 `Environment: dev|prod`.
 
+The ALB is **internal** — nothing reaches it from the internet directly.
+Browser traffic goes through an **API Gateway HTTP API** (`*.execute-api`)
+over a VPC Link, and listing images through **CloudFront** (`*.cloudfront.net`)
+in front of S3. No custom domain yet.
+
+```
+browser → API Gateway (HTTP API) → VPC Link → internal ALB → ECS services
+browser → CloudFront → S3 (listing images)
+service → internal ALB → ECS services   (server-to-server, stays in the VPC)
+```
+
 Security group chain per environment:
 
 ```
-internet → alb-sg (80/443) → app-sg (3000 web, 3001 profile, 3002 listings) → db-sg (5432)
+VPC CIDR (API Gateway VPC Link) → alb-sg (80) → app-sg (3000 web, 3001 profile, 3002 listings, 3003 notification) → db-sg (5432)
 ```
 
 ## Stacks
@@ -43,6 +54,12 @@ then cluster by scope.
 | `rescufood-dev-ecs` | `cloudformation/ecs.yaml` | Per environment |
 | `rescufood-dev-data` | `cloudformation/data.yaml` | Per environment |
 | `rescufood-dev-messaging` | `cloudformation/messaging.yaml` | Per environment |
+| `rescufood-dev-api-gateway` | `cloudformation/api-gateway.yaml` | Per environment (deploy after ECS) |
+
+`api-gateway.yaml` is the internet-facing front (HTTP API + VPC Link + a
+`$default` route to the ECS stack's ALB listener). See
+[`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md) for the
+migration writeup.
 
 Planned future stacks follow the same pattern: `rescufood-core-dns`,
 `rescufood-prod-security`, ...
@@ -349,9 +366,10 @@ other AWS customer claims it first - checked available before each
 environment's first deploy. If a collision ever blocks a deploy, add an
 account-id or random suffix in `data.yaml`'s `BucketName`.
 
-- **Private** — all four public-access-block settings on, no bucket
-  policy. Images are served through short-lived presigned GET URLs
-  generated on read; nothing is ever fetched directly from the bucket.
+- **Private** — all four public-access-block settings on. The only reader
+  is a CloudFront distribution (provisioned in this stack) via an Origin
+  Access Control; `service/listings` returns `${CDN_URL}/${key}` image
+  links, no presigning. Nothing is fetched from the bucket directly.
 - **SSE-S3 encryption** at rest.
 - **No CORS configuration** — uploads go through the listings service
   (`multipart/form-data` to the API, which then calls `PutObjectCommand`
@@ -392,11 +410,12 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 ```
 
-Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack
-name) are consumed by whichever service's task definition/role needs
-to send or receive on the queue — none does yet.
+Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack name) are
+imported by the ECS stack: `service/profile` and `service/listings` get
+`sqs:SendMessage` on the queue, `service/notifications` gets
+receive/delete.
 
-## Deploying (not yet executed)
+## Deploying
 
 All deploy commands are idempotent: `aws cloudformation deploy` creates the
 stack on first run and updates it on later runs, and
@@ -451,18 +470,32 @@ aws cloudformation deploy \
   --template-file cloudformation/messaging.yaml \
   --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
   --no-fail-on-empty-changeset
+
+# 7. Dev environment API Gateway front (needs 4 - imports the ECS ALB listener)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-api-gateway \
+  --template-file cloudformation/api-gateway.yaml \
+  --parameter-overrides file://cloudformation/parameters/api-gateway-dev.json \
+  --no-fail-on-empty-changeset
 ```
 
 `CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
-ECS stack creates. The site URL is the stack's `FrontendUrl` output:
+ECS stack creates. The public site URL is the API Gateway stack's
+`ApiGatewayUrl` output (the ECS stack's `FrontendUrl` is the internal ALB):
 
 ```sh
 aws cloudformation describe-stacks \
   --region ap-southeast-1 \
-  --stack-name rescufood-dev-ecs \
-  --query "Stacks[0].Outputs[?OutputKey=='FrontendUrl'].OutputValue" \
+  --stack-name rescufood-dev-api-gateway \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" \
   --output text
 ```
+
+On the very first deploy, run step 4 once without the
+`ApiGatewayStackName` override (nothing to import yet), then steps 5-7, then
+step 4 again to wire the gateway URL into the task env - see
+[`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md).
 
 For prod later: copy each `parameters/*-dev.json` to a `*-prod.json`, set
 `EnvironmentName=prod` (and a `:latest` or pinned image tag for ECS), then
@@ -475,6 +508,7 @@ Delete in reverse order (security stacks before network — exports cannot be
 deleted while imported):
 
 ```sh
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-api-gateway
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-ecs
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-data
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-messaging
@@ -482,6 +516,9 @@ aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-d
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
 ```
+
+(`rescufood-dev-api-gateway` first — it imports `HttpListenerArn` from the
+ECS stack.)
 
 Deleting the IAM stack deletes the user pool and all registered users —
 fine for dev, deliberate decision required for prod (`DeletionProtection`

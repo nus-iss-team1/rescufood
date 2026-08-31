@@ -326,6 +326,8 @@ Resources:
               Value: !Sub http://${LoadBalancer.DNSName}
             - Name: LISTINGS_API_URL
               Value: !Sub http://${LoadBalancer.DNSName}
+            - Name: NOTIFICATION_API_URL
+              Value: !Sub http://${LoadBalancer.DNSName}
           RepositoryCredentials: !If
             - HasPullSecret
             - CredentialsParameter: !Ref GhcrPullSecretArn

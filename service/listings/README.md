@@ -44,6 +44,8 @@ notable ones:
 | `AUTH_COGNITO_ISSUER` | OIDC issuer URL — `Issuer` output of the `rescufood-<env>-iam` stack |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API |
 | `AWS_REGION` / `S3_BUCKET_NAME` | Where listing images are uploaded (`src/storage/s3.service.ts`) |
+| `LISTING_IMAGES_CDN_URL` | CloudFront base URL prefixed to image keys in API responses |
+| `NOTIFICATION_QUEUE_URL` | SQS queue for lifecycle notifications; unset = notifications disabled (logged once) |
 | `RATE_LIMIT_TTL_SECONDS` / `RATE_LIMIT_MAX_REQUESTS` | App-wide throttle, default 100 req/60s/client |
 | `IDEMPOTENCY_RETENTION_DAYS` | How long claim idempotency records are kept before a reused key counts as new, default 7 |
 
@@ -61,6 +63,15 @@ All routes are namespaced under `/api` (`app.setGlobalPrefix('api')` in
 Requests carry a Cognito-issued bearer token; org membership and
 listing/request ownership are enforced per-route (see
 `src/auth/org-membership.guard.ts` and the `*-access.util.ts` helpers).
+
+### Lifecycle notifications
+
+After a claim, cancellation, pickup reminder/completion or listing expiry
+commits, `NotificationsPublisher` (`src/notifications/`) sends one SQS
+message per recipient to `NOTIFICATION_QUEUE_URL` — carrying a deterministic
+`eventId` and the recipient's Cognito sub — which `service/notifications`
+turns into an email and an in-app notification. Best-effort: the send runs
+after the transaction and a failure is only logged.
 
 ### Claim idempotency
 
@@ -135,7 +146,9 @@ src/
 ├── auth/                    # JWT guard + org-membership guard
 ├── db/                      # Drizzle schema (own + external/profile tables)
 ├── listings/                # Listings CRUD, image upload, expiry job
-├── requests/                # Request/claim lifecycle, pickup-code verification
+├── requests/                # Request/claim lifecycle, pickup-code verification, idempotency
+├── notifications/           # SQS publisher for lifecycle notifications
+├── audit/                   # audit_log writer for the listing/claim lifecycle
 ├── storage/                 # S3 upload service
 └── health/                  # Health check controller
 ```

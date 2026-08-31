@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lt, notInArray, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/db.module';
 import { notifications } from '../db/schema';
 import type {
@@ -8,6 +8,10 @@ import type {
 } from './notification-message.dto';
 
 const PG_UNIQUE_VIOLATION = '23505';
+
+// A recipient's in-app feed is capped at this many notifications. When a
+// newer one arrives, older ones past the cap are soft-deleted.
+export const IN_APP_FEED_LIMIT = 10;
 
 export interface NotificationRecord {
   recipientEmail: string;
@@ -106,10 +110,14 @@ export class NotificationsRepository {
     recipientUserId: string,
     options: ListInAppOptions = {},
   ): Promise<InAppNotification[]> {
-    const limit = Math.min(Math.max(options.limit ?? 20, 1), 100);
+    const limit = Math.min(
+      Math.max(options.limit ?? IN_APP_FEED_LIMIT, 1),
+      100,
+    );
     const conditions = [
       eq(notifications.channel, 'in_app'),
       eq(notifications.recipientUserId, recipientUserId),
+      isNull(notifications.deletedAt),
     ];
     if (options.unreadOnly) conditions.push(isNull(notifications.readAt));
     if (options.before) {
@@ -139,6 +147,7 @@ export class NotificationsRepository {
           eq(notifications.channel, 'in_app'),
           eq(notifications.recipientUserId, recipientUserId),
           isNull(notifications.readAt),
+          isNull(notifications.deletedAt),
         ),
       );
     return row?.count ?? 0;
@@ -185,6 +194,86 @@ export class NotificationsRepository {
           eq(notifications.channel, 'in_app'),
           eq(notifications.recipientUserId, recipientUserId),
           isNull(notifications.readAt),
+          isNull(notifications.deletedAt),
+        ),
+      )
+      .returning({ id: notifications.id });
+    return rows.length;
+  }
+
+  // Soft-deletes one of the caller's own in-app notifications (idempotent);
+  // returns false when no such row belongs to the caller.
+  async deleteForUser(recipientUserId: string, id: string): Promise<boolean> {
+    const [existing] = await this.db
+      .select({ deletedAt: notifications.deletedAt })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.id, id),
+          eq(notifications.channel, 'in_app'),
+          eq(notifications.recipientUserId, recipientUserId),
+        ),
+      )
+      .limit(1);
+    if (!existing) return false;
+    if (!existing.deletedAt) {
+      await this.db
+        .update(notifications)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(notifications.id, id),
+            eq(notifications.recipientUserId, recipientUserId),
+          ),
+        );
+    }
+    return true;
+  }
+
+  // Soft-deletes every one of the caller's in-app notifications; returns how
+  // many were still live.
+  async deleteAllForUser(recipientUserId: string): Promise<number> {
+    const rows = await this.db
+      .update(notifications)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          eq(notifications.channel, 'in_app'),
+          eq(notifications.recipientUserId, recipientUserId),
+          isNull(notifications.deletedAt),
+        ),
+      )
+      .returning({ id: notifications.id });
+    return rows.length;
+  }
+
+  // Soft-deletes the caller's in-app notifications past the feed cap, keeping
+  // the newest IN_APP_FEED_LIMIT. Called after a new one is created.
+  async trimInAppFeed(recipientUserId: string): Promise<number> {
+    const live = and(
+      eq(notifications.channel, 'in_app'),
+      eq(notifications.recipientUserId, recipientUserId),
+      isNull(notifications.deletedAt),
+    );
+
+    const keep = await this.db
+      .select({ id: notifications.id })
+      .from(notifications)
+      .where(live)
+      .orderBy(desc(notifications.createdAt))
+      .limit(IN_APP_FEED_LIMIT);
+    if (keep.length < IN_APP_FEED_LIMIT) return 0;
+
+    const rows = await this.db
+      .update(notifications)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          live,
+          notInArray(
+            notifications.id,
+            keep.map((r) => r.id),
+          ),
         ),
       )
       .returning({ id: notifications.id });

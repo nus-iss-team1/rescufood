@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth, authConfigured } from "@/auth";
 import { SignOutButton } from "@/components/auth/sign-out-dialog";
 import { HeaderMenu } from "@/components/header-menu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navItemClass =
   "inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted";
@@ -21,7 +22,8 @@ export async function SiteHeader() {
         </Link>
 
         {session?.user ? (
-          <>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
             {/* Desktop: navigation rendered directly in the bar */}
             <nav className="hidden items-center gap-1 md:flex">
               <a href="/dashboard" className={navItemClass}>
@@ -36,7 +38,7 @@ export async function SiteHeader() {
             <div className="md:hidden">
               <HeaderMenu />
             </div>
-          </>
+          </div>
         ) : (
           <Link href="/login" className={navItemClass}>
             Sign in
