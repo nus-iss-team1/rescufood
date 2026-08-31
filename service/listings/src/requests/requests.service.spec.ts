@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/types/express';
+import type { CreateRequestDto } from './dto/create-request.dto';
+import { requestFingerprint } from './idempotency/request-fingerprint.util';
 import { hashPickupCode } from './pickup/pickup-code.util';
 import { RequestsRepository } from './requests.repository';
 import { RequestsService } from './requests.service';
@@ -21,7 +23,6 @@ const mockResolveOrgId = resolveOrgIdByUserId as jest.Mock;
 function makeRepository() {
   return {
     create: jest.fn(),
-    findByIdempotencyKey: jest.fn().mockResolvedValue(undefined),
     findById: jest.fn(),
     findMany: jest.fn(),
     countMany: jest.fn().mockResolvedValue(0),
@@ -69,19 +70,57 @@ function makeNotifications() {
   };
 }
 
-function makeService(repository: ReturnType<typeof makeRepository>) {
+function makeIdempotency() {
+  return {
+    find: jest.fn().mockResolvedValue(undefined),
+    claimSlot: jest.fn().mockResolvedValue({ id: 'slot-1' }),
+    complete: jest.fn().mockResolvedValue(undefined),
+    release: jest.fn().mockResolvedValue(undefined),
+    deleteExpired: jest.fn().mockResolvedValue(0),
+  };
+}
+
+function makeConfig(values: Record<string, unknown> = {}) {
+  return { get: jest.fn((key: string) => values[key]) };
+}
+
+function makeService(
+  repository: ReturnType<typeof makeRepository>,
+  idempotency: ReturnType<typeof makeIdempotency> = makeIdempotency(),
+) {
   const db = makeDb();
   const logger = makeLogger();
   const audit = makeAudit();
   const notifications = makeNotifications();
+  const config = makeConfig();
   const service = new RequestsService(
     repository as unknown as RequestsRepository,
+    idempotency as never,
     audit as never,
     notifications as never,
     db as never,
     logger as never,
+    config as never,
   );
-  return { service, db, logger, audit, notifications };
+  return { service, db, logger, audit, notifications, idempotency };
+}
+
+// Fingerprint of the shared `dto` below, so replay-record mocks match.
+const FINGERPRINT_DTO = requestFingerprint({
+  listingId: 'listing-1',
+} as CreateRequestDto);
+
+function completedRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'slot-1',
+    rescueOrgId: 'org-rescue',
+    idempotencyKey: 'idem-1',
+    requestFingerprint: FINGERPRINT_DTO,
+    status: 'completed',
+    claimId: 'request-1',
+    responseSnapshot: null,
+    ...overrides,
+  };
 }
 
 const rescueUser: AuthenticatedUser = {
@@ -123,7 +162,6 @@ const baseRequest = {
   listingId: 'listing-1',
   rescueOrgId: 'org-rescue',
   claimedBy: 'user-rescue',
-  idempotencyKey: 'idem-1',
   status: 'active' as const,
   requestedQuantity: '10.00',
 };
@@ -156,7 +194,6 @@ describe('RequestsService', () => {
           listingId: 'listing-1',
           rescueOrgId: 'org-rescue',
           claimedBy: 'user-rescue',
-          idempotencyKey: 'idem-1',
           status: 'active',
           requestedQuantity: '10.00',
         }),
@@ -295,32 +332,160 @@ describe('RequestsService', () => {
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
-    it('replays the original claim when the same key was already used', async () => {
+    it('pins the claim to the idempotency slot inside the transaction (AC1)', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
-      repository.findByIdempotencyKey.mockResolvedValue(baseRequest);
-      const { service } = makeService(repository);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockResolvedValue(baseRequest);
+      const idempotency = makeIdempotency();
+      const { service } = makeService(repository, idempotency);
+
+      await service.create(dto, rescueUser);
+
+      expect(idempotency.claimSlot).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rescueOrgId: 'org-rescue',
+          idempotencyKey: 'idem-1',
+          requestFingerprint: FINGERPRINT_DTO,
+          expiresAt: expect.any(Date) as Date,
+        }),
+      );
+      expect(idempotency.complete).toHaveBeenCalledWith(
+        'slot-1',
+        'request-1',
+        expect.objectContaining({ id: 'request-1' }),
+        expect.any(Date),
+        TX_TOKEN,
+      );
+    });
+
+    it('replays the original outcome for an identical retry (AC2)', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest);
+      const idempotency = makeIdempotency();
+      idempotency.find.mockResolvedValue(completedRecord());
+      const { service } = makeService(repository, idempotency);
 
       await expect(service.create(dto, rescueUser)).resolves.toEqual(
         baseRequest,
       );
-      expect(repository.findByIdempotencyKey).toHaveBeenCalledWith(
-        'org-rescue',
-        'idem-1',
+      expect(idempotency.find).toHaveBeenCalledWith('org-rescue', 'idem-1');
+      expect(repository.findListingById).not.toHaveBeenCalled();
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+      expect(idempotency.claimSlot).not.toHaveBeenCalled();
+    });
+
+    it('replays even after the listing has moved on from available (AC2, AC6)', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest);
+      const idempotency = makeIdempotency();
+      idempotency.find.mockResolvedValue(completedRecord());
+      const { service } = makeService(repository, idempotency);
+
+      // No listing lookup happens, so a now-reserved listing can't 400 the retry.
+      await expect(service.create(dto, rescueUser)).resolves.toEqual(
+        baseRequest,
+      );
+    });
+
+    it('409s a key reused with a different request and leaves the claim alone (AC3)', async () => {
+      const repository = makeRepository();
+      const idempotency = makeIdempotency();
+      idempotency.find.mockResolvedValue(
+        completedRecord({ requestFingerprint: 'a-different-fingerprint' }),
+      );
+      const { service, audit } = makeService(repository, idempotency);
+
+      await expect(
+        service.create({ ...dto, listingId: 'listing-2' }, rescueUser),
+      ).rejects.toThrow(/different request/i);
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+      expect(repository.create).not.toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.idempotency_conflict',
+          entityId: 'request-1',
+        }),
+      );
+    });
+
+    it('409s a retry received while the original is still in flight (AC5)', async () => {
+      const repository = makeRepository();
+      const idempotency = makeIdempotency();
+      idempotency.find.mockResolvedValue(
+        completedRecord({ status: 'pending', claimId: null }),
+      );
+      const { service } = makeService(repository, idempotency);
+
+      await expect(service.create(dto, rescueUser)).rejects.toThrow(
+        /still being processed/i,
       );
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('resolves to the original outcome when a concurrent request won the slot (AC4)', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.findById.mockResolvedValue(baseRequest);
+      const idempotency = makeIdempotency();
+      idempotency.find
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(completedRecord());
+      idempotency.claimSlot.mockResolvedValue(undefined);
+      const { service } = makeService(repository, idempotency);
+
+      await expect(service.create(dto, rescueUser)).resolves.toEqual(
+        baseRequest,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
+    it('409s a retry that lost the slot race while the winner is still pending (AC4, AC5)', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      const idempotency = makeIdempotency();
+      idempotency.find
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(
+          completedRecord({ status: 'pending', claimId: null }),
+        );
+      idempotency.claimSlot.mockResolvedValue(undefined);
+      const { service } = makeService(repository, idempotency);
+
+      await expect(service.create(dto, rescueUser)).rejects.toThrow(
+        /still being processed/i,
+      );
+    });
+
+    it('scopes the idempotency lookup and slot to the caller org (AC7)', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockResolvedValue(baseRequest);
+      const idempotency = makeIdempotency();
+      const otherOrgUser = { ...rescueUser, orgId: 'org-other' };
+      const { service } = makeService(repository, idempotency);
+
+      await service.create(dto, otherOrgUser);
+
+      expect(idempotency.find).toHaveBeenCalledWith('org-other', 'idem-1');
+      expect(idempotency.claimSlot).toHaveBeenCalledWith(
+        expect.objectContaining({ rescueOrgId: 'org-other' }),
+      );
     });
 
     it('409s when another org claimed the listing first (reserve returns nothing)', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       repository.reserveListingForClaim.mockResolvedValue(undefined);
-      const { service } = makeService(repository);
+      const idempotency = makeIdempotency();
+      const { service } = makeService(repository, idempotency);
 
       await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
         ConflictException,
       );
       expect(repository.create).not.toHaveBeenCalled();
+      expect(idempotency.release).toHaveBeenCalledWith('slot-1');
     });
 
     it('409s when the active-claim unique index rejects a concurrent insert', async () => {
@@ -331,43 +496,13 @@ describe('RequestsService', () => {
         code: '23505',
         constraint: 'requests_active_claim_per_listing_uq',
       });
-      const { service } = makeService(repository);
+      const idempotency = makeIdempotency();
+      const { service } = makeService(repository, idempotency);
 
       await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
         ConflictException,
       );
-    });
-
-    it('replays the original when a concurrent retry trips the idempotency index', async () => {
-      const repository = makeRepository();
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
-      repository.create.mockRejectedValue({
-        code: '23505',
-        constraint: 'requests_rescue_org_idempotency_key_uq',
-      });
-      repository.findByIdempotencyKey
-        .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce(baseRequest);
-      const { service } = makeService(repository);
-
-      await expect(service.create(dto, rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
-    });
-
-    it('replays the original when a concurrent retry loses the reserve race', async () => {
-      const repository = makeRepository();
-      repository.findListingById.mockResolvedValue(availableListing);
-      repository.reserveListingForClaim.mockResolvedValue(undefined);
-      repository.findByIdempotencyKey
-        .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce(baseRequest);
-      const { service } = makeService(repository);
-
-      await expect(service.create(dto, rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
+      expect(idempotency.release).toHaveBeenCalledWith('slot-1');
     });
 
     it('rethrows an unexpected unique violation', async () => {

@@ -6,3 +6,4 @@ made a choice reasonable at the time.
 | ADR | Decision |
 | --- | --- |
 | [0001](0001-keep-the-admin-console-local.md) | Keep the admin console local |
+| [0002](0002-claim-idempotency.md) | Claim idempotency |

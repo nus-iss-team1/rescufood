@@ -83,7 +83,6 @@ const baseRequest = {
   listingId: 'listing-1',
   rescueOrgId: 'org-rescue',
   claimedBy: 'user-rescue',
-  idempotencyKey: 'idem-1',
   status: 'active' as const,
   requestedQuantity: '10.00',
   requestedAt: new Date('2026-08-06T00:00:00Z'),
@@ -123,7 +122,6 @@ describe('RequestsRepository', () => {
         listingId: 'listing-1',
         rescueOrgId: 'org-rescue',
         claimedBy: 'user-rescue',
-        idempotencyKey: 'idem-1',
         status: 'active',
         requestedQuantity: '10.00',
       });
@@ -142,7 +140,6 @@ describe('RequestsRepository', () => {
           listingId: 'listing-1',
           rescueOrgId: 'org-rescue',
           claimedBy: 'user-rescue',
-          idempotencyKey: 'idem-1',
           status: 'active',
           requestedQuantity: '10.00',
         },
@@ -151,32 +148,6 @@ describe('RequestsRepository', () => {
 
       expect(tx.insert).toHaveBeenCalledWith(requests);
       expect(db.insert).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findByIdempotencyKey', () => {
-    it('scopes the lookup to the claiming org', async () => {
-      const db = makeDb();
-      const queryChain = chain([baseRequest]);
-      db.select.mockReturnValue(queryChain);
-      const repository = new RequestsRepository(db as unknown as Database);
-
-      await expect(
-        repository.findByIdempotencyKey('org-rescue', 'idem-1'),
-      ).resolves.toEqual(baseRequest);
-
-      const { params } = renderWhere(queryChain.where as jest.Mock);
-      expect(params).toEqual(expect.arrayContaining(['org-rescue', 'idem-1']));
-    });
-
-    it('returns undefined when missing', async () => {
-      const db = makeDb();
-      db.select.mockReturnValue(chain([]));
-      const repository = new RequestsRepository(db as unknown as Database);
-
-      await expect(
-        repository.findByIdempotencyKey('org-rescue', 'missing'),
-      ).resolves.toBeUndefined();
     });
   });
 

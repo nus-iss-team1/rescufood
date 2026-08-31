@@ -187,7 +187,6 @@ function request(
     listingId: sampleListings[0].id,
     rescueOrgId: org,
     claimedBy: rescue,
-    idempotencyKey: `key-${over.id}`,
     status: "active",
     requestedQuantity: "6.00",
     requestedAt: "2026-08-11T03:00:00.000Z",

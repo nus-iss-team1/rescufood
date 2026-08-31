@@ -45,6 +45,7 @@ notable ones:
 | `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the API |
 | `AWS_REGION` / `S3_BUCKET_NAME` | Where listing images are uploaded (`src/storage/s3.service.ts`) |
 | `RATE_LIMIT_TTL_SECONDS` / `RATE_LIMIT_MAX_REQUESTS` | App-wide throttle, default 100 req/60s/client |
+| `IDEMPOTENCY_RETENTION_DAYS` | How long claim idempotency records are kept before a reused key counts as new, default 7 |
 
 ## API
 
@@ -60,6 +61,27 @@ All routes are namespaced under `/api` (`app.setGlobalPrefix('api')` in
 Requests carry a Cognito-issued bearer token; org membership and
 listing/request ownership are enforced per-route (see
 `src/auth/org-membership.guard.ts` and the `*-access.util.ts` helpers).
+
+### Claim idempotency
+
+`POST /api/requests` requires an `idempotencyKey` (client-generated, unique
+per rescue org). The service records the key, a fingerprint of the request,
+and its outcome in `request_idempotency_keys`:
+
+- **Identical retry** → the original claim is returned, no second claim
+  created — even after the listing has left `available`.
+- **Same key, different listing** → `409` idempotency conflict; the existing
+  claim is untouched and a `claim.idempotency_conflict` audit row is written.
+- **Retry while the first request is still in flight** → `409` asking the
+  caller to retry; the concurrent unique index guarantees at most one claim
+  commits.
+- **Isolation** → the key is scoped to the rescue org, so two orgs can use
+  the same key value without interfering.
+- **Retention** → records are pruned once past `IDEMPOTENCY_RETENTION_DAYS`
+  (abandoned in-flight records after 15 min) by `IdempotencyRetentionService`;
+  after that the key is treated as new.
+
+See [ADR 0002](../../docs/adr/0002-claim-idempotency.md).
 
 ## Database
 

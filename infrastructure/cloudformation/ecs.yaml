@@ -131,6 +131,13 @@ Parameters:
     Default: 3002
     Description: Port the listings service listens on
 
+  ListingsIdempotencyRetentionDays:
+    Type: Number
+    Default: 7
+    Description: >-
+      How long the listings service keeps claim idempotency records. After
+      this window a reused idempotency key is treated as a new request.
+
   NotificationImage:
     Type: String
     Default: ""
@@ -903,6 +910,8 @@ Resources:
             - Name: NOTIFICATION_QUEUE_URL
               Value:
                 Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
+            - Name: IDEMPOTENCY_RETENTION_DAYS
+              Value: !Ref ListingsIdempotencyRetentionDays
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"

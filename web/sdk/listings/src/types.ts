@@ -150,7 +150,6 @@ export interface ListingRequest {
   listingId: string;
   rescueOrgId: string;
   claimedBy: string;
-  idempotencyKey: string;
   status: RequestStatus;
   /** Decimal string, e.g. "5.00". */
   requestedQuantity: string;

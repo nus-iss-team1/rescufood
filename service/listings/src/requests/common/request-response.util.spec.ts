@@ -6,7 +6,6 @@ const fullRequest: ListingRequest = {
   listingId: 'listing-1',
   rescueOrgId: 'org-rescue',
   claimedBy: 'user-rescue',
-  idempotencyKey: 'idem-1',
   status: 'active',
   requestedQuantity: '5.00',
   requestedAt: new Date('2026-08-06T00:00:00Z'),

@@ -17,7 +17,6 @@ export function toPublicRequest(request: ListingRequest): PublicListingRequest {
     listingId: request.listingId,
     rescueOrgId: request.rescueOrgId,
     claimedBy: request.claimedBy,
-    idempotencyKey: request.idempotencyKey,
     status: request.status,
     requestedQuantity: request.requestedQuantity,
     requestedAt: request.requestedAt,

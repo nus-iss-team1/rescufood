@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { AuditAction } from '../audit/audit.actions';
 import { AuditRepository } from '../audit/audit.repository';
@@ -24,6 +25,16 @@ import {
 } from './common/request-response.util';
 import { formatWindow } from './common/pickup-window.util';
 import { assertValidRequestStatusTransition } from './common/request-status.util';
+import {
+  IdempotencyConflictException,
+  IdempotencyProcessingException,
+} from './idempotency/idempotency.exceptions';
+import {
+  IdempotencyRepository,
+  STALE_PENDING_MS,
+  type IdempotencyRecord,
+} from './idempotency/idempotency.repository';
+import { requestFingerprint } from './idempotency/request-fingerprint.util';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
@@ -42,27 +53,44 @@ import {
   RequestsRepository,
 } from './requests.repository';
 
-const IDEMPOTENCY_KEY_CONSTRAINT = 'requests_rescue_org_idempotency_key_uq';
 const ACTIVE_CLAIM_CONSTRAINT = 'requests_active_claim_per_listing_uq';
+const DEFAULT_RETENTION_DAYS = 7;
 
 @Injectable()
 export class RequestsService {
+  private readonly retentionMs: number;
+
   constructor(
     private readonly requestsRepository: RequestsRepository,
+    private readonly idempotency: IdempotencyRepository,
     private readonly auditRepository: AuditRepository,
     private readonly notifications: NotificationsPublisher,
     @Inject(DATABASE) private readonly db: Database,
     private readonly logger: Logger,
-  ) {}
+    config: ConfigService,
+  ) {
+    const days =
+      config.get<number>('IDEMPOTENCY_RETENTION_DAYS') ??
+      DEFAULT_RETENTION_DAYS;
+    this.retentionMs = days * 24 * 60 * 60 * 1000;
+  }
 
   // First-come-first-served: claim the whole listing and reserve it for the
-  // caller's org in one transaction. Idempotent on (rescueOrgId,
-  // idempotencyKey) - a retry replays the original claim; a losing race gets
-  // a 409.
+  // caller's org in one transaction. Idempotent per rescue org on
+  // idempotencyKey - an identical retry replays the original claim, a reused
+  // key with different data is a 409 conflict, a retry mid-flight is a 409
+  // asking the caller to try again, and a losing race gets a 409.
   async create(
     dto: CreateRequestDto,
     user: AuthenticatedUser,
   ): Promise<PublicListingRequest> {
+    const fingerprint = requestFingerprint(dto);
+
+    // Replay first: an identical retry must return the original outcome even
+    // after the listing has moved on from 'available'.
+    const prior = await this.idempotency.find(user.orgId!, dto.idempotencyKey);
+    if (prior) return this.replayIdempotent(prior, fingerprint, user);
+
     const listing = await this.requestsRepository.findListingById(
       dto.listingId,
     );
@@ -99,11 +127,22 @@ export class RequestsService {
       );
     }
 
-    const replay = await this.requestsRepository.findByIdempotencyKey(
-      user.orgId!,
-      dto.idempotencyKey,
-    );
-    if (replay) return toPublicRequest(replay);
+    const slot = await this.idempotency.claimSlot({
+      rescueOrgId: user.orgId!,
+      idempotencyKey: dto.idempotencyKey,
+      requestFingerprint: fingerprint,
+      expiresAt: new Date(Date.now() + STALE_PENDING_MS),
+    });
+    if (!slot) {
+      // Lost the slot race between the lookup above and here - re-read and
+      // resolve to whatever the winner is doing.
+      const raced = await this.idempotency.find(
+        user.orgId!,
+        dto.idempotencyKey,
+      );
+      if (raced) return this.replayIdempotent(raced, fingerprint, user);
+      throw new IdempotencyProcessingException();
+    }
 
     try {
       const created = await this.db.transaction(async (tx) => {
@@ -121,7 +160,6 @@ export class RequestsService {
             listingId: dto.listingId,
             rescueOrgId: user.orgId!,
             claimedBy: user.userId,
-            idempotencyKey: dto.idempotencyKey,
             status: 'active',
             requestedQuantity: reserved.quantity!,
           },
@@ -140,37 +178,68 @@ export class RequestsService {
           },
           tx,
         );
+        await this.idempotency.complete(
+          slot.id,
+          claim.id,
+          toPublicRequest(claim),
+          new Date(Date.now() + this.retentionMs),
+          tx,
+        );
         return claim;
       });
       await this.notifyClaimCreated(listing, user);
       return toPublicRequest(created);
     } catch (err) {
-      // A retry landing just after the original committed replays it rather
-      // than erroring on the lost race.
-      if (err instanceof ConflictException) {
-        const raced = await this.requestsRepository.findByIdempotencyKey(
-          user.orgId!,
-          dto.idempotencyKey,
+      // The claim never committed - free the slot so a genuine retry isn't
+      // stuck replaying a failure that may no longer apply.
+      await this.idempotency.release(slot.id).catch((releaseErr: unknown) => {
+        this.logger.error(
+          { err: releaseErr, slotId: slot.id },
+          'failed to release idempotency slot after a failed claim',
         );
-        if (raced) return toPublicRequest(raced);
-        throw err;
-      }
-      if (isPgError(err, PG_UNIQUE_VIOLATION)) {
-        if (err.constraint === IDEMPOTENCY_KEY_CONSTRAINT) {
-          const existing = await this.requestsRepository.findByIdempotencyKey(
-            user.orgId!,
-            dto.idempotencyKey,
-          );
-          if (existing) return toPublicRequest(existing);
-        }
-        if (err.constraint === ACTIVE_CLAIM_CONSTRAINT) {
-          throw new ConflictException(
-            `listing ${dto.listingId} has already been claimed`,
-          );
-        }
+      });
+      if (err instanceof ConflictException) throw err;
+      if (
+        isPgError(err, PG_UNIQUE_VIOLATION) &&
+        err.constraint === ACTIVE_CLAIM_CONSTRAINT
+      ) {
+        throw new ConflictException(
+          `listing ${dto.listingId} has already been claimed`,
+        );
       }
       throw err;
     }
+  }
+
+  // Resolves a reused idempotency key: replays the original claim for an
+  // identical retry, 409s a key reused with different data, and 409s (retry
+  // later) while the original is still in flight.
+  private async replayIdempotent(
+    record: IdempotencyRecord,
+    fingerprint: string,
+    user: AuthenticatedUser,
+  ): Promise<PublicListingRequest> {
+    if (record.requestFingerprint !== fingerprint) {
+      if (record.claimId) {
+        await this.auditRepository.record({
+          actor: { userId: user.userId, orgId: user.orgId ?? null },
+          action: AuditAction.ClaimIdempotencyConflict,
+          entityType: 'claim',
+          entityId: record.claimId,
+        });
+      }
+      throw new IdempotencyConflictException();
+    }
+    if (record.status !== 'completed' || !record.claimId) {
+      throw new IdempotencyProcessingException();
+    }
+    const claim = await this.requestsRepository.findById(record.claimId);
+    if (!claim) {
+      throw new Error(
+        `idempotency record ${record.id} references missing claim ${record.claimId}`,
+      );
+    }
+    return toPublicRequest(claim);
   }
 
   async findAll(

@@ -16,9 +16,6 @@ export class RequestResponseDto {
   @ApiProperty({ format: 'uuid', description: 'User who filed the request.' })
   claimedBy!: string;
 
-  @ApiProperty()
-  idempotencyKey!: string;
-
   @ApiProperty({ enum: requestStatus.enumValues })
   status!: (typeof requestStatus.enumValues)[number];
 

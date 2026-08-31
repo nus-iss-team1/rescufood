@@ -141,7 +141,8 @@ export class ListingsClient implements ListingsApi {
 
   /**
    * Claims the whole listing first-come-first-served. Idempotent per org on
-   * the claim's idempotencyKey.
+   * the request's idempotencyKey - an identical retry replays the original
+   * claim; reusing a key for a different listing is a 409.
    */
   createRequest(request: NewRequest): Promise<ListingRequest> {
     return this.send("POST", "/requests", request);
