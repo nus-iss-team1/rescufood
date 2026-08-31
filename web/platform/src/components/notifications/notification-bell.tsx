@@ -104,22 +104,29 @@ export function NotificationBell() {
     }
   }, [count]);
 
-  // Sends a mutation and reconciles with the fresh feed the server returns.
-  const mutate = useCallback(async (url: string, init: RequestInit) => {
-    setBusy(true);
-    try {
-      const res = await fetch(url, { ...init, cache: "no-store" });
-      if (res.ok) {
-        const data = (await res.json()) as NotificationList;
-        setFeed(data);
-        setCount(data.unreadCount);
+  // Sends a mutation and syncs to the feed the server returns. If it fails,
+  // re-load so the panel reflects the server's real state rather than the
+  // optimistic change that didn't take.
+  const mutate = useCallback(
+    async (url: string, init: RequestInit) => {
+      setBusy(true);
+      let synced = false;
+      try {
+        const res = await fetch(url, { ...init, cache: "no-store" });
+        if (res.ok) {
+          const data = (await res.json()) as NotificationList;
+          setFeed(data);
+          setCount(data.unreadCount);
+          synced = true;
+        }
+      } catch {
+        /* fall through to the reload below */
       }
-    } catch {
-      /* optimistic state stays; the next poll reconciles the count */
-    } finally {
       setBusy(false);
-    }
-  }, []);
+      if (!synced) void loadFeed();
+    },
+    [loadFeed],
+  );
 
   const post = useCallback(
     (body: { read?: string; readAll?: boolean }) =>
@@ -195,6 +202,12 @@ export function NotificationBell() {
     [mutate],
   );
 
+  const onClearAll = useCallback(() => {
+    setFeed({ items: [], unreadCount: 0 });
+    setCount(0);
+    void mutate(FEED, { method: "DELETE" });
+  }, [mutate]);
+
   const items = feed?.items ?? [];
 
   return (
@@ -218,15 +231,32 @@ export function NotificationBell() {
       <PopoverContent align="end" sideOffset={8} className="w-80 gap-0 p-0">
         <div className="flex items-center justify-between px-3.5 py-2.5">
           <span className="text-sm font-medium">Notifications</span>
-          {items.some((n) => !n.readAt) && (
-            <button
-              type="button"
-              onClick={onMarkAll}
-              disabled={busy}
-              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-            >
-              Mark all as read
-            </button>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              {items.some((n) => !n.readAt) && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onMarkAll}
+                    disabled={busy}
+                    className="transition-colors hover:text-foreground disabled:opacity-50"
+                  >
+                    Mark all read
+                  </button>
+                  <span aria-hidden className="text-border">
+                    |
+                  </span>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={onClearAll}
+                disabled={busy}
+                className="transition-colors hover:text-foreground disabled:opacity-50"
+              >
+                Clear all
+              </button>
+            </div>
           )}
         </div>
         <div className="max-h-96 overflow-y-auto border-t border-border">

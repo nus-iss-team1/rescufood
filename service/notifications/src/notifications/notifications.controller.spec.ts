@@ -22,6 +22,7 @@ describe('NotificationsController', () => {
     markRead: jest.Mock;
     markAllRead: jest.Mock;
     deleteForUser: jest.Mock;
+    deleteAllForUser: jest.Mock;
   };
   let controller: NotificationsController;
 
@@ -32,6 +33,7 @@ describe('NotificationsController', () => {
       markRead: jest.fn().mockResolvedValue({ readAt: new Date('2026-01-01') }),
       markAllRead: jest.fn().mockResolvedValue(2),
       deleteForUser: jest.fn().mockResolvedValue(true),
+      deleteAllForUser: jest.fn().mockResolvedValue(4),
     };
     controller = new NotificationsController(
       repository as unknown as NotificationsRepository,
@@ -89,5 +91,10 @@ describe('NotificationsController', () => {
     await expect(
       controller.remove(reqAs('sub-2'), 'n1'),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('clears all of the caller’s notifications', async () => {
+    expect(await controller.removeAll(reqAs('sub-1'))).toEqual({ deleted: 4 });
+    expect(repository.deleteAllForUser).toHaveBeenCalledWith('sub-1');
   });
 });

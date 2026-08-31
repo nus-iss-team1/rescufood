@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import {
+  deleteAllNotifications,
   deleteNotification,
   listNotifications,
   markAllNotificationsRead,
@@ -66,19 +67,18 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   const token = await idToken();
   if (!token) return unauthorized;
 
+  // No id -> clear the whole feed.
   const id = new URL(request.url).searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "missing id" }, { status: 400 });
-  }
   try {
-    await deleteNotification(token, id);
-  } catch (err) {
-    // Already gone is the outcome the caller wanted; anything else is an error.
-    if (!(err instanceof NotificationsApiError) || err.status !== 404) {
-      return NextResponse.json({ error: "unreachable" }, { status: 502 });
+    if (id) {
+      // Deleting one that's already gone is the outcome the caller wanted.
+      await deleteNotification(token, id).catch((err: unknown) => {
+        if (err instanceof NotificationsApiError && err.status === 404) return;
+        throw err;
+      });
+    } else {
+      await deleteAllNotifications(token);
     }
-  }
-  try {
     return NextResponse.json(await listNotifications(token));
   } catch {
     return NextResponse.json({ error: "unreachable" }, { status: 502 });

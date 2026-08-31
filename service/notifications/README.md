@@ -24,6 +24,7 @@ identified by the token `sub`, matched against `recipient_user_id`):
 | `POST /api/notifications/:id/read` | mark one read (404 if not the caller's) |
 | `POST /api/notifications/read-all` | mark all read, returns `{ updated }` |
 | `DELETE /api/notifications/:id` | dismiss one from the feed, 204 (404 if not the caller's) |
+| `DELETE /api/notifications` | dismiss the whole feed, returns `{ deleted }` |
 
 `GET /health` stays unauthenticated for container / ALB health checks.
 

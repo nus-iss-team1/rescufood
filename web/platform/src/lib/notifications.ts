@@ -75,3 +75,9 @@ export function deleteNotification(
 ): Promise<void> {
   return call(idToken, `/${id}`, { method: "DELETE" });
 }
+
+export function deleteAllNotifications(
+  idToken: string,
+): Promise<{ deleted: number }> {
+  return call(idToken, "", { method: "DELETE" });
+}

@@ -63,6 +63,13 @@ export class NotificationsController {
     return { updated: await this.repository.markAllRead(req.user!.userId) };
   }
 
+  @Delete()
+  async removeAll(@Req() req: Request): Promise<{ deleted: number }> {
+    return {
+      deleted: await this.repository.deleteAllForUser(req.user!.userId),
+    };
+  }
+
   @Delete(':id')
   @HttpCode(204)
   async remove(

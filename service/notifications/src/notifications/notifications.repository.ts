@@ -230,6 +230,23 @@ export class NotificationsRepository {
     return true;
   }
 
+  // Soft-deletes every one of the caller's in-app notifications; returns how
+  // many were still live.
+  async deleteAllForUser(recipientUserId: string): Promise<number> {
+    const rows = await this.db
+      .update(notifications)
+      .set({ deletedAt: new Date() })
+      .where(
+        and(
+          eq(notifications.channel, 'in_app'),
+          eq(notifications.recipientUserId, recipientUserId),
+          isNull(notifications.deletedAt),
+        ),
+      )
+      .returning({ id: notifications.id });
+    return rows.length;
+  }
+
   // Soft-deletes the caller's in-app notifications past the feed cap, keeping
   // the newest IN_APP_FEED_LIMIT. Called after a new one is created.
   async trimInAppFeed(recipientUserId: string): Promise<number> {
