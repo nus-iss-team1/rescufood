@@ -83,23 +83,6 @@ export class RequestsRepository {
     return created;
   }
 
-  // Idempotency is scoped to the claiming org.
-  async findByIdempotencyKey(
-    rescueOrgId: string,
-    idempotencyKey: string,
-  ): Promise<ListingRequest | undefined> {
-    const [found] = await this.db
-      .select()
-      .from(requests)
-      .where(
-        and(
-          eq(requests.rescueOrgId, rescueOrgId),
-          eq(requests.idempotencyKey, idempotencyKey),
-        ),
-      );
-    return found;
-  }
-
   async findById(id: string): Promise<ListingRequest | undefined> {
     const [found] = await this.db
       .select()

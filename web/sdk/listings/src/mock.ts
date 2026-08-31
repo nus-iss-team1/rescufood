@@ -54,6 +54,8 @@ function within(value: string, from?: string, to?: string) {
 export class MockListingsClient implements ListingsApi {
   private listings: Listing[];
   private requests: ListingRequest[];
+  // idempotency key -> the claim it created, so a retry replays it.
+  private claimsByIdempotencyKey = new Map<string, ListingRequest>();
 
   constructor() {
     this.listings = sampleListings.map((l) => ({ ...l }));
@@ -202,9 +204,7 @@ export class MockListingsClient implements ListingsApi {
 
   async createRequest(request: NewRequest): Promise<ListingRequest> {
     // Idempotent on the key, matching the service.
-    const replay = this.requests.find(
-      (r) => r.idempotencyKey === request.idempotencyKey
-    );
+    const replay = this.claimsByIdempotencyKey.get(request.idempotencyKey);
     if (replay) return replay;
 
     const listing = this.listingOr404(request.listingId);
@@ -224,7 +224,6 @@ export class MockListingsClient implements ListingsApi {
       listingId: listing.id,
       rescueOrgId: sampleRequests[0].rescueOrgId,
       claimedBy: sampleRequests[0].claimedBy,
-      idempotencyKey: request.idempotencyKey,
       status: "active",
       requestedQuantity: listing.quantity ?? "0.00",
       requestedAt: stamp,
@@ -240,6 +239,7 @@ export class MockListingsClient implements ListingsApi {
       updatedAt: stamp,
     };
     this.requests.unshift(created);
+    this.claimsByIdempotencyKey.set(request.idempotencyKey, created);
     return created;
   }
 

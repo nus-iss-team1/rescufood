@@ -71,6 +71,27 @@
       "when": 1788088011997,
       "tag": "0009_pickup_reminder_markers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788104563998,
+      "tag": "0010_claim_idempotency_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788104575177,
+      "tag": "0011_idempotency_cross_service_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788135716174,
+      "tag": "0012_drop_requests_idempotency_key",
+      "breakpoints": true
     }
   ]
 }

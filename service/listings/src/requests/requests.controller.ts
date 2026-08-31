@@ -55,7 +55,7 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Claim a listing',
     description:
-      "First-come-first-served: creates one claim for the whole listing and reserves it for the caller's org in a single transaction. Idempotent per org on `idempotencyKey` - retrying with the same key replays the original claim.",
+      "First-come-first-served: creates one claim for the whole listing and reserves it for the caller's org in a single transaction. Idempotent per rescue org on `idempotencyKey` - an identical retry replays the original claim; the same key with a different listing is a 409 conflict; a retry while the original is still in flight is a 409 asking the caller to try again. Records are kept for a configurable retention period, after which the key is treated as new.",
   })
   @ApiResponse({ status: 201, type: RequestResponseDto })
   @ApiResponse({
@@ -72,7 +72,7 @@ export class RequestsController {
   @ApiResponse({
     status: 409,
     description:
-      'The listing has already been claimed by another organisation.',
+      'The listing has already been claimed by another organisation; the idempotency key was reused with a different request; or a request with this key is still being processed.',
   })
   @Post()
   @UseGuards(OrgMembershipGuard)

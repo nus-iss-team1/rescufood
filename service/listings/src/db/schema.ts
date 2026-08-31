@@ -54,6 +54,11 @@ export const requestStatus = pgEnum('request_status', [
   'expired',
 ]);
 
+export const idempotencyStatus = pgEnum('idempotency_status', [
+  'pending',
+  'completed',
+]);
+
 // ---------------------------------------------------------------------------
 // listings (FR2)
 // ---------------------------------------------------------------------------
@@ -186,8 +191,6 @@ export const requests = pgTable(
       .references(() => listings.id),
     rescueOrgId: uuid('rescue_org_id').notNull(), // FK -> organisations.id (service/profile)
     claimedBy: uuid('claimed_by').notNull(), // FK -> users.id (service/profile) - the rescue-partner user
-    // Unique per rescue org - see requests_rescue_org_idempotency_key_uq.
-    idempotencyKey: text('idempotency_key').notNull(),
     status: requestStatus('status').notNull().default('active'),
     requestedQuantity: numeric('requested_quantity', {
       precision: 10,
@@ -235,15 +238,46 @@ export const requests = pgTable(
     index('requests_listing_id_idx').on(table.listingId),
     index('requests_rescue_org_id_idx').on(table.rescueOrgId),
     index('requests_status_idx').on(table.status),
-    // Idempotency is scoped to the claiming org, so two orgs can reuse a key.
-    uniqueIndex('requests_rescue_org_idempotency_key_uq').on(
-      table.rescueOrgId,
-      table.idempotencyKey,
-    ),
     // At most one 'active' claim per listing; ending a claim frees the listing.
     uniqueIndex('requests_active_claim_per_listing_uq')
       .on(table.listingId)
       .where(sql`status = 'active'`),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// request_idempotency_keys - makes claim creation idempotent per rescue org.
+// A row is a claimed (org, key) slot: born 'pending', flipped to 'completed'
+// in the claim's own transaction. An identical retry replays claimId; a key
+// reused with a different fingerprint is a conflict. The retention sweep
+// deletes rows past expiresAt (short-lived while 'pending' so an abandoned
+// attempt is reclaimed; extended to the configured window on completion).
+// ---------------------------------------------------------------------------
+
+export const requestIdempotencyKeys = pgTable(
+  'request_idempotency_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    rescueOrgId: uuid('rescue_org_id').notNull(), // FK -> organisations.id (service/profile)
+    idempotencyKey: text('idempotency_key').notNull(),
+    // sha256 of the claim-defining request fields - see request-fingerprint.util.ts.
+    requestFingerprint: text('request_fingerprint').notNull(),
+    status: idempotencyStatus('status').notNull().default('pending'),
+    claimId: uuid('claim_id').references(() => requests.id),
+    // Serialised public claim as returned originally - kept for audit/debugging
+    // (replay re-reads the claim by claimId).
+    responseSnapshot: jsonb('response_snapshot'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('request_idempotency_keys_org_key_uq').on(
+      table.rescueOrgId,
+      table.idempotencyKey,
+    ),
+    index('request_idempotency_keys_expires_at_idx').on(table.expiresAt),
   ],
 );
 
