@@ -1,9 +1,10 @@
 # RescuFood Notifications Service
 
-Consumes one SQS queue and sends the actual email. Producers (`service/profile`,
-later `service/listings`) publish a JSON message per notification instead of
-calling SES/SMTP themselves - this is the one place that owns mail credentials,
-templates and delivery history.
+Consumes one SQS queue. For each event it creates an **in-app notification**
+(the primary channel) and sends an **email** (secondary). Producers
+(`service/profile`, `service/listings`) publish a JSON message per notification
+instead of calling SES/SMTP themselves - this is the one place that owns mail
+credentials, templates, in-app records and delivery history.
 
 **Stack:** NestJS 11 · TypeScript · Drizzle ORM · PostgreSQL (own database,
 unlike `service/listings` which shares `profile`'s) · Amazon SQS · Gmail SMTP
@@ -11,9 +12,19 @@ unlike `service/listings` which shares `profile`'s) · Amazon SQS · Gmail SMTP
 control fails SPF/DKIM/DMARC at the recipient; Gmail's own servers send the
 mail, authenticated as a real account.
 
-No public HTTP API yet - `GET /health` is the only route, for ECS container
-health checks. A `channel: 'in_app'` message is recorded but nothing serves
-it back to a browser yet; that's future work, not this commit.
+## Read API
+
+Cognito-bearer-authenticated, under `/api/notifications` (the caller is
+identified by the token `sub`, matched against `recipient_user_id`):
+
+| Route | Purpose |
+|---|---|
+| `GET /api/notifications?unreadOnly=&limit=&before=` | the caller's in-app notifications (newest first, keyset on `created_at`) plus `unreadCount` |
+| `GET /api/notifications/unread-count` | `{ count }` for the unread dot |
+| `POST /api/notifications/:id/read` | mark one read (404 if not the caller's) |
+| `POST /api/notifications/read-all` | mark all read, returns `{ updated }` |
+
+`GET /health` stays unauthenticated for container / ALB health checks.
 
 ## Prerequisites
 
@@ -51,47 +62,59 @@ See [`.env.example`](.env.example) for the full list. The notable ones:
 | `NOTIFICATION_QUEUE_URL` | `QueueUrl` output of the `rescufood-<env>-messaging` stack |
 | `AWS_REGION` | Region for the SQS client |
 | `GMAIL_USER` / `GMAIL_APP_PASSWORD` | Gmail account emails are sent through |
+| `AUTH_COGNITO_ISSUER` | Cognito issuer URL the read API verifies bearer tokens against |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed to call the read API |
 
 ## Message contract
 
-One SQS message body = one notification:
+One SQS message body = one notification for one recipient:
 
 ```json
 {
-  "type": "org_approved",
+  "type": "claim_created",
   "channel": "email",
-  "recipientEmail": "ops@freshmart.sg",
-  "payload": { "orgName": "Fresh Mart" }
+  "recipientEmail": "donor@example.com",
+  "recipientUserId": "<cognito-sub>",
+  "eventId": "claim:<claimId>:created",
+  "payload": { "listingDescription": "Bread", "audience": "donor" }
 }
 ```
 
 `type` and `channel` are validated against the `notification_type`/
 `notification_channel` enums in `src/db/schema.ts` - see
-`src/notifications/notification-message.dto.ts`. `org_approved` and
-`user_welcome` have email templates today (`src/notifications/templates.ts`);
-every other `notification_type` value is reserved for when `service/listings`
-starts publishing claim/pickup events.
+`src/notifications/notification-message.dto.ts`.
 
-`user_welcome` is published by `service/profile` the first time it
-provisions a user row (first authenticated request after signup); its
-payload is `{ "name": "Sam", "orgType": "donor" }` (`orgType` is
-`donor`, `rescue_partner` or empty, and tailors the copy).
+- **`recipientUserId`** (optional) - the recipient's Cognito sub. When present
+  and the type has an in-app template (`src/notifications/in-app-templates.ts`),
+  an `in_app` notification row is created.
+- **`eventId`** (optional) - a stable, per-recipient identifier for the domain
+  event (e.g. `claim:<id>:created`). Drives duplicate-processing protection.
+- A message with neither field is handled exactly as before: email only,
+  no de-duplication.
+
+`service/listings` publishes the claim / pickup / expiry events;
+`service/profile` publishes `org_approved` (email only) and `user_welcome`
+(in-app + email) - the latter the first time it provisions a user row.
 
 ## Delivery semantics
 
-SQS owns retries, not the database: the queue's redrive policy
-(`maxReceiveCount: 5` in `messaging.yaml`) redelivers a message that fails
-until it's moved to the dead-letter queue. `notifications` is a pure
-delivery-audit table - one row per attempt, `status` is `sent` or `failed`,
-written after the attempt completes (see `SqsConsumerService.process` in
-`src/notifications/sqs-consumer.service.ts`).
+**In-app is the primary channel, email is secondary.** For each message the
+consumer (`SqsConsumerService.process`):
 
-A message is deleted from the queue (no further retries) when:
+1. Creates the in-app row (`INSERT ... ON CONFLICT DO NOTHING` on the
+   `(event_id, recipient_user_id)` partial unique index). A DB failure here
+   leaves the message on the queue to be redelivered - the in-app record
+   *must* land.
+2. Sends the email. A prior successful send for the same `(event_id,
+   recipient_email)` is skipped. A send failure is logged and written as a
+   `status = 'failed'` row, but does **not** redeliver the message or reverse
+   anything when an in-app row was created.
 
-- it sent successfully, or
-- it's unrecoverable - malformed JSON/failed validation, or a well-formed
-  message of a `notification_type` with no template yet
+`notifications` doubles as the delivery-audit / error log - `failed` email
+rows accumulate; the partial unique indexes only constrain successful rows.
 
-It's left in place (SQS will redeliver it) when the failure looks
-transient - an SMTP or database error - so a temporary outage doesn't lose
-the notification.
+A message is deleted from the queue when the in-app row landed (or there was
+no in-app recipient and the email succeeded / is a permanent failure - bad
+JSON, failed validation, or a type with no email template). It's left for SQS
+to redeliver (`maxReceiveCount: 5` → DLQ) only on a transient failure of the
+primary path.

@@ -1,6 +1,6 @@
 // Package notify publishes notification events to the SQS queue
 // consumed by service/notifications, which owns the actual email
-// sending.
+// sending and the in-app notification records.
 package notify
 
 import (
@@ -24,31 +24,40 @@ type SQSPublisher struct {
 }
 
 type notificationMessage struct {
-	Type           string         `json:"type"`
-	Channel        string         `json:"channel"`
-	RecipientEmail string         `json:"recipientEmail"`
-	Payload        map[string]any `json:"payload,omitempty"`
+	Type            string         `json:"type"`
+	Channel         string         `json:"channel"`
+	RecipientEmail  string         `json:"recipientEmail"`
+	RecipientUserID string         `json:"recipientUserId,omitempty"`
+	EventID         string         `json:"eventId,omitempty"`
+	Payload         map[string]any `json:"payload,omitempty"`
 }
 
-// SendOrgApproved publishes an org_approved notification; the
-// notification service turns it into the actual email.
-func (p *SQSPublisher) SendOrgApproved(ctx context.Context, to, orgName string) error {
+// SendOrgApproved publishes an org_approved notification. orgID gives
+// the event a stable identity for duplicate-processing protection; the
+// org contact is not necessarily a platform user, so no in-app record
+// is created.
+func (p *SQSPublisher) SendOrgApproved(ctx context.Context, to, orgName, orgID string) error {
 	return p.publish(ctx, notificationMessage{
 		Type:           "org_approved",
 		Channel:        "email",
 		RecipientEmail: to,
+		EventID:        "org:" + orgID + ":approved",
 		Payload:        map[string]any{"orgName": orgName},
 	})
 }
 
 // SendWelcome publishes a user_welcome notification for a newly
-// provisioned account. orgType tailors the copy and may be empty.
-func (p *SQSPublisher) SendWelcome(ctx context.Context, to, name, orgType string) error {
+// provisioned account. cognitoSub identifies the recipient for the
+// in-app record and gives the event a stable identity. orgType tailors
+// the copy and may be empty.
+func (p *SQSPublisher) SendWelcome(ctx context.Context, to, name, orgType, cognitoSub string) error {
 	return p.publish(ctx, notificationMessage{
-		Type:           "user_welcome",
-		Channel:        "email",
-		RecipientEmail: to,
-		Payload:        map[string]any{"name": name, "orgType": orgType},
+		Type:            "user_welcome",
+		Channel:         "email",
+		RecipientEmail:  to,
+		RecipientUserID: cognitoSub,
+		EventID:         "user:" + cognitoSub + ":welcome",
+		Payload:         map[string]any{"name": name, "orgType": orgType},
 	})
 }
 

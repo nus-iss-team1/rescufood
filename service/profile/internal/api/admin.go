@@ -46,7 +46,7 @@ type LoginUnlocker interface {
 
 // Mailer notifies an organisation's contact once it's approved.
 type Mailer interface {
-	SendOrgApproved(ctx context.Context, to, orgName string) error
+	SendOrgApproved(ctx context.Context, to, orgName, orgID string) error
 }
 
 // notifyOrgApproved returns nil when mailer is nil, so notifications can be disabled without a separate flag.
@@ -55,7 +55,7 @@ func notifyOrgApproved(mailer Mailer) func(context.Context, *domain.Organisation
 		return nil
 	}
 	return func(ctx context.Context, o *domain.Organisation) error {
-		return mailer.SendOrgApproved(ctx, o.ContactEmail, o.Name)
+		return mailer.SendOrgApproved(ctx, o.ContactEmail, o.Name, o.ID.String())
 	}
 }
 

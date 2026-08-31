@@ -208,13 +208,15 @@ export class ListingsRepository {
       .where(inArray(organisations.id, ids));
   }
 
-  // Per just-expired listing: its description and its donor user's name + email.
+  // Per just-expired listing: its description and its donor user's identity,
+  // name + email.
   async findExpiredListingTargets(listingIds: string[]): Promise<
     {
       id: string;
       description: string | null;
       donorName: string;
       donorEmail: string;
+      donorSub: string;
     }[]
   > {
     if (listingIds.length === 0) return [];
@@ -224,27 +226,32 @@ export class ListingsRepository {
         description: listings.description,
         donorName: users.name,
         donorEmail: users.email,
+        donorSub: users.cognitoSub,
       })
       .from(listings)
       .innerJoin(users, eq(users.id, listings.createdBy))
       .where(inArray(listings.id, listingIds));
   }
 
-  // Per just-expired claim: the listing description + rescue-partner user's
-  // name and email.
+  // Per just-expired claim: the listing id + description and the
+  // rescue-partner user's identity, name and email.
   async findExpiredClaimTargets(claimIds: string[]): Promise<
     {
+      listingId: string;
       listingDescription: string | null;
       rescueName: string;
       rescueEmail: string;
+      rescueSub: string;
     }[]
   > {
     if (claimIds.length === 0) return [];
     return this.db
       .select({
+        listingId: listings.id,
         listingDescription: listings.description,
         rescueName: users.name,
         rescueEmail: users.email,
+        rescueSub: users.cognitoSub,
       })
       .from(requests)
       .innerJoin(listings, eq(listings.id, requests.listingId))
@@ -252,15 +259,22 @@ export class ListingsRepository {
       .where(inArray(requests.id, claimIds));
   }
 
-  // Name + email for the given user ids, for addressing notifications to the
-  // individual rather than their organisation.
+  // Identity, name + email for the given user ids, for addressing
+  // notifications to the individual rather than their organisation.
   async findUserContacts(
     ids: string[],
-  ): Promise<{ id: string; name: string; email: string }[]> {
+  ): Promise<
+    { id: string; cognitoSub: string; name: string; email: string }[]
+  > {
     const unique = [...new Set(ids.filter(Boolean))];
     if (unique.length === 0) return [];
     return this.db
-      .select({ id: users.id, name: users.name, email: users.email })
+      .select({
+        id: users.id,
+        cognitoSub: users.cognitoSub,
+        name: users.name,
+        email: users.email,
+      })
       .from(users)
       .where(inArray(users.id, unique));
   }

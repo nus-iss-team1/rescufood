@@ -29,14 +29,17 @@ function make(repository: ReturnType<typeof makeRepository>) {
 }
 
 const target = {
+  claimId: 'r1',
   listingDescription: 'Bread',
   pickupLocation: 'Loc A',
   pickupWindowStart: new Date('2026-08-11T07:00:00Z'),
   pickupWindowEnd: new Date('2026-08-11T11:00:00Z'),
   rescueName: 'Alex Tan',
   rescueEmail: 'rescue@x.com',
+  rescueSub: 'sub-rescue',
   donorName: 'Priya Nair',
   donorEmail: 'donor@x.com',
+  donorSub: 'sub-donor',
 };
 
 describe('PickupReminderService', () => {
@@ -78,6 +81,7 @@ describe('PickupReminderService', () => {
         listingDescription: 'Bread',
         recipientName: 'Alex Tan',
       }),
+      { eventId: 'claim:r1:pickup-opening', recipientUserId: 'sub-rescue' },
     );
     expect(notifications.pickupReminder).toHaveBeenCalledWith(
       'donor@x.com',
@@ -85,6 +89,7 @@ describe('PickupReminderService', () => {
         phase: 'opening',
         recipientName: 'Priya Nair',
       }),
+      { eventId: 'claim:r1:pickup-opening', recipientUserId: 'sub-donor' },
     );
   });
 
@@ -104,6 +109,7 @@ describe('PickupReminderService', () => {
     expect(notifications.pickupReminder).toHaveBeenCalledWith(
       'rescue@x.com',
       expect.objectContaining({ phase: 'closing' }),
+      { eventId: 'claim:r1:pickup-closing', recipientUserId: 'sub-rescue' },
     );
   });
 

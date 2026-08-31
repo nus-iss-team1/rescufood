@@ -34,6 +34,11 @@ Parameters:
     Default: 3002
     Description: Container port for the listings service
 
+  NotificationPort:
+    Type: Number
+    Default: 3003
+    Description: Container port for the notification service read API
+
 Resources:
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -76,6 +81,11 @@ Resources:
           ToPort: !Ref ListingsPort
           SourceSecurityGroupId: !Ref AlbSecurityGroup
           Description: Listings service from ALB
+        - IpProtocol: tcp
+          FromPort: !Ref NotificationPort
+          ToPort: !Ref NotificationPort
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: Notification service read API from ALB
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-app-sg

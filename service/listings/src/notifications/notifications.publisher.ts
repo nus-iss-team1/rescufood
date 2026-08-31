@@ -10,6 +10,14 @@ type NotificationType =
   | 'pickup_completed'
   | 'listing_expired';
 
+// Stable per-recipient identity for one domain event. eventId drives the
+// notification service's duplicate-processing protection; recipientUserId
+// (the recipient's Cognito sub) is what an in-app notification is filed under.
+export interface NotificationIdentity {
+  eventId: string;
+  recipientUserId?: string | null;
+}
+
 // Publishes notification events to the queue service/notifications consumes.
 // Nil-safe (no queue url = disabled) and best-effort (send failures logged).
 @Injectable()
@@ -34,34 +42,55 @@ export class NotificationsPublisher {
   }
 
   // Tells the donor a partner claimed their listing.
-  claimCreated(to: string, payload: ClaimCreatedPayload): Promise<void> {
-    return this.publish('claim_created', to, payload);
+  claimCreated(
+    to: string,
+    payload: ClaimCreatedPayload,
+    identity: NotificationIdentity,
+  ): Promise<void> {
+    return this.publish('claim_created', to, payload, identity);
   }
 
   // Tells the other party a claim ended before pickup.
-  claimEnded(to: string, payload: ClaimEndedPayload): Promise<void> {
-    return this.publish('claim_cancelled', to, payload);
+  claimEnded(
+    to: string,
+    payload: ClaimEndedPayload,
+    identity: NotificationIdentity,
+  ): Promise<void> {
+    return this.publish('claim_cancelled', to, payload, identity);
   }
 
   // Reminds a party that a pickup window is opening or closing soon.
-  pickupReminder(to: string, payload: PickupReminderPayload): Promise<void> {
-    return this.publish('pickup_reminder', to, payload);
+  pickupReminder(
+    to: string,
+    payload: PickupReminderPayload,
+    identity: NotificationIdentity,
+  ): Promise<void> {
+    return this.publish('pickup_reminder', to, payload, identity);
   }
 
   // Tells both parties a pickup was verified.
-  pickupCompleted(to: string, payload: PickupCompletedPayload): Promise<void> {
-    return this.publish('pickup_completed', to, payload);
+  pickupCompleted(
+    to: string,
+    payload: PickupCompletedPayload,
+    identity: NotificationIdentity,
+  ): Promise<void> {
+    return this.publish('pickup_completed', to, payload, identity);
   }
 
   // Tells the donor (and any claimant) a listing lapsed.
-  listingExpired(to: string, payload: ListingExpiredPayload): Promise<void> {
-    return this.publish('listing_expired', to, payload);
+  listingExpired(
+    to: string,
+    payload: ListingExpiredPayload,
+    identity: NotificationIdentity,
+  ): Promise<void> {
+    return this.publish('listing_expired', to, payload, identity);
   }
 
   private async publish(
     type: NotificationType,
     recipientEmail: string,
     payload: Record<string, unknown>,
+    identity: NotificationIdentity,
   ): Promise<void> {
     if (!this.client || !this.queueUrl || !recipientEmail) return;
     try {
@@ -72,13 +101,15 @@ export class NotificationsPublisher {
             type,
             channel: 'email',
             recipientEmail,
+            recipientUserId: identity.recipientUserId ?? undefined,
+            eventId: identity.eventId,
             payload,
           }),
         }),
       );
     } catch (err) {
       this.logger.error(
-        { err, type, recipientEmail },
+        { err, type, recipientEmail, eventId: identity.eventId },
         'failed to publish notification',
       );
     }
@@ -92,6 +123,9 @@ export type ClaimCreatedPayload = {
   rescueOrgName: string;
   pickupLocation?: string | null;
   pickupWindow?: string;
+  // Who this copy is for - the donor whose listing was reserved, or the
+  // rescue partner who reserved it.
+  audience?: 'donor' | 'rescue_partner';
 };
 
 export type ClaimEndedPayload = {

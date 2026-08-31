@@ -103,13 +103,13 @@ func (f *fakeLockLookup) AdminUnlock(_ context.Context, username string) error {
 }
 
 type fakeMailer struct {
-	to, orgName string
-	calls       int
-	err         error
+	to, orgName, orgID string
+	calls              int
+	err                error
 }
 
-func (f *fakeMailer) SendOrgApproved(_ context.Context, to, orgName string) error {
-	f.to, f.orgName = to, orgName
+func (f *fakeMailer) SendOrgApproved(_ context.Context, to, orgName, orgID string) error {
+	f.to, f.orgName, f.orgID = to, orgName, orgID
 	f.calls++
 	return f.err
 }
