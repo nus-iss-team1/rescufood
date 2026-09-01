@@ -22,9 +22,11 @@ per-environment security groups, ECS services, and databases, tagged with
 `Environment: dev|prod`.
 
 The ALB is **internal** — nothing reaches it from the internet directly.
-Browser traffic goes through an **API Gateway HTTP API** (`*.execute-api`)
-over a VPC Link, and listing images through **CloudFront** (`*.cloudfront.net`)
-in front of S3. No custom domain yet.
+Browser traffic goes through an **API Gateway HTTP API** over a VPC Link,
+and listing images through **CloudFront** (`*.cloudfront.net`) in front of
+S3. The HTTP API answers on `dev.rescufood.com` once the domain is
+registered and the DNS stack is deployed, and on its `*.execute-api` URL
+until then. The apex `rescufood.com` is not mapped to an environment yet.
 
 ```
 browser → API Gateway (HTTP API) → VPC Link → internal ALB → ECS services
@@ -54,15 +56,16 @@ then cluster by scope.
 | `rescufood-dev-ecs` | `cloudformation/ecs.yaml` | Per environment |
 | `rescufood-dev-data` | `cloudformation/data.yaml` | Per environment |
 | `rescufood-dev-messaging` | `cloudformation/messaging.yaml` | Per environment |
-| `rescufood-dev-api-gateway` | `cloudformation/api-gateway.yaml` | Per environment (deploy after ECS) |
+| `rescufood-core-dns` | `cloudformation/dns.yaml` | Core (deploy once) |
+| `rescufood-dev-api-gateway` | `cloudformation/api-gateway.yaml` | Per environment (after ECS and DNS) |
 
 `api-gateway.yaml` is the internet-facing front (HTTP API + VPC Link + a
 `$default` route to the ECS stack's ALB listener). See
 [`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md) for the
 migration writeup.
 
-Planned future stacks follow the same pattern: `rescufood-core-dns`,
-`rescufood-prod-security`, ...
+Planned future stacks follow the same pattern: `rescufood-prod-security`,
+`rescufood-prod-ecs`, ...
 
 Deploy order: network first — the security groups stack imports the VPC id
 from the network stack's exports, and the ECS and data stacks import both.
@@ -415,6 +418,66 @@ imported by the ECS stack: `service/profile` and `service/listings` get
 `sqs:SendMessage` on the queue, `service/notifications` gets
 receive/delete.
 
+## DNS and custom domain
+
+`cloudformation/dns.yaml` holds the shared certificate for the custom
+domain. It is core scope: one certificate covers the apex and every
+subdomain, and each environment's API Gateway stack imports it.
+
+The hosted zone is **not** created by this stack. Registering a domain
+through Route 53 creates a public hosted zone automatically, and a second
+zone for the same name would serve a different set of nameservers than the
+registrar delegates to. Pass the existing zone id instead:
+
+```sh
+aws route53 list-hosted-zones \
+  --query "HostedZones[?Name=='rescufood.com.'].Id" --output text
+```
+
+Fill that id into `cloudformation/parameters/dns-core.json` — it ships with
+a `REPLACE_AFTER_DOMAIN_REGISTRATION` placeholder — then deploy. ACM writes
+its own validation records into the zone, so the stack settles without
+manual DNS steps, typically within a few minutes.
+
+The certificate must live in **ap-southeast-1**: a regional API Gateway
+domain requires the certificate in the API's own region. A CloudFront
+alternate domain name (e.g. `images.rescufood.com`) would need a second
+certificate in **us-east-1**, which means a second stack deployed to that
+region — CloudFormation cannot create a resource outside its own region.
+
+| Parameter | Notes |
+|---|---|
+| `DomainName` | Registered apex, `rescufood.com` |
+| `HostedZoneId` | Zone Route 53 created during registration |
+
+The per-environment domain records live in `api-gateway.yaml`, gated on
+`DnsStackName` being set:
+
+| Parameter | Notes |
+|---|---|
+| `DnsStackName` | Empty leaves the API on its `execute-api` URL |
+| `CustomDomainName` | Domain for this environment, `dev.rescufood.com` |
+| `ApexDomainName` | Extra domain on the same API, `rescufood.com` |
+
+`ApexDomainName` is unset, so `rescufood.com` resolves nowhere. Setting it
+on an environment maps the apex to that environment's API as a second
+domain — useful for putting the apex on dev before a prod environment
+exists. Once prod is deployed, prefer giving it
+`CustomDomainName=rescufood.com` and leaving `ApexDomainName` empty
+everywhere.
+
+The stack exports `PublicUrl` — the custom domain when one is configured,
+otherwise the `execute-api` endpoint. The ECS stack imports it for `AUTH_URL`
+and `CORS_ALLOWED_ORIGINS`, so both follow the domain automatically. Deploy
+the api-gateway stack before the ECS stack when introducing the domain, so
+the export exists before ECS imports it.
+
+Cognito rejects non-HTTPS callback URLs, so `iam-dev.json` could previously
+only register localhost. `dev.rescufood.com` is now in `CallbackUrls` and
+`LogoutUrls`; redeploy the IAM stack to register it and the hosted-UI OAuth
+flow works against the deployed environment. Any further domain has to be
+added here too — an unregistered callback URL fails the OAuth redirect.
+
 ## Deploying
 
 All deploy commands are idempotent: `aws cloudformation deploy` creates the
@@ -444,6 +507,7 @@ aws cloudformation deploy \
   --stack-name rescufood-dev-iam \
   --template-file cloudformation/iam.yaml \
   --parameter-overrides file://cloudformation/parameters/iam-dev.json \
+  --capabilities CAPABILITY_IAM \
   --no-fail-on-empty-changeset
 
 # 4. Dev environment compute (needs 1, 2, and a published frontend image)
@@ -471,7 +535,17 @@ aws cloudformation deploy \
   --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
   --no-fail-on-empty-changeset
 
-# 7. Dev environment API Gateway front (needs 4 - imports the ECS ALB listener)
+# 7. Shared DNS certificate (independent of 1-6; needs the domain registered
+#    and HostedZoneId filled into parameters/dns-core.json)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-core-dns \
+  --template-file cloudformation/dns.yaml \
+  --parameter-overrides file://cloudformation/parameters/dns-core.json \
+  --no-fail-on-empty-changeset
+
+# 8. Dev environment API Gateway front (needs 4 - imports the ECS ALB
+#    listener - and 7 when a custom domain is configured)
 aws cloudformation deploy \
   --region ap-southeast-1 \
   --stack-name rescufood-dev-api-gateway \
@@ -482,18 +556,19 @@ aws cloudformation deploy \
 
 `CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
 ECS stack creates. The public site URL is the API Gateway stack's
-`ApiGatewayUrl` output (the ECS stack's `FrontendUrl` is the internal ALB):
+`PublicUrl` output — the custom domain when one is configured, otherwise the
+`execute-api` endpoint (the ECS stack's `FrontendUrl` is the internal ALB):
 
 ```sh
 aws cloudformation describe-stacks \
   --region ap-southeast-1 \
   --stack-name rescufood-dev-api-gateway \
-  --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" \
+  --query "Stacks[0].Outputs[?OutputKey=='PublicUrl'].OutputValue" \
   --output text
 ```
 
 On the very first deploy, run step 4 once without the
-`ApiGatewayStackName` override (nothing to import yet), then steps 5-7, then
+`ApiGatewayStackName` override (nothing to import yet), then steps 5-8, then
 step 4 again to wire the gateway URL into the task env - see
 [`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md).
 
@@ -514,11 +589,17 @@ aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-d
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-messaging
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-iam
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-dns
 aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
 ```
 
 (`rescufood-dev-api-gateway` first — it imports `HttpListenerArn` from the
-ECS stack.)
+ECS stack, and the certificate and hosted zone id from the DNS stack.)
+
+Deleting the DNS stack releases the certificate but leaves the hosted zone
+and the domain registration alone — neither is a resource in any stack. A
+registered domain keeps billing annually until it is disabled from
+auto-renew in the Route 53 console.
 
 Deleting the IAM stack deletes the user pool and all registered users —
 fine for dev, deliberate decision required for prod (`DeletionProtection`
