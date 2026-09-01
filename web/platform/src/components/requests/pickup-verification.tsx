@@ -41,23 +41,27 @@ export function PickupVerification({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [verifyState, verifyAction] = useActionState(verifyPickupCodeAction, {});
+  // Reports from the action itself: revalidation unmounts this component, so
+  // an effect would not survive to fire.
+  const verify = async (
+    prev: { success?: boolean; error?: string },
+    formData: FormData,
+  ) => {
+    const result = await verifyPickupCodeAction(prev, formData);
+    if (result.success) {
+      toast.success("Pickup confirmed", {
+        description: "The lot is marked as collected.",
+      });
+    } else if (result.error) {
+      toast.error("Pickup not confirmed", { description: result.error });
+    }
+    return result;
+  };
+  const [verifyState, verifyAction] = useActionState(verify, {});
 
   const router = useRouter();
   const waiting =
     isDonor && request.status === "active" && !request.codeGeneratedBy;
-
-  useEffect(() => {
-    if (verifyState.success) {
-      toast.success("Pickup confirmed", {
-        description: "The handover is recorded as collected.",
-      });
-    } else if (verifyState.error) {
-      toast.error("Pickup not confirmed", {
-        description: verifyState.error,
-      });
-    }
-  }, [verifyState]);
 
   // Polls for the code the partner generates in their own session.
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -17,6 +17,7 @@ import {
 } from "@/app/requests/actions";
 import { quantity } from "@/lib/listing-labels";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
+import { toast } from "@rescufood/ui/components/sonner";
 import {
   Card,
   CardContent,
@@ -36,6 +37,16 @@ export function ClaimLotForm({ listing }: ClaimLotFormProps) {
     createRequestAction,
     {},
   );
+
+  useEffect(() => {
+    if (state.requestedId) {
+      toast.success("Lot claimed", {
+        description: "It is reserved for your organisation.",
+      });
+    } else if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   // Mint client UUID once on initial client render for idempotency readiness
   const [idempotencyKey] = useState(() =>

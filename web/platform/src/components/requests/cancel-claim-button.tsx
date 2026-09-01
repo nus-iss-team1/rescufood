@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { VariantProps } from "class-variance-authority";
 
 import { cancelRequestAction } from "@/app/requests/actions";
+import { toast } from "@rescufood/ui/components/sonner";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
   Dialog,
@@ -41,6 +42,23 @@ export function CancelClaimButton({
   children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // Reports from the action itself: revalidation unmounts this component, so
+  // an effect would not survive to fire.
+  const cancel = async (
+    prev: { requestedId?: string; error?: string },
+    formData: FormData,
+  ) => {
+    const result = await cancelRequestAction(prev, formData);
+    if (result.requestedId) {
+      toast.success("Claim cancelled", {
+        description: "The lot is back on the browse list.",
+      });
+    } else if (result.error) {
+      toast.error("Could not cancel", { description: result.error });
+    }
+    return result;
+  };
+  const [, action] = useActionState(cancel, {});
 
   return (
     <>
@@ -66,7 +84,7 @@ export function CancelClaimButton({
             <Button variant="outline" onClick={() => setOpen(false)}>
               Keep claim
             </Button>
-            <form action={cancelRequestAction}>
+            <form action={action}>
               <input type="hidden" name="requestId" value={requestId} />
               <ConfirmButton />
             </form>

@@ -22,7 +22,6 @@ import {
   type ListingFormState,
 } from "@/app/listings/actions";
 import { DateTimeField } from "@/components/listings/date-time-field";
-import { Badge } from "@rescufood/ui/components/badge";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import { Input } from "@rescufood/ui/components/input";
 import { Label } from "@rescufood/ui/components/label";
@@ -37,7 +36,6 @@ import { toast } from "@rescufood/ui/components/sonner";
 import { Textarea } from "@rescufood/ui/components/textarea";
 import {
   categoryLabels,
-  listingStatusVariant,
 } from "@/lib/listing-labels";
 import { cn } from "@/lib/utils";
 
@@ -247,30 +245,13 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
   return (
     <form action={handleSubmit} noValidate className="grid gap-5 md:grid-cols-2">
-      {/* State Machine Lock Banner */}
       {isLocked && (
         <div
           data-animate="field"
-          className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-4 text-sm md:col-span-2"
+          className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground md:col-span-2"
         >
-          <Lock className="size-5 shrink-0 text-muted-foreground mt-0.5" />
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">
-                Listing is locked
-              </span>
-              <Badge
-                variant={listingStatusVariant[listing.status]}
-                className="capitalize text-xs"
-              >
-                {listing.status}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">
-              This listing has advanced to <strong>{listing.status}</strong> and
-              can no longer be modified.
-            </p>
-          </div>
+          <Lock className="size-4 shrink-0" />
+          <span>This listing can no longer be edited.</span>
         </div>
       )}
 
