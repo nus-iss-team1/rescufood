@@ -277,24 +277,34 @@ export class MockListingsClient implements ListingsApi {
     return request;
   }
 
-  async generatePickupCode(id: string): Promise<PickupCode> {
+  async generatePickupCode(
+    id: string,
+    regenerate = false
+  ): Promise<PickupCode> {
     const request = this.requestOr404(id);
     if (request.status !== "active") {
       throw new ApiError(400, "claim is not active");
     }
-    // A live code is handed back unchanged; a new one is minted otherwise.
+    const ttlMs = 60 * 60_000;
+    // A live code is handed back unchanged unless a fresh one was asked for.
     const live =
+      !regenerate &&
       request.codeExpiresAt != null &&
       new Date(request.codeExpiresAt) > new Date();
     const expiresAt =
       live && request.codeExpiresAt != null
         ? request.codeExpiresAt
-        : new Date(Date.now() + 60 * 60_000).toISOString();
+        : new Date(Date.now() + ttlMs).toISOString();
     if (!live) {
       request.codeExpiresAt = expiresAt;
       request.updatedAt = now();
     }
-    return { code: "123456", expiresAt };
+    const generatedAtMs = new Date(expiresAt).getTime() - ttlMs;
+    return {
+      code: "123456",
+      expiresAt,
+      regenerateAvailableAt: new Date(generatedAtMs + 60_000).toISOString(),
+    };
   }
 
   async verifyPickupCode(

@@ -15,4 +15,5 @@ export const AuditAction = {
   ClaimExpired: 'claim.expired',
   ClaimIdempotencyConflict: 'claim.idempotency_conflict',
   PickupCodeGenerated: 'pickup_code.generated',
+  PickupCodeExhausted: 'pickup_code.exhausted',
 } as const;

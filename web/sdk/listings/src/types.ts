@@ -193,6 +193,8 @@ export interface PickupCode {
   /** 6-digit code, returned only here and never on a later read. */
   code: string;
   expiresAt: string;
+  /** Earliest a replacement code can be generated. */
+  regenerateAvailableAt: string;
 }
 
 export interface VerifyPickup {
@@ -219,6 +221,6 @@ export interface ListingsApi {
     id: string,
     decision: RequestDecisionInput
   ): Promise<ListingRequest>;
-  generatePickupCode(id: string): Promise<PickupCode>;
+  generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
 }

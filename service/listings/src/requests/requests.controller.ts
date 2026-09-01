@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
+  ParseBoolPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -14,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -40,6 +43,10 @@ import { RequestsService } from './requests.service';
 // primary guard - it caps wrong guesses per code at 3 - but that's scoped to
 // one request's code, not the endpoint as a whole.
 const verifyThrottle = Throttle({ default: { limit: 10, ttl: 60_000 } });
+
+// Bounds how fast codes can be minted - defense in depth for the manual
+// regenerate option so it can't be scripted into churning codes.
+const generateThrottle = Throttle({ default: { limit: 6, ttl: 60_000 } });
 
 @ApiTags('requests')
 @ApiBearerAuth()
@@ -146,9 +153,15 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Get the pickup code',
     description:
-      "Only the rescue partner that claimed the listing may call this. Returns the claim's current pickup code if one is still live, or mints a new one when there isn't - so a reload or a second device gets the same code back. The code auto-rotates on expiry or after too many failed verifies, and is only returned here, never on GET.",
+      "Only the rescue partner that claimed the listing may call this. Returns the claim's current pickup code if one is still live, or mints a new one when there isn't - so a reload or a second device gets the same code back. Pass `regenerate=true` to force a fresh code; minting a replacement is limited to one per minute. The code also expires on its own or after too many failed verifies, and is only returned here, never on GET.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiQuery({
+    name: 'regenerate',
+    required: false,
+    type: Boolean,
+    description: 'Force a fresh code even if a live one exists.',
+  })
   @ApiResponse({ status: 201, type: PickupCodeResponseDto })
   @ApiResponse({
     status: 400,
@@ -163,23 +176,31 @@ export class RequestsController {
     status: 409,
     description: 'Request was modified since it was read.',
   })
+  @ApiResponse({
+    status: 429,
+    description:
+      'A new code was requested within a minute of the last one, or the endpoint rate limit was hit.',
+  })
   @Post(':id/pickup-code')
   @UseGuards(OrgMembershipGuard)
+  @generateThrottle
   generatePickupCode(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('regenerate', new DefaultValuePipe(false), ParseBoolPipe)
+    regenerate: boolean,
     @Req() req: Request,
   ) {
     this.logger.log(
-      { userId: req.user!.userId, requestId: id },
+      { userId: req.user!.userId, requestId: id, regenerate },
       'generating pickup code',
     );
-    return this.requestsService.generatePickupCode(id, req.user!);
+    return this.requestsService.generatePickupCode(id, req.user!, regenerate);
   }
 
   @ApiOperation({
     summary: 'Verify a pickup code',
     description:
-      'Only the donor may call this. On success, marks the claim completed and the listing collected. Three failed attempts force the code to be regenerated. Resubmitting the same code after it already completed the claim replays the completed request instead of erroring.',
+      'Only the donor may call this. On success, marks the claim completed and the listing collected. Three failed attempts void the code - the rescue partner generates a new one (limited to one per minute); the donor is not otherwise blocked. Resubmitting the same code after it already completed the claim replays the completed request instead of erroring.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({

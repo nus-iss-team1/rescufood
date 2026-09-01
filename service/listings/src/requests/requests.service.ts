@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -48,6 +50,7 @@ import {
   createPickupCode,
   hashPickupCode,
   MAX_PICKUP_CODE_ATTEMPTS,
+  PICKUP_CODE_REGEN_COOLDOWN_SECONDS,
   PICKUP_CODE_TTL_MINUTES,
   pickupCodeMatches,
 } from './pickup/pickup-code.util';
@@ -59,6 +62,13 @@ import {
 
 const ACTIVE_CLAIM_CONSTRAINT = 'requests_active_claim_per_listing_uq';
 const DEFAULT_RETENTION_DAYS = 7;
+
+// Earliest a replacement pickup code may be minted, given when the current
+// one was. Falls back to "now" when nothing was ever generated.
+function regenAvailableAt(generatedAt: Date | null): Date {
+  const from = generatedAt?.getTime() ?? Date.now();
+  return new Date(from + PICKUP_CODE_REGEN_COOLDOWN_SECONDS * 1000);
+}
 
 @Injectable()
 export class RequestsService {
@@ -347,15 +357,17 @@ export class RequestsService {
     }
   }
 
-  // The claiming rescue partner asks for the pickup code. A live (unexpired)
-  // code is handed back unchanged so a reload or a second device can show it
-  // without invalidating what the donor may be about to enter; a new one is
-  // minted only when there isn't one. The code auto-rotates on expiry or
-  // after MAX_PICKUP_CODE_ATTEMPTS failed verifies.
+  // The claiming rescue partner asks for the pickup code. By default a live
+  // (unexpired) code is handed back unchanged so a reload or a second device
+  // can show it without invalidating what the donor may be about to enter;
+  // `regenerate` forces a fresh one. Minting a replacement is rate-limited to
+  // one per PICKUP_CODE_REGEN_COOLDOWN_SECONDS. The code also expires after
+  // PICKUP_CODE_TTL_MINUTES or once MAX_PICKUP_CODE_ATTEMPTS verifies fail.
   async generatePickupCode(
     id: string,
     user: AuthenticatedUser,
-  ): Promise<{ code: string; expiresAt: Date }> {
+    regenerate = false,
+  ): Promise<{ code: string; expiresAt: Date; regenerateAvailableAt: Date }> {
     const existing = await this.getOrThrow(id);
     await this.getListingOrThrow(existing.listingId);
     assertIsClaimingPartner(existing, user);
@@ -367,15 +379,38 @@ export class RequestsService {
     }
 
     if (
+      !regenerate &&
       existing.pickupCode &&
       existing.codeExpiresAt &&
       existing.codeExpiresAt.getTime() > Date.now()
     ) {
-      return { code: existing.pickupCode, expiresAt: existing.codeExpiresAt };
+      return {
+        code: existing.pickupCode,
+        expiresAt: existing.codeExpiresAt,
+        regenerateAvailableAt: regenAvailableAt(existing.pickupCodeGeneratedAt),
+      };
+    }
+
+    // Minting a replacement - not too soon after the last one.
+    if (existing.pickupCodeGeneratedAt) {
+      const waitSeconds = Math.ceil(
+        (regenAvailableAt(existing.pickupCodeGeneratedAt).getTime() -
+          Date.now()) /
+          1000,
+      );
+      if (waitSeconds > 0) {
+        throw new HttpException(
+          `please wait ${waitSeconds}s before generating a new code`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
     }
 
     const code = createPickupCode();
-    const expiresAt = new Date(Date.now() + PICKUP_CODE_TTL_MINUTES * 60_000);
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + PICKUP_CODE_TTL_MINUTES * 60_000,
+    );
 
     await this.db.transaction(async (tx) => {
       const updated = await this.requestsRepository.updateStatus(
@@ -386,8 +421,9 @@ export class RequestsService {
           pickupCodeHash: hashPickupCode(code),
           codeExpiresAt: expiresAt,
           codeGeneratedBy: user.userId,
+          pickupCodeGeneratedAt: now,
           pickupCodeAttempts: 0,
-          updatedAt: new Date(),
+          updatedAt: now,
         },
         tx,
       );
@@ -407,12 +443,13 @@ export class RequestsService {
       );
     });
 
-    return { code, expiresAt };
+    return { code, expiresAt, regenerateAvailableAt: regenAvailableAt(now) };
   }
 
   // Redeems a pickup code. A wrong guess and an expired code give the same
   // error so timing leaks nothing. MAX_PICKUP_CODE_ATTEMPTS wrong guesses
-  // force a new code, bounding online guessing of the 6-digit space.
+  // void the code - the rescue partner then generates a new one, bounding
+  // online guessing of the 6-digit space.
   async verifyPickupCode(
     id: string,
     dto: VerifyPickupCodeDto,
@@ -440,7 +477,9 @@ export class RequestsService {
     }
     if (!existing.pickupCodeHash) {
       throw new BadRequestException(
-        'no pickup code has been generated for this claim',
+        existing.pickupCodeAttempts >= MAX_PICKUP_CODE_ATTEMPTS
+          ? 'that code is no longer valid after too many attempts - ask the rescue partner for a new one'
+          : 'no pickup code has been generated for this claim',
       );
     }
 
@@ -456,16 +495,29 @@ export class RequestsService {
         throw new ConflictException(`request ${id} is no longer active`);
       }
       if (attempts >= MAX_PICKUP_CODE_ATTEMPTS) {
-        await this.requestsRepository.updateStatus(id, 'active', {
-          pickupCode: null,
-          pickupCodeHash: null,
-          codeExpiresAt: null,
-          codeGeneratedBy: null,
-          pickupCodeAttempts: 0,
-          updatedAt: now,
-        });
+        // Void the code; the attempt count is left at the cap so verify can
+        // still say why, and pickupCodeGeneratedAt still gates regeneration.
+        const voided = await this.requestsRepository.updateStatus(
+          id,
+          'active',
+          {
+            pickupCode: null,
+            pickupCodeHash: null,
+            codeExpiresAt: null,
+            codeGeneratedBy: null,
+            updatedAt: now,
+          },
+        );
+        if (voided) {
+          await this.auditRepository.record({
+            actor: { userId: user.userId, orgId: user.orgId ?? null },
+            action: AuditAction.PickupCodeExhausted,
+            entityType: 'claim',
+            entityId: id,
+          });
+        }
         throw new BadRequestException(
-          'too many failed pickup code attempts - generate a new code',
+          'too many incorrect attempts - this code is no longer valid. Ask the rescue partner for a new one',
         );
       }
       throw new BadRequestException('invalid pickup code');

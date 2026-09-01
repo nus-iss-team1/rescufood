@@ -121,14 +121,33 @@ describe('RequestsController', () => {
 
       const result = await controller.generatePickupCode(
         'request-1',
+        false,
         makeRequest(),
       );
 
       expect(service.generatePickupCode).toHaveBeenCalledWith(
         'request-1',
         user,
+        false,
       );
       expect(result).toEqual({ code: '042917', expiresAt });
+    });
+
+    it('passes the regenerate flag through', async () => {
+      const service = makeService();
+      service.generatePickupCode.mockResolvedValue({
+        code: '042917',
+        expiresAt: new Date('2026-08-06T00:30:00Z'),
+      });
+      const { controller } = makeController(service);
+
+      await controller.generatePickupCode('request-1', true, makeRequest());
+
+      expect(service.generatePickupCode).toHaveBeenCalledWith(
+        'request-1',
+        user,
+        true,
+      );
     });
   });
 

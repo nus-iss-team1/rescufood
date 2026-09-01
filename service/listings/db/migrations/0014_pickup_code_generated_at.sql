@@ -1,0 +1,1 @@
+ALTER TABLE "requests" ADD COLUMN "pickup_code_generated_at" timestamp with time zone;

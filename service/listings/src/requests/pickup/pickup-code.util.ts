@@ -4,10 +4,14 @@ export const PICKUP_CODE_LENGTH = 6;
 export const PICKUP_CODE_TTL_MINUTES = 60;
 
 // Failed verify attempts allowed against a single generated code before it's
-// force-invalidated and the caller has to generate a new one. Bounds online
+// voided and the rescue partner has to generate a new one. Bounds online
 // guessing of the 10^6 code space to a negligible success rate - see
 // RequestsService.verifyPickupCode.
 export const MAX_PICKUP_CODE_ATTEMPTS = 3;
+
+// Minimum gap between minting one code and the next - stops codes being
+// churned (manually or after burning the attempt cap).
+export const PICKUP_CODE_REGEN_COOLDOWN_SECONDS = 60;
 
 // 6-digit numeric OTP, zero-padded (e.g. "042917") - short enough to type,
 // or to fall back on if a QR render of it fails to scan.

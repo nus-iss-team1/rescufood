@@ -211,6 +211,10 @@ export const requests = pgTable(
     pickupCodeHash: text('pickup_code_hash'),
     codeExpiresAt: timestamp('code_expires_at', { withTimezone: true }),
     codeGeneratedBy: uuid('code_generated_by'), // FK -> users.id
+    // When the current code was minted - gates how soon a replacement can be.
+    pickupCodeGeneratedAt: timestamp('pickup_code_generated_at', {
+      withTimezone: true,
+    }),
     // Failed verify attempts against the current code; reset to 0 on each
     // new code.
     pickupCodeAttempts: integer('pickup_code_attempts').notNull().default(0),

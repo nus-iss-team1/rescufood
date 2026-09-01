@@ -5,6 +5,7 @@ export type PublicListingRequest = Omit<
   | 'pickupCode'
   | 'pickupCodeHash'
   | 'pickupCodeAttempts'
+  | 'pickupCodeGeneratedAt'
   | 'pickupOpenReminderSentAt'
   | 'pickupCloseReminderSentAt'
 >;
