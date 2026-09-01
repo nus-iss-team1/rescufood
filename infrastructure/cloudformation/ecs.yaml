@@ -60,7 +60,7 @@ Parameters:
     Default: ""
     Description: >-
       Name of the API Gateway stack. When set, browser-facing env vars
-      (AUTH_URL, CORS_ALLOWED_ORIGINS) use the imported ApiGatewayUrl.
+      (AUTH_URL, CORS_ALLOWED_ORIGINS) use the imported PublicUrl.
       Leave empty on first deploy before the api-gateway stack exists.
 
   GhcrPullSecretArn:
@@ -319,7 +319,7 @@ Resources:
             - Name: AUTH_URL
               Value: !If
                 - HasApiGateway
-                - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
+                - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
                 - !Sub http://${LoadBalancer.DNSName}
             # Server-side calls to the other services stay on the internal ALB.
             - Name: PROFILE_API_URL
@@ -643,7 +643,7 @@ Resources:
                 - HasApiGateway
                 - !Join
                   - ","
-                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
                     - !Ref ExtraCorsOrigins
                 - !Join
                   - ","
@@ -885,7 +885,7 @@ Resources:
                 - HasApiGateway
                 - !Join
                   - ","
-                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
                     - !Ref ExtraCorsOrigins
                 - !Join
                   - ","
@@ -1174,7 +1174,7 @@ Resources:
                 - HasApiGateway
                 - !Join
                   - ","
-                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
                     - !Ref ExtraCorsOrigins
                 - !Join
                   - ","
@@ -1299,5 +1299,5 @@ Outputs:
     Description: URL of the web platform (API Gateway when available, else ALB)
     Value: !If
       - HasApiGateway
-      - Fn::ImportValue: !Sub ${ApiGatewayStackName}-ApiGatewayUrl
+      - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
       - !Sub http://${LoadBalancer.DNSName}

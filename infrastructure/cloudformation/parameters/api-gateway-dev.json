@@ -3,5 +3,7 @@
   "EnvironmentName=dev",
   "NetworkStackName=rescufood-core-network",
   "EcsStackName=rescufood-dev-ecs",
-  "SecurityStackName=rescufood-dev-security"
+  "SecurityStackName=rescufood-dev-security",
+  "DnsStackName=rescufood-core-dns",
+  "CustomDomainName=dev.rescufood.com"
 ]

@@ -1,8 +1,8 @@
 [
   "ProjectName=rescufood",
   "EnvironmentName=dev",
-  "CallbackUrls=http://localhost:3000/api/auth/callback/cognito,http://127.0.0.1:3000/api/auth/callback/cognito",
-  "LogoutUrls=http://localhost:3000,http://127.0.0.1:3000",
+  "CallbackUrls=http://localhost:3000/api/auth/callback/cognito,http://127.0.0.1:3000/api/auth/callback/cognito,https://dev.rescufood.com/api/auth/callback/cognito",
+  "LogoutUrls=http://localhost:3000,http://127.0.0.1:3000,https://dev.rescufood.com",
   "SuperAdminUsername=admin",
   "SuperAdminPassword=P@ssw0rd",
   "AutoConfirmSignups=false"

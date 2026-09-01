@@ -19,6 +19,30 @@ Parameters:
   SecurityStackName:
     Type: String
     Description: Name of the security-groups stack to import AlbSgId from
+  DnsStackName:
+    Type: String
+    Default: ""
+    Description: >-
+      Name of the DNS stack to import CertificateArn and HostedZoneId from.
+      Empty leaves the API reachable only on its execute-api URL.
+  CustomDomainName:
+    Type: String
+    Default: ""
+    Description: Domain this environment answers on, e.g. dev.rescufood.com
+  ApexDomainName:
+    Type: String
+    Default: ""
+    Description: >-
+      Additional domain mapped to the same API, e.g. rescufood.com. Parks
+      the apex on this environment until a prod environment exists.
+
+Conditions:
+  HasCustomDomain: !And
+    - !Not [!Equals [!Ref DnsStackName, ""]]
+    - !Not [!Equals [!Ref CustomDomainName, ""]]
+  HasApexDomain: !And
+    - !Not [!Equals [!Ref DnsStackName, ""]]
+    - !Not [!Equals [!Ref ApexDomainName, ""]]
 
 Resources:
   # ----------------------------------------------------------
@@ -71,12 +95,85 @@ Resources:
       StageName: "$default"
       AutoDeploy: true
 
+  # ----------------------------------------------------------
+  # Custom domains
+  # ----------------------------------------------------------
+
+  ApiCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: HasCustomDomain
+    Properties:
+      DomainName: !Ref CustomDomainName
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn:
+            Fn::ImportValue: !Sub "${DnsStackName}-CertificateArn"
+
+  ApiDomainMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: HasCustomDomain
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref ApiCustomDomain
+      Stage: !Ref HttpApiStage
+
+  ApiDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasCustomDomain
+    Properties:
+      HostedZoneId:
+        Fn::ImportValue: !Sub "${DnsStackName}-HostedZoneId"
+      Name: !Ref CustomDomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApiCustomDomain.RegionalDomainName
+        HostedZoneId: !GetAtt ApiCustomDomain.RegionalHostedZoneId
+
+  ApexCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: HasApexDomain
+    Properties:
+      DomainName: !Ref ApexDomainName
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn:
+            Fn::ImportValue: !Sub "${DnsStackName}-CertificateArn"
+
+  ApexDomainMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: HasApexDomain
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref ApexCustomDomain
+      Stage: !Ref HttpApiStage
+
+  ApexDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasApexDomain
+    Properties:
+      HostedZoneId:
+        Fn::ImportValue: !Sub "${DnsStackName}-HostedZoneId"
+      Name: !Ref ApexDomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApexCustomDomain.RegionalDomainName
+        HostedZoneId: !GetAtt ApexCustomDomain.RegionalHostedZoneId
+
 Outputs:
   ApiGatewayUrl:
     Description: API Gateway auto-generated endpoint URL
     Value: !GetAtt HttpApi.ApiEndpoint
     Export:
       Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
+
+  PublicUrl:
+    Description: Base URL browsers reach the API on - custom domain when set, else the execute-api endpoint
+    Value: !If
+      - HasCustomDomain
+      - !Sub "https://${CustomDomainName}"
+      - !GetAtt HttpApi.ApiEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicUrl"
 
   VpcLinkId:
     Description: VPC Link ID for API Gateway to ALB connectivity
