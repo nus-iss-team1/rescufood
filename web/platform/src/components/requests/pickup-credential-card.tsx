@@ -161,11 +161,6 @@ export function PickupCredentialCard({
                       ? `Generate New Code (${regenSecondsLeft}s)`
                       : "Generate New Code"}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    {regenSecondsLeft > 0
-                      ? `Available again in ${regenSecondsLeft}s.`
-                      : "Replaces this code — the current one stops working."}
-                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
