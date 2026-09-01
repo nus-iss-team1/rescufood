@@ -1,13 +1,13 @@
 import { createHash, randomInt, timingSafeEqual } from 'crypto';
 
 export const PICKUP_CODE_LENGTH = 6;
-export const PICKUP_CODE_TTL_MINUTES = 30;
+export const PICKUP_CODE_TTL_MINUTES = 60;
 
 // Failed verify attempts allowed against a single generated code before it's
 // force-invalidated and the caller has to generate a new one. Bounds online
 // guessing of the 10^6 code space to a negligible success rate - see
 // RequestsService.verifyPickupCode.
-export const MAX_PICKUP_CODE_ATTEMPTS = 5;
+export const MAX_PICKUP_CODE_ATTEMPTS = 3;
 
 // 6-digit numeric OTP, zero-padded (e.g. "042917") - short enough to type,
 // or to fall back on if a QR render of it fails to scan.

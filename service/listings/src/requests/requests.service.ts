@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { AuditAction } from '../audit/audit.actions';
 import { AuditRepository } from '../audit/audit.repository';
-import { resolveOrgIdByUserId } from '../auth/org-membership.guard';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
@@ -18,7 +17,12 @@ import {
   PG_FOREIGN_KEY_VIOLATION,
   PG_UNIQUE_VIOLATION,
 } from '../db/pg-errors';
-import { assertIsParty, isRequestVisible } from './common/request-access.util';
+import {
+  assertIsClaimingPartner,
+  assertIsDonor,
+  assertIsParty,
+  isRequestVisible,
+} from './common/request-access.util';
 import {
   PublicListingRequest,
   toPublicRequest,
@@ -343,20 +347,31 @@ export class RequestsService {
     }
   }
 
-  // Either party may (re)generate the pickup code; regenerating invalidates
-  // the previous one.
+  // The claiming rescue partner asks for the pickup code. A live (unexpired)
+  // code is handed back unchanged so a reload or a second device can show it
+  // without invalidating what the donor may be about to enter; a new one is
+  // minted only when there isn't one. The code auto-rotates on expiry or
+  // after MAX_PICKUP_CODE_ATTEMPTS failed verifies.
   async generatePickupCode(
     id: string,
     user: AuthenticatedUser,
   ): Promise<{ code: string; expiresAt: Date }> {
     const existing = await this.getOrThrow(id);
-    const listing = await this.getListingOrThrow(existing.listingId);
-    assertIsParty(existing, listing, user);
+    await this.getListingOrThrow(existing.listingId);
+    assertIsClaimingPartner(existing, user);
 
     if (existing.status !== 'active') {
       throw new BadRequestException(
         `cannot generate a pickup code for a claim that is ${existing.status}`,
       );
+    }
+
+    if (
+      existing.pickupCode &&
+      existing.codeExpiresAt &&
+      existing.codeExpiresAt.getTime() > Date.now()
+    ) {
+      return { code: existing.pickupCode, expiresAt: existing.codeExpiresAt };
     }
 
     const code = createPickupCode();
@@ -367,6 +382,7 @@ export class RequestsService {
         id,
         'active',
         {
+          pickupCode: code,
           pickupCodeHash: hashPickupCode(code),
           codeExpiresAt: expiresAt,
           codeGeneratedBy: user.userId,
@@ -404,9 +420,20 @@ export class RequestsService {
   ): Promise<PublicListingRequest> {
     const existing = await this.getOrThrow(id);
     const listing = await this.getListingOrThrow(existing.listingId);
-    assertIsParty(existing, listing, user);
+    assertIsDonor(listing, user);
 
     if (existing.status !== 'active') {
+      // Idempotent replay: the donor who already verified this claim
+      // resubmits the same code (a lost response, a double-tap) and should
+      // see success, not an error.
+      if (
+        existing.status === 'completed' &&
+        existing.verifiedBy === user.userId &&
+        existing.pickupCodeHash &&
+        pickupCodeMatches(dto.code, existing.pickupCodeHash)
+      ) {
+        return toPublicRequest(existing);
+      }
       throw new BadRequestException(
         `cannot verify a pickup code for a claim that is ${existing.status}`,
       );
@@ -415,19 +442,6 @@ export class RequestsService {
       throw new BadRequestException(
         'no pickup code has been generated for this claim',
       );
-    }
-    // The verifier must be from the other org - otherwise one org could
-    // generate and verify by itself.
-    if (user.role !== 'admin' && existing.codeGeneratedBy) {
-      const generatorOrgId = await resolveOrgIdByUserId(
-        this.db,
-        existing.codeGeneratedBy,
-      );
-      if (generatorOrgId && generatorOrgId === user.orgId) {
-        throw new ForbiddenException(
-          'the organisation that generated the pickup code cannot also verify it',
-        );
-      }
     }
 
     const now = new Date();
@@ -443,6 +457,7 @@ export class RequestsService {
       }
       if (attempts >= MAX_PICKUP_CODE_ATTEMPTS) {
         await this.requestsRepository.updateStatus(id, 'active', {
+          pickupCode: null,
           pickupCodeHash: null,
           codeExpiresAt: null,
           codeGeneratedBy: null,
@@ -474,6 +489,7 @@ export class RequestsService {
           verifiedBy: user.userId,
           collectedAt: now,
           collectedQuantity,
+          pickupCode: null,
           pickupCodeAttempts: 0,
           updatedAt: now,
         },

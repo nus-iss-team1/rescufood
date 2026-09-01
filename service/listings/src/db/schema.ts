@@ -204,6 +204,10 @@ export const requests = pgTable(
     cancellationReason: text('cancellation_reason').notNull().default(''),
 
     // Pickup verification - one shared code, shown as QR or typed as OTP.
+    // Stored in the clear so the generating party can be shown it again after
+    // a reload; the hash backs the constant-time verify. Never serialized -
+    // see toPublicRequest.
+    pickupCode: text('pickup_code'),
     pickupCodeHash: text('pickup_code_hash'),
     codeExpiresAt: timestamp('code_expires_at', { withTimezone: true }),
     codeGeneratedBy: uuid('code_generated_by'), // FK -> users.id

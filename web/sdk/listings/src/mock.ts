@@ -282,9 +282,18 @@ export class MockListingsClient implements ListingsApi {
     if (request.status !== "active") {
       throw new ApiError(400, "claim is not active");
     }
-    const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
-    request.codeExpiresAt = expiresAt;
-    request.updatedAt = now();
+    // A live code is handed back unchanged; a new one is minted otherwise.
+    const live =
+      request.codeExpiresAt != null &&
+      new Date(request.codeExpiresAt) > new Date();
+    const expiresAt =
+      live && request.codeExpiresAt != null
+        ? request.codeExpiresAt
+        : new Date(Date.now() + 60 * 60_000).toISOString();
+    if (!live) {
+      request.codeExpiresAt = expiresAt;
+      request.updatedAt = now();
+    }
     return { code: "123456", expiresAt };
   }
 
@@ -293,11 +302,15 @@ export class MockListingsClient implements ListingsApi {
     verify: VerifyPickup
   ): Promise<ListingRequest> {
     const request = this.requestOr404(id);
-    if (request.status !== "active") {
-      throw new ApiError(409, "claim is no longer active");
-    }
     if (verify.code !== "123456") {
       throw new ApiError(400, "invalid or expired code");
+    }
+    // Replaying the same code against an already-verified claim succeeds.
+    if (request.status === "completed") {
+      return request;
+    }
+    if (request.status !== "active") {
+      throw new ApiError(409, "claim is no longer active");
     }
     request.status = "completed";
     request.collectedQuantity = (

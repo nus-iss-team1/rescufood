@@ -37,7 +37,7 @@ import { RequestsService } from './requests.service';
 // Tighter than the app-wide default (see ThrottlerModule in app.module.ts):
 // this is defense in depth against guessing the 6-digit pickup code across
 // many requests. MAX_PICKUP_CODE_ATTEMPTS (in pickup-code.util.ts) is the
-// primary guard - it caps wrong guesses per code at 5 - but that's scoped to
+// primary guard - it caps wrong guesses per code at 3 - but that's scoped to
 // one request's code, not the endpoint as a whole.
 const verifyThrottle = Throttle({ default: { limit: 10, ttl: 60_000 } });
 
@@ -144,9 +144,9 @@ export class RequestsController {
   }
 
   @ApiOperation({
-    summary: 'Generate a pickup code',
+    summary: 'Get the pickup code',
     description:
-      'Either party to an active claim may (re)generate the shared pickup code; regenerating invalidates the previous one. The code is only returned here, never on GET.',
+      "Only the rescue partner that claimed the listing may call this. Returns the claim's current pickup code if one is still live, or mints a new one when there isn't - so a reload or a second device gets the same code back. The code auto-rotates on expiry or after too many failed verifies, and is only returned here, never on GET.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 201, type: PickupCodeResponseDto })
@@ -156,7 +156,7 @@ export class RequestsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Caller is not a party to this claim.',
+    description: 'Caller is not the rescue partner that claimed this listing.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
@@ -179,10 +179,15 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Verify a pickup code',
     description:
-      'Must be called by the party that did NOT generate the code. On success, marks the claim completed and the listing collected. Five failed attempts force the code to be regenerated.',
+      'Only the donor may call this. On success, marks the claim completed and the listing collected. Three failed attempts force the code to be regenerated. Resubmitting the same code after it already completed the claim replays the completed request instead of erroring.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiResponse({ status: 201, type: RequestResponseDto })
+  @ApiResponse({
+    status: 201,
+    type: RequestResponseDto,
+    description:
+      'Claim completed, or replayed if this code already completed it.',
+  })
   @ApiResponse({
     status: 400,
     description:
@@ -190,8 +195,7 @@ export class RequestsController {
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Caller is not a party to this claim, or is from the same org that generated the code.',
+    description: 'Caller is not the donor for this listing.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
