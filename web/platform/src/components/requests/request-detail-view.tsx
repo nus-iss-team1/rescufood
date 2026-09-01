@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useFormStatus } from "react-dom";
 import { Calendar, MapPin, Package, AlertTriangle } from "lucide-react";
 
 import { type Listing, type ListingRequest } from "@rescufood/listings-sdk";
@@ -14,29 +13,18 @@ import {
   pickupWindow,
   shortDate,
 } from "@/lib/listing-labels";
-import { cancelRequestAction } from "@/app/requests/actions";
+import { CancelClaimButton } from "./cancel-claim-button";
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { Badge } from "@rescufood/ui/components/badge";
 import { AnimateIn } from "@/components/animate-in";
-import { Button } from "@rescufood/ui/components/button";
 import { PickupCredentialCard } from "./pickup-credential-card";
-
-function SubmitButton({ children, className, variant = "default" }: { children: React.ReactNode, className?: string, variant?: "default" | "destructive" | "outline" }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className={className} variant={variant}>
-      {pending ? "Please wait..." : children}
-    </Button>
-  );
-}
 
 export function RequestDetailView({
   request,
@@ -168,7 +156,7 @@ export function RequestDetailView({
                 .
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {request.status === "active" && (
                 <div className="rounded-md bg-success/15 p-4 text-sm text-success-foreground">
                   <p className="font-medium">This lot is reserved for your organisation.</p>
@@ -187,17 +175,12 @@ export function RequestDetailView({
                   )}
                 </div>
               )}
+              {isActiveRequest(request.status) && (
+                <CancelClaimButton requestId={request.id} className="w-full">
+                  Cancel Claim
+                </CancelClaimButton>
+              )}
             </CardContent>
-            {isActiveRequest(request.status) && (
-              <CardFooter className="border-t pt-4">
-                <form action={cancelRequestAction} className="w-full">
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <SubmitButton variant="outline" className="w-full">
-                    Cancel Claim
-                  </SubmitButton>
-                </form>
-              </CardFooter>
-            )}
           </Card>
         </AnimateIn>
 

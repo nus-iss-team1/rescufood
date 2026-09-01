@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
 import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
 
-import { cancelRequestAction } from "@/app/requests/actions";
+import { CancelClaimButton } from "./cancel-claim-button";
 import {
   isActiveRequest,
   quantity,
@@ -13,7 +13,7 @@ import {
 import { ListingPhoto } from "@/components/listings/listing-photo";
 import { categoryLabels } from "@/lib/listing-labels";
 import { Badge } from "@rescufood/ui/components/badge";
-import { Button, buttonVariants } from "@rescufood/ui/components/button";
+import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
 export function RequestCards({
@@ -108,12 +108,7 @@ export function RequestCards({
               View Details
             </Link>
             {isActiveRequest(request.status) && (
-              <form action={cancelRequestAction}>
-                <input type="hidden" name="requestId" value={request.id} />
-                <Button type="submit" variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </form>
+              <CancelClaimButton requestId={request.id} size="sm" />
             )}
           </div>
         </li>
