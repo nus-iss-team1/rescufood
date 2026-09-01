@@ -198,7 +198,10 @@ export default async function BrowsePage({
                 action={(listing) => (
                   <Link
                     href={`/browse/${listing.id}`}
-                    className={cn(buttonVariants({ size: "sm" }), "w-full")}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "w-full",
+                    )}
                   >
                     View Details
                   </Link>

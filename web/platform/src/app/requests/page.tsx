@@ -132,15 +132,14 @@ export default async function RequestsPage({
   const requests =
     active === "all" ? all : all.filter((r) => r.status === active);
 
-  // Requests carry only a listingId, so the cards need the listings joined
-  // in for their photo and category.
+  // Requests carry only a listingId; both views name the lot from these.
   let listings = new Map<string, Listing>();
-  if (!unavailable && layout === "card") {
+  if (!unavailable) {
     try {
       const page = await listListings(session.idToken!, { limit: 100 });
       listings = new Map(page.items.map((l) => [l.id, l]));
     } catch {
-      // Cards fall back to the placeholder and the requested quantity.
+      // Both views fall back to the requested quantity.
     }
   }
 
@@ -231,7 +230,7 @@ export default async function RequestsPage({
             {layout === "card" ? (
               <RequestCards requests={requests} listings={listings} />
             ) : (
-              <RequestList requests={requests} />
+              <RequestList requests={requests} listings={listings} />
             )}
           </div>
         )}

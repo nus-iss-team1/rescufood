@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
-import type { ListingRequest } from "@rescufood/listings-sdk";
+import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
 
 import { CancelClaimButton } from "./cancel-claim-button";
 import {
@@ -14,7 +14,13 @@ import { Badge } from "@rescufood/ui/components/badge";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
-export function RequestList({ requests }: { requests: ListingRequest[] }) {
+export function RequestList({
+  requests,
+  listings,
+}: {
+  requests: ListingRequest[];
+  listings?: Map<string, Listing>;
+}) {
   if (requests.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -39,13 +45,21 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
         >
           <div className="grid gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={`/requests/${request.id}`} className="font-medium hover:underline">
-                {quantity(request.requestedQuantity, "requested")}
+              <Link
+                href={`/requests/${request.id}`}
+                className="font-medium hover:underline"
+              >
+                {listings?.get(request.listingId)?.description ??
+                  quantity(request.requestedQuantity, "requested")}
               </Link>
               <Badge variant={requestStatusVariant[request.status]}>
                 {requestStatusLabels[request.status]}
               </Badge>
             </div>
+
+            <p className="text-sm text-muted-foreground">
+              {quantity(request.requestedQuantity, "requested")}
+            </p>
 
             <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <CalendarClock className="size-4 shrink-0" aria-hidden />
@@ -72,7 +86,7 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
           <div className="flex items-center gap-2 sm:justify-end">
             <Link
               href={`/requests/${request.id}`}
-              className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
               View Details
             </Link>

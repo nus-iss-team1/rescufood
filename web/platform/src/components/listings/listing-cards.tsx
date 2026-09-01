@@ -40,9 +40,25 @@ export function ListingCards({
         <li
           key={listing.id}
           data-animate="field"
-          className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
+          className={cn(
+            "flex flex-col gap-3 rounded-lg border border-border bg-card p-4",
+            "transition-[transform,box-shadow] duration-200 ease-out",
+            "motion-safe:hover:-translate-y-0.5 hover:shadow-md",
+          )}
         >
-          <ListingPhoto listing={listing} />
+          <ListingPhoto
+            listing={listing}
+            overlay={
+              <Badge
+                variant="secondary"
+                className="bg-background/90 backdrop-blur-sm"
+              >
+                {listing.category
+                  ? categoryLabels[listing.category]
+                  : "No category yet"}
+              </Badge>
+            }
+          />
 
           <div className="flex items-start justify-between gap-2">
             <span className="font-medium">
@@ -58,18 +74,11 @@ export function ListingCards({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">
-              {listing.category
-                ? categoryLabels[listing.category]
-                : "No category yet"}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              {listing.quantity != null && listing.unit
-                ? quantity(listing.quantity, listing.unit)
-                : "Quantity not set"}
-            </span>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {listing.quantity != null && listing.unit
+              ? quantity(listing.quantity, listing.unit)
+              : "Quantity not set"}
+          </span>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <CalendarClock className="size-4 shrink-0" aria-hidden />
@@ -104,7 +113,7 @@ export function ListingCards({
             </p>
           )}
 
-          {action && <div className="mt-auto pt-1">{action(listing)}</div>}
+          {action && <div className="mt-auto">{action(listing)}</div>}
         </li>
       ))}
     </ul>

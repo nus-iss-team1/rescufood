@@ -220,7 +220,7 @@ export default async function BrowseListingDetailPage({
   }
 
   return (
-    <PageShell>
+    <PageShell className="max-w-2xl">
       <AnimateIn className="flex flex-col gap-6">
         <PageHeader
           title={listing.description || "Listing Details"}

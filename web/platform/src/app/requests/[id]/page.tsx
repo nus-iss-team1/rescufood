@@ -116,13 +116,13 @@ export default async function RequestDetailsPage({
   const isDonor = listing.donorOrgId === me.org.id;
 
   return (
-    <PageShell>
+    <PageShell className="max-w-2xl">
       <PageHeader
-        title="Request Details"
+        title={listing.description || "Request details"}
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Your requests", href: "/requests" },
-          { label: "Request Details" },
+          { label: listing.description || "Request details" },
         ]}
       />
       <div className="mt-8">
