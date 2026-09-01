@@ -96,18 +96,21 @@ See [ADR 0002](../../docs/adr/0002-claim-idempotency.md).
 
 ### Pickup verification
 
-At handover the two parties exchange a 6-digit code:
+At handover the **rescue partner** shows a 6-digit code and the **donor**
+enters it. The roles are fixed - neither side can do the other's step.
 
-- `POST /api/requests/:id/pickup-code` returns the claim's current code,
-  minting one only when there isn't a live one — so a reload or a second
-  device gets the **same** code back rather than rotating it. Either party
-  may call it. The raw code is stored (never serialized on `GET`) alongside
+- `POST /api/requests/:id/pickup-code` — the claiming rescue partner only.
+  Returns the claim's current code, minting one only when there isn't a live
+  one, so a reload or a second device gets the **same** code back rather than
+  rotating it. The raw code is stored (never serialized on `GET`) alongside
   its hash; the code is only returned here.
-- `POST /api/requests/:id/verify` must be called by the *other* party. A
-  wrong or expired code returns the same generic error. The code auto-rotates
-  after **3** failed attempts (`MAX_PICKUP_CODE_ATTEMPTS`) or when it expires
+- `POST /api/requests/:id/verify` — the donor only. A wrong or expired code
+  returns the same generic error. The code auto-rotates after **3** failed
+  attempts (`MAX_PICKUP_CODE_ATTEMPTS`) or when it expires
   (`PICKUP_CODE_TTL_MINUTES`, 60). Resubmitting the code that already
   completed the claim replays the completed request instead of erroring.
+
+Admins may call either endpoint.
 
 ## Database
 

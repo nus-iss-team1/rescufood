@@ -11,15 +11,6 @@ import { hashPickupCode } from './pickup/pickup-code.util';
 import { RequestsRepository } from './requests.repository';
 import { RequestsService } from './requests.service';
 
-// RequestsService.verifyPickupCode resolves the code-generator's *current*
-// org via this, the same helper OrgMembershipGuard uses - mocked here so
-// tests control it directly instead of faking a drizzle select chain.
-jest.mock('../auth/org-membership.guard', () => ({
-  resolveOrgIdByUserId: jest.fn(),
-}));
-import { resolveOrgIdByUserId } from '../auth/org-membership.guard';
-const mockResolveOrgId = resolveOrgIdByUserId as jest.Mock;
-
 function makeRepository() {
   return {
     create: jest.fn(),
@@ -167,10 +158,6 @@ const baseRequest = {
 };
 
 describe('RequestsService', () => {
-  beforeEach(() => {
-    mockResolveOrgId.mockReset();
-  });
-
   describe('create', () => {
     const dto = { listingId: 'listing-1', idempotencyKey: 'idem-1' };
 
@@ -862,7 +849,7 @@ describe('RequestsService', () => {
       repository.findListingById.mockResolvedValue(availableListing);
       const { service, db, audit } = makeService(repository);
 
-      const result = await service.generatePickupCode('request-1', donorUser);
+      const result = await service.generatePickupCode('request-1', rescueUser);
 
       expect(result).toEqual({ code: '424242', expiresAt });
       expect(repository.updateStatus).not.toHaveBeenCalled();
@@ -883,7 +870,7 @@ describe('RequestsService', () => {
       repository.updateStatus.mockResolvedValue(activeRequest);
       const { service } = makeService(repository);
 
-      const result = await service.generatePickupCode('request-1', donorUser);
+      const result = await service.generatePickupCode('request-1', rescueUser);
 
       expect(result.code).not.toBe('424242');
       expect(repository.updateStatus).toHaveBeenCalled();
@@ -909,7 +896,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('allows either party to generate a code', async () => {
+    it('lets the claiming rescue partner generate a code', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
@@ -917,8 +904,20 @@ describe('RequestsService', () => {
       const { service } = makeService(repository);
 
       await expect(
-        service.generatePickupCode('request-1', donorUser),
+        service.generatePickupCode('request-1', rescueUser),
       ).resolves.toMatchObject({ code: expect.any(String) as string });
+    });
+
+    it('rejects the donor generating a code', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(activeRequest);
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', donorUser),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
     });
 
     it('rejects an outsider', async () => {
@@ -983,7 +982,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
         ...activeRequest,
         status: 'completed',
@@ -1051,7 +1049,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
         ...activeRequest,
         status: 'completed',
@@ -1072,7 +1069,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue({
         ...activeRequest,
         status: 'completed',
@@ -1104,7 +1100,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       const { service } = makeService(repository);
 
       await expect(
@@ -1117,11 +1112,10 @@ describe('RequestsService', () => {
       expect(repository.updateStatus).not.toHaveBeenCalled();
     });
 
-    it('rejects when the same org generated and is trying to verify the code', async () => {
+    it('rejects the rescue partner verifying the code', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       const { service } = makeService(repository);
 
       await expect(
@@ -1211,7 +1205,6 @@ describe('RequestsService', () => {
     it('gives the same generic error for a wrong code as for an expired one', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(1);
 
       repository.findById.mockResolvedValue(activeRequest);
@@ -1254,7 +1247,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(2);
       const { service } = makeService(repository);
 
@@ -1272,7 +1264,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(3);
       const { service } = makeService(repository);
 
@@ -1296,7 +1287,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.incrementPickupCodeAttempts.mockResolvedValue(undefined);
       const { service } = makeService(repository);
 
@@ -1309,7 +1299,6 @@ describe('RequestsService', () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
-      mockResolveOrgId.mockResolvedValue('org-rescue');
       repository.updateStatus.mockResolvedValue(undefined);
       const { service } = makeService(repository);
 
@@ -1318,7 +1307,7 @@ describe('RequestsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
-    it('lets an admin verify regardless of org, without the cross-org check', async () => {
+    it('lets an admin verify regardless of org', async () => {
       const repository = makeRepository();
       const admin: AuthenticatedUser = {
         userId: 'admin-1',
@@ -1336,7 +1325,6 @@ describe('RequestsService', () => {
       await expect(
         service.verifyPickupCode('request-1', { code }, admin),
       ).resolves.toMatchObject({ status: 'completed' });
-      expect(mockResolveOrgId).not.toHaveBeenCalled();
     });
   });
 });

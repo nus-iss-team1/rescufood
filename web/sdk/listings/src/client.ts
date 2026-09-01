@@ -156,12 +156,12 @@ export class ListingsClient implements ListingsApi {
     return this.send("PATCH", `/requests/${id}`, decision);
   }
 
-  /** Either party to an active claim; invalidates any previous code. */
+  /** The claiming rescue partner only; hands back the live code unchanged. */
   generatePickupCode(id: string): Promise<PickupCode> {
     return this.send("POST", `/requests/${id}/pickup-code`, {});
   }
 
-  /** Must be called by the party that did not generate the code. */
+  /** The donor only. */
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest> {
     return this.send("POST", `/requests/${id}/verify`, verify);
   }

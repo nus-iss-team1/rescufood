@@ -1,6 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../common/types/express';
-import { assertIsParty, isRequestVisible } from './request-access.util';
+import {
+  assertIsClaimingPartner,
+  assertIsDonor,
+  assertIsParty,
+  isRequestVisible,
+} from './request-access.util';
 
 const donorUser: AuthenticatedUser = {
   userId: 'user-donor',
@@ -43,6 +48,48 @@ describe('assertIsParty', () => {
     expect(() => assertIsParty(request, listing, outsider)).toThrow(
       ForbiddenException,
     );
+  });
+});
+
+describe('assertIsClaimingPartner', () => {
+  it('allows the rescue org that filed the request', () => {
+    expect(() => assertIsClaimingPartner(request, rescueUser)).not.toThrow();
+  });
+
+  it('allows an admin', () => {
+    expect(() => assertIsClaimingPartner(request, admin)).not.toThrow();
+  });
+
+  it('rejects the donor', () => {
+    expect(() => assertIsClaimingPartner(request, donorUser)).toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('rejects an outsider', () => {
+    expect(() => assertIsClaimingPartner(request, outsider)).toThrow(
+      ForbiddenException,
+    );
+  });
+});
+
+describe('assertIsDonor', () => {
+  it('allows the donor org that owns the listing', () => {
+    expect(() => assertIsDonor(listing, donorUser)).not.toThrow();
+  });
+
+  it('allows an admin', () => {
+    expect(() => assertIsDonor(listing, admin)).not.toThrow();
+  });
+
+  it('rejects the rescue partner', () => {
+    expect(() => assertIsDonor(listing, rescueUser)).toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('rejects an outsider', () => {
+    expect(() => assertIsDonor(listing, outsider)).toThrow(ForbiddenException);
   });
 });
 

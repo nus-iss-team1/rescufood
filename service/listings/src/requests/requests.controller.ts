@@ -146,7 +146,7 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Get the pickup code',
     description:
-      "Either party to an active claim may call this. Returns the claim's current pickup code if one is still live, or mints a new one when there isn't - so a reload or a second device gets the same code back. The code auto-rotates on expiry or after too many failed verifies, and is only returned here, never on GET.",
+      "Only the rescue partner that claimed the listing may call this. Returns the claim's current pickup code if one is still live, or mints a new one when there isn't - so a reload or a second device gets the same code back. The code auto-rotates on expiry or after too many failed verifies, and is only returned here, never on GET.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 201, type: PickupCodeResponseDto })
@@ -156,7 +156,7 @@ export class RequestsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Caller is not a party to this claim.',
+    description: 'Caller is not the rescue partner that claimed this listing.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
@@ -179,7 +179,7 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Verify a pickup code',
     description:
-      'Must be called by the party that did NOT generate the code. On success, marks the claim completed and the listing collected. Three failed attempts force the code to be regenerated. Resubmitting the same code after it already completed the claim replays the completed request instead of erroring.',
+      'Only the donor may call this. On success, marks the claim completed and the listing collected. Three failed attempts force the code to be regenerated. Resubmitting the same code after it already completed the claim replays the completed request instead of erroring.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({
@@ -195,8 +195,7 @@ export class RequestsController {
   })
   @ApiResponse({
     status: 403,
-    description:
-      'Caller is not a party to this claim, or is from the same org that generated the code.',
+    description: 'Caller is not the donor for this listing.',
   })
   @ApiResponse({ status: 404, description: 'Request or listing not found.' })
   @ApiResponse({
