@@ -343,8 +343,11 @@ export class RequestsService {
     }
   }
 
-  // Either party may (re)generate the pickup code; regenerating invalidates
-  // the previous one.
+  // Either party may ask for the pickup code. A live (unexpired) code is
+  // handed back unchanged so a reload or a second device can show it without
+  // invalidating what the other party already holds; a new one is minted only
+  // when there isn't one. The code auto-rotates on expiry or after
+  // MAX_PICKUP_CODE_ATTEMPTS failed verifies.
   async generatePickupCode(
     id: string,
     user: AuthenticatedUser,
@@ -359,6 +362,14 @@ export class RequestsService {
       );
     }
 
+    if (
+      existing.pickupCode &&
+      existing.codeExpiresAt &&
+      existing.codeExpiresAt.getTime() > Date.now()
+    ) {
+      return { code: existing.pickupCode, expiresAt: existing.codeExpiresAt };
+    }
+
     const code = createPickupCode();
     const expiresAt = new Date(Date.now() + PICKUP_CODE_TTL_MINUTES * 60_000);
 
@@ -367,6 +378,7 @@ export class RequestsService {
         id,
         'active',
         {
+          pickupCode: code,
           pickupCodeHash: hashPickupCode(code),
           codeExpiresAt: expiresAt,
           codeGeneratedBy: user.userId,
@@ -407,6 +419,17 @@ export class RequestsService {
     assertIsParty(existing, listing, user);
 
     if (existing.status !== 'active') {
+      // Idempotent replay: the party that already verified this claim
+      // resubmits the same code (a lost response, a double-tap) and should
+      // see success, not an error.
+      if (
+        existing.status === 'completed' &&
+        existing.verifiedBy === user.userId &&
+        existing.pickupCodeHash &&
+        pickupCodeMatches(dto.code, existing.pickupCodeHash)
+      ) {
+        return toPublicRequest(existing);
+      }
       throw new BadRequestException(
         `cannot verify a pickup code for a claim that is ${existing.status}`,
       );
@@ -443,6 +466,7 @@ export class RequestsService {
       }
       if (attempts >= MAX_PICKUP_CODE_ATTEMPTS) {
         await this.requestsRepository.updateStatus(id, 'active', {
+          pickupCode: null,
           pickupCodeHash: null,
           codeExpiresAt: null,
           codeGeneratedBy: null,
@@ -474,6 +498,7 @@ export class RequestsService {
           verifiedBy: user.userId,
           collectedAt: now,
           collectedQuantity,
+          pickupCode: null,
           pickupCodeAttempts: 0,
           updatedAt: now,
         },

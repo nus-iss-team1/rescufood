@@ -92,6 +92,13 @@
       "when": 1788135716174,
       "tag": "0012_drop_requests_idempotency_key",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788234280729,
+      "tag": "0013_pickup_code_plaintext",
+      "breakpoints": true
     }
   ]
 }
