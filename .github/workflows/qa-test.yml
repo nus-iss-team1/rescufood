@@ -50,8 +50,10 @@ jobs:
 
       - name: Run tests
         env:
-          # Matches the default dev ALB already used locally in playwright.config.ts.
-          BASE_URL: https://3f0a17w33l.execute-api.ap-southeast-1.amazonaws.com
+          # Base URL of the deployed environment under test. Set as an Actions
+          # variable (Settings > Secrets and variables > Actions > Variables).
+          # Required - the run fails fast if it is unset.
+          BASE_URL: ${{ vars.BASE_URL }}
           TEST_DONOR_USERNAME: ${{ secrets.TEST_DONOR_USERNAME }}
           TEST_DONOR_PASSWORD: ${{ secrets.TEST_DONOR_PASSWORD }}
           TEST_RESCUE_PARTNER_USERNAME: ${{ secrets.TEST_RESCUE_PARTNER_USERNAME }}
