@@ -47,6 +47,12 @@ export function RequestDetailView({
   listing: Listing;
   isDonor: boolean;
 }) {
+  const fullLot =
+    listing.quantity && listing.unit
+      ? quantity(listing.quantity, listing.unit)
+      : null;
+  const requested = quantity(request.requestedQuantity, listing.unit ?? "").trim();
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-6">
@@ -77,12 +83,10 @@ export function RequestDetailView({
                       {listing.description || "No description provided."}
                     </p>
                   </div>
-                  <div className="text-right whitespace-nowrap bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20">
-                    <div className="text-xs font-semibold uppercase tracking-wider mb-0.5 opacity-80">Full Lot</div>
-                    <div className="text-xl font-bold">
-                      {listing.quantity && listing.unit 
-                        ? quantity(listing.quantity, listing.unit) 
-                        : "Unknown quantity"}
+                  <div className="text-right whitespace-nowrap">
+                    <div className="text-xs text-muted-foreground">Full lot</div>
+                    <div className="text-sm font-medium">
+                      {fullLot ?? "Unknown quantity"}
                     </div>
                   </div>
                 </div>
@@ -155,7 +159,13 @@ export function RequestDetailView({
                 </Badge>
               </div>
               <CardDescription>
-                Claimed on {shortDate(request.requestedAt)}.
+                Claimed{" "}
+                <span className="font-medium text-foreground">{requested}</span>
+                {fullLot ? ` of ${fullLot}` : ""} on{" "}
+                <span className="font-medium text-foreground">
+                  {shortDate(request.requestedAt)}
+                </span>
+                .
               </CardDescription>
             </CardHeader>
             <CardContent>
