@@ -15,6 +15,7 @@ const fullRequest: ListingRequest = {
   pickupCodeHash: 'super-secret-hash',
   codeExpiresAt: new Date('2026-08-06T02:00:00Z'),
   codeGeneratedBy: 'user-donor',
+  pickupCodeGeneratedAt: new Date('2026-08-06T01:00:00Z'),
   pickupCodeAttempts: 3,
   verifiedBy: null,
   collectedQuantity: null,
@@ -33,6 +34,7 @@ describe('toPublicRequest', () => {
     expect(result).not.toHaveProperty('pickupCode');
     expect(result).not.toHaveProperty('pickupCodeHash');
     expect(result).not.toHaveProperty('pickupCodeAttempts');
+    expect(result).not.toHaveProperty('pickupCodeGeneratedAt');
   });
 
   it('keeps every other field intact', () => {
@@ -40,6 +42,7 @@ describe('toPublicRequest', () => {
       pickupCode,
       pickupCodeHash,
       pickupCodeAttempts,
+      pickupCodeGeneratedAt,
       pickupOpenReminderSentAt,
       pickupCloseReminderSentAt,
       ...expected
@@ -47,6 +50,7 @@ describe('toPublicRequest', () => {
     void pickupCode;
     void pickupCodeHash;
     void pickupCodeAttempts;
+    void pickupCodeGeneratedAt;
     void pickupOpenReminderSentAt;
     void pickupCloseReminderSentAt;
 

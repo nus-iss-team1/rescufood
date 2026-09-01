@@ -86,7 +86,8 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
 }
 
 export async function getPickupCredentialAction(
-  requestId: string
+  requestId: string,
+  regenerate = false
 ): Promise<{ data?: PickupCode; error?: string }> {
   const token = await idToken();
   if (!token) return { error: expired };
@@ -94,7 +95,7 @@ export async function getPickupCredentialAction(
   if (!requestId) return { error: "Missing request ID." };
 
   try {
-    const data = await generatePickupCode(token, requestId);
+    const data = await generatePickupCode(token, requestId, regenerate);
     return { data };
   } catch (err) {
     if (err instanceof ListingsApiError) return { error: err.message };

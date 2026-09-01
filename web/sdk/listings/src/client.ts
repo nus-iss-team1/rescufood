@@ -156,9 +156,13 @@ export class ListingsClient implements ListingsApi {
     return this.send("PATCH", `/requests/${id}`, decision);
   }
 
-  /** The claiming rescue partner only; hands back the live code unchanged. */
-  generatePickupCode(id: string): Promise<PickupCode> {
-    return this.send("POST", `/requests/${id}/pickup-code`, {});
+  /**
+   * The claiming rescue partner only. Hands back the live code unchanged
+   * unless `regenerate` is set, which forces a fresh one.
+   */
+  generatePickupCode(id: string, regenerate = false): Promise<PickupCode> {
+    const qs = regenerate ? "?regenerate=true" : "";
+    return this.send("POST", `/requests/${id}/pickup-code${qs}`, {});
   }
 
   /** The donor only. */

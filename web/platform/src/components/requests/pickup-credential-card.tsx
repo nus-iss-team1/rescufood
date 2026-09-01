@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { useFormStatus } from "react-dom";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
@@ -38,13 +38,14 @@ export function PickupCredentialCard({
   const [credential, setCredential] = useState<PickupCode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const [verifyState, verifyAction] = useActionState(verifyPickupCodeAction, {});
 
-  const handleGenerate = () => {
+  const handleGenerate = (regenerate = false) => {
     setLoading(true);
     setError("");
-    getPickupCredentialAction(request.id)
+    getPickupCredentialAction(request.id, regenerate)
       .then((res) => {
         if (res.error) {
           setError(res.error);
@@ -55,6 +56,37 @@ export function PickupCredentialCard({
       .catch(() => setError("Failed to load pickup code."))
       .finally(() => setLoading(false));
   };
+
+  // The partner's code isn't returned on GET. If a live one exists, fetch it
+  // (idempotently) on open so a reload restores the code and an accurate
+  // cooldown; generating the first code stays an explicit action.
+  const hasLiveCode =
+    !!request.codeExpiresAt && dayjs(request.codeExpiresAt).isAfter(dayjs());
+  useEffect(() => {
+    if (!isDonor && request.status === "active" && hasLiveCode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleGenerate(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDonor, request.id, request.status, hasLiveCode]);
+
+  const regenAvailableMs = credential
+    ? dayjs(credential.regenerateAvailableAt).valueOf()
+    : 0;
+  const regenSecondsLeft = Math.max(
+    0,
+    Math.ceil((regenAvailableMs - nowMs) / 1000),
+  );
+
+  // Tick once a second while the regenerate cooldown is counting down.
+  useEffect(() => {
+    if (regenAvailableMs <= Date.now()) return;
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+      if (Date.now() >= regenAvailableMs) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [regenAvailableMs]);
 
   if (request.status === "cancelled") {
     return (
@@ -105,7 +137,7 @@ export function PickupCredentialCard({
         <CardContent>
           {!isDonor ? (
             <div className="space-y-4">
-              {loading ? (
+              {loading && !credential ? (
                 <div className="animate-pulse rounded-xl bg-muted h-20 w-full" />
               ) : credential ? (
                 <div className="space-y-4">
@@ -116,6 +148,24 @@ export function PickupCredentialCard({
                     <Clock className="size-4" />
                     <span>Expires {dayjs(credential.expiresAt).format("MMM D, h:mm a")}</span>
                   </div>
+                  {error && (
+                    <p className="text-sm text-destructive text-center">{error}</p>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => handleGenerate(true)}
+                    disabled={loading || regenSecondsLeft > 0}
+                    className="w-full"
+                  >
+                    {regenSecondsLeft > 0
+                      ? `Generate New Code (${regenSecondsLeft}s)`
+                      : "Generate New Code"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {regenSecondsLeft > 0
+                      ? `Available again in ${regenSecondsLeft}s.`
+                      : "Replaces this code — the current one stops working."}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -124,7 +174,7 @@ export function PickupCredentialCard({
                       {error}
                     </div>
                   )}
-                  <Button onClick={handleGenerate} className="w-full">
+                  <Button onClick={() => handleGenerate()} className="w-full">
                     {error ? "Retry Generation" : "Generate Pickup Code"}
                   </Button>
                 </div>
@@ -152,7 +202,7 @@ export function PickupCredentialCard({
               {verifyState.success && (
                 <p className="text-sm text-success">Verification successful.</p>
               )}
-              <SubmitButton className="w-full">Verify & Complete Handover</SubmitButton>
+              <SubmitButton className="w-full">Verify &amp; Complete Handover</SubmitButton>
             </form>
           )}
         </CardContent>

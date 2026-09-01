@@ -827,6 +827,7 @@ describe('RequestsService', () => {
           pickupCode: string;
           pickupCodeHash: string;
           codeGeneratedBy: string;
+          pickupCodeGeneratedAt: Date;
           pickupCodeAttempts: number;
         },
       ];
@@ -834,24 +835,34 @@ describe('RequestsService', () => {
       expect(values.pickupCodeHash).toBe(hashPickupCode(result.code));
       expect(values.codeGeneratedBy).toBe(rescueUser.userId);
       expect(values.pickupCodeAttempts).toBe(0);
+      // cooldown starts from the mint time
+      expect(result.regenerateAvailableAt.getTime()).toBe(
+        values.pickupCodeGeneratedAt.getTime() + 60_000,
+      );
     });
 
     it('hands back the current code unchanged while it is still live', async () => {
       const repository = makeRepository();
       const expiresAt = new Date(Date.now() + 30 * 60_000);
+      const generatedAt = new Date(Date.now() - 30 * 60_000);
       repository.findById.mockResolvedValue({
         ...activeRequest,
         pickupCode: '424242',
         pickupCodeHash: hashPickupCode('424242'),
         codeExpiresAt: expiresAt,
         codeGeneratedBy: 'user-rescue',
+        pickupCodeGeneratedAt: generatedAt,
       });
       repository.findListingById.mockResolvedValue(availableListing);
       const { service, db, audit } = makeService(repository);
 
       const result = await service.generatePickupCode('request-1', rescueUser);
 
-      expect(result).toEqual({ code: '424242', expiresAt });
+      expect(result).toEqual({
+        code: '424242',
+        expiresAt,
+        regenerateAvailableAt: new Date(generatedAt.getTime() + 60_000),
+      });
       expect(repository.updateStatus).not.toHaveBeenCalled();
       expect(db.transaction).not.toHaveBeenCalled();
       expect(audit.record).not.toHaveBeenCalled();
@@ -873,6 +884,86 @@ describe('RequestsService', () => {
       const result = await service.generatePickupCode('request-1', rescueUser);
 
       expect(result.code).not.toBe('424242');
+      expect(repository.updateStatus).toHaveBeenCalled();
+    });
+
+    it('mints a fresh code on regenerate once the cooldown has passed', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...activeRequest,
+        pickupCode: '424242',
+        pickupCodeHash: hashPickupCode('424242'),
+        codeExpiresAt: new Date(Date.now() + 30 * 60_000),
+        codeGeneratedBy: 'user-rescue',
+        pickupCodeGeneratedAt: new Date(Date.now() - 120_000),
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue(activeRequest);
+      const { service } = makeService(repository);
+
+      const result = await service.generatePickupCode(
+        'request-1',
+        rescueUser,
+        true,
+      );
+
+      expect(result.code).not.toBe('424242');
+      const [, , values] = repository.updateStatus.mock.calls[0] as [
+        string,
+        string,
+        { pickupCodeGeneratedAt: Date },
+      ];
+      expect(values.pickupCodeGeneratedAt).toBeInstanceOf(Date);
+    });
+
+    it('refuses to mint a replacement while the cooldown is active', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...activeRequest,
+        pickupCode: '424242',
+        pickupCodeHash: hashPickupCode('424242'),
+        codeExpiresAt: new Date(Date.now() + 30 * 60_000),
+        pickupCodeGeneratedAt: new Date(Date.now() - 10_000),
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', rescueUser, true),
+      ).rejects.toMatchObject({ status: 429 });
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('rate-limits regeneration after the attempt cap voided the code', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...activeRequest,
+        pickupCodeAttempts: 3,
+        pickupCodeGeneratedAt: new Date(Date.now() - 10_000),
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.generatePickupCode('request-1', rescueUser),
+      ).rejects.toMatchObject({ status: 429 });
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+    });
+
+    it('mints a new code once the cooldown has passed', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...activeRequest,
+        pickupCodeAttempts: 3,
+        pickupCodeGeneratedAt: new Date(Date.now() - 120_000),
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.updateStatus.mockResolvedValue(activeRequest);
+      const { service } = makeService(repository);
+
+      const result = await service.generatePickupCode('request-1', rescueUser);
+
+      expect(result.code).toMatch(/^\d{6}$/);
       expect(repository.updateStatus).toHaveBeenCalled();
     });
 
@@ -1260,27 +1351,54 @@ describe('RequestsService', () => {
       expect(repository.updateStatus).not.toHaveBeenCalled();
     });
 
-    it('force-invalidates the code after hitting the attempt cap', async () => {
+    it('voids the code after hitting the attempt cap and audits it', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(activeRequest);
       repository.findListingById.mockResolvedValue(availableListing);
       repository.incrementPickupCodeAttempts.mockResolvedValue(3);
-      const { service } = makeService(repository);
+      repository.updateStatus.mockResolvedValue(activeRequest);
+      const { service, audit } = makeService(repository);
 
       await expect(
         service.verifyPickupCode('request-1', { code: '000000' }, donorUser),
       ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.updateStatus).toHaveBeenCalledWith(
-        'request-1',
-        'active',
-        expect.objectContaining({
-          pickupCode: null,
-          pickupCodeHash: null,
-          codeExpiresAt: null,
-          codeGeneratedBy: null,
-          pickupCodeAttempts: 0,
-        }),
+      const [, , values] = repository.updateStatus.mock.calls[0] as [
+        string,
+        string,
+        Record<string, unknown>,
+      ];
+      expect(values).toEqual({
+        pickupCode: null,
+        pickupCodeHash: null,
+        codeExpiresAt: null,
+        codeGeneratedBy: null,
+        updatedAt: now,
+      });
+      // attempt count is left at the cap, and pickupCodeGeneratedAt is kept -
+      // it still gates how soon a replacement can be minted
+      expect(values).not.toHaveProperty('pickupCodeAttempts');
+      expect(values).not.toHaveProperty('pickupCodeGeneratedAt');
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'pickup_code.exhausted' }),
       );
+    });
+
+    it('explains a voided code rather than pretending none was generated', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...activeRequest,
+        pickupCode: null,
+        pickupCodeHash: null,
+        codeExpiresAt: null,
+        pickupCodeAttempts: 3,
+      });
+      repository.findListingById.mockResolvedValue(availableListing);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.verifyPickupCode('request-1', { code }, donorUser),
+      ).rejects.toThrow(/no longer valid after too many attempts/);
+      expect(repository.incrementPickupCodeAttempts).not.toHaveBeenCalled();
     });
 
     it('409s when the claim stopped being accepted mid-verify', async () => {

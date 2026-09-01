@@ -102,13 +102,18 @@ enters it. The roles are fixed - neither side can do the other's step.
 - `POST /api/requests/:id/pickup-code` — the claiming rescue partner only.
   Returns the claim's current code, minting one only when there isn't a live
   one, so a reload or a second device gets the **same** code back rather than
-  rotating it. The raw code is stored (never serialized on `GET`) alongside
-  its hash; the code is only returned here.
+  rotating it. `?regenerate=true` forces a fresh code. Minting a replacement
+  is limited to one per `PICKUP_CODE_REGEN_COOLDOWN_SECONDS` (60) - a `429`
+  otherwise, and the response's `regenerateAvailableAt` says when the next is
+  allowed. The raw code is stored (never serialized on `GET`) alongside its
+  hash; the code is only returned here. Throttled to 6/min.
 - `POST /api/requests/:id/verify` — the donor only. A wrong or expired code
-  returns the same generic error. The code auto-rotates after **3** failed
-  attempts (`MAX_PICKUP_CODE_ATTEMPTS`) or when it expires
-  (`PICKUP_CODE_TTL_MINUTES`, 60). Resubmitting the code that already
-  completed the claim replays the completed request instead of erroring.
+  returns the same generic error. After **3** failed attempts
+  (`MAX_PICKUP_CODE_ATTEMPTS`) the code is voided and the partner generates a
+  new one (subject to the cooldown above) - the donor is not otherwise
+  blocked. The code also expires after `PICKUP_CODE_TTL_MINUTES` (60).
+  Resubmitting the code that already completed the claim replays the completed
+  request instead of erroring. Throttled to 10/min.
 
 Admins may call either endpoint.
 

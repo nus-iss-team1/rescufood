@@ -115,8 +115,9 @@ export function decideRequest(
 export function generatePickupCode(
   idToken: string,
   id: string,
+  regenerate = false,
 ): Promise<PickupCode> {
-  return client(idToken).generatePickupCode(id);
+  return client(idToken).generatePickupCode(id, regenerate);
 }
 
 export function verifyPickupCode(
