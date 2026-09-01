@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
+import { requireEnv } from './tests/helpers/env';
 
 dotenv.config();
 
@@ -17,9 +18,7 @@ export default defineConfig({
       ]
     : 'html',
   use: {
-    baseURL:
-      process.env.BASE_URL ??
-      'https://3f0a17w33l.execute-api.ap-southeast-1.amazonaws.com',
+    baseURL: requireEnv('BASE_URL'),
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

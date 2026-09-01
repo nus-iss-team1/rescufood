@@ -16,16 +16,19 @@ Copy `.env.example` to `.env` and fill in real test account credentials before r
 cp .env.example .env
 ```
 
-| Variable | Value |
-| --- | --- |
-| `TEST_DONOR_USERNAME` / `TEST_DONOR_PASSWORD` | A donor-org test account |
-| `TEST_RESCUE_PARTNER_USERNAME` / `TEST_RESCUE_PARTNER_PASSWORD` | A rescue-partner-org test account |
+| Variable                                                        | Value                                  |
+| --------------------------------------------------------------- | -------------------------------------- |
+| `BASE_URL`                                                      | Base URL of the environment under test |
+| `TEST_DONOR_USERNAME` / `TEST_DONOR_PASSWORD`                   | A donor-org test account               |
+| `TEST_RESCUE_PARTNER_USERNAME` / `TEST_RESCUE_PARTNER_PASSWORD` | A rescue-partner-org test account      |
+
+All are required — the run fails immediately if any is unset.
 
 `.env` is gitignored — never commit real credentials. Ask a teammate for values if you don't have test accounts yet.
 
 ## Running tests
 
-By default, tests run against the dev environment (`rescufood-dev-alb-...`), configured in `playwright.config.ts`. To target a different environment, set `BASE_URL`.
+Tests run against whatever `BASE_URL` points at — there is no default, so it must be set in `.env` (or the shell). Point it at the dev API Gateway for a normal run, or another environment to target that instead.
 
 ```
 npm test                          # run all tests headless
@@ -48,11 +51,14 @@ A ready-to-use workflow lives at [`.github/workflows/qa-test.yml`](../.github/wo
 
 It's already written and works locally, but it needs one thing before it's actually live:
 
-**Ask a repo admin to add these as GitHub Actions secrets** (Settings → Secrets and variables → Actions), matching the same values you use in your local `.env`:
+**Ask a repo admin to configure these** (Settings → Secrets and variables → Actions), matching the same values you use in your local `.env`:
 
-- `TEST_DONOR_USERNAME`, `TEST_DONOR_PASSWORD`
-- `TEST_RESCUE_PARTNER_USERNAME`, `TEST_RESCUE_PARTNER_PASSWORD`
+- `BASE_URL` — as a **variable**
+- `TEST_DONOR_USERNAME`, `TEST_DONOR_PASSWORD` — as **secrets**
+- `TEST_RESCUE_PARTNER_USERNAME`, `TEST_RESCUE_PARTNER_PASSWORD` — as **secrets**
 
-One quirk worth knowing: GitHub only evaluates a `workflow_run`-triggered workflow using the copy of the file on the **default branch** (`develop`), not whatever's on a feature branch or PR. So this workflow won't actually start watching for deploys until it's merged — a copy sitting on a branch or open PR is inert for that trigger. The secrets should ideally be in place by the time it merges, so the first real run doesn't fail on empty credentials.
+The run fails fast if any of these is missing.
+
+One quirk worth knowing: GitHub only evaluates a `workflow_run`-triggered workflow using the copy of the file on the **default branch** (`develop`), not whatever's on a feature branch or PR. So this workflow won't actually start watching for deploys until it's merged — a copy sitting on a branch or open PR is inert for that trigger. The secrets and `BASE_URL` variable should ideally be in place by the time it merges, so the first real run doesn't fail on missing config.
 
 Since it can't block anything by design, don't add it as a required branch-protection check — that would work against the point of it being non-blocking.

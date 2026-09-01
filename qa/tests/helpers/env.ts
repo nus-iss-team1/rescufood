@@ -3,7 +3,7 @@ export function requireEnv(name: string): string {
   if (!value) {
     throw new Error(
       `Missing required environment variable "${name}". Copy .env.example to .env locally, ` +
-        'or check that GitHub Actions secrets are configured (see qa/README.md > CI/CD).',
+        'or check that the GitHub Actions secrets and variables are configured (see qa/README.md > CI/CD).',
     );
   }
   return value;
