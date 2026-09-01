@@ -60,12 +60,15 @@ export async function createRequestAction(
   }
 }
 
-export async function cancelRequestAction(formData: FormData): Promise<void> {
+export async function cancelRequestAction(
+  _prev: RequestFormState,
+  formData: FormData,
+): Promise<RequestFormState> {
   const token = await idToken();
-  if (!token) return;
+  if (!token) return { error: expired };
 
   const id = String(formData.get("requestId") ?? "");
-  if (!id) return;
+  if (!id) return { error: "Missing request ID." };
 
   try {
     const updated = await decideRequest(token, id, {
@@ -75,14 +78,16 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
     if (updated.listingId) {
       revalidatePath(`/browse/${updated.listingId}`);
     }
-  } catch {
-    // The list re-renders with whatever the service still reports.
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
   }
   revalidatePath("/requests");
   revalidatePath(`/requests/${id}`);
   revalidatePath("/browse");
   revalidatePath("/listings");
   revalidatePath("/dashboard");
+  return { requestedId: id };
 }
 
 export async function getPickupCredentialAction(
@@ -95,6 +100,7 @@ export async function getPickupCredentialAction(
 
   try {
     const data = await generatePickupCode(token, requestId);
+    revalidatePath(`/requests/${requestId}`);
     return { data };
   } catch (err) {
     if (err instanceof ListingsApiError) return { error: err.message };

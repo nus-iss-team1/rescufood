@@ -1,47 +1,74 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useFormStatus } from "react-dom";
-import { Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Clock } from "lucide-react";
 
 import type { ListingRequest, PickupCode } from "@rescufood/listings-sdk";
 import { getPickupCredentialAction, verifyPickupCodeAction } from "@/app/requests/actions";
 import { Button } from "@rescufood/ui/components/button";
+import { toast } from "@rescufood/ui/components/sonner";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@rescufood/ui/components/card";
-import { Input } from "@rescufood/ui/components/input";
-import { Label } from "@rescufood/ui/components/label";
-import { AnimateIn } from "@/components/animate-in";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@rescufood/ui/components/dialog";
+import { OtpInput } from "./otp-input";
 
-function SubmitButton({ children, className }: { children: React.ReactNode; className?: string }) {
+function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className={className}>
-      {pending ? "Verifying..." : children}
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto min-w-24">
+      {pending ? "Confirming..." : "Confirm pickup"}
     </Button>
   );
 }
 
-export function PickupCredentialCard({
+export function PickupVerification({
   request,
   isDonor,
 }: {
   request: ListingRequest;
   isDonor: boolean;
 }) {
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
   const [credential, setCredential] = useState<PickupCode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [verifyState, verifyAction] = useActionState(verifyPickupCodeAction, {});
 
-  const handleGenerate = () => {
+  const router = useRouter();
+  const waiting =
+    isDonor && request.status === "active" && !request.codeGeneratedBy;
+
+  useEffect(() => {
+    if (verifyState.success) {
+      toast.success("Pickup confirmed", {
+        description: "The handover is recorded as collected.",
+      });
+    } else if (verifyState.error) {
+      toast.error("Pickup not confirmed", {
+        description: verifyState.error,
+      });
+    }
+  }, [verifyState]);
+
+  // Polls for the code the partner generates in their own session.
+  useEffect(() => {
+    if (!waiting) return;
+    const id = setInterval(() => router.refresh(), 10_000);
+    return () => clearInterval(id);
+  }, [waiting, router]);
+
+  const showCode = () => {
+    setCodeOpen(true);
+    if (credential || loading) return;
     setLoading(true);
     setError("");
     getPickupCredentialAction(request.id)
@@ -56,107 +83,98 @@ export function PickupCredentialCard({
       .finally(() => setLoading(false));
   };
 
-  if (request.status === "cancelled") {
-    return (
-      <AnimateIn>
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 text-destructive">
-              <XCircle className="size-5 shrink-0" />
-              <p className="font-medium text-sm">Reservation cancelled — pickup code is no longer valid.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimateIn>
-    );
-  }
-
-  if (request.status === "completed") {
-    return (
-      <AnimateIn>
-        <Card className="border-success/20 bg-success/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3 text-success">
-              <CheckCircle2 className="size-5 shrink-0" />
-              <p className="font-medium text-sm">Pickup completed — handover verified.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimateIn>
-    );
-  }
-
   // Only an active claim has a live pickup code.
   if (request.status !== "active") {
     return null;
   }
 
   return (
-    <AnimateIn>
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle>Pickup Verification</CardTitle>
-          <CardDescription>
-            {isDonor
-              ? "Enter the 6-digit verification code provided by the rescue partner to complete the handover."
-              : "Present this 6-digit verification code to the donor at the pickup location to complete the handover."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!isDonor ? (
-            <div className="space-y-4">
-              {loading ? (
-                <div className="animate-pulse rounded-xl bg-muted h-20 w-full" />
-              ) : credential ? (
-                <div className="space-y-4">
-                  <div className="tracking-widest text-3xl font-mono font-bold bg-muted px-6 py-4 rounded-xl border border-border text-center select-all">
-                    {credential.code}
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="size-4" />
-                    <span>Expires {dayjs(credential.expiresAt).format("MMM D, h:mm a")}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {error && (
-                    <div className="rounded-md bg-destructive/15 p-4 text-sm text-destructive">
-                      {error}
-                    </div>
-                  )}
-                  <Button onClick={handleGenerate} className="w-full">
-                    {error ? "Retry Generation" : "Generate Pickup Code"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
+    <>
+      {isDonor ? (
+        waiting ? (
+          <Button size="sm" variant="outline" disabled>
+            Waiting for partner&apos;s code
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => setVerifyOpen(true)}>
+            Enter pickup code
+          </Button>
+        )
+      ) : (
+        <Button size="sm" onClick={showCode}>
+          {request.codeGeneratedBy ? "Show pickup code" : "Generate pickup code"}
+        </Button>
+      )}
+
+      {isDonor ? (
+        <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Confirm pickup</DialogTitle>
+              <DialogDescription>
+                Enter the rescue partner&apos;s code.
+              </DialogDescription>
+            </DialogHeader>
             <form action={verifyAction} className="space-y-4">
               <input type="hidden" name="requestId" value={request.id} />
-              <div className="space-y-2">
-                <Label htmlFor="verification-code" className="sr-only">
-                  6-Digit Verification Code
-                </Label>
-                <Input
-                  id="verification-code"
-                  name="code"
-                  placeholder="e.g. 123456"
-                  maxLength={6}
-                  className="text-center text-2xl tracking-widest font-mono h-14"
-                  required
-                />
-              </div>
+              <OtpInput name="code" />
               {verifyState.error && (
                 <p className="text-sm text-destructive">{verifyState.error}</p>
               )}
               {verifyState.success && (
                 <p className="text-sm text-success">Verification successful.</p>
               )}
-              <SubmitButton className="w-full">Verify & Complete Handover</SubmitButton>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setVerifyOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <SubmitButton />
+              </div>
             </form>
-          )}
-        </CardContent>
-      </Card>
-    </AnimateIn>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Dialog open={codeOpen} onOpenChange={setCodeOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Your pickup code</DialogTitle>
+              <DialogDescription>
+                Present this to the donor at the pickup location.
+              </DialogDescription>
+            </DialogHeader>
+            {loading ? (
+              <div className="h-20 w-full animate-pulse rounded-xl bg-muted" />
+            ) : credential ? (
+              <div className="space-y-4">
+                <div className="select-all rounded-xl border border-border px-6 py-4 text-center font-mono text-3xl font-bold tracking-widest">
+                  {credential.code}
+                </div>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="size-4" />
+                  <span>
+                    Expires {dayjs(credential.expiresAt).format("MMM D, h:mm a")}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-destructive/15 p-4 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+                <Button onClick={showCode} className="w-full">
+                  {error ? "Retry Generation" : "Generate Pickup Code"}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
