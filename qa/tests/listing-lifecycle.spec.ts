@@ -187,7 +187,12 @@ test.describe.serial('Listing claim lifecycle', () => {
       .first();
     await expect(request.getByText('Active')).toBeVisible();
 
-    await request.getByRole('button', { name: 'Cancel' }).click();
+    // Opens a confirmation dialog first; the real submit lives inside it.
+    await request.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Cancel claim' })
+      .click();
 
     await expect(request.getByText('Cancelled')).toBeVisible({ timeout: 10_000 });
   });

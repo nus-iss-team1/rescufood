@@ -12,6 +12,7 @@ import {
   type ListingFormState,
 } from "@/app/listings/actions";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
+import { toast } from "@rescufood/ui/components/sonner";
 import { Input } from "@rescufood/ui/components/input";
 import { DateTimeField } from "@/components/listings/date-time-field";
 import { Label } from "@rescufood/ui/components/label";
@@ -128,6 +129,16 @@ export function CreateListingForm() {
       }
     };
   }, [imagePreview]);
+
+  useEffect(() => {
+    if (state.publishedId) {
+      toast.success(
+        state.status === "available" ? "Listing published" : "Draft saved",
+      );
+    } else if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   const handleSubmit = (formData: FormData) => {
     if (listingImage) {

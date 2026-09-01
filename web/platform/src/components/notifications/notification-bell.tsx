@@ -228,7 +228,11 @@ export function NotificationBell() {
           </button>
         }
       />
-      <PopoverContent align="end" sideOffset={8} className="w-80 gap-0 p-0">
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-80 max-w-[calc(100vw-2rem)] gap-0 p-0 sm:w-96 lg:w-[28rem]"
+      >
         <div className="flex items-center justify-between px-3.5 py-2.5">
           <span className="text-sm font-medium">Notifications</span>
           {items.length > 0 && (
@@ -259,7 +263,7 @@ export function NotificationBell() {
             </div>
           )}
         </div>
-        <div className="max-h-96 overflow-y-auto border-t border-border">
+        <div className="max-h-[min(24rem,60dvh)] overflow-y-auto border-t border-border sm:max-h-[min(32rem,70dvh)]">
           {feed === null || (busy && items.length === 0) ? (
             <p className="px-3.5 py-8 text-center text-sm text-muted-foreground">
               Loading…

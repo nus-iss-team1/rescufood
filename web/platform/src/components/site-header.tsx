@@ -1,12 +1,12 @@
 import Link from "next/link";
+import { House, LogOut, Settings } from "lucide-react";
 
 import { auth, authConfigured } from "@/auth";
 import { SignOutButton } from "@/components/auth/sign-out-dialog";
-import { HeaderMenu } from "@/components/header-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navItemClass =
-  "inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted";
+  "inline-flex size-9 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export async function SiteHeader() {
   const session = authConfigured ? await auth() : null;
@@ -22,25 +22,37 @@ export async function SiteHeader() {
         </Link>
 
         {session?.user ? (
-          <div className="flex items-center gap-1">
+          <nav className="flex items-center gap-1">
+            <a
+              href="/dashboard"
+              className={navItemClass}
+              aria-label="Home"
+              title="Home"
+            >
+              <House className="size-[18px]" />
+            </a>
             <NotificationBell />
-            {/* Desktop: navigation rendered directly in the bar */}
-            <nav className="hidden items-center gap-1 md:flex">
-              <a href="/dashboard" className={navItemClass}>
-                Home
-              </a>
-              <a href="/settings" className={navItemClass}>
-                Settings
-              </a>
-              <SignOutButton className={navItemClass} />
-            </nav>
-            {/* Small screens: hamburger opens the drawer */}
-            <div className="md:hidden">
-              <HeaderMenu />
-            </div>
-          </div>
+            <a
+              href="/settings"
+              className={navItemClass}
+              aria-label="Settings"
+              title="Settings"
+            >
+              <Settings className="size-[18px]" />
+            </a>
+            <SignOutButton
+              className={navItemClass}
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut className="size-[18px]" />
+            </SignOutButton>
+          </nav>
         ) : (
-          <Link href="/login" className={navItemClass}>
+          <Link
+            href="/login"
+            className="inline-flex h-9 items-center rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
             Sign in
           </Link>
         )}

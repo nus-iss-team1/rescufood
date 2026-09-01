@@ -106,6 +106,12 @@ function Hero({ org }: { org: Org }) {
             >
               Your listings
             </Link>
+            <Link
+              href="/requests"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Claims on your listings
+            </Link>
           </>
         ) : (
           <>

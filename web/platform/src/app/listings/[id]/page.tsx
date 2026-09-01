@@ -3,13 +3,19 @@ import { forbidden, notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getMe, type Me } from "@/lib/profile";
-import { getListing, ListingsApiError, type Listing } from "@/lib/listings";
+import {
+  getListing,
+  listRequests,
+  ListingsApiError,
+  type Listing,
+} from "@/lib/listings";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { EditListingForm } from "@/components/listings/edit-listing-form";
 import { Badge } from "@rescufood/ui/components/badge";
+import { buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
   CardContent,
@@ -18,6 +24,7 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { listingStatusVariant } from "@/lib/listing-labels";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "View / Edit Listing — RescuFood",
@@ -118,6 +125,19 @@ export default async function ListingDetailPage({
     forbidden();
   }
 
+  // Donor-side entry to the pickup flow: the claim against this listing.
+  let activeRequestId: string | null = null;
+  try {
+    const page = await listRequests(session.idToken!, {
+      listingId: listing.id,
+      status: "active",
+      limit: 1,
+    });
+    activeRequestId = page.items[0]?.id ?? null;
+  } catch {
+    activeRequestId = null;
+  }
+
   return (
     <PageShell>
       <AnimateIn className="flex flex-col gap-6">
@@ -138,6 +158,23 @@ export default async function ListingDetailPage({
             { label: listing.description || "Listing details" },
           ]}
         />
+
+        {activeRequestId && (
+          <div
+            data-animate="field"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 p-4 text-sm"
+          >
+            <span className="text-muted-foreground">
+              A rescue partner has claimed this listing.
+            </span>
+            <Link
+              href={`/requests/${activeRequestId}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              View claim
+            </Link>
+          </div>
+        )}
 
         <Card data-animate="field">
           <CardHeader>
