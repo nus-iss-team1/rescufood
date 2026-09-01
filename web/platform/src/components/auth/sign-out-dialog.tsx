@@ -45,13 +45,22 @@ export function SignOutConfirm({
 }
 
 /** Trigger that owns its own confirmation dialog. */
-export function SignOutButton({ className }: { className?: string }) {
+export function SignOutButton({
+  className,
+  children = "Sign out",
+  ...props
+}: React.ComponentProps<"button">) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
-        Sign out
+      <button
+        {...props}
+        type="button"
+        className={className}
+        onClick={() => setOpen(true)}
+      >
+        {children}
       </button>
       <SignOutConfirm open={open} onOpenChange={setOpen} />
     </>
