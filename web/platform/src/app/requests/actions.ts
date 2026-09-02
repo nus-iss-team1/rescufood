@@ -7,9 +7,11 @@ import {
   createRequest,
   decideRequest,
   generatePickupCode,
+  lookupPickupCode,
   verifyPickupCode,
   ListingsApiError,
   type PickupCode,
+  type PickupCodeMatch,
 } from "@/lib/listings";
 
 export type RequestFormState = {
@@ -102,6 +104,23 @@ export async function getPickupCredentialAction(
   try {
     const data = await generatePickupCode(token, requestId, regenerate);
     revalidatePath(`/requests/${requestId}`);
+    return { data };
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+}
+
+export async function lookupPickupCodeAction(
+  code: string,
+): Promise<{ data?: PickupCodeMatch; error?: string }> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code." };
+
+  try {
+    const data = await lookupPickupCode(token, code);
     return { data };
   } catch (err) {
     if (err instanceof ListingsApiError) return { error: err.message };

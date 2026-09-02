@@ -450,6 +450,44 @@ export class RequestsService {
   // error so timing leaks nothing. MAX_PICKUP_CODE_ATTEMPTS wrong guesses
   // void the code - the rescue partner then generates a new one, bounding
   // online guessing of the 6-digit space.
+  // Resolves a pickup code to the claim it belongs to, without consuming it.
+  // Scoped to the caller's own listings.
+  async lookupByPickupCode(
+    code: string,
+    user: AuthenticatedUser,
+  ): Promise<{
+    requestId: string;
+    listingDescription: string | null;
+    requestedQuantity: string;
+    unit: string | null;
+  }> {
+    if (!user.orgId) {
+      throw new NotFoundException('no claim matches that code');
+    }
+
+    const candidates =
+      await this.requestsRepository.findActiveWithLiveCodeForDonor(
+        user.orgId,
+        new Date(),
+      );
+    const matches = candidates.filter(
+      (c) => c.pickupCodeHash && pickupCodeMatches(code, c.pickupCodeHash),
+    );
+
+    // Codes are not unique across rows; an ambiguous match is a failure.
+    if (matches.length !== 1) {
+      throw new NotFoundException('no claim matches that code');
+    }
+
+    const [match] = matches;
+    return {
+      requestId: match.id,
+      listingDescription: match.listingDescription,
+      requestedQuantity: match.requestedQuantity,
+      unit: match.listingUnit,
+    };
+  }
+
   async verifyPickupCode(
     id: string,
     dto: VerifyPickupCodeDto,

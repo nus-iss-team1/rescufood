@@ -149,6 +149,41 @@ export class RequestsRepository {
     return listing;
   }
 
+  // Live-code claims on the caller's own listings - the code-only lookup's
+  // candidate set.
+  async findActiveWithLiveCodeForDonor(
+    donorOrgId: string,
+    now: Date,
+  ): Promise<
+    {
+      id: string;
+      pickupCodeHash: string | null;
+      requestedQuantity: string;
+      listingDescription: string | null;
+      listingUnit: string | null;
+    }[]
+  > {
+    return this.db
+      .select({
+        id: requests.id,
+        pickupCodeHash: requests.pickupCodeHash,
+        requestedQuantity: requests.requestedQuantity,
+        listingDescription: listings.description,
+        listingUnit: listings.unit,
+      })
+      .from(requests)
+      .innerJoin(listings, eq(requests.listingId, listings.id))
+      .where(
+        and(
+          eq(listings.donorOrgId, donorOrgId),
+          isNull(listings.deletedAt),
+          eq(requests.status, 'active'),
+          isNotNull(requests.pickupCodeHash),
+          gt(requests.codeExpiresAt, now),
+        ),
+      );
+  }
+
   // Contact details for the given org ids, for addressing notifications.
   async findOrgContacts(ids: string[]): Promise<OrgContact[]> {
     if (ids.length === 0) return [];

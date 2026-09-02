@@ -26,6 +26,7 @@ export {
   type ListingsApi,
   type Paginated,
   type PickupCode,
+  type PickupCodeMatch,
   type RequestDecision,
   type RequestDecisionInput,
   type RequestQuery,

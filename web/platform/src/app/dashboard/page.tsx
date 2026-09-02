@@ -23,6 +23,7 @@ import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
+import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
 import { listRequests, type ListingRequest } from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
@@ -106,12 +107,7 @@ function Hero({ org }: { org: Org }) {
             >
               Your listings
             </Link>
-            <Link
-              href="/requests"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              Claims on your listings
-            </Link>
+            <VerifyClaimButton />
           </>
         ) : (
           <>

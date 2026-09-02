@@ -12,6 +12,7 @@ import {
   type NewRequest,
   type Paginated,
   type PickupCode,
+  type PickupCodeMatch,
   type RequestDecisionInput,
   type RequestQuery,
   type VerifyPickup,
@@ -46,6 +47,7 @@ export type {
   NewRequest,
   Paginated,
   PickupCode,
+  PickupCodeMatch,
   RequestDecisionInput,
   RequestQuery,
   VerifyPickup,
@@ -118,6 +120,13 @@ export function generatePickupCode(
   regenerate = false,
 ): Promise<PickupCode> {
   return client(idToken).generatePickupCode(id, regenerate);
+}
+
+export function lookupPickupCode(
+  idToken: string,
+  code: string,
+): Promise<PickupCodeMatch> {
+  return client(idToken).lookupPickupCode(code);
 }
 
 export function verifyPickupCode(
