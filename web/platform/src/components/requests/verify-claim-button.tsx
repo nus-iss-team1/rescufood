@@ -4,9 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { PickupCodeMatch } from "@rescufood/listings-sdk";
-import { lookupPickupCodeAction } from "@/app/requests/actions";
+import {
+  lookupPickupCodeAction,
+  verifyPickupCodeAction,
+} from "@/app/requests/actions";
 import { quantity } from "@/lib/listing-labels";
 import { Button } from "@rescufood/ui/components/button";
+import { toast } from "@rescufood/ui/components/sonner";
 import {
   Dialog,
   DialogContent,
@@ -16,35 +20,63 @@ import {
 } from "@rescufood/ui/components/dialog";
 import { OtpInput } from "./otp-input";
 
-/** Resolves a pickup code to its claim, then opens it once confirmed. */
+/** Resolves a pickup code to its claim and completes the pickup. */
 export function VerifyClaimButton({ className }: { className?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [match, setMatch] = useState<PickupCodeMatch | null>(null);
+  const [code, setCode] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   const reset = (next: boolean) => {
     setOpen(next);
     if (!next) {
       setMatch(null);
+      setCode("");
       setError("");
     }
   };
 
   const lookup = (formData: FormData) => {
+    const entered = String(formData.get("code") ?? "");
     setChecking(true);
     setError("");
-    lookupPickupCodeAction(String(formData.get("code") ?? ""))
+    lookupPickupCodeAction(entered)
       .then((res) => {
         if (res.error) {
           setError(res.error);
         } else if (res.data) {
+          setCode(entered);
           setMatch(res.data);
         }
       })
       .catch(() => setError("Could not check that code."))
       .finally(() => setChecking(false));
+  };
+
+  const confirm = () => {
+    if (!match) return;
+    setConfirming(true);
+    setError("");
+    const formData = new FormData();
+    formData.set("requestId", match.requestId);
+    formData.set("code", code);
+    verifyPickupCodeAction({}, formData)
+      .then((res) => {
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
+        toast.success("Pickup confirmed", {
+          description: "The lot is marked as collected.",
+        });
+        reset(false);
+        router.push(`/requests/${match.requestId}`);
+      })
+      .catch(() => setError("Could not confirm the pickup."))
+      .finally(() => setConfirming(false));
   };
 
   return (
@@ -62,17 +94,16 @@ export function VerifyClaimButton({ className }: { className?: string }) {
                 <DialogDescription>
                   {match.listingDescription ?? "This lot"} —{" "}
                   {quantity(match.requestedQuantity, match.unit ?? "").trim()}{" "}
-                  claimed. Opening the claim lets you confirm the handover.
+                  claimed. Confirming records the handover as collected.
                 </DialogDescription>
               </DialogHeader>
+              {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button variant="outline" onClick={() => reset(false)}>
                   Not yet
                 </Button>
-                <Button
-                  onClick={() => router.push(`/requests/${match.requestId}`)}
-                >
-                  Open claim
+                <Button onClick={confirm} disabled={confirming}>
+                  {confirming ? "Confirming..." : "Confirm pickup"}
                 </Button>
               </div>
             </>
