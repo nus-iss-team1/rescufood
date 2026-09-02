@@ -28,6 +28,7 @@ function makeRepository() {
     reopenListingAfterClaimEnded: jest.fn(),
     incrementPickupCodeAttempts: jest.fn(),
     markListingCollectedIfDone: jest.fn().mockResolvedValue(false),
+    findActiveWithLiveCodeForDonor: jest.fn().mockResolvedValue([]),
     findOrgContacts: jest.fn().mockResolvedValue([]),
     findUserContacts: jest.fn().mockResolvedValue([]),
   };
@@ -1443,6 +1444,104 @@ describe('RequestsService', () => {
       await expect(
         service.verifyPickupCode('request-1', { code }, admin),
       ).resolves.toMatchObject({ status: 'completed' });
+    });
+  });
+  describe('lookupByPickupCode', () => {
+    const donor: AuthenticatedUser = {
+      userId: 'user-1',
+      role: 'user',
+      orgId: 'donor-org',
+    };
+
+    function candidate(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'request-1',
+        pickupCodeHash: hashPickupCode('204921'),
+        requestedQuantity: '6.00',
+        listingDescription: 'Crate of bananas',
+        listingUnit: 'crates',
+        ...overrides,
+      };
+    }
+
+    it('resolves a live code to its claim', async () => {
+      const repository = makeRepository();
+      repository.findActiveWithLiveCodeForDonor.mockResolvedValue([
+        candidate(),
+      ]);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.lookupByPickupCode('204921', donor),
+      ).resolves.toEqual({
+        requestId: 'request-1',
+        listingDescription: 'Crate of bananas',
+        requestedQuantity: '6.00',
+        unit: 'crates',
+      });
+    });
+
+    it('scopes the candidate set to the caller org', async () => {
+      const repository = makeRepository();
+      repository.findActiveWithLiveCodeForDonor.mockResolvedValue([
+        candidate(),
+      ]);
+      const { service } = makeService(repository);
+
+      await service.lookupByPickupCode('204921', donor);
+
+      expect(repository.findActiveWithLiveCodeForDonor).toHaveBeenCalledWith(
+        'donor-org',
+        expect.any(Date),
+      );
+    });
+
+    it('rejects a caller with no organisation', async () => {
+      const repository = makeRepository();
+      const { service } = makeService(repository);
+
+      await expect(
+        service.lookupByPickupCode('204921', { ...donor, orgId: undefined }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.findActiveWithLiveCodeForDonor).not.toHaveBeenCalled();
+    });
+
+    it('rejects a code that matches nothing', async () => {
+      const repository = makeRepository();
+      repository.findActiveWithLiveCodeForDonor.mockResolvedValue([
+        candidate(),
+      ]);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.lookupByPickupCode('999999', donor),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('rejects an ambiguous match rather than guessing', async () => {
+      const repository = makeRepository();
+      repository.findActiveWithLiveCodeForDonor.mockResolvedValue([
+        candidate(),
+        candidate({ id: 'request-2' }),
+      ]);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.lookupByPickupCode('204921', donor),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('leaves the code attempt count untouched', async () => {
+      const repository = makeRepository();
+      repository.findActiveWithLiveCodeForDonor.mockResolvedValue([
+        candidate(),
+      ]);
+      const { service } = makeService(repository);
+
+      await expect(
+        service.lookupByPickupCode('999999', donor),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.incrementPickupCodeAttempts).not.toHaveBeenCalled();
     });
   });
 });

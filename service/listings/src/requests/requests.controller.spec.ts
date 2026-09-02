@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import type { AuthenticatedUser } from '../common/types/express';
 import { RequestsController } from './requests.controller';
 import { RequestsService } from './requests.service';
+import { OrgMembershipGuard } from '../auth/org-membership.guard';
 
 // requests.controller.ts pulls in JwtAuthGuard, which imports the `jose`
 // package - real ESM Jest can't parse under this project's ts-jest config.
@@ -20,6 +21,7 @@ function makeService() {
     findOne: jest.fn(),
     decide: jest.fn(),
     generatePickupCode: jest.fn(),
+    lookupByPickupCode: jest.fn(),
     verifyPickupCode: jest.fn(),
   };
 }
@@ -173,6 +175,30 @@ describe('RequestsController', () => {
         user,
       );
       expect(result).toEqual({ id: 'request-1', status: 'completed' });
+    });
+  });
+  describe('lookupByPickupCode', () => {
+    it('passes the code and caller to the service', async () => {
+      const service = makeService();
+      service.lookupByPickupCode.mockResolvedValue({ requestId: 'request-1' });
+      const { controller } = makeController(service);
+
+      await controller.lookupByPickupCode({ code: '204921' }, makeRequest());
+
+      expect(service.lookupByPickupCode).toHaveBeenCalledWith('204921', user);
+    });
+
+    // The guard resolves the caller's profile onto request.user, including the
+    // orgId the lookup scopes by. Without it every lookup reports no match.
+    it('is guarded by OrgMembershipGuard', () => {
+      const handler = Object.getOwnPropertyDescriptor(
+        RequestsController.prototype,
+        'lookupByPickupCode',
+      )?.value as object;
+      const guards = (Reflect.getMetadata('__guards__', handler) ??
+        []) as unknown[];
+
+      expect(guards).toContain(OrgMembershipGuard);
     });
   });
 });
