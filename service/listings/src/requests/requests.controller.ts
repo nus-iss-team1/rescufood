@@ -237,6 +237,7 @@ export class RequestsController {
   @ApiResponse({ status: 404, description: 'No claim matches that code.' })
   @ApiResponse({ status: 429, description: 'Too many lookups.' })
   @Post('lookup-code')
+  @UseGuards(OrgMembershipGuard)
   @lookupThrottle
   lookupByPickupCode(@Body() dto: LookupPickupCodeDto, @Req() req: Request) {
     this.logger.log({ userId: req.user!.userId }, 'looking up pickup code');
