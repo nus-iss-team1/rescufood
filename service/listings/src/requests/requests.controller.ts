@@ -34,6 +34,7 @@ import { PickupCodeResponseDto } from './dto/pickup-code-response.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { RequestResponseDto } from './dto/request-response.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
+import { LookupPickupCodeDto } from './dto/lookup-pickup-code.dto';
 import { VerifyPickupCodeDto } from './dto/verify-pickup-code.dto';
 import { RequestsService } from './requests.service';
 
@@ -47,6 +48,10 @@ const verifyThrottle = Throttle({ default: { limit: 10, ttl: 60_000 } });
 // Bounds how fast codes can be minted - defense in depth for the manual
 // regenerate option so it can't be scripted into churning codes.
 const generateThrottle = Throttle({ default: { limit: 6, ttl: 60_000 } });
+
+// Tighter than verifyThrottle: a code-only lookup has no request id to
+// narrow a guess.
+const lookupThrottle = Throttle({ default: { limit: 5, ttl: 60_000 } });
 
 @ApiTags('requests')
 @ApiBearerAuth()
@@ -223,6 +228,21 @@ export class RequestsController {
     status: 409,
     description: 'Claim is no longer active (concurrently modified).',
   })
+  @ApiOperation({
+    summary: 'Resolve a pickup code to the claim it belongs to',
+    description:
+      "Matches against live codes on the caller's own listings. Does not " +
+      'consume the code or count against its attempt limit.',
+  })
+  @ApiResponse({ status: 404, description: 'No claim matches that code.' })
+  @ApiResponse({ status: 429, description: 'Too many lookups.' })
+  @Post('lookup-code')
+  @lookupThrottle
+  lookupByPickupCode(@Body() dto: LookupPickupCodeDto, @Req() req: Request) {
+    this.logger.log({ userId: req.user!.userId }, 'looking up pickup code');
+    return this.requestsService.lookupByPickupCode(dto.code, req.user!);
+  }
+
   @ApiResponse({
     status: 429,
     description: 'Too many verify attempts on this endpoint.',

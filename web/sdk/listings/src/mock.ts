@@ -15,6 +15,7 @@ import type {
   NewRequest,
   Paginated,
   PickupCode,
+  PickupCodeMatch,
   RequestDecisionInput,
   RequestQuery,
   RequestStatus,
@@ -304,6 +305,28 @@ export class MockListingsClient implements ListingsApi {
       code: "123456",
       expiresAt,
       regenerateAvailableAt: new Date(generatedAtMs + 60_000).toISOString(),
+    };
+  }
+
+  async lookupPickupCode(code: string): Promise<PickupCodeMatch> {
+    if (code !== "123456") {
+      throw new ApiError(404, "no claim matches that code");
+    }
+    const match = this.requests.find(
+      (r) =>
+        r.status === "active" &&
+        r.codeExpiresAt != null &&
+        new Date(r.codeExpiresAt) > new Date()
+    );
+    if (!match) {
+      throw new ApiError(404, "no claim matches that code");
+    }
+    const listing = this.listings.find((l) => l.id === match.listingId);
+    return {
+      requestId: match.id,
+      listingDescription: listing?.description ?? null,
+      requestedQuantity: match.requestedQuantity,
+      unit: listing?.unit ?? null,
     };
   }
 

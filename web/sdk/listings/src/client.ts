@@ -8,6 +8,7 @@ import type {
   NewRequest,
   Paginated,
   PickupCode,
+  PickupCodeMatch,
   RequestDecisionInput,
   RequestQuery,
   VerifyPickup,
@@ -163,6 +164,11 @@ export class ListingsClient implements ListingsApi {
   generatePickupCode(id: string, regenerate = false): Promise<PickupCode> {
     const qs = regenerate ? "?regenerate=true" : "";
     return this.send("POST", `/requests/${id}/pickup-code${qs}`, {});
+  }
+
+  /** The donor only: resolves a code to its claim without consuming it. */
+  lookupPickupCode(code: string): Promise<PickupCodeMatch> {
+    return this.send("POST", "/requests/lookup-code", { code });
   }
 
   /** The donor only. */

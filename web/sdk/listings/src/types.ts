@@ -197,6 +197,14 @@ export interface PickupCode {
   regenerateAvailableAt: string;
 }
 
+/** What a pickup code resolves to, without consuming it. */
+export interface PickupCodeMatch {
+  requestId: string;
+  listingDescription: string | null;
+  requestedQuantity: string;
+  unit: string | null;
+}
+
 export interface VerifyPickup {
   code: string;
   /** Defaults to the full requested quantity when omitted. */
@@ -222,5 +230,6 @@ export interface ListingsApi {
     decision: RequestDecisionInput
   ): Promise<ListingRequest>;
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
+  lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
 }
