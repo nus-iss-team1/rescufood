@@ -127,6 +127,18 @@ npm run db:generate   # generate a migration from schema changes
 npm run db:migrate    # apply migrations (local DATABASE_URL)
 ```
 
+### Integration tests
+
+`npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
+runs the repositories and the HTTP layer against a real Postgres that
+[testcontainers](https://node.testcontainers.org/) starts and throws away,
+so it needs a working Docker daemon. `test/integration/support/migrate.ts`
+applies `service/profile`'s migrations and then this service's, directly as
+SQL — no Go toolchain or sibling `node_modules` required. The JWT guard is
+stubbed (a header carries the Cognito sub); the org-membership guards,
+services and repositories all run for real. CI runs this as a separate
+`integration` job in [`listings-ci.yml`](../../.github/workflows/listings-ci.yml).
+
 Against the deployed RDS instance, use
 [`scripts/migrate-rds.sh`](scripts/migrate-rds.sh) instead — it tunnels
 through SSM to reach the private DB and runs migrations from a developer
@@ -144,6 +156,7 @@ folder, since migrations never run from inside the container.
 | `npm run lint` | ESLint (`--fix`) |
 | `npm test` | Unit tests |
 | `npm run test:e2e` | End-to-end tests |
+| `npm run test:integration` | Repository + HTTP tests against a throwaway Postgres (needs Docker) |
 
 ## Docker
 
