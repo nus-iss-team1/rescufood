@@ -5,6 +5,8 @@ on:
     branches: [develop]
     paths:
       - "service/listings/**"
+      # The integration suite applies these too.
+      - "service/profile/db/migrations/**"
       - ".github/workflows/listings-ci.yml"
       - ".github/workflows/reusable-sast.yml"
   workflow_dispatch:
@@ -63,3 +65,33 @@ jobs:
       semgrep-configs: p/default p/secrets p/nodejs
       # Flip to true once the existing findings are triaged.
       fail-on-findings: false
+
+  integration:
+    name: Integration test
+    # Gated on `test`: skip the container spin-up if lint/unit/build already failed.
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: service/listings
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: service/listings/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Starts its own Postgres via testcontainers (Docker is on the runner).
+      - name: Integration test
+        run: npm run test:integration
