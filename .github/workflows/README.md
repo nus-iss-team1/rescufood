@@ -7,7 +7,7 @@ a post-deploy e2e run.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, SAST, DAST (ZAP baseline) |
-| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST |
+| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres, `go test -tags=integration ./integration/...`) |
 | `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations) |
 | `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations) |
 | `platform-build.yml` | Push to `develop` touching `web/**` | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
