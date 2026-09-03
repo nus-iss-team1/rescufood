@@ -1,11 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { Pool } from 'pg';
 
-// File global-setup writes the container's connection string to.
-export const DATABASE_URL_FILE = join(tmpdir(), 'listings-itest-db-url');
+// Project-local file global-setup writes the container's connection string to.
+export const DATABASE_URL_FILE = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'node_modules',
+  '.cache',
+  'listings-integration-db-url',
+);
 
 // globalThis key holding the container handle for teardown.
 export const CONTAINER_GLOBAL = '__listingsIntegrationPg__';
