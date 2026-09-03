@@ -525,6 +525,25 @@ describe('RequestsService', () => {
       expect(idempotency.release).toHaveBeenCalledWith('slot-1');
     });
 
+    it('409s when the violation is wrapped by drizzle', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue(availableListing);
+      repository.reserveListingForClaim.mockResolvedValue(reservedListing);
+      repository.create.mockRejectedValue(
+        Object.assign(new Error('Failed query'), {
+          cause: {
+            code: '23505',
+            constraint: 'requests_active_claim_per_listing_uq',
+          },
+        }),
+      );
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
     it('rethrows an unexpected unique violation', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);

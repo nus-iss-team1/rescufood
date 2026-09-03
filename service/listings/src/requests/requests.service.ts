@@ -15,7 +15,7 @@ import { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import {
-  isPgError,
+  pgError,
   PG_FOREIGN_KEY_VIOLATION,
   PG_UNIQUE_VIOLATION,
 } from '../db/pg-errors';
@@ -214,8 +214,8 @@ export class RequestsService {
       });
       if (err instanceof ConflictException) throw err;
       if (
-        isPgError(err, PG_UNIQUE_VIOLATION) &&
-        err.constraint === ACTIVE_CLAIM_CONSTRAINT
+        pgError(err, PG_UNIQUE_VIOLATION)?.constraint ===
+        ACTIVE_CLAIM_CONSTRAINT
       ) {
         throw new ConflictException(
           `listing ${dto.listingId} has already been claimed`,
@@ -350,7 +350,7 @@ export class RequestsService {
       await this.notifyClaimEnded(existing, listing, dto, user);
       return result;
     } catch (err) {
-      if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
+      if (pgError(err, PG_FOREIGN_KEY_VIOLATION)) {
         throw new NotFoundException(`listing ${existing.listingId} not found`);
       }
       throw err;

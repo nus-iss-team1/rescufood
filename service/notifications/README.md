@@ -129,3 +129,19 @@ no in-app recipient and the email succeeded / is a permanent failure - bad
 JSON, failed validation, or a type with no email template). It's left for SQS
 to redeliver (`maxReceiveCount: 5` → DLQ) only on a transient failure of the
 primary path.
+
+## Testing
+
+| Command | What it does |
+|---|---|
+| `npm test` | Unit tests |
+| `npm run test:integration` | Repository, HTTP and `SqsConsumerService.process` tests against a throwaway Postgres (needs Docker) |
+
+`npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
+starts a real Postgres with [testcontainers](https://node.testcontainers.org/)
+and applies this service's migrations directly as SQL - the schema is
+self-contained, so no other service's migrations are needed. The JWT guard
+is stubbed (a header carries the Cognito sub); the repository, controller and
+SQS consumer run for real, the mailer is a spy. CI runs it as a separate
+`integration` job in
+[`notifications-ci.yml`](../../.github/workflows/notifications-ci.yml).
