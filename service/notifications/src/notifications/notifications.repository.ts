@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, isNull, lt, notInArray, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/db.module';
+import { pgError, PG_UNIQUE_VIOLATION } from '../db/pg-errors';
 import { notifications } from '../db/schema';
 import type {
   NotificationChannel,
   NotificationType,
 } from './notification-message.dto';
-
-const PG_UNIQUE_VIOLATION = '23505';
 
 // A recipient's in-app feed is capped at this many notifications. When a
 // newer one arrives, older ones past the cap are soft-deleted.
@@ -95,13 +94,7 @@ export class NotificationsRepository {
       });
       return 'created';
     } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        (error as { code?: string }).code === PG_UNIQUE_VIOLATION
-      ) {
-        return 'duplicate';
-      }
+      if (pgError(error, PG_UNIQUE_VIOLATION)) return 'duplicate';
       throw error;
     }
   }

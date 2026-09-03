@@ -561,6 +561,21 @@ describe('ListingsService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
+    it('translates a drizzle-wrapped check violation into a BadRequestException', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseListing);
+      repository.updateWithVersion.mockRejectedValue(
+        Object.assign(new Error('Failed query'), {
+          cause: { code: '23514', detail: 'quantity_non_negative' },
+        }),
+      );
+      const { service } = makeService(repository);
+
+      await expect(
+        service.update('listing-1', { version: 1 }, [], owner),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('deletes and inserts images inside the same transaction as the field update, then returns the resulting images', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing);

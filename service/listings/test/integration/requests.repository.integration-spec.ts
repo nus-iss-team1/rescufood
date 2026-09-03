@@ -11,6 +11,7 @@ import {
   type SeededUser,
 } from './support/db';
 import { createRepoContext, type RepoContext } from './support/repos';
+import { pgError, PG_UNIQUE_VIOLATION } from '../../src/db/pg-errors';
 
 let ctx: RepoContext;
 
@@ -83,6 +84,43 @@ describe('RequestsRepository (integration)', () => {
       await expect(
         insertActiveClaim(listing, b.org, b.user),
       ).rejects.toMatchObject({ code: '23505' });
+    });
+
+    it('surfaces the violation through pgError when drizzle wraps it', async () => {
+      const donor = await seedDonor();
+      const a = await seedRescuePartner();
+      const b = await seedRescuePartner();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+      });
+
+      await ctx.requests.create({
+        listingId: listing.id,
+        rescueOrgId: a.org.id,
+        claimedBy: a.user.id,
+        requestedQuantity: '10.00',
+        status: 'active',
+      });
+
+      let caught: unknown;
+      try {
+        await ctx.requests.create({
+          listingId: listing.id,
+          rescueOrgId: b.org.id,
+          claimedBy: b.user.id,
+          requestedQuantity: '10.00',
+          status: 'active',
+        });
+      } catch (err) {
+        caught = err;
+      }
+
+      // The raw error has no top-level code - it hangs off `cause`.
+      expect((caught as { code?: string }).code).toBeUndefined();
+      expect(pgError(caught, PG_UNIQUE_VIOLATION)?.constraint).toBe(
+        'requests_active_claim_per_listing_uq',
+      );
     });
 
     it('allows a new active claim once the previous one ended', async () => {

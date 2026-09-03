@@ -13,7 +13,7 @@ import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import {
-  isPgError,
+  pgError,
   PG_CHECK_VIOLATION,
   PG_FOREIGN_KEY_VIOLATION,
 } from '../db/pg-errors';
@@ -406,12 +406,13 @@ export class ListingsService {
       if (s3Keys.length > 0) {
         await this.listingImageUploadService.cleanupS3Keys(s3Keys);
       }
-      if (isPgError(err, PG_CHECK_VIOLATION)) {
+      const checkViolation = pgError(err, PG_CHECK_VIOLATION);
+      if (checkViolation) {
         throw new BadRequestException(
-          err.detail ?? 'listing violates a data constraint',
+          checkViolation.detail ?? 'listing violates a data constraint',
         );
       }
-      if (isPgError(err, PG_FOREIGN_KEY_VIOLATION)) {
+      if (pgError(err, PG_FOREIGN_KEY_VIOLATION)) {
         throw new NotFoundException(`listing ${id} not found`);
       }
       throw err;

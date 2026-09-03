@@ -21,4 +21,24 @@ describe('NotificationsRepository', () => {
     expect(insert).toHaveBeenCalledWith(notifications);
     expect(values).toHaveBeenCalledWith(entry);
   });
+
+  it('reads a duplicate from a drizzle-wrapped unique violation', async () => {
+    const wrapped = Object.assign(new Error('Failed query'), {
+      cause: { code: '23505' },
+    });
+    const values = jest.fn().mockRejectedValue(wrapped);
+    const insert = jest.fn().mockReturnValue({ values });
+    const db = { insert } as unknown as Database;
+
+    const repository = new NotificationsRepository(db);
+    await expect(
+      repository.createInApp({
+        recipientUserId: 'sub-1',
+        recipientEmail: 'a@b.co',
+        type: 'claim_created',
+        body: 'x',
+        payload: {},
+      }),
+    ).resolves.toBe('duplicate');
+  });
 });

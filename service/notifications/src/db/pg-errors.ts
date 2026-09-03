@@ -1,8 +1,5 @@
-// Postgres error codes repositories let bubble up untranslated - services
-// interpret them into domain-meaningful (and eventually HTTP) errors.
-// https://www.postgresql.org/docs/current/errcodes-appendix.html
-export const PG_CHECK_VIOLATION = '23514';
-export const PG_FOREIGN_KEY_VIOLATION = '23503';
+// Postgres error codes, and a helper to read them off an error drizzle has
+// wrapped. https://www.postgresql.org/docs/current/errcodes-appendix.html
 export const PG_UNIQUE_VIOLATION = '23505';
 
 export interface PgError {
