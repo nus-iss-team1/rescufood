@@ -7,9 +7,9 @@ a post-deploy e2e run.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, SAST, DAST (ZAP baseline) |
-| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres, `go test -tags=integration ./integration/...`) |
-| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations) |
-| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations) |
+| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres; runs unit + integration together for a combined coverage report in the job summary) |
+| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
+| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
 | `platform-build.yml` | Push to `develop` touching `web/**` | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
 | `profile-build.yml` | Push to `develop` touching `service/profile/**` | SAST → build & push `.../profile` → roll the `profile` ECS service |
 | `listings-build.yml` | Push to `develop` touching `service/listings/**` | SAST → build & push `.../listings` → roll the `listings` ECS service |
@@ -26,6 +26,16 @@ back. **CloudFormation is not touched** — infra stacks are deployed by hand
 
 Findings land in **Security → Code scanning** (SAST) and in the run's artifacts
 plus job summary (DAST).
+
+## Coverage
+
+Each backend service's `integration` job runs its unit and integration suites
+with coverage and posts a merged unit+integration table to the run's **job
+summary**. It is **report-only** — a drop is visible on the PR but does not
+fail the build. Node services merge the two Jest JSON reports via
+`scripts/coverage-summary.mjs`; profile runs `go test -tags=integration ./...`
+once so `-coverpkg` attributes store coverage from the `integration` package.
+To make it blocking, add a threshold check to that step.
 
 ## reusable-sast.yml
 
