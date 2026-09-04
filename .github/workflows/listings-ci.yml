@@ -92,14 +92,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Unit tests (coverage)
-        run: npm test -- --ci --coverage --coverageReporters=json --coverageDirectory="$PWD/coverage/unit"
-
-      # Starts its own Postgres via testcontainers (Docker is on the runner).
-      - name: Integration test (coverage)
-        run: npm run test:integration -- --coverage --coverageReporters=json --coverageDirectory="$PWD/coverage/integration"
-
-      # Report-only: merges both reports into the run's job summary, never fails.
-      - name: Coverage summary
-        if: always()
-        run: node scripts/coverage-summary.mjs coverage/unit/coverage-final.json coverage/integration/coverage-final.json >> "$GITHUB_STEP_SUMMARY"
+      # Runs the unit + integration suites (testcontainers starts its own
+      # Postgres) and writes a merged coverage table to the job summary.
+      # Report-only - it fails on a test failure, never on low coverage.
+      - name: Test & coverage
+        run: npm run test:coverage

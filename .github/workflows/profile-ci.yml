@@ -76,29 +76,10 @@ jobs:
       - name: Vet
         run: go vet -tags=integration ./integration/...
 
-      # `./...` with the tag runs the unit and integration tests together, so
-      # the profile counts store coverage from the integration package too.
-      # testcontainers starts its own Postgres (Docker is on the runner).
-      - name: Test (coverage)
-        run: go test -tags=integration -coverpkg=./internal/... -coverprofile=coverage.out ./...
-
-      # Report-only: writes the merged coverage to the run's job summary.
-      - name: Coverage summary
-        if: always()
-        run: |
-          func=$(go tool cover -func=coverage.out)
-          {
-            echo '### Coverage (unit + integration)'
-            echo
-            echo '| Package | % |'
-            echo '|---|---|'
-            echo "$func" | awk '
-              /^total:/ { next }
-              { pkg = $1; sub(/\/[^/]+\.go:.*/, "", pkg); sub(/.*\/profile\//, "", pkg); c[pkg] += $3 + 0; n[pkg]++ }
-              END { for (p in c) printf "| %s | %.1f%% |\n", p, c[p] / n[p] }' | sort
-            echo
-            echo "**Total:** $(echo "$func" | awk '/^total:/ { print $NF }')"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # Runs the unit + integration tests (testcontainers starts its own
+      # Postgres) and writes a coverage table to the job summary. Report-only.
+      - name: Test & coverage
+        run: bash scripts/coverage.sh
 
   sast:
     name: SAST

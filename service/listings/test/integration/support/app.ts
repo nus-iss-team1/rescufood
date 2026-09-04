@@ -45,12 +45,15 @@ export async function createTestApp(): Promise<TestApp> {
   const { AppModule } = await import('../../../src/app.module');
   const { JwtAuthGuard } = await import('../../../src/auth/jwt-auth.guard');
   const { PG_POOL } = await import('../../../src/db/db.module');
+  const { PARAMS_PROVIDER_TOKEN } = await import('nestjs-pino');
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideGuard(JwtAuthGuard)
     .useValue(jwtStub)
     .overrideGuard(ThrottlerGuard)
     .useValue({ canActivate: () => true })
+    .overrideProvider(PARAMS_PROVIDER_TOKEN)
+    .useValue({ pinoHttp: { level: 'silent' } })
     .compile();
 
   const app = moduleRef.createNestApplication({ logger: false });

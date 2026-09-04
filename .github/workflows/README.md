@@ -32,10 +32,17 @@ plus job summary (DAST).
 Each backend service's `integration` job runs its unit and integration suites
 with coverage and posts a merged unit+integration table to the run's **job
 summary**. It is **report-only** — a drop is visible on the PR but does not
-fail the build. Node services merge the two Jest JSON reports via
-`scripts/coverage-summary.mjs`; profile runs `go test -tags=integration ./...`
-once so `-coverpkg` attributes store coverage from the `integration` package.
-To make it blocking, add a threshold check to that step.
+fail the build.
+
+The same commands run locally (they need Docker):
+
+- `make coverage` — all three backend services
+- listings / notifications: `npm run test:coverage` (merges the two Jest JSON
+  reports via `scripts/coverage-summary.mjs`)
+- profile: `bash scripts/coverage.sh` (`go test -tags=integration ./...` once,
+  so `-coverpkg` attributes store coverage from the `integration` package)
+
+To make it blocking, add a threshold check to those scripts.
 
 ## reusable-sast.yml
 

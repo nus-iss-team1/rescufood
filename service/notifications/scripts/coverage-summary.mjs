@@ -1,10 +1,10 @@
-// Merges the unit and integration coverage JSON reports and prints a
-// Markdown summary (for $GITHUB_STEP_SUMMARY). Report-only - never exits
-// non-zero on low coverage.
+// Merges the unit and integration coverage JSON reports into a Markdown
+// table. Prints it to stdout and, in CI, appends it to the job summary.
+// Report-only - never exits non-zero on low coverage.
 //
 //   node scripts/coverage-summary.mjs <unit.json> <integration.json>
 
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import libCoverage from 'istanbul-lib-coverage';
 
 const [, , unitPath, intPath] = process.argv;
@@ -14,7 +14,7 @@ for (const path of [unitPath, intPath]) {
   try {
     map.merge(JSON.parse(readFileSync(path, 'utf8')));
   } catch (err) {
-    console.log(`> could not read ${path}: ${err.message}`);
+    console.error(`> could not read ${path}: ${err.message}`);
   }
 }
 
@@ -53,16 +53,24 @@ for (const f of files) {
 
 const pct = ([c, t]) => (t === 0 ? '100.0' : ((100 * c) / t).toFixed(1));
 
-console.log('### Coverage (unit + integration)\n');
-console.log('| Metric | % |');
-console.log('|---|---|');
+const lines = [
+  '### Coverage (unit + integration)',
+  '',
+  '| Metric | % |',
+  '|---|---|',
+];
 for (const k of ['statements', 'branches', 'functions', 'lines']) {
-  console.log(`| ${k} | ${pct(totals[k])}% |`);
+  lines.push(`| ${k} | ${pct(totals[k])}% |`);
 }
-console.log('\n<details><summary>By directory (statements)</summary>\n');
-console.log('| Directory | % |');
-console.log('|---|---|');
+lines.push('', '<details><summary>By directory (statements)</summary>', '');
+lines.push('| Directory | % |', '|---|---|');
 for (const [dir, acc] of [...byDir].sort()) {
-  console.log(`| ${dir} | ${pct(acc)}% |`);
+  lines.push(`| ${dir} | ${pct(acc)}% |`);
 }
-console.log('\n</details>');
+lines.push('', '</details>');
+
+const report = lines.join('\n');
+console.log(report);
+if (process.env.GITHUB_STEP_SUMMARY) {
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, report + '\n');
+}

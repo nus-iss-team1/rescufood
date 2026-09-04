@@ -19,6 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:integration": "jest --config ./test/jest-integration.json --runInBand",
+    "test:coverage": "jest --ci --silent --coverage --coverageReporters=json --coverageDirectory=../coverage/unit && jest --config ./test/jest-integration.json --runInBand --silent --coverage --coverageReporters=json --coverageDirectory=coverage/integration && node scripts/coverage-summary.mjs coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
     "docker:build": "docker build -t listing .",
     "docker:run": "docker run -p 3002:3002 --name listing-container listing",
     "db:generate": "drizzle-kit generate",

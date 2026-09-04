@@ -11,7 +11,7 @@ SERVICES ?= web-platform profile
 .DEFAULT_GOAL := help
 
 .PHONY: help dev preflight db db-down migrate run-profile run-listings \
-	run-platform run-admin test aws-status aws-pause aws-resume
+	run-platform run-admin test coverage aws-status aws-pause aws-resume
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -136,3 +136,8 @@ test: ## backend tests plus frontend type-checks and lint
 	cd web/ui && npm run check
 	cd web/platform && npx tsc --noEmit && npm run lint
 	cd web/admin-console && npm run build
+
+coverage: ## combined unit + integration coverage per backend service (needs docker)
+	cd service/profile && bash scripts/coverage.sh
+	cd service/listings && npm run test:coverage
+	cd service/notifications && npm run test:coverage
