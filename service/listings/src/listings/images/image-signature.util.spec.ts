@@ -20,7 +20,7 @@ describe('matchesDeclaredImageType', () => {
     expect(matchesDeclaredImageType(asFile('image/gif', JPEG))).toBe(false);
   });
 
-  it('rejects Object.prototype keys instead of invoking them', () => {
+  it('rejects Object.prototype keys', () => {
     for (const key of [
       'constructor',
       'toString',
