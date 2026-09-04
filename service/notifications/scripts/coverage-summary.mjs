@@ -1,76 +1,57 @@
-// Merges the unit and integration coverage JSON reports into a Markdown
-// table. Prints it to stdout and, in CI, appends it to the job summary.
-// Report-only - never exits non-zero on low coverage.
+// Merges the unit and integration coverage reports and prints the standard
+// Istanbul coverage table (the one `jest --coverage` shows). In CI it also
+// appends it to the job summary. Report-only - never exits non-zero.
 //
 //   node scripts/coverage-summary.mjs <unit.json> <integration.json>
 
 import { appendFileSync, readFileSync } from 'node:fs';
 import libCoverage from 'istanbul-lib-coverage';
+import { createContext } from 'istanbul-lib-report';
+import reports from 'istanbul-reports';
 
 const [, , unitPath, intPath] = process.argv;
 
-const map = libCoverage.createCoverageMap({});
+const merged = libCoverage.createCoverageMap({});
 for (const path of [unitPath, intPath]) {
   try {
-    map.merge(JSON.parse(readFileSync(path, 'utf8')));
+    merged.merge(JSON.parse(readFileSync(path, 'utf8')));
   } catch (err) {
     console.error(`> could not read ${path}: ${err.message}`);
   }
 }
 
-const files = map
-  .files()
-  .filter(
-    (f) =>
-      !f.includes('.spec.') &&
-      !/[\\/]test[\\/]/.test(f) &&
-      !f.endsWith('.d.ts'),
-  );
-
-const totals = {
-  statements: [0, 0],
-  branches: [0, 0],
-  functions: [0, 0],
-  lines: [0, 0],
-};
-const byDir = new Map();
-
-for (const f of files) {
-  const s = map.fileCoverageFor(f).toSummary().data;
-  for (const k of Object.keys(totals)) {
-    totals[k][0] += s[k].covered;
-    totals[k][1] += s[k].total;
+// Keep the source tree only - no specs, test helpers or type stubs.
+const map = libCoverage.createCoverageMap({});
+for (const file of merged.files()) {
+  if (
+    !file.includes('.spec.') &&
+    !/[\\/]test[\\/]/.test(file) &&
+    !file.endsWith('.d.ts')
+  ) {
+    map.addFileCoverage(merged.fileCoverageFor(file));
   }
-  const rel = (f.split(/[\\/]src[\\/]/)[1] ?? f).replace(/\\/g, '/');
-  const dir = rel.includes('/')
-    ? 'src/' + rel.split('/').slice(0, -1).join('/')
-    : 'src';
-  const acc = byDir.get(dir) ?? [0, 0];
-  acc[0] += s.statements.covered;
-  acc[1] += s.statements.total;
-  byDir.set(dir, acc);
 }
 
-const pct = ([c, t]) => (t === 0 ? '100.0' : ((100 * c) / t).toFixed(1));
-
-const lines = [
-  '### Coverage (unit + integration)',
-  '',
-  '| Metric | % |',
-  '|---|---|',
-];
-for (const k of ['statements', 'branches', 'functions', 'lines']) {
-  lines.push(`| ${k} | ${pct(totals[k])}% |`);
+// Render the text reporter to a string.
+let table = '';
+const restore = process.stdout.write.bind(process.stdout);
+process.stdout.write = (chunk) => {
+  table += chunk;
+  return true;
+};
+try {
+  reports
+    .create('text', { maxCols: 100 })
+    .execute(createContext({ coverageMap: map, dir: '.' }));
+} finally {
+  process.stdout.write = restore;
 }
-lines.push('', '<details><summary>By directory (statements)</summary>', '');
-lines.push('| Directory | % |', '|---|---|');
-for (const [dir, acc] of [...byDir].sort()) {
-  lines.push(`| ${dir} | ${pct(acc)}% |`);
-}
-lines.push('', '</details>');
 
-const report = lines.join('\n');
-console.log(report);
+process.stdout.write('\nCoverage (unit + integration)\n\n' + table + '\n');
+
 if (process.env.GITHUB_STEP_SUMMARY) {
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, report + '\n');
+  appendFileSync(
+    process.env.GITHUB_STEP_SUMMARY,
+    `### Coverage (unit + integration)\n\n\`\`\`\n${table}\`\`\`\n`,
+  );
 }

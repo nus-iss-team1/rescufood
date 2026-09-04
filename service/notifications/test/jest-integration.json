@@ -9,7 +9,7 @@
   "moduleNameMapper": {
     "^jose$": "<rootDir>/test/integration/support/jose-stub.ts"
   },
-  "setupFilesAfterEnv": ["<rootDir>/test/integration/support/silence-logs.ts"],
+  "setupFilesAfterEnv": ["<rootDir>/test/jest.setup.ts"],
   "globalSetup": "<rootDir>/test/integration/support/global-setup.ts",
   "globalTeardown": "<rootDir>/test/integration/support/global-teardown.ts",
   "testTimeout": 30000,

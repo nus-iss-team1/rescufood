@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 
-// The SUT logs handled failures (e.g. a mailer error the consumer records
-// and retries). Keep that out of the test output.
+// Several specs drive the SUT's error-handling paths on purpose (a mailer
+// that throws, a DB blip, a bad message). The SUT logs those by design;
+// keep them out of the test output.
 const noop = () => undefined;
 for (const method of [
   'log',
