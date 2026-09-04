@@ -5,3 +5,6 @@
 # build output
 /bin/
 /server
+
+# coverage
+coverage.out

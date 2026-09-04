@@ -75,9 +75,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Starts its own Postgres via testcontainers (Docker is on the runner).
-      - name: Integration test
-        run: npm run test:integration
+      # Runs the unit + integration suites (testcontainers starts its own
+      # Postgres) and writes a merged coverage table to the job summary.
+      # Report-only - it fails on a test failure, never on low coverage.
+      - name: Test & coverage
+        run: npm run test:coverage
 
   sast:
     name: SAST

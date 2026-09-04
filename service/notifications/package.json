@@ -19,6 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:integration": "jest --config ./test/jest-integration.json --runInBand",
+    "test:coverage": "jest --ci --silent --coverage --coverageReporters=json --coverageDirectory=../coverage/unit && jest --config ./test/jest-integration.json --runInBand --silent --coverage --coverageReporters=json --coverageDirectory=coverage/integration && node scripts/coverage-summary.mjs coverage/unit/coverage-final.json coverage/integration/coverage-final.json",
     "docker:build": "docker build -t notifications .",
     "docker:run": "docker run -p 3003:3003 --name notifications-container notifications",
     "db:generate": "drizzle-kit generate",
@@ -62,6 +63,9 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
     "jest": "^30.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
@@ -84,6 +88,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "setupFilesAfterEnv": [
+      "<rootDir>/../test/jest.setup.ts"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

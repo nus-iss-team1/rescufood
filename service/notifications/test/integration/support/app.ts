@@ -48,12 +48,15 @@ export async function createTestApp(): Promise<TestApp> {
   const { SqsConsumerService } =
     await import('../../../src/notifications/sqs-consumer.service');
   const { PG_POOL } = await import('../../../src/db/db.module');
+  const { PARAMS_PROVIDER_TOKEN } = await import('nestjs-pino');
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
     .overrideGuard(JwtAuthGuard)
     .useValue(jwtStub)
     .overrideProvider(SqsConsumerService)
     .useValue(consumerStub)
+    .overrideProvider(PARAMS_PROVIDER_TOKEN)
+    .useValue({ pinoHttp: { level: 'silent' } })
     .compile();
 
   const app = moduleRef.createNestApplication({ logger: false });

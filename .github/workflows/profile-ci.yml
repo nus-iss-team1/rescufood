@@ -51,6 +51,36 @@ jobs:
       - name: Coverage summary
         run: go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"
 
+  integration:
+    name: Integration test
+    # Gated on `test`: skip the container spin-up if vet/unit already failed.
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: service/profile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: service/profile/go.mod
+          cache-dependency-path: service/profile/go.sum
+
+      - name: Vet
+        run: go vet -tags=integration ./integration/...
+
+      # Runs the unit + integration tests (testcontainers starts its own
+      # Postgres) and writes a coverage table to the job summary. Report-only.
+      - name: Test & coverage
+        run: bash scripts/coverage.sh
+
   sast:
     name: SAST
     uses: ./.github/workflows/reusable-sast.yml
