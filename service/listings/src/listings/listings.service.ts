@@ -423,14 +423,14 @@ export class ListingsService {
     const existing = await this.getOrThrow(id);
     assertCanModify(existing, user);
 
-    // Reject deletion while the listing still has requests or images.
-    const [imageCount, requestCount] = await Promise.all([
-      this.listingImagesRepository.countByListingId(id),
-      this.listingsRepository.countAssociatedRequests(id),
-    ]);
-    if (imageCount > 0 || requestCount > 0) {
+    // Reject deletion while the listing still has requests - those are kept
+    // for audit history. Images stay with the (soft-deleted) row and are
+    // reclaimed only if the listing is ever hard-purged (FK cascade).
+    const requestCount =
+      await this.listingsRepository.countAssociatedRequests(id);
+    if (requestCount > 0) {
       throw new ConflictException(
-        `listing ${id} has associated requests or images and cannot be deleted`,
+        `listing ${id} has associated requests and cannot be deleted`,
       );
     }
 
