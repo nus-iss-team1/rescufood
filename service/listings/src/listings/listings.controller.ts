@@ -225,6 +225,10 @@ export class ListingsController {
     description: "Caller is not a member of the listing's donor organisation.",
   })
   @ApiResponse({ status: 404, description: 'Listing not found.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Listing has associated requests and cannot be deleted.',
+  })
   @Delete(':id')
   @UseGuards(OrgMembershipGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

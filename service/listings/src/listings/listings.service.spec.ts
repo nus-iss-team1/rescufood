@@ -776,16 +776,23 @@ describe('ListingsService', () => {
       expect(repository.delete).not.toHaveBeenCalled();
     });
 
-    it('throws ConflictException when the listing has associated images', async () => {
+    it('leaves the listing images untouched (no longer blocks, no cleanup)', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseListing);
-      const { service, imagesRepository } = makeService(repository);
-      imagesRepository.countByListingId.mockResolvedValue(1);
+      repository.delete.mockResolvedValue(undefined);
+      const { service, imagesRepository, uploadService } =
+        makeService(repository);
+      imagesRepository.countByListingId.mockResolvedValue(2);
 
-      await expect(service.remove('listing-1', owner)).rejects.toBeInstanceOf(
-        ConflictException,
+      await service.remove('listing-1', owner);
+
+      expect(repository.delete).toHaveBeenCalledWith(
+        'listing-1',
+        baseListing.version + 1,
+        expect.anything(),
       );
-      expect(repository.delete).not.toHaveBeenCalled();
+      expect(imagesRepository.deleteMany).not.toHaveBeenCalled();
+      expect(uploadService.deleteS3Objects).not.toHaveBeenCalled();
     });
   });
 
