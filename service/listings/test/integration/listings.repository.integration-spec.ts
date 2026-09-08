@@ -98,6 +98,41 @@ describe('ListingsRepository (integration)', () => {
     });
   });
 
+  describe('listing_images ON DELETE CASCADE', () => {
+    it('keeps the image rows on a soft-delete but drops them on a hard-delete', async () => {
+      const { org, user } = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: org.id,
+        createdBy: user.id,
+      });
+      const pool = testPool();
+      await pool.query(
+        `INSERT INTO listing_images (listing_id, s3_key, position) VALUES ($1, 'a.jpg', 0)`,
+        [listing.id],
+      );
+
+      await ctx.listings.delete(listing.id, 2);
+      expect(
+        (
+          await pool.query(
+            `SELECT 1 FROM listing_images WHERE listing_id = $1`,
+            [listing.id],
+          )
+        ).rows,
+      ).toHaveLength(1);
+
+      await pool.query(`DELETE FROM listings WHERE id = $1`, [listing.id]);
+      expect(
+        (
+          await pool.query(
+            `SELECT 1 FROM listing_images WHERE listing_id = $1`,
+            [listing.id],
+          )
+        ).rows,
+      ).toHaveLength(0);
+    });
+  });
+
   describe('available_listing_is_complete CHECK', () => {
     it('rejects publishing a listing with missing fields', async () => {
       const { org, user } = await seedDonor();

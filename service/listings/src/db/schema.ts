@@ -154,9 +154,10 @@ export const listingImages = pgTable(
   'listing_images',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    // Cascade on delete so a listing's image rows never outlive it.
     listingId: uuid('listing_id')
       .notNull()
-      .references(() => listings.id),
+      .references(() => listings.id, { onDelete: 'cascade' }),
     // S3 object key only, not a full URL - keeps bucket/region/CDN-domain
     // changes from requiring a data migration.
     s3Key: text('s3_key').notNull(),
