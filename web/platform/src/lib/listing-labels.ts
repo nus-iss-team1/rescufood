@@ -58,7 +58,10 @@ export function quantity(amount: string, unit: string) {
   return `${trimmed} ${unit}`;
 }
 
+const TIME_ZONE = "Asia/Singapore";
+
 const dateTime = new Intl.DateTimeFormat("en-SG", {
+  timeZone: TIME_ZONE,
   day: "numeric",
   month: "short",
   hour: "numeric",
@@ -66,19 +69,42 @@ const dateTime = new Intl.DateTimeFormat("en-SG", {
 });
 
 const timeOnly = new Intl.DateTimeFormat("en-SG", {
+  timeZone: TIME_ZONE,
   hour: "numeric",
   minute: "2-digit",
+});
+
+const dateTimeWithYear = new Intl.DateTimeFormat("en-SG", {
+  timeZone: TIME_ZONE,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/** Calendar day in TIME_ZONE, for comparing two instants by date. */
+const dayKey = new Intl.DateTimeFormat("en-SG", {
+  timeZone: TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
 });
 
 /** Drops the repeated date when the window opens and closes the same day. */
 export function pickupWindow(startIso: string, endIso: string) {
   const from = new Date(startIso);
   const to = new Date(endIso);
-  return from.toDateString() === to.toDateString()
+  return dayKey.format(from) === dayKey.format(to)
     ? `${dateTime.format(from)} – ${timeOnly.format(to)}`
     : `${dateTime.format(from)} – ${dateTime.format(to)}`;
 }
 
 export function shortDate(iso: string) {
   return dateTime.format(new Date(iso));
+}
+
+/** Date and time including the year. */
+export function longDateTime(iso: string) {
+  return dateTimeWithYear.format(new Date(iso));
 }

@@ -11,6 +11,7 @@ import {
 
 import { signOutAction } from "@/app/actions";
 import { requireSession } from "@/lib/session";
+import { longDateTime } from "@/lib/listing-labels";
 import {
   getMe,
   getMyOrgMembers,
@@ -287,7 +288,7 @@ export default async function DashboardPage() {
             <CardContent className="grid gap-4">
               <ReviewProgress org={me.org} />
               <p className="text-xs text-muted-foreground">
-                Submitted {new Date(me.org.created_at).toLocaleString()}.
+                Submitted {longDateTime(me.org.created_at)}.
               </p>
             </CardContent>
           </Card>
