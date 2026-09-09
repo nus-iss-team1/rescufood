@@ -229,6 +229,37 @@ export async function getListingRow(
   return rows[0];
 }
 
+export interface RequestRow {
+  status: string;
+  pickup_code_attempts: number;
+  verified_by: string | null;
+  collected_at: Date | null;
+}
+
+export async function getRequestRow(
+  id: string,
+): Promise<RequestRow | undefined> {
+  const { rows } = await testPool().query<RequestRow>(
+    `SELECT status, pickup_code_attempts, verified_by, collected_at
+       FROM requests WHERE id = $1`,
+    [id],
+  );
+  return rows[0];
+}
+
+/** Audit rows recording one action against one entity. */
+export async function countAuditActions(
+  action: string,
+  entityId: string,
+): Promise<number> {
+  const { rows } = await testPool().query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM audit_log
+      WHERE action = $1 AND entity_id = $2`,
+    [action, entityId],
+  );
+  return Number(rows[0].count);
+}
+
 export async function countRows(table: string): Promise<number> {
   const { rows } = await testPool().query<{ count: string }>(
     `SELECT count(*)::text AS count FROM ${table}`,
