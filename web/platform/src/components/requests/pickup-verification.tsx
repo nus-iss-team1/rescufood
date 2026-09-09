@@ -63,13 +63,16 @@ export function PickupVerification({
   const router = useRouter();
   const waiting =
     isDonor && request.status === "active" && !request.codeGeneratedBy;
+  const awaitingVerification =
+    !isDonor && request.status === "active" && !!request.codeGeneratedBy;
 
-  // Polls for the code the partner generates in their own session.
+  // Polls for the code the partner generates, and for the donor's
+  // verification, each in the other party's session.
   useEffect(() => {
-    if (!waiting) return;
+    if (!waiting && !awaitingVerification) return;
     const id = setInterval(() => router.refresh(), 10_000);
     return () => clearInterval(id);
-  }, [waiting, router]);
+  }, [waiting, awaitingVerification, router]);
 
   const generate = (regenerate = false) => {
     setLoading(true);
