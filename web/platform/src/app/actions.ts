@@ -31,6 +31,8 @@ export async function signOutAction() {
 
 export type FormState = {
   error?: string;
+  /** login: sign-in succeeded; the form navigates to /dashboard itself */
+  success?: boolean;
   /** signup flow: which step to render */
   step?: "details" | "confirm";
   username?: string;
@@ -48,14 +50,17 @@ export async function loginAction(
   }
 
   try {
+    // Returns instead of redirecting, so the caller can load /dashboard as a
+    // new document: the header reads the session in the root layout, which a
+    // client-side navigation would not re-render.
     await signIn("credentials", {
       username,
       password,
-      redirectTo: "/dashboard",
+      redirect: false,
     });
-    return {};
+    return { success: true };
   } catch (err) {
-    if (isRedirectError(err)) throw err; // successful sign-in redirects
+    if (isRedirectError(err)) throw err;
     if (err instanceof CredentialsSignin && err.code === "account_restricted") {
       return {
         error:
