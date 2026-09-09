@@ -4,6 +4,7 @@ import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
 import {
+  getListing,
   listListings,
   listRequests,
   type Listing,
@@ -144,6 +145,18 @@ export default async function RequestsPage({
       listings = new Map(page.items.map((l) => [l.id, l]));
     } catch {
       // Both views fall back to the requested quantity.
+    }
+    // The browse query drops anything not available, claimed lots included.
+    const missing = [...new Set(all.map((r) => r.listingId))].filter(
+      (id) => !listings.has(id),
+    );
+    const rest = await Promise.allSettled(
+      missing.map((id) => getListing(session.idToken!, id)),
+    );
+    for (const result of rest) {
+      if (result.status === "fulfilled") {
+        listings.set(result.value.id, result.value);
+      }
     }
   }
 
