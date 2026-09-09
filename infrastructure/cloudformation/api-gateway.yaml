@@ -9,6 +9,7 @@ Parameters:
     Type: String
     AllowedValues:
       - dev
+      - qa
       - prod
   NetworkStackName:
     Type: String

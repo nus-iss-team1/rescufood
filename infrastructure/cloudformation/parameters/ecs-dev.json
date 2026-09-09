@@ -3,6 +3,8 @@
   "EnvironmentName=dev",
   "NetworkStackName=rescufood-core-network",
   "SecurityStackName=rescufood-dev-security",
+  "DataStackName=rescufood-dev-data",
+  "MessagingStackName=rescufood-dev-messaging",
   "Image=ghcr.io/nus-iss-team1/rescufood/frontend:develop",
   "DesiredCount=1",
   "GhcrPullSecretArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/dev/ghcr-pull-AyC3X5",

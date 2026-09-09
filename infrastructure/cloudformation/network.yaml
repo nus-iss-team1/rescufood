@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  RescuFood network foundation: VPC shared by dev and prod, spanning 2 AZs
+  RescuFood network foundation: VPC shared by every environment, spanning 2 AZs
   with public, private app, and isolated data subnet tiers. Single NAT
   Gateway (accepted single point of failure for cost reasons).
 

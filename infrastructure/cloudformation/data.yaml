@@ -12,7 +12,7 @@ Parameters:
 
   EnvironmentName:
     Type: String
-    AllowedValues: [dev, prod]
+    AllowedValues: [dev, qa, prod]
     Description: Environment this database belongs to
 
   NetworkStackName:

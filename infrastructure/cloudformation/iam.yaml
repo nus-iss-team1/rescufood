@@ -7,7 +7,7 @@ Parameters:
 
   EnvironmentName:
     Type: String
-    AllowedValues: [dev, prod]
+    AllowedValues: [dev, qa, prod]
     Description: Environment this user pool belongs to
 
   CallbackUrls:

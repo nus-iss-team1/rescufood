@@ -11,7 +11,7 @@ Parameters:
 
   EnvironmentName:
     Type: String
-    AllowedValues: [dev, prod]
+    AllowedValues: [dev, qa, prod]
     Description: Environment this cluster and service belong to
 
   NetworkStackName:
@@ -98,8 +98,10 @@ Parameters:
 
   DataStackName:
     Type: String
-    Default: rescufood-dev-data
-    Description: Name of the data stack whose database exports to import
+    Description: >-
+      Name of this environment's data stack, whose database exports to
+      import. No default - a wrong value points the services at another
+      environment's database.
 
   ProfileDbName:
     Type: String
@@ -161,8 +163,9 @@ Parameters:
 
   MessagingStackName:
     Type: String
-    Default: rescufood-dev-messaging
-    Description: Name of the messaging stack whose queue exports to import
+    Description: >-
+      Name of this environment's messaging stack, whose queue exports to
+      import. No default, same reasoning as DataStackName.
 
   GmailCredentialsSecretArn:
     Type: String

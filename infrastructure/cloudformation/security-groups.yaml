@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   RescuFood per-environment security groups. Strict chain:
   API Gateway VPC Link -> ALB (80) -> app containers (web/api ports) -> database (5432).
-  Deployed once per environment (dev, prod) into the shared VPC.
+  Deployed once per environment (dev, qa, prod) into the shared VPC.
 
 Parameters:
   ProjectName:
@@ -11,7 +11,7 @@ Parameters:
 
   EnvironmentName:
     Type: String
-    AllowedValues: [dev, prod]
+    AllowedValues: [dev, qa, prod]
     Description: Environment these security groups belong to
 
   NetworkStackName:

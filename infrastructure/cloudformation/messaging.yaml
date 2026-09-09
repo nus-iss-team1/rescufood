@@ -3,7 +3,7 @@ Description: >-
   RescuFood notifications queue. Producers (profile, listings) send one
   message per notification to NotificationQueue; the notification
   service consumes it and sends the actual email. Deployed once per
-  environment (dev, prod) - no VPC dependency, so it can be deployed
+  environment (dev, qa, prod) - no VPC dependency, so it can be deployed
   independently of the network/security/data stacks.
 
 Parameters:
@@ -13,7 +13,7 @@ Parameters:
 
   EnvironmentName:
     Type: String
-    AllowedValues: [dev, prod]
+    AllowedValues: [dev, qa, prod]
     Description: Environment this queue belongs to
 
 Resources:
