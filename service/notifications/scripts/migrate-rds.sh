@@ -7,7 +7,7 @@
 # has EnableExecuteCommand: true) and runs `npm run db:migrate` through it.
 #
 # Usage: scripts/migrate-rds.sh [env] [local-port]
-#   env         dev or prod (default: dev)
+#   env         dev, qa or prod (default: dev)
 #   local-port  local port for the tunnel (default: 15433)
 #
 # Requires: AWS CLI v2, the Session Manager plugin, Node.js, and an IAM
