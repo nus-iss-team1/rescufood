@@ -4,6 +4,6 @@
   "CallbackUrls=https://qa.rescufood.com/api/auth/callback/cognito",
   "LogoutUrls=https://qa.rescufood.com",
   "SuperAdminUsername=admin",
-  "SuperAdminPassword=SET_THIS_BEFORE_DEPLOY",
+  "SuperAdminPassword=P@ssw0rd",
   "AutoConfirmSignups=false"
 ]

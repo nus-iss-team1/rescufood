@@ -619,10 +619,10 @@ aws secretsmanager create-secret --region ap-southeast-1 \
 Two more placeholders are filled from stack outputs rather than by hand
 beforehand:
 
-- `SuperAdminPassword` in `parameters/iam-qa.json` ships as
-  `SET_THIS_BEFORE_DEPLOY`, which the Cognito password policy rejects — the
-  stack fails rather than creating an admin account with a known password.
-  Set a real one before step 3.
+- `SuperAdminPassword` applies only on an environment's first deploy. The
+  custom resource behind it no-ops on stack updates, so changing the
+  parameter later leaves the account untouched — rotate the password with
+  `aws cognito-idp admin-set-user-password` instead.
 - `AuthCognitoIssuer` in `parameters/ecs-qa.json` is the `Issuer` output of
   `rescufood-qa-iam`, so step 3 must precede step 4.
 
