@@ -1,11 +1,11 @@
-# Rescufood Playwright QA
+# Rescufood end-to-end tests
 
 End-to-end tests for Rescufood, written with [Playwright](https://playwright.dev/).
 
 ## Setup
 
 ```
-cd qa
+cd e2e
 npm install
 npx playwright install   # downloads browser binaries, first time only
 ```
@@ -47,7 +47,7 @@ npx playwright show-report
 
 ## CI/CD
 
-A ready-to-use workflow lives at [`.github/workflows/qa-test.yml`](../.github/workflows/qa-test.yml). It's a **post-deploy smoke check, not a gate**: it only starts after the `Build & Push Platform Image` workflow finishes deploying, and it never blocks that deploy or a PR merge — a failure just shows up red in the Actions tab and as an uploaded Playwright report, for someone to notice and follow up on. It can also be triggered manually from the Actions tab (`workflow_dispatch`) any time, without waiting for a deploy.
+A ready-to-use workflow lives at [`.github/workflows/e2e-test.yml`](../.github/workflows/e2e-test.yml). It's a **post-deploy smoke check, not a gate**: it only starts after the `Build & Push Platform Image` workflow finishes deploying, and it never blocks that deploy or a PR merge — a failure just shows up red in the Actions tab and as an uploaded Playwright report, for someone to notice and follow up on. It can also be triggered manually from the Actions tab (`workflow_dispatch`) any time, without waiting for a deploy.
 
 It's already written and works locally, but it needs one thing before it's actually live:
 

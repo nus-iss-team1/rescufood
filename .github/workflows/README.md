@@ -14,7 +14,7 @@ a post-deploy e2e run.
 | `profile-build.yml` | Push to `develop` touching `service/profile/**` | SAST → build & push `.../profile` → roll the `profile` ECS service |
 | `listings-build.yml` | Push to `develop` touching `service/listings/**` | SAST → build & push `.../listings` → roll the `listings` ECS service |
 | `notifications-build.yml` | Push to `develop` touching `service/notifications/**` | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
-| `qa-test.yml` | After **Build & Push Platform Image** completes, or manual | Playwright e2e against the deployed API Gateway URL. Post-deploy smoke check — never blocks anything |
+| `e2e-test.yml` | After **Build & Push Platform Image** completes, or manual | Playwright e2e against the deployed API Gateway URL. Post-deploy smoke check — never blocks anything |
 | `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
