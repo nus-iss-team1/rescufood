@@ -29,6 +29,11 @@ production environment that does not exist yet.
 A hotfix branches off the environment branch that is broken and is merged
 back down to `develop` afterwards, so the next promotion does not revert it.
 
+Creating a branch builds nothing — a branch-creation push carries no file
+diff, so every `paths:` filter misses. Seed a new environment's images with
+the manual trigger instead: **Actions → the build workflow → Run workflow**,
+with the branch selected.
+
 ## Workflows
 
 | Workflow | Trigger | What it does |
@@ -37,10 +42,10 @@ back down to `develop` afterwards, so the next promotion does not revert it.
 | `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres; runs unit + integration together for a combined coverage report in the job summary) |
 | `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
 | `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
-| `platform-build.yml` | Push to `develop` or `qa` touching `web/**` | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
-| `profile-build.yml` | Push to `develop` or `qa` touching `service/profile/**` | SAST → build & push `.../profile` → roll the `profile` ECS service |
-| `listings-build.yml` | Push to `develop` or `qa` touching `service/listings/**` | SAST → build & push `.../listings` → roll the `listings` ECS service |
-| `notifications-build.yml` | Push to `develop` or `qa` touching `service/notifications/**` | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
+| `platform-build.yml` | Push to `develop` or `qa` touching `web/**`, manual | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
+| `profile-build.yml` | Push to `develop` or `qa` touching `service/profile/**`, manual | SAST → build & push `.../profile` → roll the `profile` ECS service |
+| `listings-build.yml` | Push to `develop` or `qa` touching `service/listings/**`, manual | SAST → build & push `.../listings` → roll the `listings` ECS service |
+| `notifications-build.yml` | Push to `develop` or `qa` touching `service/notifications/**`, manual | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
 | `e2e-test.yml` | After **Build & Push Platform Image** completes, or manual | Playwright e2e against the deployed API Gateway URL. Post-deploy smoke check — never blocks anything |
 | `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |

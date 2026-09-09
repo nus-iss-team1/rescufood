@@ -8,6 +8,7 @@ on:
       - "web/sdk/**"
       - "web/ui/**"
       - ".github/workflows/platform-build.yml"
+  workflow_dispatch: {}
 
 # One run at a time; the newest queued run supersedes older pending ones.
 concurrency:

@@ -6,6 +6,7 @@ on:
     paths:
       - "service/notifications/**"
       - ".github/workflows/notifications-build.yml"
+  workflow_dispatch: {}
 
 # One run at a time; the newest queued run supersedes older pending ones.
 concurrency:
