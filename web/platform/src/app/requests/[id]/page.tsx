@@ -5,7 +5,7 @@ import { requireSession } from "@/lib/session";
 import { getMe } from "@/lib/profile";
 import { getRequest, getListing, ListingsApiError } from "@/lib/listings";
 import { PageShell } from "@/components/page-shell";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader, requestsLabel } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardDescription } from "@rescufood/ui/components/card";
 import { RequestDetailView } from "@/components/requests/request-detail-view";
 
@@ -121,7 +121,7 @@ export default async function RequestDetailsPage({
         title={listing.description || "Request details"}
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Your requests", href: "/requests" },
+          { label: requestsLabel(me), href: "/requests" },
           { label: listing.description || "Request details" },
         ]}
       />

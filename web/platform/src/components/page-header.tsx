@@ -20,6 +20,11 @@ export function describeOrg(me: Me | null): string | undefined {
   return `${me.org.name} · ${type}`;
 }
 
+/** Page label for /requests, worded for the viewer's role. */
+export function requestsLabel(me: Me | null): string {
+  return me?.org?.type === "donor" ? "Requests on your listings" : "Your requests";
+}
+
 export interface Crumb {
   label: string;
   /** Omit on the current page. */

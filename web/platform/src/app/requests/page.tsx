@@ -12,7 +12,11 @@ import {
 import { requestStatuses } from "@rescufood/listings-sdk";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
-import { PageHeader, describeOrg } from "@/components/page-header";
+import {
+  PageHeader,
+  describeOrg,
+  requestsLabel,
+} from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { RequestCards } from "@/components/requests/request-cards";
 import { RequestList } from "@/components/requests/request-list";
@@ -27,7 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Your requests — RescuFood",
+  title: "Requests — RescuFood",
 };
 
 const tabs = ["all", ...requestStatuses] as const;
@@ -147,7 +151,7 @@ export default async function RequestsPage({
     <PageShell>
       <AnimateIn className="flex flex-col gap-6">
         <PageHeader
-          title="Your requests"
+          title={requestsLabel(me)}
           subtitle={describeOrg(me)}
           action={
             me.org.type === "rescue_partner" ? (
@@ -158,7 +162,7 @@ export default async function RequestsPage({
           }
           crumbs={[
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Your requests" },
+            { label: requestsLabel(me) },
           ]}
         />
 
