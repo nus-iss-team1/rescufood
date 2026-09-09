@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError, CredentialsSignin } from "next-auth";
 
@@ -22,18 +21,11 @@ import {
   ProfileApiError,
 } from "@/lib/profile";
 
-/** Drops the cached root layout so the header renders the new session. */
-function revalidateSession() {
-  revalidatePath("/", "layout");
-}
-
 export async function signInWithCognito() {
-  revalidateSession();
   await signIn("cognito", { redirectTo: "/dashboard" });
 }
 
 export async function signOutAction() {
-  revalidateSession();
   await signOut({ redirectTo: "/" });
 }
 
@@ -63,11 +55,7 @@ export async function loginAction(
     });
     return {};
   } catch (err) {
-    // A successful sign-in throws a redirect.
-    if (isRedirectError(err)) {
-      revalidateSession();
-      throw err;
-    }
+    if (isRedirectError(err)) throw err; // successful sign-in redirects
     if (err instanceof CredentialsSignin && err.code === "account_restricted") {
       return {
         error:
@@ -179,10 +167,7 @@ export async function signUpAction(
         redirectTo: "/dashboard",
       });
     } catch (err) {
-      if (isRedirectError(err)) {
-        revalidateSession();
-        throw err;
-      }
+      if (isRedirectError(err)) throw err;
     }
     return { step: "details", error: "Account created. Please sign in." };
   }
