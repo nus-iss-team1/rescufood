@@ -2,7 +2,7 @@ name: Build & Push Platform Image
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, qa]
     paths:
       - "web/platform/**"
       - "web/sdk/**"
@@ -11,7 +11,7 @@ on:
 
 # One run at a time; the newest queued run supersedes older pending ones.
 concurrency:
-  group: platform-build-develop
+  group: platform-build-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -65,8 +65,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=sha,prefix=develop-
-            type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -86,9 +86,10 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    environment: ${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
     env:
       AWS_REGION: ap-southeast-1
-      CLUSTER: rescufood-dev
+      CLUSTER: rescufood-${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
       SERVICE: web-platform
 
     steps:
@@ -99,7 +100,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # The develop tag is mutable; a forced deployment re-pulls it.
+      # The branch tag is mutable; a forced deployment re-pulls it.
       - name: Roll service onto the new image
         id: roll
         run: |

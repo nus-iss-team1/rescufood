@@ -12,11 +12,13 @@ on:
     types: [completed]
   workflow_dispatch: {}
 
-# Only one e2e run at a time. Two overlapping runs would share the same
-# TEST_DONOR_*/TEST_RESCUE_PARTNER_* accounts and can interfere with each
-# other (see e2e/README.md) - extra runs queue rather than run in parallel.
+# One run per environment. Two overlapping runs against the same environment
+# would share its TEST_DONOR_*/TEST_RESCUE_PARTNER_* accounts and can interfere
+# with each other (see e2e/README.md) - extra runs queue rather than run in
+# parallel. Each environment has its own Cognito pool, so dev and qa runs are
+# independent and grouped separately.
 concurrency:
-  group: e2e-test
+  group: e2e-test-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -27,13 +29,18 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
     defaults:
       run:
         working-directory: e2e
 
     steps:
+      # Test the commit that was deployed, not the default branch - a qa
+      # deploy must run qa's tests.
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@v7
@@ -50,8 +57,8 @@ jobs:
 
       - name: Run tests
         env:
-          # Base URL of the deployed environment under test. Set as an Actions
-          # variable (Settings > Secrets and variables > Actions > Variables).
+          # Base URL of the environment under test, from that environment's
+          # Actions variables (Settings > Environments > <name> > Variables).
           # Required - the run fails fast if it is unset.
           BASE_URL: ${{ vars.BASE_URL }}
           TEST_DONOR_USERNAME: ${{ secrets.TEST_DONOR_USERNAME }}

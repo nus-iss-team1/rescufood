@@ -4,24 +4,52 @@ Each deployable component (`platform`, `profile`, `listings`, `notifications`)
 has a **CI** workflow and a **build** workflow, plus two reusable workflows and
 a post-deploy e2e run.
 
+## Branching model
+
+One long-lived branch per deployed environment. Promotion is a pull request
+whose diff is everything merged since the last promotion — no cherry-picking,
+no release branches.
+
+```
+feat/* fix/* ──PR──▶ develop ──PR──▶ qa
+                        │             │
+                        ▼             ▼
+                   rescufood-dev  rescufood-qa
+```
+
+| Branch | Environment | Stacks | Image tag |
+|---|---|---|---|
+| `develop` | dev | `rescufood-dev-*` | `develop` |
+| `qa` | qa | `rescufood-qa-*` | `qa` |
+
+A push to either branch builds only the components whose paths changed and
+rolls only that environment's ECS services. `main` is reserved for a
+production environment that does not exist yet.
+
+A hotfix branches off the environment branch that is broken and is merged
+back down to `develop` afterwards, so the next promotion does not revert it.
+
+## Workflows
+
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, SAST, DAST (ZAP baseline) |
 | `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres; runs unit + integration together for a combined coverage report in the job summary) |
 | `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
 | `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
-| `platform-build.yml` | Push to `develop` touching `web/**` | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
-| `profile-build.yml` | Push to `develop` touching `service/profile/**` | SAST → build & push `.../profile` → roll the `profile` ECS service |
-| `listings-build.yml` | Push to `develop` touching `service/listings/**` | SAST → build & push `.../listings` → roll the `listings` ECS service |
-| `notifications-build.yml` | Push to `develop` touching `service/notifications/**` | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
+| `platform-build.yml` | Push to `develop` or `qa` touching `web/**` | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
+| `profile-build.yml` | Push to `develop` or `qa` touching `service/profile/**` | SAST → build & push `.../profile` → roll the `profile` ECS service |
+| `listings-build.yml` | Push to `develop` or `qa` touching `service/listings/**` | SAST → build & push `.../listings` → roll the `listings` ECS service |
+| `notifications-build.yml` | Push to `develop` or `qa` touching `service/notifications/**` | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
 | `e2e-test.yml` | After **Build & Push Platform Image** completes, or manual | Playwright e2e against the deployed API Gateway URL. Post-deploy smoke check — never blocks anything |
 | `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
-The build workflows tag images `develop`, `develop-<sha>` and `latest`, then
-`aws ecs update-service --force-new-deployment` (the `develop` tag is mutable)
-and wait for the rollout, failing if the deployment circuit breaker rolls it
-back. **CloudFormation is not touched** — infra stacks are deployed by hand
+The build workflows tag images `<branch>`, `<branch>-<sha>` and — on `develop`
+only — `latest`, then `aws ecs update-service --force-new-deployment` (the
+branch tag is mutable) and wait for the rollout, failing if the deployment
+circuit breaker rolls it back. **CloudFormation is not touched** — infra
+stacks are deployed by hand
 (see [`infrastructure/README.md`](../../infrastructure/README.md)).
 
 Findings land in **Security → Code scanning** (SAST) and in the run's artifacts
@@ -43,6 +71,26 @@ The same commands run locally (they need Docker):
   so `-coverpkg` attributes store coverage from the `integration` package)
 
 To make it blocking, add a threshold check to those scripts.
+
+## GitHub Environments
+
+Each deploy job runs under a GitHub Environment named after its target
+(`dev` or `qa`), resolved from the branch. Configure both under
+**Settings → Environments**:
+
+| Setting | Kind | Used by |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Secret | The deploy job |
+| `BASE_URL` | Variable | `e2e-test.yml` |
+| `TEST_DONOR_*`, `TEST_RESCUE_PARTNER_*` | Secret | `e2e-test.yml` |
+
+Repository-level secrets still apply wherever an environment defines none, so
+`dev` keeps working with the existing repository secrets and only `qa` needs
+filling in. Give `qa` its own `BASE_URL` and test accounts — each environment
+has a separate Cognito user pool, so dev's accounts do not exist in qa.
+
+Adding required reviewers to an environment turns its deploys into a gated
+promotion. That is how prod will be protected when `main` is wired up.
 
 ## reusable-sast.yml
 

@@ -2,14 +2,14 @@ name: Build & Push Notifications Image
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, qa]
     paths:
       - "service/notifications/**"
       - ".github/workflows/notifications-build.yml"
 
 # One run at a time; the newest queued run supersedes older pending ones.
 concurrency:
-  group: notifications-build-develop
+  group: notifications-build-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -60,8 +60,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=sha,prefix=develop-
-            type=raw,value=latest
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -80,9 +80,10 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    environment: ${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
     env:
       AWS_REGION: ap-southeast-1
-      CLUSTER: rescufood-dev
+      CLUSTER: rescufood-${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
       SERVICE: notification
 
     steps:
@@ -110,7 +111,7 @@ jobs:
             echo "::warning::ECS service '$SERVICE' is not deployed - the image was pushed but nothing was rolled. See infrastructure/README.md."
           fi
 
-      # The develop tag is mutable; a forced deployment re-pulls it.
+      # The branch tag is mutable; a forced deployment re-pulls it.
       - name: Roll service onto the new image
         if: steps.check.outputs.exists == '1'
         id: roll
