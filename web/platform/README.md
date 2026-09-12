@@ -117,9 +117,15 @@ If styling ever looks mysteriously stale in dev, clear the Turbopack cache:
 ## Testing
 
 ```sh
-npm test         # Vitest + React Testing Library, run once
+npm test              # Vitest + React Testing Library, run once
 npm run test:watch
+npm run test:coverage # Coverage report; fails below the 80% threshold
 ```
+
+Coverage excludes trivial boilerplate (root layout, the NextAuth route
+handler re-export) — see `coverage.exclude` in
+[`vitest.config.mts`](./vitest.config.mts). An HTML report is written to
+`coverage/index.html`.
 
 `@rescufood/ui` (`web/ui/`) is a `file:` dependency, not an npm workspace —
 its `node_modules` installs independently and `npm ci`/`npm install` here
