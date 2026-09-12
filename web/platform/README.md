@@ -114,6 +114,25 @@ aws cognito-idp admin-add-user-to-group --region ap-southeast-1 --user-pool-id "
 If styling ever looks mysteriously stale in dev, clear the Turbopack cache:
 `rm -rf .next` and restart.
 
+## Testing
+
+```sh
+npm test         # Vitest + React Testing Library, run once
+npm run test:watch
+```
+
+`@rescufood/ui` (`web/ui/`) is a `file:` dependency, not an npm workspace —
+its `node_modules` installs independently and `npm ci`/`npm install` here
+never touches it. Run `npm ci` in **both** `web/ui` and `web/platform`
+before testing, or a stale `ui` install can hide real failures (or, less
+often, produce ones that aren't really there).
+
+> `web/ui` and `web/platform` currently pin different React versions. Vitest
+> works around the resulting duplicate-React-copy crash via the `resolve`
+> and `test.server.deps.inline` settings in
+> [`vitest.config.mts`](./vitest.config.mts) — see the comments there. The
+> real fix is aligning the two packages' React versions.
+
 ## Docker
 
 The Dockerfile builds a slim three-stage image (Next.js standalone, non-root
