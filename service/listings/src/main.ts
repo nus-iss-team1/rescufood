@@ -20,28 +20,27 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
 
-  // Not exposed publicly (no reverse-proxy route maps to it) - reachable
-  // only from inside the VPC/localhost, same trust boundary as the service
-  // itself. Namespaced under the service name (unlike the API routes
-  // themselves) so each service's docs get a distinct path behind the
-  // shared /api/ gateway.
-  const swaggerDocument = SwaggerModule.createDocument(
-    app,
-    new DocumentBuilder()
-      .setTitle('RescuFood Listings API')
-      .setDescription(
-        'Food listing and pickup-request lifecycle for donor and rescue organisations.',
-      )
-      .setVersion('1.0')
-      .addBearerAuth({
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Cognito-issued access token',
-      })
-      .build(),
-  );
-  SwaggerModule.setup('api/listings/docs', app, swaggerDocument);
+  // Withheld from qa and prod: the docs live under /api/listings, which the
+  // ALB forwards, so there they would be public through API Gateway.
+  if (config.get<string>('ENVIRONMENT_NAME') === 'dev') {
+    const swaggerDocument = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder()
+        .setTitle('RescuFood Listings API')
+        .setDescription(
+          'Food listing and pickup-request lifecycle for donor and rescue organisations.',
+        )
+        .setVersion('1.0')
+        .addBearerAuth({
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Cognito-issued access token',
+        })
+        .build(),
+    );
+    SwaggerModule.setup('api/listings/docs', app, swaggerDocument);
+  }
 
   // Mirrors service/profile's CORS setup - see CORS_ALLOWED_ORIGINS in
   // .env.example.

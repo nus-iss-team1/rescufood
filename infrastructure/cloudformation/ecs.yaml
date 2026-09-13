@@ -643,6 +643,8 @@ Resources:
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref ProfilePort
             - Name: AUTH_COGNITO_ISSUER
@@ -887,6 +889,8 @@ Resources:
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref ListingsPort
             - Name: AUTH_COGNITO_ISSUER
@@ -1173,6 +1177,8 @@ Resources:
             Retries: 3
             StartPeriod: 30
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref NotificationPort
             - Name: AWS_REGION

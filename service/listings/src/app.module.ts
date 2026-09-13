@@ -24,29 +24,18 @@ import { SummaryModule } from './summary/summary.module';
         ],
       }),
     }),
-    LoggerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        pinoHttp: {
-          // dev = colorized text logs; anything else = JSON (see .env.example)
-          transport:
-            config.get<string>('ENV') === 'dev'
-              ? {
-                  target: 'pino-pretty',
-                  options: { colorize: true, singleLine: true },
-                }
-              : undefined,
-          serializers: {
-            req: (req: { method: string; url: string }) => ({
-              method: req.method,
-              url: req.url,
-            }),
-            res: (res: { statusCode: number }) => ({
-              statusCode: res.statusCode,
-            }),
-          },
+    LoggerModule.forRoot({
+      pinoHttp: {
+        serializers: {
+          req: (req: { method: string; url: string }) => ({
+            method: req.method,
+            url: req.url,
+          }),
+          res: (res: { statusCode: number }) => ({
+            statusCode: res.statusCode,
+          }),
         },
-      }),
+      },
     }),
     ListingsModule,
     RequestsModule,
