@@ -1168,14 +1168,6 @@ Resources:
             - HasPullSecret
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
-          HealthCheck:
-            Command:
-              - CMD-SHELL
-              - !Sub wget -qO- http://localhost:${NotificationPort}/health || exit 1
-            Interval: 30
-            Timeout: 5
-            Retries: 3
-            StartPeriod: 30
           Environment:
             - Name: ENVIRONMENT_NAME
               Value: !Ref EnvironmentName
