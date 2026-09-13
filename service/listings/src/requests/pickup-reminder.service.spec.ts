@@ -17,13 +17,21 @@ function makeLogger() {
   return { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
 }
 
-function make(repository: ReturnType<typeof makeRepository>) {
+function makeConfig(values: Record<string, number> = {}) {
+  return { get: jest.fn((key: string) => values[key]) };
+}
+
+function make(
+  repository: ReturnType<typeof makeRepository>,
+  config: ReturnType<typeof makeConfig> = makeConfig(),
+) {
   const notifications = makeNotifications();
   const logger = makeLogger();
   const service = new PickupReminderService(
     repository as unknown as RequestsRepository,
     notifications as unknown as NotificationsPublisher,
     logger as never,
+    config as never,
   );
   return { service, notifications, logger };
 }
@@ -120,5 +128,19 @@ describe('PickupReminderService', () => {
 
     await expect(service.sendPickupReminders()).resolves.toBeUndefined();
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('uses PICKUP_REMINDER_LEAD_HOURS from config instead of the default', async () => {
+    const repository = makeRepository();
+    const config = makeConfig({ PICKUP_REMINDER_LEAD_HOURS: 2 });
+    const { service } = make(repository, config);
+
+    await service.sendPickupReminders();
+
+    expect(repository.markDuePickupReminders).toHaveBeenCalledWith(
+      'opening',
+      expect.any(Date),
+      2 * 60 * 60 * 1000,
+    );
   });
 });

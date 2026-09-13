@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { formatInstant, formatWindow } from './common/pickup-window.util';
@@ -8,19 +9,26 @@ import {
   type PickupReminderPhase,
 } from './requests.repository';
 
-// A reminder fires within a day of the window opening or closing.
-const REMINDER_LEAD_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_REMINDER_LEAD_HOURS = 24;
 
 // Emails a one-shot reminder as an active claim's pickup window approaches
 // (opening -> rescue partner + donor) or nears its end (closing -> rescue
 // partner). Each phase is marked once per claim so it can't repeat.
 @Injectable()
 export class PickupReminderService {
+  private readonly leadMs: number;
+
   constructor(
     private readonly requestsRepository: RequestsRepository,
     private readonly notifications: NotificationsPublisher,
     private readonly logger: Logger,
-  ) {}
+    config: ConfigService,
+  ) {
+    const hours =
+      config.get<number>('PICKUP_REMINDER_LEAD_HOURS') ??
+      DEFAULT_REMINDER_LEAD_HOURS;
+    this.leadMs = hours * 60 * 60 * 1000;
+  }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async sendPickupReminders(): Promise<void> {
@@ -34,7 +42,7 @@ export class PickupReminderService {
       const marked = await this.requestsRepository.markDuePickupReminders(
         phase,
         now,
-        REMINDER_LEAD_MS,
+        this.leadMs,
       );
       if (marked.length === 0) return;
 
