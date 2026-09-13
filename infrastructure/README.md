@@ -309,7 +309,7 @@ security group opens `NotificationPort` to the ALB, and the task gets
 | Parameter | Notes |
 |---|---|
 | `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
-| `NotificationPort` | Default `3003` — container health check (`/health`) and the ALB target group for `/api/notifications*` |
+| `NotificationPort` | Default `3003` — the ALB target group for `/api/notifications*` |
 | `MessagingStackName` | Messaging stack `NOTIFICATION_QUEUE_URL` is imported from. No default, same reasoning as `DataStackName` |
 | `GmailCredentialsSecretArn` | Secrets Manager secret ARN with `user`/`appPassword` JSON keys - create it by hand (`aws secretsmanager create-secret`), same as `GhcrPullSecretArn` |
 
@@ -332,9 +332,10 @@ come from `GmailCredentialsSecretArn` via the execution role's
 `read-secrets` policy, not a task-role AWS permission (see
 `mailer.service.ts`).
 
-Since there's no ALB in front of it, health is checked with a
-container-level `HealthCheck` (`wget` against `/health` from inside the
-container) rather than a target group.
+Health is checked by the ALB target group against `/api/health`, the same
+as the other services. The service was a queue consumer with no ALB when it
+was first deployed, so it used to carry a container-level `HealthCheck` on
+the same endpoint as well.
 
 ### Applying migrations
 
