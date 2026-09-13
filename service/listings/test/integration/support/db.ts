@@ -213,6 +213,49 @@ export async function seedListing(args: {
   };
 }
 
+type RequestStatus =
+  'active' | 'cancelled' | 'completed' | 'no_show' | 'expired';
+
+export interface SeededRequest {
+  id: string;
+  listingId: string;
+  rescueOrgId: string;
+  claimedBy: string;
+  status: RequestStatus;
+}
+
+// Inserts a claim directly, for tests that need one already in an end state.
+// Only one 'active' claim per listing is allowed
+export async function seedRequest(args: {
+  listingId: string;
+  rescueOrgId: string;
+  claimedBy: string;
+  status?: RequestStatus;
+  requestedQuantity?: string;
+}): Promise<SeededRequest> {
+  const id = randomUUID();
+  const status = args.status ?? 'active';
+  await testPool().query(
+    `INSERT INTO requests (id, listing_id, rescue_org_id, claimed_by, status, requested_quantity)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      id,
+      args.listingId,
+      args.rescueOrgId,
+      args.claimedBy,
+      status,
+      args.requestedQuantity ?? '10.00',
+    ],
+  );
+  return {
+    id,
+    listingId: args.listingId,
+    rescueOrgId: args.rescueOrgId,
+    claimedBy: args.claimedBy,
+    status,
+  };
+}
+
 export interface ListingRow {
   status: string;
   version: number;

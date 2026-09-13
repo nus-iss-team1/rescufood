@@ -7,6 +7,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { RequestsModule } from './requests/requests.module';
     }),
     ListingsModule,
     RequestsModule,
+    SummaryModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
