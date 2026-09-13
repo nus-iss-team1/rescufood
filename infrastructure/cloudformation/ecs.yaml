@@ -140,6 +140,13 @@ Parameters:
       How long the listings service keeps claim idempotency records. After
       this window a reused idempotency key is treated as a new request.
 
+  ListingsPickupReminderLeadHours:
+    Type: Number
+    Default: 24
+    Description: >-
+      How far ahead of a pickup window opening/closing the listings service
+      fires a pickup reminder.
+
   NotificationImage:
     Type: String
     Default: ""
@@ -917,6 +924,8 @@ Resources:
                 Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
             - Name: IDEMPOTENCY_RETENTION_DAYS
               Value: !Ref ListingsIdempotencyRetentionDays
+            - Name: PICKUP_REMINDER_LEAD_HOURS
+              Value: !Ref ListingsPickupReminderLeadHours
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"
