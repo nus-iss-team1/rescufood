@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/lmittmann/tint"
 
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
@@ -39,18 +38,9 @@ func newPublisher(ctx context.Context, logger *slog.Logger) *notify.SQSPublisher
 	}
 }
 
-func newLogger(env string) *slog.Logger {
-	if env == "development" {
-		return slog.New(tint.NewTextHandler(os.Stdout, &tint.Options{
-			TimeFormat: time.ANSIC,
-		}))
-	}
-	return slog.New(slog.NewJSONHandler(os.Stdout, nil))
-}
-
 func main() {
 	_ = godotenv.Load()
-	logger := newLogger(os.Getenv("ENV"))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
