@@ -1145,7 +1145,7 @@ describe('ListingsService', () => {
       expect(repository.updateWithVersion).not.toHaveBeenCalled();
     });
 
-    it('reports every failing rule together (AC7)', async () => {
+    it('reports every failing rule together', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue({
         ...baseListing,

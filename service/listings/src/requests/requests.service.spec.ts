@@ -232,7 +232,7 @@ describe('RequestsService', () => {
         'user-donor',
         'user-rescue',
       ]);
-      // AC1: the donor is notified...
+      // the donor is notified
       expect(notifications.claimCreated).toHaveBeenCalledWith(
         'donor@x.com',
         expect.objectContaining({
@@ -339,7 +339,7 @@ describe('RequestsService', () => {
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
-    it('pins the claim to the idempotency slot inside the transaction (AC1)', async () => {
+    it('pins the claim to the idempotency slot inside the transaction', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       repository.reserveListingForClaim.mockResolvedValue(reservedListing);
@@ -366,7 +366,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('replays the original outcome for an identical retry (AC2)', async () => {
+    it('replays the original outcome for an identical retry', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
       const idempotency = makeIdempotency();
@@ -382,7 +382,7 @@ describe('RequestsService', () => {
       expect(idempotency.claimSlot).not.toHaveBeenCalled();
     });
 
-    it('replays even after the listing has moved on from available (AC2, AC6)', async () => {
+    it('replays even after the listing has moved on from available', async () => {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
       const idempotency = makeIdempotency();
@@ -395,7 +395,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('409s a key reused with a different request and leaves the claim alone (AC3)', async () => {
+    it('409s a key reused with a different request and leaves the claim alone', async () => {
       const repository = makeRepository();
       const idempotency = makeIdempotency();
       idempotency.find.mockResolvedValue(
@@ -416,7 +416,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('409s a retry received while the original is still in flight (AC5)', async () => {
+    it('409s a retry received while the original is still in flight', async () => {
       const repository = makeRepository();
       const idempotency = makeIdempotency();
       idempotency.find.mockResolvedValue(
@@ -430,7 +430,7 @@ describe('RequestsService', () => {
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
-    it('resolves to the original outcome when a concurrent request won the slot (AC4)', async () => {
+    it('resolves to the original outcome when a concurrent request won the slot', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       repository.findById.mockResolvedValue(baseRequest);
@@ -447,7 +447,7 @@ describe('RequestsService', () => {
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
-    it('409s a retry that lost the slot race while the winner is still pending (AC4, AC5)', async () => {
+    it('409s a retry that lost the slot race while the winner is still pending', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       const idempotency = makeIdempotency();
@@ -464,7 +464,7 @@ describe('RequestsService', () => {
       );
     });
 
-    it('scopes the idempotency lookup and slot to the caller org (AC7)', async () => {
+    it('scopes the idempotency lookup and slot to the caller org', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       repository.reserveListingForClaim.mockResolvedValue(reservedListing);
@@ -495,7 +495,7 @@ describe('RequestsService', () => {
       expect(idempotency.release).toHaveBeenCalledWith('slot-1');
     });
 
-    it('does not notify when the claim transaction rolls back (AC5)', async () => {
+    it('does not notify when the claim transaction rolls back', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue(availableListing);
       repository.reserveListingForClaim.mockResolvedValue(undefined);
