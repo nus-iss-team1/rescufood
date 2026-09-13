@@ -757,13 +757,15 @@ Resources:
       Conditions:
         - Field: path-pattern
           # /api/listings and /api/requests are themselves routes, not just
-          # prefixes, so both the bare path and /* are needed.
+          # prefixes, so both the bare path and /* are needed. /api/summary
+          # is a single route with nothing below it.
           Values:
             [
               /api/listings,
               /api/listings/*,
               /api/requests,
               /api/requests/*,
+              /api/summary,
             ]
       Actions:
         - Type: forward
