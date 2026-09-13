@@ -48,6 +48,7 @@ notable ones:
 | `NOTIFICATION_QUEUE_URL` | SQS queue for lifecycle notifications; unset = notifications disabled (logged once) |
 | `RATE_LIMIT_TTL_SECONDS` / `RATE_LIMIT_MAX_REQUESTS` | App-wide throttle, default 100 req/60s/client |
 | `IDEMPOTENCY_RETENTION_DAYS` | How long claim idempotency records are kept before a reused key counts as new, default 7 |
+| `PICKUP_REMINDER_LEAD_HOURS` | How far ahead of a pickup window opening/closing `PickupReminderService` fires a reminder, default 24 |
 
 ## API
 
@@ -72,6 +73,11 @@ message per recipient to `NOTIFICATION_QUEUE_URL` — carrying a deterministic
 `eventId` and the recipient's Cognito sub — which `service/notifications`
 turns into an email and an in-app notification. Best-effort: the send runs
 after the transaction and a failure is only logged.
+
+`PickupReminderService` (`src/requests/pickup-reminder.service.ts`) polls
+every 10 minutes for active claims entering the `PICKUP_REMINDER_LEAD_HOURS`
+window around their pickup window opening or closing, and marks each claim
+so a reminder fires at most once per phase.
 
 ### Claim idempotency
 
