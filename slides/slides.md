@@ -80,7 +80,7 @@ deploy procedure, because there isn't one.
 
 ---
 class: flex flex-col justify-center
-clicks: 3
+clicks: 5
 ---
 
 # The pipeline
@@ -117,8 +117,19 @@ clicks: 3
   <div class="text-center text-xs font-mono transition-all duration-700" style="width:9rem;color:#00000066" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">rescufood.com</div>
 </div>
 
-<div class="text-center mt-14 transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
-  <span class="text-2xl font-semibold">Every arrow is a <span class="accent">pull request</span>.</span>
+<div class="mt-12 mx-auto" style="max-width:34rem">
+  <div class="flex items-baseline transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-base" style="color:#000000">Every arrow is a <span class="accent font-semibold">pull request</span></span>
+  </div>
+  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 4 ? 'opacity-100' : 'opacity-0'">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-base" style="color:#000000">A promotion carries <span class="font-semibold">everything</span> since the last one</span>
+  </div>
+  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 5 ? 'opacity-100' : 'opacity-0'">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-base" style="color:#000000"><span class="font-mono text-sm">git diff qa..develop</span> is the release note</span>
+  </div>
 </div>
 
 </div>
@@ -137,43 +148,15 @@ Click. Promoting to prod is a merge from qa into main. Same shape again.
 Each branch owns one environment, one set of CloudFormation stacks, and
 one domain. There is no fourth path and no manual deploy step.
 
-Click. Every arrow is a pull request, so every promotion is reviewable
-and every promotion is a diff you can read.
--->
+Click. Every arrow is a pull request, so every promotion is reviewable.
 
----
-class: flex flex-col justify-center text-center
-clicks: 2
----
+Click. And a promotion carries whatever has accumulated since the last
+one. No cherry-picking, no release branch, no payload assembled by hand
+under time pressure.
 
-<div class="text-5xl font-extrabold leading-tight px-16">
-A promotion is <span class="accent">everything</span> since the last one.
-</div>
-
-<div class="text-xl mt-10 transition-all duration-700" style="color:#00000099" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">
-No cherry-picking. No release branches. No hand-assembled payload.
-</div>
-
-<div class="mt-10 transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">
-<div class="inline-block rounded-lg border px-6 py-3 font-mono text-base" style="border-color:#0000001a;background:#ffffff;color:#000000">
-git diff qa..develop
-</div>
-</div>
-
-<!--
-WHAT A PROMOTION IS
-
-The hardest part of most release processes is deciding what goes in it.
-We removed that decision. A promotion carries whatever has accumulated
-since the last one, in order.
-
-Click. That rules out the three things that usually go wrong: someone
-cherry-picking a commit and missing its dependency, a release branch
-that drifts from develop, and a payload assembled by hand under time
-pressure.
-
-Click. This command is the entire release note. If you want to know what
-is about to ship to qa, you read that diff. Nothing else is authoritative.
+Click. Which makes that command the entire release note. If you want to
+know what is about to ship to qa, you read that diff. Nothing else is
+authoritative.
 -->
 
 ---
