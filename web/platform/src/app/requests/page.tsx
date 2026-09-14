@@ -35,6 +35,8 @@ export const metadata: Metadata = {
   title: "Requests — RescuFood",
 };
 
+const LISTING_LOOKUP_BATCH = 4;
+
 const tabs = ["all", ...requestStatuses] as const;
 
 const views = [
@@ -146,16 +148,23 @@ export default async function RequestsPage({
     } catch {
       // Both views fall back to the requested quantity.
     }
-    // The browse query drops anything not available, claimed lots included.
-    const missing = [...new Set(all.map((r) => r.listingId))].filter(
+    // The browse query drops anything not available, claimed lots included,
+    // and the list endpoint has no bulk form for them. Fetched a few at a
+    // time: every server-side call shares one rate-limit budget, so a wide
+    // burst here throttles the whole app.
+    const missing = [...new Set(requests.map((r) => r.listingId))].filter(
       (id) => !listings.has(id),
     );
-    const rest = await Promise.allSettled(
-      missing.map((id) => getListing(session.idToken!, id)),
-    );
-    for (const result of rest) {
-      if (result.status === "fulfilled") {
-        listings.set(result.value.id, result.value);
+    for (let i = 0; i < missing.length; i += LISTING_LOOKUP_BATCH) {
+      const batch = await Promise.allSettled(
+        missing
+          .slice(i, i + LISTING_LOOKUP_BATCH)
+          .map((id) => getListing(session.idToken!, id)),
+      );
+      for (const result of batch) {
+        if (result.status === "fulfilled") {
+          listings.set(result.value.id, result.value);
+        }
       }
     }
   }
