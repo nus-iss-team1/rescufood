@@ -98,6 +98,11 @@ pool, so one environment's accounts do not exist in another.
 Adding required reviewers to an environment turns its deploys into a gated
 promotion, which is worth doing on `prod`.
 
+`e2e-test.yml` waits for every service in the target cluster to report a
+`COMPLETED` rollout before it starts. Only the platform build triggers it, so
+a commit touching several services would otherwise test against ones still
+mid-deploy.
+
 `e2e-test.yml` deliberately skips `main`. The suite posts listings, claims
 them and completes pickups, so pointing it at prod would write test data
 into the live site. Only `dev` and `qa` need its `BASE_URL` and test
