@@ -1,0 +1,65 @@
+/* Warm cream canvas, green accent. Tokens mirror web/platform globals.css. */
+:root {
+  --deck-green: #1f6b45;
+  --deck-green-dark: #17533a;
+  --deck-ink: #000000;
+  --deck-muted: #00000099;
+  --deck-line: #0000001a;
+  --deck-surface: #ffffff;
+  --deck-subtle: #f2f0ed;
+
+  --slidev-theme-primary: var(--deck-green);
+}
+
+.slidev-layout {
+  background: #f6f4f1;
+  color: var(--deck-ink);
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  color: var(--deck-ink);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.slidev-layout h1 {
+  font-size: 3.75rem;
+  line-height: 1.05;
+}
+
+.slidev-layout a {
+  color: var(--deck-green);
+  border-bottom-color: var(--deck-green);
+}
+
+.slidev-layout code {
+  color: var(--deck-green-dark);
+}
+
+/* Green accent applied to one word or phrase inside a statement. */
+.accent {
+  color: var(--deck-green);
+}
+
+/* Short rule under the deck title. */
+.rule-green {
+  width: 4rem;
+  height: 4px;
+  background: var(--deck-green);
+  border-radius: 2px;
+}
+
+/* Diagram labels: small uppercase, wide tracking. */
+.dgm {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.dgm-wide {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+}
