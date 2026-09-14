@@ -47,7 +47,7 @@ with the branch selected.
 | `profile-build.yml` | Push to `develop`, `qa` or `main` touching `service/profile/**`, manual | SAST → build & push `.../profile` → roll the `profile` ECS service |
 | `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | SAST → build & push `.../listings` → roll the `listings` ECS service |
 | `notifications-build.yml` | Push to `develop`, `qa` or `main` touching `service/notifications/**`, manual | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
-| `e2e-test.yml` | After **Build & Push Platform Image** completes, or manual | Playwright e2e against the deployed API Gateway URL. Post-deploy smoke check — never blocks anything |
+| `e2e-test.yml` | After **Build & Push Platform Image** completes on `develop` or `qa`, or manual | Playwright e2e against that environment. Post-deploy smoke check — never blocks anything |
 | `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
@@ -97,6 +97,11 @@ pool, so one environment's accounts do not exist in another.
 
 Adding required reviewers to an environment turns its deploys into a gated
 promotion, which is worth doing on `prod`.
+
+`e2e-test.yml` deliberately skips `main`. The suite posts listings, claims
+them and completes pickups, so pointing it at prod would write test data
+into the live site. Only `dev` and `qa` need its `BASE_URL` and test
+accounts.
 
 ## reusable-sast.yml
 

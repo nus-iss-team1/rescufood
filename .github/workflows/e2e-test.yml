@@ -6,6 +6,10 @@ name: End-to-End Tests
 # any branch-protection required check. A failure here should show up red in
 # the Actions tab and in the uploaded report - not be silently masked - so
 # don't add continue-on-error to the test step.
+#
+# dev and qa only. The suite posts listings, claims them and completes
+# pickups, so running it against prod would write test data into the live
+# site.
 on:
   workflow_run:
     workflows: ["Build & Push Platform Image"]
@@ -24,12 +28,15 @@ concurrency:
 jobs:
   e2e:
     name: Playwright E2E
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      (github.event_name == 'workflow_dispatch'
+        || github.event.workflow_run.conclusion == 'success')
+      && (github.event.workflow_run.head_branch || github.ref_name) != 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
+    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
     defaults:
       run:
         working-directory: e2e
