@@ -11,8 +11,8 @@
   "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:prod",
   "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:prod",
   "DesiredCount=1",
-  "GhcrPullSecretArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
-  "AppSecretsArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
-  "GmailCredentialsSecretArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
-  "AuthCognitoIssuer=REPLACE_AFTER_PROD_IAM_STACK_DEPLOY"
+  "GhcrPullSecretArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/prod/ghcr-pull-OuUwR2",
+  "AppSecretsArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/prod/app-secrets-3UsJAQ",
+  "GmailCredentialsSecretArn=arn:aws:secretsmanager:ap-southeast-1:695137441790:secret:rescufood/prod/gmail-credentials-MnanaQ",
+  "AuthCognitoIssuer=https://cognito-idp.ap-southeast-1.amazonaws.com/ap-southeast-1_G2gDbefDg"
 ]
