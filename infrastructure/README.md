@@ -9,10 +9,11 @@ Region: **ap-southeast-1** (Singapore).
 |---|---|---|---|
 | dev | `develop` | `dev.json`, `*-dev.json` | `dev.rescufood.com` |
 | qa | `qa` | `qa.json`, `*-qa.json` | `qa.rescufood.com` |
+| prod | `main` | `prod.json`, `*-prod.json` | `rescufood.com` |
 
-Both share `rescufood-core-network` and `rescufood-core-dns`; everything else
-is per environment — its own security groups, Cognito user pool, ECS cluster,
-RDS instance, S3 bucket, SQS queues and API Gateway.
+All three share `rescufood-core-network` and `rescufood-core-dns`; everything
+else is per environment — its own security groups, Cognito user pool, ECS
+cluster, RDS instance, S3 bucket, SQS queues and API Gateway.
 
 Pushing to an environment's branch builds the components whose paths changed
 and rolls that environment's ECS services. See
@@ -40,10 +41,9 @@ security groups, ECS services, and databases, tagged with
 The ALB is **internal** — nothing reaches it from the internet directly.
 Browser traffic goes through an **API Gateway HTTP API** over a VPC Link,
 and listing images through **CloudFront** (`*.cloudfront.net`) in front of
-S3. Each environment's HTTP API answers on its own subdomain
-(`dev.rescufood.com`, `qa.rescufood.com`) once the DNS stack is deployed, and
-on its `*.execute-api` URL until then. The apex `rescufood.com` is not mapped
-to an environment yet.
+S3. Each environment's HTTP API answers on its own domain once the DNS stack
+is deployed, and on its `*.execute-api` URL until then: `dev.rescufood.com`,
+`qa.rescufood.com`, and the apex `rescufood.com` for prod.
 
 ```
 browser → API Gateway (HTTP API) → VPC Link → internal ALB → ECS services
@@ -81,8 +81,8 @@ then cluster by scope.
 [`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md) for the
 migration writeup.
 
-`dev` and `qa` are deployed. A prod environment follows the same pattern:
-`rescufood-prod-security`, `rescufood-prod-ecs`, ...
+`dev`, `qa` and `prod` are all deployed, each a full set of the per-environment
+stacks above.
 
 Deploy order: network first — the security groups stack imports the VPC id
 from the network stack's exports, and the ECS and data stacks import both.
@@ -635,10 +635,10 @@ Finally, add a **qa** GitHub Environment with its own `BASE_URL` variable and
 test-account secrets so `e2e-test.yml` runs against it — see
 [`.github/workflows/README.md`](../.github/workflows/README.md).
 
-For prod later: copy each `parameters/*-qa.json` to a `*-prod.json`, set
-`EnvironmentName=prod` (and a pinned image tag for ECS), override
-`MultiAz=true` and `DeletionProtection=true` in `data-prod.json`, then deploy
-the same way.
+`parameters/*-prod.json` mirror the qa set, sized the same. For a real
+production workload, override `MultiAz=true`, `DeletionProtection=true` and a
+larger `InstanceClass` in `data-prod.json`, and set the Cognito user pool's
+`DeletionProtection` to `ACTIVE`.
 
 ## Teardown
 
