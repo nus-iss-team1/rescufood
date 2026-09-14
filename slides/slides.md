@@ -24,11 +24,7 @@ Rescu<span class="accent">Food</span>
 
 <div class="rule-green mt-10" style="margin-left:auto;margin-right:auto"></div>
 
-<div class="text-2xl mt-10 font-medium" style="color:#00000099">
-Branching &amp; deployment strategy
-</div>
-
-<div class="text-sm mt-16 dgm-wide" style="color:#00000066">
+<div class="text-sm mt-12 dgm-wide" style="color:#00000066">
 NUS-ISS &middot; Team 1
 </div>
 
@@ -38,6 +34,22 @@ TITLE
 Hold here while people settle. One line if you need it: this is how code
 gets from a laptop to rescufood.com, and it is the same three steps every
 time.
+-->
+
+---
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Section</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Branching &amp; <span class="accent">deployment</span>
+</div>
+
+<!--
+SECTION
+
+Say the title and move on. This is a marker, not a slide to talk over.
 -->
 
 ---
