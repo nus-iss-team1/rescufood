@@ -1,0 +1,5 @@
+# ZAP alert handling for DAST scans: <alert id> <TAB> IGNORE|WARN|FAIL <TAB> comment
+# Unlisted alerts default to WARN. Mark an alert FAIL to block a pipeline on it
+# (callers must also set fail-on-findings: true).
+# Alert ids: https://www.zaproxy.org/docs/alerts/
+10035	IGNORE	Strict-Transport-Security - ephemeral scan target is plain HTTP, TLS terminates at the ALB

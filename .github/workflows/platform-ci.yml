@@ -1,0 +1,104 @@
+name: Platform CI
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "web/platform/**"
+      - "web/sdk/**"
+      - "web/ui/**"
+      - ".github/workflows/platform-ci.yml"
+      - ".github/workflows/reusable-sast.yml"
+      - ".github/workflows/reusable-dast.yml"
+      - ".github/zap/**"
+  workflow_dispatch:
+    inputs:
+      scan-type:
+        description: ZAP scan type. Active attacks run only on request.
+        required: false
+        default: baseline
+        type: choice
+        options: [baseline, full]
+
+concurrency:
+  group: platform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint & type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web/platform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            web/platform/package-lock.json
+            web/ui/package-lock.json
+
+      # The linked ui package resolves its own runtime deps from web/ui,
+      # since it's a file: dependency, not an npm workspace (see
+      # web/platform/Dockerfile).
+      - name: Install ui dependencies
+        working-directory: web/ui
+        run: npm ci --omit=dev
+
+      - name: Install platform dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/reusable-sast.yml
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      component: platform
+      # Semgrep and trivy cover every web package; codeql analyses the
+      # app alone because the wider tree makes one query hang.
+      working-directory: web
+      codeql-paths: web/platform
+      codeql-languages: '["javascript-typescript"]'
+      # Flip to true once the existing dependency findings are triaged.
+      fail-on-findings: false
+
+  dast:
+    name: DAST
+    uses: ./.github/workflows/reusable-dast.yml
+    permissions:
+      contents: read
+    with:
+      component: platform
+      build-context: web
+      dockerfile: web/platform/Dockerfile
+      port: 3000
+      health-path: /
+      scan-path: /
+      # Empty on pull requests, where only the passive scan makes sense.
+      scan-type: ${{ inputs.scan-type || 'baseline' }}
+      fail-on-findings: false
+      # Cognito variables are left unset, so the app renders sign-in as disabled.
+      runtime-env: |
+        AUTH_SECRET=dast-throwaway-secret-not-used-outside-ci
+        AUTH_URL=http://localhost:3000
+        AUTH_TRUST_HOST=true
+        NEXT_TELEMETRY_DISABLED=1

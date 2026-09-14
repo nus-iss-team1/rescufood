@@ -1,0 +1,107 @@
+package main
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"time"
+
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/config"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/notify"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/store"
+)
+
+// newPublisher builds a queue-backed notifier, or returns nil
+// (notifications disabled) when the queue isn't configured.
+func newPublisher(ctx context.Context, logger *slog.Logger) *notify.SQSPublisher {
+	queueURL := os.Getenv("NOTIFICATION_QUEUE_URL")
+	if queueURL == "" {
+		logger.Warn("NOTIFICATION_QUEUE_URL not set; email notifications are disabled")
+		return nil
+	}
+	cfg, err := awsconfig.LoadDefaultConfig(ctx)
+	if err != nil {
+		logger.Warn("unable to load AWS config; email notifications are disabled", "error", err)
+		return nil
+	}
+	return &notify.SQSPublisher{
+		Client:   sqs.NewFromConfig(cfg),
+		QueueURL: queueURL,
+	}
+}
+
+func main() {
+	_ = godotenv.Load()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	dsn, err := config.DatabaseURL()
+	if err != nil {
+		logger.Error("database is not configured", "error", err)
+		os.Exit(1)
+	}
+
+	// connect to database.
+	pool, err := pgxpool.New(ctx, dsn)
+	if err == nil {
+		err = pool.Ping(ctx)
+	}
+	if err != nil {
+		logger.Error("unable to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+	logger.Info("successfully connected to database")
+
+	verifier, err := auth.NewVerifier(ctx, os.Getenv("AUTH_COGNITO_ISSUER"))
+	if err != nil {
+		logger.Error("unable to configure token verifier", "error", err)
+		os.Exit(1)
+	}
+
+	st := store.New(pool)
+
+	pub := newPublisher(ctx, logger)
+	var mailer api.Mailer
+	var welcomer auth.Welcomer
+	if pub != nil {
+		mailer = pub
+		welcomer = pub
+	}
+
+	router := api.NewRouter(api.Deps{
+		Logger:               logger,
+		Store:                st,
+		Auth:                 auth.Middleware(verifier, st.Users, welcomer),
+		Mailer:               mailer,
+		AllowedOrigins:       config.AllowedOrigins(),
+		FailedLoginThreshold: config.FailedLoginThreshold(),
+		RestrictionDuration:  config.RestrictionDuration(),
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3001"
+	}
+
+	srv := &http.Server{
+		Addr:              ":" + port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	logger.Info("profile service listening", "port", port)
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Error("server stopped", "error", err)
+		os.Exit(1)
+	}
+}

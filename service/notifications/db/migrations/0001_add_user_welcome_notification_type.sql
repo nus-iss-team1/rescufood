@@ -1,0 +1,1 @@
+ALTER TYPE "public"."notification_type" ADD VALUE 'user_welcome' BEFORE 'claim_requested';

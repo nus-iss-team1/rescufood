@@ -1,0 +1,680 @@
+# RescuFood Infrastructure
+
+AWS CloudFormation templates for the RescuFood platform.
+Region: **ap-southeast-1** (Singapore).
+
+## Environments
+
+| Environment | Branch | Parameter files | Public URL |
+|---|---|---|---|
+| dev | `develop` | `dev.json`, `*-dev.json` | `dev.rescufood.com` |
+| qa | `qa` | `qa.json`, `*-qa.json` | `qa.rescufood.com` |
+| prod | `main` | `prod.json`, `*-prod.json` | `rescufood.com` |
+
+All three share `rescufood-core-network` and `rescufood-core-dns`; everything
+else is per environment — its own security groups, Cognito user pool, ECS
+cluster, RDS instance, S3 bucket, SQS queues and API Gateway.
+
+Pushing to an environment's branch builds the components whose paths changed
+and rolls that environment's ECS services. See
+[`.github/workflows/README.md`](../.github/workflows/README.md) for the
+branching model.
+
+## Architecture
+
+One VPC (`10.0.0.0/16`) shared by every environment, spanning 2 AZs:
+
+| Tier | AZ-a | AZ-b | Internet path | Hosts |
+|---|---|---|---|---|
+| Public | 10.0.0.0/24 | 10.0.1.0/24 | Internet Gateway | ALB, NAT Gateway |
+| App (private) | 10.0.10.0/24 | 10.0.11.0/24 | outbound via NAT | ECS Fargate tasks |
+| Data (isolated) | 10.0.20.0/24 | 10.0.21.0/24 | none | RDS PostgreSQL |
+
+A single NAT Gateway (in public AZ-a) serves both app subnets — an accepted
+single point of failure to keep cost down (~US$35/month). The data tier has
+no route to the internet at all.
+
+Environment separation inside the shared VPC is logical: per-environment
+security groups, ECS services, and databases, tagged with
+`Environment: dev|qa|prod`.
+
+The ALB is **internal** — nothing reaches it from the internet directly.
+Browser traffic goes through an **API Gateway HTTP API** over a VPC Link,
+and listing images through **CloudFront** (`*.cloudfront.net`) in front of
+S3. Each environment's HTTP API answers on its own domain once the DNS stack
+is deployed, and on its `*.execute-api` URL until then: `dev.rescufood.com`,
+`qa.rescufood.com`, and the apex `rescufood.com` for prod.
+
+```
+browser → API Gateway (HTTP API) → VPC Link → internal ALB → ECS services
+browser → CloudFront → S3 (listing images)
+service → internal ALB → ECS services   (server-to-server, stays in the VPC)
+```
+
+Security group chain per environment:
+
+```
+VPC CIDR (API Gateway VPC Link) → alb-sg (80) → app-sg (3000 web, 3001 profile, 3002 listings, 3003 notification) → db-sg (5432)
+```
+
+## Stacks
+
+Stack naming convention: **`rescufood-<scope>-<component>`**, where scope is
+`core` for resources used by every environment, or the environment name
+(`dev`, `qa`, `prod`) for per-environment resources. The CloudFormation console
+sorts alphabetically, so all project stacks group under `rescufood-` and
+then cluster by scope.
+
+| Stack name | Template | Scope |
+|---|---|---|
+| `rescufood-core-network` | `cloudformation/network.yaml` | Core (deploy once) |
+| `rescufood-<env>-security` | `cloudformation/security-groups.yaml` | Per environment |
+| `rescufood-<env>-iam` | `cloudformation/iam.yaml` | Per environment |
+| `rescufood-<env>-ecs` | `cloudformation/ecs.yaml` | Per environment |
+| `rescufood-<env>-data` | `cloudformation/data.yaml` | Per environment |
+| `rescufood-<env>-messaging` | `cloudformation/messaging.yaml` | Per environment |
+| `rescufood-core-dns` | `cloudformation/dns.yaml` | Core (deploy once) |
+| `rescufood-<env>-api-gateway` | `cloudformation/api-gateway.yaml` | Per environment (after ECS and DNS) |
+
+`api-gateway.yaml` is the internet-facing front (HTTP API + VPC Link + a
+`$default` route to the ECS stack's ALB listener). See
+[`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md) for the
+migration writeup.
+
+`dev`, `qa` and `prod` are all deployed, each a full set of the per-environment
+stacks above.
+
+Deploy order: network first — the security groups stack imports the VPC id
+from the network stack's exports, and the ECS and data stacks import both.
+The IAM stack (Cognito) has no VPC dependency and can be deployed
+independently at any time.
+
+## Identity (IAM) stack
+
+`cloudformation/iam.yaml` provisions the per-environment identity service:
+
+- **Cognito User Pool** (`rescufood-<env>-users`) — email sign-in,
+  self-signup enabled (admins approve organisations at the application
+  level per FR1), verified-email recovery, 12-char minimum passwords.
+- **Hosted UI domain** — `rescufood-<env>.auth.ap-southeast-1.amazoncognito.com`.
+- **Web app client** — confidential client (secret generated) using the
+  OAuth authorization-code flow with `openid email profile` scopes; the
+  frontend's Auth.js handles the server-side code exchange.
+- **Role groups** — `donor`, `rescue-partner`, `admin`; group membership
+  is included in tokens (`cognito:groups` claim) for role checks.
+
+The frontend consumes the stack via environment variables (see
+`web/.env.example`):
+
+| Frontend env var | Source |
+|---|---|
+| `AUTH_COGNITO_ID` | `WebClientId` output |
+| `AUTH_COGNITO_SECRET` | Managed client secret (Cognito console / CLI, not a stack output) |
+| `AUTH_COGNITO_ISSUER` | `Issuer` output |
+
+After deploying, register any non-localhost frontend URL by re-deploying
+with `CallbackUrls`/`LogoutUrls` parameter overrides.
+
+## Compute (ECS) stack
+
+`cloudformation/ecs.yaml` provisions the per-environment compute tier:
+
+- **ECS cluster** (`rescufood-<env>`) and a Fargate **web-platform service**
+  in the private app subnets (no public IP, image pulls via the NAT).
+  The optional **profile service** shares the cluster and ALB — see
+  below.
+- **Internet-facing ALB** in the public subnets, forwarding to the
+  container on port 3000. HTTP-only until `CertificateArn` is set, at
+  which point 443 is served and 80 redirects to it.
+- **Deployment circuit breaker** — a rollout whose tasks fail health
+  checks rolls back automatically instead of looping.
+- **ECS Exec** enabled — `aws ecs execute-command` opens a shell in a
+  running task for debugging.
+
+The service runs without a backend or database; the only runtime
+dependency is Cognito, injected through the optional secrets below.
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `Image` | `ghcr.io/nus-iss-team1/rescufood/frontend:develop` | Pushed by `platform-build.yml` |
+| `CertificateArn` | empty | ACM cert; empty = plain HTTP on 80 |
+| `GhcrPullSecretArn` | empty | Only needed while the GHCR image is private |
+| `AppSecretsArn` | empty | Empty = sign-in renders disabled |
+
+Two optional Secrets Manager secrets, passed by ARN:
+
+- **GHCR pull secret** (`GhcrPullSecretArn`) — needed only if the GHCR
+  package is private. JSON: `{"username": "<github-username>",
+  "password": "<PAT with read:packages>"}`. Making the package public
+  (GitHub → Packages → frontend → settings) avoids this entirely.
+- **App secrets** (`AppSecretsArn`) — one secret holding the four auth
+  variables from `web/.env.example` as JSON keys: `AUTH_SECRET`,
+  `AUTH_COGNITO_ID`, `AUTH_COGNITO_SECRET`, `AUTH_COGNITO_ISSUER`.
+
+Caveat while the ALB is HTTP-only: Cognito rejects non-HTTPS callback
+URLs (localhost excepted), so the hosted-UI OAuth flow cannot be
+registered against `http://<alb-dns>`. The username/password form does
+not use a callback and works fine over HTTP.
+
+The `Image` tag `develop` is mutable — CloudFormation sees no change
+when a new image is pushed. The `deploy` job in
+`.github/workflows/platform-build.yml` rolls the service onto each
+newly pushed image and fails the run if the deployment circuit breaker
+rolls it back. It authenticates with an access key from `AWS_ACCESS_KEY_ID`
+and `AWS_SECRET_ACCESS_KEY`, read from the GitHub Environment matching the
+branch and falling back to the repository secrets. To roll the service
+manually instead:
+
+```sh
+aws ecs update-service \
+  --region ap-southeast-1 \
+  --cluster rescufood-dev \
+  --service web-platform \
+  --force-new-deployment
+```
+
+## Profile service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the Go profile service, gated on
+`ProfileImage`: leave it empty and no profile resources are created.
+When set it adds a Fargate service on port 3001, its own target group
+and log group, and an ALB rule routing `/api/profile/*` to it.
+
+| Parameter | Notes |
+|---|---|
+| `ProfileImage` | `ghcr.io/nus-iss-team1/rescufood/profile:develop` |
+| `AuthCognitoIssuer` | `Issuer` output of the IAM stack |
+| `ProfileDbName` | Database and role the service owns (`profile`) |
+| `DataStackName` | Data stack whose database exports to import. No default — a wrong value points the service at another environment's database |
+
+The service reads `DB_HOST`, `DB_PORT`, `DB_USER` and `DB_NAME` from the
+task definition (imported from the data stack) and `DB_PASSWORD` from
+Secrets Manager, then composes its own connection string. The password
+lives in a secret this stack **generates** — nothing to create by hand,
+and it never appears in a template, a parameter file or a log.
+
+### One-time database bootstrap
+
+Postgres roles, databases and tables are not CloudFormation resources —
+no resource type reaches inside an instance. The stack therefore ships a
+`rescufood-<env>-db-bootstrap` task definition that creates the role and
+database using the RDS master credentials. Run it once per environment
+(and again after rotating the generated password); it is idempotent:
+
+```sh
+subnets=$(aws cloudformation describe-stacks --region ap-southeast-1 \
+  --stack-name rescufood-core-network \
+  --query "Stacks[0].Outputs[?OutputKey=='AppSubnetIds'].OutputValue" \
+  --output text)
+sg=$(aws cloudformation describe-stacks --region ap-southeast-1 \
+  --stack-name rescufood-dev-security \
+  --query "Stacks[0].Outputs[?OutputKey=='AppSecurityGroupId'].OutputValue" \
+  --output text)
+net="awsvpcConfiguration={subnets=[$subnets],securityGroups=[$sg],\
+assignPublicIp=DISABLED}"
+
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-db-bootstrap --launch-type FARGATE \
+  --network-configuration "$net"
+```
+
+Watch it with
+`aws logs tail /ecs/rescufood-dev/db-bootstrap --region ap-southeast-1`.
+
+### Applying migrations
+
+The service never migrates schema itself. Its image carries a `migrate`
+binary, so schema changes run as the same task definition with the
+command overridden — no tunnel and no local database client:
+
+```sh
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-profile --launch-type FARGATE \
+  --network-configuration "$net" \
+  --overrides '{"containerOverrides":[{"name":"profile",
+    "command":["/migrate","up"]}]}'
+```
+
+Run this **before** deploying code that needs the new schema: a rollout
+reverts the code, never the database. Until `ProfileImage` is set, the
+service and this task definition do not exist, and `profile-build.yml`
+still builds and pushes the image but warns instead of deploying.
+
+## Listings service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the NestJS listings service,
+gated on `ListingsImage` the same way the profile service is gated on
+`ProfileImage` — leave it empty and no listings resources are created.
+When set it adds a Fargate service on port 3002, its own target group
+and log group, and one ALB rule routing both `/api/listings/*` and
+`/api/requests/*` to it (one service handles both resource types).
+
+| Parameter | Notes |
+|---|---|
+| `ListingsImage` | `ghcr.io/nus-iss-team1/rescufood/listings:develop` |
+| `ListingsPort` | Default `3002` |
+
+Unlike the profile service, listings gets **no database role, secret or
+bootstrap task of its own**. Its tables (listings, requests, audit_log)
+live in the same `profile` database and reference organisations/users
+via plain FK columns (see
+`service/listings/src/db/external.schema.ts`), so the task definition
+reuses `ProfileDbName` for `DB_USER`/`DB_NAME` and reads `DB_PASSWORD`
+from the same `ProfileDbSecret` the profile service uses. Deploying the
+listings service therefore requires the profile service's database
+bootstrap (above) to have already run — there is no separate one for
+listings.
+
+The task role also carries an inline policy granting `s3:PutObject`,
+`s3:GetObject` and `s3:DeleteObject` on the data stack's listing images
+bucket (`${BucketArn}/*`, imported via `DataStackName`) — see
+`src/storage/s3.service.ts`. No other AWS access is needed; the bucket
+stays private, images are served through presigned GET URLs.
+
+The ALB health check hits `/api/health`, an unauthenticated endpoint
+added specifically for this — every other route in the service sits
+behind `JwtAuthGuard`, which an ALB target group health check has no
+bearer token to satisfy.
+
+### Applying migrations
+
+Unlike profile, the listings image carries no `migrate` binary and the
+task definition has no override path for one. Migrations run from a
+developer machine instead, through an SSM tunnel to a running
+frontend task:
+
+```sh
+service/listings/scripts/migrate-rds.sh dev
+```
+
+Requires the AWS CLI v2, the Session Manager plugin, and an IAM
+principal allowed to call `cloudformation:DescribeStacks`,
+`secretsmanager:GetSecretValue`, `ecs:ListTasks`, `ecs:DescribeTasks`,
+`ecs:ExecuteCommand` and `ssm:StartSession`. Run it before deploying
+code that needs the new schema, same as profile's migration step.
+
+## Notification service (in the ECS stack)
+
+`cloudformation/ecs.yaml` also carries the NestJS notification service,
+gated on `NotificationImage` the same way profile/listings are — leave it
+empty and no notification resources are created. When set it adds a
+Fargate service that long-polls the SQS queue from the messaging stack and
+sends email via Gmail SMTP (`nodemailer`, not SES — sending "from" a domain
+you don't control fails SPF/DKIM/DMARC at the recipient). It also serves an
+authenticated read API for in-app notifications at `/api/notifications*`,
+behind its own target group and listener rule (priority 12); the app
+security group opens `NotificationPort` to the ALB, and the task gets
+`AUTH_COGNITO_ISSUER` + `CORS_ALLOWED_ORIGINS` like profile/listings.
+
+| Parameter | Notes |
+|---|---|
+| `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
+| `NotificationPort` | Default `3003` — the ALB target group for `/api/notifications*` |
+| `MessagingStackName` | Messaging stack `NOTIFICATION_QUEUE_URL` is imported from. No default, same reasoning as `DataStackName` |
+| `GmailCredentialsSecretArn` | Secrets Manager secret ARN with `user`/`appPassword` JSON keys - create it by hand (`aws secretsmanager create-secret`), same as `GhcrPullSecretArn` |
+
+Unlike listings, this service gets **its own database role, secret and
+bootstrap task** (`NotificationDbSecret`, `NotificationDbBootstrapTaskDefinition`)
+— a delivery record never needs to join against listings/profile tables, so
+there's no reason to share their database. Bootstrap it the same way as
+profile's (above), substituting the notification bootstrap task definition:
+
+```sh
+aws ecs run-task --region ap-southeast-1 --cluster rescufood-dev \
+  --task-definition rescufood-dev-notification-db-bootstrap --launch-type FARGATE \
+  --network-configuration "$net"
+```
+
+The task role carries an inline policy granting `sqs:ReceiveMessage`,
+`sqs:DeleteMessage` and `sqs:GetQueueAttributes` on the messaging stack's
+queue — see `src/notifications/sqs-consumer.service.ts`. Gmail credentials
+come from `GmailCredentialsSecretArn` via the execution role's
+`read-secrets` policy, not a task-role AWS permission (see
+`mailer.service.ts`).
+
+Health is checked by the ALB target group against `/api/health`, the same
+as the other services. The service was a queue consumer with no ALB when it
+was first deployed, so it used to carry a container-level `HealthCheck` on
+the same endpoint as well.
+
+### Applying migrations
+
+Same approach as listings — no `migrate` binary in the image, so
+migrations run from a developer machine through an SSM tunnel:
+
+```sh
+service/notifications/scripts/migrate-rds.sh dev
+```
+
+Same requirements as listings' migration step (above). Run it after the
+database bootstrap task and before deploying code that needs the new
+schema.
+
+## Database (data) stack
+
+`cloudformation/data.yaml` provisions the per-environment data tier:
+
+- **RDS PostgreSQL** (`rescufood-<env>-db`) in the isolated data
+  subnets — no public access, port 5432 reachable only from the app
+  security group.
+- **Managed master credentials** — RDS creates and rotates the master
+  password in Secrets Manager; it never appears in a template or
+  parameter file. The secret ARN is the `DbSecretArn` output (JSON
+  keys `username`, `password`).
+- **Encrypted gp3 storage**, 20 GiB autoscaling up to 100 GiB.
+- **Backups** — 7 days of automated backups; deleting or replacing
+  the instance takes a final snapshot (`DeletionPolicy: Snapshot`).
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `EngineVersion` | `17` | Major version; set `major.minor` to pin |
+| `InstanceClass` | `db.t4g.micro` | ~US$13/month, ~US$15 with storage |
+| `MultiAz` | `false` | Standby replica in the second AZ |
+| `DeletionProtection` | `false` | Set `true` for prod |
+
+The backend consumes the stack through the `DbEndpoint`, `DbPort`,
+`DbName` and `DbSecretArn` exports, composing the connection string as
+`postgresql://<username>:<password>@<endpoint>:<port>/<name>`. For prod,
+override `MultiAz=true`, `DeletionProtection=true` and a larger instance
+class in `parameters/data-prod.json`.
+
+### Listing images bucket
+
+The same stack provisions `rescufood-<env>-listing-images`, the S3
+bucket `service/listings`' `S3Service` reads and writes
+(`src/storage/s3.service.ts`). S3 bucket names are unique across all of
+AWS, not just this account, so this name is only safe as long as no
+other AWS customer claims it first - checked available before each
+environment's first deploy. If a collision ever blocks a deploy, add an
+account-id or random suffix in `data.yaml`'s `BucketName`.
+
+- **Private** — all four public-access-block settings on. The only reader
+  is a CloudFront distribution (provisioned in this stack) via an Origin
+  Access Control; `service/listings` returns `${CDN_URL}/${key}` image
+  links, no presigning. Nothing is fetched from the bucket directly.
+- **SSE-S3 encryption** at rest.
+- **No CORS configuration** — uploads go through the listings service
+  (`multipart/form-data` to the API, which then calls `PutObjectCommand`
+  server-side), so the browser never talks to S3 directly.
+- **`DeletionPolicy: Retain`** — same reasoning as the database's
+  snapshot policy: deleting the stack must not be able to take listing
+  images with it. CloudFormation also refuses to delete a non-empty
+  bucket regardless.
+
+The listings task role (`ListingsTaskRole` in the ECS stack, see above)
+is the only principal granted access, scoped to `PutObject`/`GetObject`/
+`DeleteObject`. `S3_BUCKET_NAME` in the listings task definition is
+wired to this stack's `BucketName` export.
+
+## Messaging (SQS) stack
+
+`cloudformation/messaging.yaml` provisions the per-environment
+notification queue plus its dead-letter queue:
+
+- **`rescufood-<env>-notifications`** — producers (profile, listings)
+  send one message per notification here; the notification service
+  consumes it, sends the email and creates the in-app record.
+  `VisibilityTimeout` 60s, SQS-managed encryption at rest.
+- **`rescufood-<env>-notifications-dlq`** — messages that fail 5
+  delivery attempts land here instead of retrying forever. 14-day
+  retention (the SQS maximum) to leave room to notice and replay
+  failures.
+
+No VPC dependency, so unlike the ECS/data stacks it can be deployed
+independently of the network and security stacks:
+
+```sh
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-messaging \
+  --template-file cloudformation/messaging.yaml \
+  --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
+  --no-fail-on-empty-changeset
+```
+
+Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack name) are
+imported by the ECS stack: `service/profile` and `service/listings` get
+`sqs:SendMessage` on the queue, `service/notifications` gets
+receive/delete.
+
+## DNS and custom domain
+
+`cloudformation/dns.yaml` holds the shared certificate for the custom
+domain. It is core scope: one certificate covers the apex and every
+subdomain, and each environment's API Gateway stack imports it.
+
+The hosted zone is **not** created by this stack. Registering a domain
+through Route 53 creates a public hosted zone automatically, and a second
+zone for the same name would serve a different set of nameservers than the
+registrar delegates to. Pass the existing zone id instead:
+
+```sh
+aws route53 list-hosted-zones \
+  --query "HostedZones[?Name=='rescufood.com.'].Id" --output text
+```
+
+Fill that id into `cloudformation/parameters/dns-core.json` — it ships with
+a `REPLACE_AFTER_DOMAIN_REGISTRATION` placeholder — then deploy. ACM writes
+its own validation records into the zone, so the stack settles without
+manual DNS steps, typically within a few minutes.
+
+The certificate must live in **ap-southeast-1**: a regional API Gateway
+domain requires the certificate in the API's own region. A CloudFront
+alternate domain name (e.g. `images.rescufood.com`) would need a second
+certificate in **us-east-1**, which means a second stack deployed to that
+region — CloudFormation cannot create a resource outside its own region.
+
+| Parameter | Notes |
+|---|---|
+| `DomainName` | Registered apex, `rescufood.com` |
+| `HostedZoneId` | Zone Route 53 created during registration |
+
+The per-environment domain records live in `api-gateway.yaml`, gated on
+`DnsStackName` being set:
+
+| Parameter | Notes |
+|---|---|
+| `DnsStackName` | Empty leaves the API on its `execute-api` URL |
+| `CustomDomainName` | Domain for this environment, `dev.rescufood.com` |
+| `ApexDomainName` | Extra domain on the same API, `rescufood.com` |
+
+`ApexDomainName` is unset, so `rescufood.com` resolves nowhere. Setting it
+on an environment maps the apex to that environment's API as a second
+domain — useful for putting the apex on dev before a prod environment
+exists. Once prod is deployed, prefer giving it
+`CustomDomainName=rescufood.com` and leaving `ApexDomainName` empty
+everywhere.
+
+The stack exports `PublicUrl` — the custom domain when one is configured,
+otherwise the `execute-api` endpoint. The ECS stack imports it for `AUTH_URL`
+and `CORS_ALLOWED_ORIGINS`, so both follow the domain automatically. Deploy
+the api-gateway stack before the ECS stack when introducing the domain, so
+the export exists before ECS imports it.
+
+Cognito rejects non-HTTPS callback URLs, so `iam-dev.json` could previously
+only register localhost. `dev.rescufood.com` is now in `CallbackUrls` and
+`LogoutUrls`; redeploy the IAM stack to register it and the hosted-UI OAuth
+flow works against the deployed environment. Any further domain has to be
+added here too — an unregistered callback URL fails the OAuth redirect.
+
+## Deploying
+
+All deploy commands are idempotent: `aws cloudformation deploy` creates the
+stack on first run and updates it on later runs, and
+`--no-fail-on-empty-changeset` makes a no-change re-run exit 0 instead of
+erroring — safe to run repeatedly, locally or in CI.
+
+```sh
+# 1. Shared network foundation
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-core-network \
+  --template-file cloudformation/network.yaml \
+  --no-fail-on-empty-changeset
+
+# 2. Dev environment security groups
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-security \
+  --template-file cloudformation/security-groups.yaml \
+  --parameter-overrides file://cloudformation/parameters/dev.json \
+  --no-fail-on-empty-changeset
+
+# 3. Dev environment identity service (independent of 1 and 2)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-iam \
+  --template-file cloudformation/iam.yaml \
+  --parameter-overrides file://cloudformation/parameters/iam-dev.json \
+  --capabilities CAPABILITY_IAM \
+  --no-fail-on-empty-changeset
+
+# 4. Dev environment compute (needs 1, 2, and a published frontend image)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-ecs \
+  --template-file cloudformation/ecs.yaml \
+  --parameter-overrides file://cloudformation/parameters/ecs-dev.json \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --no-fail-on-empty-changeset
+
+# 5. Dev environment database (needs 1 and 2; takes ~10 minutes)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-data \
+  --template-file cloudformation/data.yaml \
+  --parameter-overrides file://cloudformation/parameters/data-dev.json \
+  --no-fail-on-empty-changeset
+
+# 6. Dev environment notification queue (independent of 1-5)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-messaging \
+  --template-file cloudformation/messaging.yaml \
+  --parameter-overrides file://cloudformation/parameters/messaging-dev.json \
+  --no-fail-on-empty-changeset
+
+# 7. Shared DNS certificate (independent of 1-6; needs the domain registered
+#    and HostedZoneId filled into parameters/dns-core.json)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-core-dns \
+  --template-file cloudformation/dns.yaml \
+  --parameter-overrides file://cloudformation/parameters/dns-core.json \
+  --no-fail-on-empty-changeset
+
+# 8. Dev environment API Gateway front (needs 4 - imports the ECS ALB
+#    listener - and 7 when a custom domain is configured)
+aws cloudformation deploy \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-api-gateway \
+  --template-file cloudformation/api-gateway.yaml \
+  --parameter-overrides file://cloudformation/parameters/api-gateway-dev.json \
+  --no-fail-on-empty-changeset
+```
+
+`CAPABILITY_NAMED_IAM` acknowledges the named task/execution roles the
+ECS stack creates. The public site URL is the API Gateway stack's
+`PublicUrl` output — the custom domain when one is configured, otherwise the
+`execute-api` endpoint (the ECS stack's `FrontendUrl` is the internal ALB):
+
+```sh
+aws cloudformation describe-stacks \
+  --region ap-southeast-1 \
+  --stack-name rescufood-dev-api-gateway \
+  --query "Stacks[0].Outputs[?OutputKey=='PublicUrl'].OutputValue" \
+  --output text
+```
+
+On the very first deploy, run step 4 once without the
+`ApiGatewayStackName` override (nothing to import yet), then steps 5-8, then
+step 4 again to wire the gateway URL into the task env - see
+[`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md).
+
+### Standing up another environment
+
+The same eight commands stand up any environment — substitute the name in
+every stack name and parameter file. The two `core` stacks are already
+deployed, so steps 1 and 7 are skipped. `parameters/*-qa.json` are committed
+and ready apart from the placeholders below.
+
+Three secrets have no CloudFormation resource and must exist before the ECS
+stack deploys. Create them, then paste the returned ARNs into
+`parameters/ecs-qa.json` over the `REPLACE_AFTER_CREATING_QA_SECRETS`
+placeholders:
+
+```sh
+aws secretsmanager create-secret --region ap-southeast-1 \
+  --name rescufood/qa/ghcr-pull \
+  --secret-string '{"username":"<github-user>","password":"<PAT>"}'
+
+aws secretsmanager create-secret --region ap-southeast-1 \
+  --name rescufood/qa/app-secrets \
+  --secret-string '{"AUTH_SECRET":"...","AUTH_COGNITO_ID":"...","AUTH_COGNITO_SECRET":"...","AUTH_COGNITO_ISSUER":"..."}'
+
+aws secretsmanager create-secret --region ap-southeast-1 \
+  --name rescufood/qa/gmail-credentials \
+  --secret-string '{"user":"...","appPassword":"..."}'
+```
+
+Two more placeholders are filled from stack outputs rather than by hand
+beforehand:
+
+- `SuperAdminPassword` applies only on an environment's first deploy. The
+  custom resource behind it no-ops on stack updates, so changing the
+  parameter later leaves the account untouched — rotate the password with
+  `aws cognito-idp admin-set-user-password` instead.
+- `AuthCognitoIssuer` in `parameters/ecs-qa.json` is the `Issuer` output of
+  `rescufood-qa-iam`, so step 3 must precede step 4.
+
+Then run the one-time database bootstrap tasks and the migration scripts
+against the new environment, exactly as documented above but with
+`rescufood-qa` as the cluster and `qa` as the script argument.
+
+Finally, add a **qa** GitHub Environment with its own `BASE_URL` variable and
+test-account secrets so `e2e-test.yml` runs against it — see
+[`.github/workflows/README.md`](../.github/workflows/README.md).
+
+`parameters/*-prod.json` mirror the qa set, sized the same. For a real
+production workload, override `MultiAz=true`, `DeletionProtection=true` and a
+larger `InstanceClass` in `data-prod.json`, and set the Cognito user pool's
+`DeletionProtection` to `ACTIVE`.
+
+## Teardown
+
+Delete in reverse order (security stacks before network — exports cannot be
+deleted while imported):
+
+```sh
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-api-gateway
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-ecs
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-data
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-messaging
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-iam
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-dev-security
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-dns
+aws cloudformation delete-stack --region ap-southeast-1 --stack-name rescufood-core-network
+```
+
+Run the per-environment half of that list once per environment. The two
+`core` stacks come last of all — their exports cannot be deleted while any
+environment still imports them.
+
+(`rescufood-dev-api-gateway` first — it imports `HttpListenerArn` from the
+ECS stack, and the certificate and hosted zone id from the DNS stack.)
+
+Deleting the DNS stack releases the certificate but leaves the hosted zone
+and the domain registration alone — neither is a resource in any stack. A
+registered domain keeps billing annually until it is disabled from
+auto-renew in the Route 53 console.
+
+Deleting the IAM stack deletes the user pool and all registered users —
+fine for dev, deliberate decision required for prod (`DeletionProtection`
+should be set to `ACTIVE` in the prod parameters when that time comes).
+
+Deleting the data stack leaves a final snapshot behind (billed per GiB);
+delete it from the RDS console once it is no longer needed.
+
+Remember the NAT Gateway, its Elastic IP, the ALB, running Fargate tasks
+and the RDS instance all bill hourly — tear down the ECS, data and
+network stacks when not in use for extended periods.

@@ -1,0 +1,118 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785936924788,
+      "tag": "0000_pink_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785936945487,
+      "tag": "0001_cross_service_fks",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786009130875,
+      "tag": "0002_amusing_dark_phoenix",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786070917579,
+      "tag": "0003_broken_madrox",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786640950658,
+      "tag": "0004_seed_demo_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787146977537,
+      "tag": "0005_friendly_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787670386130,
+      "tag": "0006_tough_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787963279853,
+      "tag": "0007_first_come_first_served_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788051137548,
+      "tag": "0008_first_come_first_served_reserved_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788088011997,
+      "tag": "0009_pickup_reminder_markers",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788104563998,
+      "tag": "0010_claim_idempotency_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788104575177,
+      "tag": "0011_idempotency_cross_service_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788135716174,
+      "tag": "0012_drop_requests_idempotency_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788234280729,
+      "tag": "0013_pickup_code_plaintext",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788239820089,
+      "tag": "0014_pickup_code_generated_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1788866086393,
+      "tag": "0015_listing_images_cascade_delete",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: RescuFood per-environment identity service - Cognito user pool and role groups.
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, qa, prod]
+    Description: Environment this user pool belongs to
+
+  CallbackUrls:
+    Type: CommaDelimitedList
+    Default: http://localhost:3000/api/auth/callback/cognito
+    Description: >-
+      Allowed OAuth redirect URIs (Auth.js Cognito callback). Add the
+      deployed frontend URL alongside localhost once the ALB/domain exists.
+
+  LogoutUrls:
+    Type: CommaDelimitedList
+    Default: http://localhost:3000
+    Description: Allowed post-logout redirect URIs
+
+  SuperAdminUsername:
+    Type: String
+    Default: admin
+    Description: Username of the bootstrap superadmin account
+
+  SuperAdminPassword:
+    Type: String
+    NoEcho: true
+    Description: Password of the bootstrap superadmin account
+
+  AutoConfirmSignups:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >-
+      Auto-confirm new signups and mark their email verified via a
+      pre-sign-up trigger. Dev only: synthetic organisation emails
+      cannot receive verification codes.
+
+Conditions:
+  AutoConfirm: !Equals [!Ref AutoConfirmSignups, "true"]
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${ProjectName}-${EnvironmentName}-users
+      # FR1: users register themselves; admins approve organisations at the
+      # application level, so self-signup stays enabled.
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      # Plain usernames (no UsernameAttributes): users sign in with a
+      # username; email is a verified attribute used for codes/recovery.
+      # Email alias: a verified email is unique across the pool and can
+      # also be used in place of the username at sign-in.
+      AliasAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      UsernameConfiguration:
+        CaseSensitive: false
+      DeletionProtection: INACTIVE
+      MfaConfiguration: "OFF"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+      LambdaConfig: !If
+        - AutoConfirm
+        - PreSignUp: !GetAtt AutoConfirmFunction.Arn
+        - !Ref AWS::NoValue
+      UserPoolTags:
+        Project: !Ref ProjectName
+        Environment: !Ref EnvironmentName
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      # Cognito-hosted domain prefix; must be unique per region.
+      Domain: !Sub ${ProjectName}-${EnvironmentName}
+      UserPoolId: !Ref UserPool
+
+  WebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-${EnvironmentName}-web
+      UserPoolId: !Ref UserPool
+      # Confidential client: Auth.js runs the code exchange server-side.
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: !Ref CallbackUrls
+      LogoutURLs: !Ref LogoutUrls
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        # Server-side email/password login from the app's own form
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  AdminConsoleClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${ProjectName}-${EnvironmentName}-admin-console
+      UserPoolId: !Ref UserPool
+      # Public client: the admin console SPA signs in from the browser,
+      # so no secret is generated.
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  DonorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: donor
+      Description: Donor organisation users - publish and manage surplus listings
+      UserPoolId: !Ref UserPool
+
+  RescuePartnerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: rescue-partner
+      Description: Rescue partner users - discover and claim listings
+      UserPoolId: !Ref UserPool
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Platform administrators - approve and manage organisations
+      UserPoolId: !Ref UserPool
+
+  # -------------------------------------- Dev signup auto-confirmation
+  AutoConfirmFunctionRole:
+    Type: AWS::IAM::Role
+    Condition: AutoConfirm
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AutoConfirmFunction:
+    Type: AWS::Lambda::Function
+    Condition: AutoConfirm
+    Properties:
+      Description: Pre-sign-up trigger - confirms users and verifies email
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 5
+      Role: !GetAtt AutoConfirmFunctionRole.Arn
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              event["response"]["autoConfirmUser"] = True
+              if event["request"]["userAttributes"].get("email"):
+                  event["response"]["autoVerifyEmail"] = True
+              return event
+
+  AutoConfirmPermission:
+    Type: AWS::Lambda::Permission
+    Condition: AutoConfirm
+    Properties:
+      FunctionName: !GetAtt AutoConfirmFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  # ------------------------------------------- Superadmin bootstrap
+  SuperAdminFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: cognito-superadmin-bootstrap
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminDeleteUser
+                Resource: !GetAtt UserPool.Arn
+
+  SuperAdminFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Creates the bootstrap superadmin user on stack deploy
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt SuperAdminFunctionRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def handler(event, context):
+              props = event["ResourceProperties"]
+              client = boto3.client("cognito-idp")
+              try:
+                  if event["RequestType"] == "Create":
+                      client.admin_create_user(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          UserAttributes=[{"Name": "name", "Value": "Super Admin"}],
+                          MessageAction="SUPPRESS",
+                      )
+                      client.admin_set_user_password(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          Password=props["Password"],
+                          Permanent=True,
+                      )
+                      client.admin_add_user_to_group(
+                          UserPoolId=props["UserPoolId"],
+                          Username=props["Username"],
+                          GroupName=props["Group"],
+                      )
+                  elif event["RequestType"] == "Delete":
+                      try:
+                          client.admin_delete_user(
+                              UserPoolId=props["UserPoolId"],
+                              Username=props["Username"],
+                          )
+                      except client.exceptions.UserNotFoundException:
+                          pass
+                  # Update: nothing to do - the account already exists.
+                  cfnresponse.send(
+                      event, context, cfnresponse.SUCCESS, {}, props["Username"]
+                  )
+              except Exception as exc:
+                  cfnresponse.send(
+                      event, context, cfnresponse.FAILED, {"Error": str(exc)}
+                  )
+
+  SuperAdmin:
+    Type: Custom::SuperAdmin
+    DependsOn: AdminGroup
+    Properties:
+      ServiceToken: !GetAtt SuperAdminFunction.Arn
+      UserPoolId: !Ref UserPool
+      Username: !Ref SuperAdminUsername
+      Password: !Ref SuperAdminPassword
+      Group: admin
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolId
+
+  WebClientId:
+    Value: !Ref WebClient
+    Export:
+      Name: !Sub ${AWS::StackName}-WebClientId
+
+  AdminConsoleClientId:
+    Description: Public app client for the admin console SPA
+    Value: !Ref AdminConsoleClient
+    Export:
+      Name: !Sub ${AWS::StackName}-AdminConsoleClientId
+
+  Issuer:
+    Description: OIDC issuer URL - AUTH_COGNITO_ISSUER for the frontend
+    Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+
+  HostedUiBaseUrl:
+    Description: Cognito hosted UI base URL for this environment
+    Value: !Sub https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com

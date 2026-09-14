@@ -1,0 +1,17 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": ".integration-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^jose$": "<rootDir>/test/integration/support/jose-stub.ts"
+  },
+  "globalSetup": "<rootDir>/test/integration/support/global-setup.ts",
+  "globalTeardown": "<rootDir>/test/integration/support/global-teardown.ts",
+  "testTimeout": 30000,
+  "collectCoverageFrom": ["src/**/*.(t|j)s"],
+  "coverageDirectory": "coverage-integration"
+}

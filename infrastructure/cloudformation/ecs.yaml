@@ -1,0 +1,1315 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  RescuFood per-environment compute: ECS Fargate cluster and web platform
+  service in the private app subnets, behind an internal ALB in the app
+  subnets. HTTP-only; TLS terminates at API Gateway.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  EnvironmentName:
+    Type: String
+    AllowedValues: [dev, qa, prod]
+    Description: Environment this cluster and service belong to
+
+  NetworkStackName:
+    Type: String
+    Default: rescufood-core-network
+    Description: Name of the network stack whose VPC/subnet exports to import
+
+  SecurityStackName:
+    Type: String
+    Description: Name of the security groups stack for this environment
+
+  Image:
+    Type: String
+    Default: ghcr.io/nus-iss-team1/rescufood/frontend:develop
+    Description: Frontend container image (GHCR reference incl. tag)
+
+  ContainerPort:
+    Type: Number
+    Default: 3000
+    Description: Port the web platform container listens on
+
+  HealthCheckPath:
+    Type: String
+    Default: /
+    Description: Path the ALB polls for target health
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+    Description: Number of web platform tasks to run
+
+  Cpu:
+    Type: String
+    Default: "256"
+    AllowedValues: ["256", "512", "1024"]
+    Description: Fargate task CPU units
+
+  Memory:
+    Type: String
+    Default: "512"
+    AllowedValues: ["512", "1024", "2048"]
+    Description: Fargate task memory (MiB)
+
+  ApiGatewayStackName:
+    Type: String
+    Default: ""
+    Description: >-
+      Name of the API Gateway stack. When set, browser-facing env vars
+      (AUTH_URL, CORS_ALLOWED_ORIGINS) use the imported PublicUrl.
+      Leave empty on first deploy before the api-gateway stack exists.
+
+  GhcrPullSecretArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Secrets Manager secret ARN with GHCR pull credentials
+      ({"username":"...","password":"<PAT with read:packages>"}).
+      Leave empty if the image is public.
+
+  AppSecretsArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Secrets Manager secret ARN holding AUTH_SECRET, AUTH_COGNITO_ID,
+      AUTH_COGNITO_SECRET and AUTH_COGNITO_ISSUER as JSON keys. Leave
+      empty to run with sign-in disabled.
+
+  LogRetentionDays:
+    Type: Number
+    Default: 30
+    Description: CloudWatch log retention for container logs
+
+  ProfileImage:
+    Type: String
+    Default: ""
+    Description: >-
+      Profile service container image. Empty leaves the service, its
+      target group and its listener rule undeployed.
+
+  ProfilePort:
+    Type: Number
+    Default: 3001
+    Description: Port the profile service listens on
+
+  DataStackName:
+    Type: String
+    Description: >-
+      Name of this environment's data stack, whose database exports to
+      import. No default - a wrong value points the services at another
+      environment's database.
+
+  ProfileDbName:
+    Type: String
+    Default: profile
+    Description: Database and role the profile service owns
+
+  AuthCognitoIssuer:
+    Type: String
+    Default: ""
+    Description: OIDC issuer URL the profile service validates tokens against
+
+  ExtraCorsOrigins:
+    Type: String
+    Default: ""
+    Description: >-
+      Extra browser origins allowed to call the profile and listings
+      APIs, comma separated. Dev convenience: lets a locally served
+      admin console talk to the deployed service.
+
+  ListingsImage:
+    Type: String
+    Default: ""
+    Description: >-
+      Listings service container image. Empty leaves the service, its
+      target group and its listener rule undeployed.
+
+  ListingsPort:
+    Type: Number
+    Default: 3002
+    Description: Port the listings service listens on
+
+  ListingsIdempotencyRetentionDays:
+    Type: Number
+    Default: 7
+    Description: >-
+      How long the listings service keeps claim idempotency records. After
+      this window a reused idempotency key is treated as a new request.
+
+  ListingsPickupReminderLeadHours:
+    Type: Number
+    Default: 24
+    Description: >-
+      How far ahead of a pickup window opening/closing the listings service
+      fires a pickup reminder.
+
+  NotificationImage:
+    Type: String
+    Default: ""
+    Description: >-
+      Notification service container image. Empty leaves the service and
+      its database bootstrap undeployed - no ALB target group/listener
+      rule, since it has no public routes (SQS consumer only).
+
+  NotificationPort:
+    Type: Number
+    Default: 3003
+    Description: Port the notification service's health check listens on
+
+  NotificationDbName:
+    Type: String
+    Default: notifications
+    Description: >-
+      Database and role the notification service owns - its own,
+      unlike listings which shares profile's, since a delivery record
+      never needs to join listings/profile tables.
+
+  MessagingStackName:
+    Type: String
+    Description: >-
+      Name of this environment's messaging stack, whose queue exports to
+      import. No default, same reasoning as DataStackName.
+
+  GmailCredentialsSecretArn:
+    Type: String
+    Default: ""
+    Description: >-
+      Secrets Manager secret ARN holding GMAIL_USER and GMAIL_APP_PASSWORD
+      as JSON keys, used to send outbound notification email.
+
+Conditions:
+  HasApiGateway: !Not [!Equals [!Ref ApiGatewayStackName, ""]]
+  HasPullSecret: !Not [!Equals [!Ref GhcrPullSecretArn, ""]]
+  HasAppSecrets: !Not [!Equals [!Ref AppSecretsArn, ""]]
+  HasAnySecret: !Or [!Condition HasPullSecret, !Condition HasAppSecrets]
+  HasProfile: !Not [!Equals [!Ref ProfileImage, ""]]
+  HasListings: !Not [!Equals [!Ref ListingsImage, ""]]
+  HasNotification: !Not [!Equals [!Ref NotificationImage, ""]]
+
+Resources:
+  # ------------------------------------------------------- Load balancer
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internal
+      Subnets: !Split
+        - ","
+        - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${SecurityStackName}-AlbSgId
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref ContainerPort
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # ------------------------------------------------------------- Cluster
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${ProjectName}-${EnvironmentName}
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/web-platform
+      RetentionInDays: !Ref LogRetentionDays
+
+  # ----------------------------------------------------------- IAM roles
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-web-platform-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies: !If
+        - HasAnySecret
+        - - PolicyName: read-secrets
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                    - !If [HasAppSecrets, !Ref AppSecretsArn, !Ref AWS::NoValue]
+        - !Ref AWS::NoValue
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-web-platform-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+
+  # ------------------------------------------------------------- Service
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-web-platform
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: web-platform
+          Image: !Ref Image
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          Environment:
+            # Base URL Auth.js uses for redirects; API Gateway URL if set, else ALB DNS.
+            - Name: AUTH_URL
+              Value: !If
+                - HasApiGateway
+                - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
+                - !Sub http://${LoadBalancer.DNSName}
+            # Server-side calls to the other services stay on the internal ALB.
+            - Name: PROFILE_API_URL
+              Value: !Sub http://${LoadBalancer.DNSName}
+            - Name: LISTINGS_API_URL
+              Value: !Sub http://${LoadBalancer.DNSName}
+            - Name: NOTIFICATION_API_URL
+              Value: !Sub http://${LoadBalancer.DNSName}
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Secrets: !If
+            - HasAppSecrets
+            - - Name: AUTH_SECRET
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_SECRET::"
+              - Name: AUTH_COGNITO_ID
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_ID::"
+              - Name: AUTH_COGNITO_SECRET
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_SECRET::"
+              - Name: AUTH_COGNITO_ISSUER
+                ValueFrom: !Sub "${AppSecretsArn}:AUTH_COGNITO_ISSUER::"
+            - !Ref AWS::NoValue
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: web-platform
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: web-platform
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: web-platform
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the listener carrying the target group
+        - Key: attached-listener
+          Value: !Ref HttpListener
+
+  # ------------------------------------- Profile database bootstrap
+  # Generated here so no password is ever typed or committed.
+  ProfileDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${ProjectName}/${EnvironmentName}/profile-db
+      Description: Login for the profile service's database role
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${ProfileDbName}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  DbBootstrapExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-db-bootstrap
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-db-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - Fn::ImportValue: !Sub ${DataStackName}-DbSecretArn
+                  - !Ref ProfileDbSecret
+                  - !If [HasNotification, !Ref NotificationDbSecret, !Ref AWS::NoValue]
+
+  DbBootstrapLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/db-bootstrap
+      RetentionInDays: !Ref LogRetentionDays
+
+  # Run once per environment (and after a password rotation) via aws ecs run-task.
+  DbBootstrapTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-db-bootstrap
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !GetAtt DbBootstrapExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: bootstrap
+          Image: public.ecr.aws/docker/library/postgres:17-alpine
+          Essential: true
+          EntryPoint: [/bin/sh, -c]
+          Command:
+            # Password has no punctuation, so interpolating it here is safe.
+            - |
+              set -eu
+              admin="postgres://$MASTER_USER:$MASTER_PASSWORD@$DB_HOST:$DB_PORT/$MASTER_DB?sslmode=require"
+              run() { psql "$admin" -v ON_ERROR_STOP=1 -c "$1"; }
+              exists() { psql "$admin" -tAc "$1" | grep -q 1; }
+
+              if exists "SELECT 1 FROM pg_roles WHERE rolname = '$DB_ROLE'"; then
+                run "ALTER ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "updated role $DB_ROLE"
+              else
+                run "CREATE ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "created role $DB_ROLE"
+              fi
+
+              # The rds master isn't a superuser - it must be in the role to own the db.
+              run "GRANT \"$DB_ROLE\" TO \"$MASTER_USER\""
+
+              if exists "SELECT 1 FROM pg_database WHERE datname = '$DB_ROLE'"; then
+                echo "database $DB_ROLE already exists"
+              else
+                run "CREATE DATABASE \"$DB_ROLE\" OWNER \"$DB_ROLE\""
+                echo "created database $DB_ROLE"
+              fi
+              echo bootstrap complete
+          Environment:
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: MASTER_DB
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbName
+            - Name: DB_ROLE
+              Value: !Ref ProfileDbName
+          Secrets:
+            - Name: MASTER_USER
+              ValueFrom: !Sub
+                - "${arn}:username::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: MASTER_PASSWORD
+              ValueFrom: !Sub
+                - "${arn}:password::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DbBootstrapLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: bootstrap
+
+  # ------------------------------------------------- Profile service
+  ProfileTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasProfile
+    Properties:
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref ProfilePort
+      HealthCheckPath: /healthz
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ProfileHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasProfile
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 10
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/profile/*]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ProfileTargetGroup
+
+  ProfileLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasProfile
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/profile
+      RetentionInDays: !Ref LogRetentionDays
+
+  ProfileExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: HasProfile
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-profile-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !Ref ProfileDbSecret
+
+  ProfileTaskRole:
+    Type: AWS::IAM::Role
+    Condition: HasProfile
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-profile-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+        # Publishes org-approval notifications for service/notifications.
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
+
+  ProfileTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasProfile
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-profile
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ProfileExecutionRole.Arn
+      TaskRoleArn: !GetAtt ProfileTaskRole.Arn
+      ContainerDefinitions:
+        - Name: profile
+          Image: !Ref ProfileImage
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ProfilePort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
+            - Name: PORT
+              Value: !Ref ProfilePort
+            - Name: AUTH_COGNITO_ISSUER
+              Value: !Ref AuthCognitoIssuer
+            # Browser origins allowed to call the api: API Gateway URL if set, else ALB DNS.
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: !If
+                - HasApiGateway
+                - !Join
+                  - ","
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
+                    - !Ref ExtraCorsOrigins
+                - !Join
+                  - ","
+                  - - !Sub http://${LoadBalancer.DNSName}
+                    - !Ref ExtraCorsOrigins
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref ProfileDbName
+            - Name: DB_NAME
+              Value: !Ref ProfileDbName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ProfileLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: profile
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ProfileService:
+    Type: AWS::ECS::Service
+    Condition: HasProfile
+    Properties:
+      ServiceName: profile
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref ProfileTaskDefinition
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: profile
+          ContainerPort: !Ref ProfilePort
+          TargetGroupArn: !Ref ProfileTargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the rule carrying the target group
+        - Key: attached-rule
+          Value: !Ref ProfileHttpRule
+
+  # ------------------------------------------------- Listings service
+  # Shares profile's database, role and secret: listings/requests tables live
+  # in the "profile" db and FK to organisations/users (see external.schema.ts).
+  ListingsTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasListings
+    Properties:
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref ListingsPort
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ListingsHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasListings
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 11
+      Conditions:
+        - Field: path-pattern
+          # /api/listings and /api/requests are themselves routes, not just
+          # prefixes, so both the bare path and /* are needed. /api/summary
+          # is a single route with nothing below it.
+          Values:
+            [
+              /api/listings,
+              /api/listings/*,
+              /api/requests,
+              /api/requests/*,
+              /api/summary,
+            ]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ListingsTargetGroup
+
+  ListingsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasListings
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/listings
+      RetentionInDays: !Ref LogRetentionDays
+
+  ListingsExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: HasListings
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-listings-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !Ref ProfileDbSecret
+
+  ListingsTaskRole:
+    Type: AWS::IAM::Role
+    Condition: HasListings
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-listings-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+        # PutObject/GetObject for uploads and presigned URLs, DeleteObject for
+        # the cleanup/delete paths. Object actions need /*, not the bare ARN.
+        - PolicyName: listing-images-s3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub
+                  - ${BucketArn}/*
+                  - BucketArn:
+                      Fn::ImportValue: !Sub ${DataStackName}-BucketArn
+        # Publishes claim/pickup/expiry notifications for service/notifications.
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
+
+  ListingsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasListings
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-listings
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ListingsExecutionRole.Arn
+      TaskRoleArn: !GetAtt ListingsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: listings
+          Image: !Ref ListingsImage
+          Essential: true
+          # DATABASE_URL is composed from the DB_* secrets to keep DB_PASSWORD in
+          # ECS secrets. uselibpqcompat makes sslmode=require encrypt-not-verify;
+          # without it every query 500s (RDS chain untrusted) while health stays up.
+          EntryPoint: ["/bin/sh", "-c"]
+          Command:
+            - >-
+              export
+              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require&uselibpqcompat=true";
+              exec node dist/main
+          PortMappings:
+            - ContainerPort: !Ref ListingsPort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
+            - Name: PORT
+              Value: !Ref ListingsPort
+            - Name: AUTH_COGNITO_ISSUER
+              Value: !Ref AuthCognitoIssuer
+            # Browser origins allowed to call the api: API Gateway URL if set, else ALB DNS.
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: !If
+                - HasApiGateway
+                - !Join
+                  - ","
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
+                    - !Ref ExtraCorsOrigins
+                - !Join
+                  - ","
+                  - - !Sub http://${LoadBalancer.DNSName}
+                    - !Ref ExtraCorsOrigins
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref ProfileDbName
+            - Name: DB_NAME
+              Value: !Ref ProfileDbName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: S3_BUCKET_NAME
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-BucketName
+            - Name: LISTING_IMAGES_CDN_URL
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-ListingImagesCDNUrl
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
+            - Name: IDEMPOTENCY_RETENTION_DAYS
+              Value: !Ref ListingsIdempotencyRetentionDays
+            - Name: PICKUP_REMINDER_LEAD_HOURS
+              Value: !Ref ListingsPickupReminderLeadHours
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${ProfileDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ListingsLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: listings
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ListingsService:
+    Type: AWS::ECS::Service
+    Condition: HasListings
+    Properties:
+      ServiceName: listings
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref ListingsTaskDefinition
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: listings
+          ContainerPort: !Ref ListingsPort
+          TargetGroupArn: !Ref ListingsTargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the rule carrying the target group
+        - Key: attached-rule
+          Value: !Ref ListingsHttpRule
+
+  # --------------------------------------------- Notification service
+  # Own db/bootstrap. SQS consumer plus a read API (/api/notifications)
+  # behind its own target group and listener rule.
+  NotificationDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: HasNotification
+    Properties:
+      Name: !Sub ${ProjectName}/${EnvironmentName}/notification-db
+      Description: Login for the notification service's database role
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username":"${NotificationDbName}"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  NotificationDbBootstrapTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasNotification
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-notification-db-bootstrap
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      ExecutionRoleArn: !GetAtt DbBootstrapExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: bootstrap
+          Image: public.ecr.aws/docker/library/postgres:17-alpine
+          Essential: true
+          EntryPoint: [/bin/sh, -c]
+          Command:
+            - |
+              set -eu
+              admin="postgres://$MASTER_USER:$MASTER_PASSWORD@$DB_HOST:$DB_PORT/$MASTER_DB?sslmode=require"
+              run() { psql "$admin" -v ON_ERROR_STOP=1 -c "$1"; }
+              exists() { psql "$admin" -tAc "$1" | grep -q 1; }
+
+              if exists "SELECT 1 FROM pg_roles WHERE rolname = '$DB_ROLE'"; then
+                run "ALTER ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "updated role $DB_ROLE"
+              else
+                run "CREATE ROLE \"$DB_ROLE\" LOGIN PASSWORD '$DB_PASSWORD'"
+                echo "created role $DB_ROLE"
+              fi
+
+              run "GRANT \"$DB_ROLE\" TO \"$MASTER_USER\""
+
+              if exists "SELECT 1 FROM pg_database WHERE datname = '$DB_ROLE'"; then
+                echo "database $DB_ROLE already exists"
+              else
+                run "CREATE DATABASE \"$DB_ROLE\" OWNER \"$DB_ROLE\""
+                echo "created database $DB_ROLE"
+              fi
+              echo bootstrap complete
+          Environment:
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: MASTER_DB
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbName
+            - Name: DB_ROLE
+              Value: !Ref NotificationDbName
+          Secrets:
+            - Name: MASTER_USER
+              ValueFrom: !Sub
+                - "${arn}:username::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: MASTER_PASSWORD
+              ValueFrom: !Sub
+                - "${arn}:password::"
+                - arn: !ImportValue
+                    Fn::Sub: ${DataStackName}-DbSecretArn
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${NotificationDbSecret}:password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DbBootstrapLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: notification-bootstrap
+
+  NotificationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: HasNotification
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}-${EnvironmentName}/notification
+      RetentionInDays: !Ref LogRetentionDays
+
+  NotificationExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: HasNotification
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-notification-execution
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: read-secrets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !Ref NotificationDbSecret
+                  - !Ref GmailCredentialsSecretArn
+
+  NotificationTaskRole:
+    Type: AWS::IAM::Role
+    Condition: HasNotification
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-notification-task
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-exec
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: "*"
+        - PolicyName: notification-queue
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource:
+                  Fn::ImportValue: !Sub ${MessagingStackName}-QueueArn
+
+  NotificationTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: HasNotification
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-notification
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "256"
+      Memory: "512"
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt NotificationExecutionRole.Arn
+      TaskRoleArn: !GetAtt NotificationTaskRole.Arn
+      ContainerDefinitions:
+        - Name: notification
+          Image: !Ref NotificationImage
+          Essential: true
+          # Same DATABASE_URL / uselibpqcompat handling as ListingsTaskDefinition.
+          EntryPoint: ["/bin/sh", "-c"]
+          Command:
+            - >-
+              export
+              DATABASE_URL="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require&uselibpqcompat=true";
+              exec node dist/main
+          PortMappings:
+            - ContainerPort: !Ref NotificationPort
+              Protocol: tcp
+          RepositoryCredentials: !If
+            - HasPullSecret
+            - CredentialsParameter: !Ref GhcrPullSecretArn
+            - !Ref AWS::NoValue
+          Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
+            - Name: PORT
+              Value: !Ref NotificationPort
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: NOTIFICATION_QUEUE_URL
+              Value:
+                Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
+            # Read API (/api/notifications) verifies Cognito bearer tokens.
+            - Name: AUTH_COGNITO_ISSUER
+              Value: !Ref AuthCognitoIssuer
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: !If
+                - HasApiGateway
+                - !Join
+                  - ","
+                  - - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
+                    - !Ref ExtraCorsOrigins
+                - !Join
+                  - ","
+                  - - !Sub http://${LoadBalancer.DNSName}
+                    - !Ref ExtraCorsOrigins
+            - Name: DB_HOST
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbEndpoint
+            - Name: DB_PORT
+              Value:
+                Fn::ImportValue: !Sub ${DataStackName}-DbPort
+            - Name: DB_USER
+              Value: !Ref NotificationDbName
+            - Name: DB_NAME
+              Value: !Ref NotificationDbName
+          Secrets:
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${NotificationDbSecret}:password::"
+            - Name: GMAIL_USER
+              ValueFrom: !Sub "${GmailCredentialsSecretArn}:user::"
+            - Name: GMAIL_APP_PASSWORD
+              ValueFrom: !Sub "${GmailCredentialsSecretArn}:appPassword::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref NotificationLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: notification
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  NotificationTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasNotification
+    Properties:
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
+      Protocol: HTTP
+      Port: !Ref NotificationPort
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  NotificationHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasNotification
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 12
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/notifications, /api/notifications/*]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref NotificationTargetGroup
+
+  NotificationService:
+    Type: AWS::ECS::Service
+    Condition: HasNotification
+    Properties:
+      ServiceName: notification
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref NotificationTaskDefinition
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split
+            - ","
+            - Fn::ImportValue: !Sub ${NetworkStackName}-AppSubnetIds
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${SecurityStackName}-AppSgId
+      LoadBalancers:
+        - ContainerName: notification
+          ContainerPort: !Ref NotificationPort
+          TargetGroupArn: !Ref NotificationTargetGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        # orders service creation after the rule carrying the target group
+        - Key: attached-rule
+          Value: !Ref NotificationHttpRule
+
+Outputs:
+  ClusterName:
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub ${AWS::StackName}-ClusterName
+
+  AlbDnsName:
+    Value: !GetAtt LoadBalancer.DNSName
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbDnsName
+
+  HttpListenerArn:
+    Description: ARN of the ALB HTTP listener (consumed by api-gateway stack)
+    Value: !Ref HttpListener
+    Export:
+      Name: !Sub ${AWS::StackName}-HttpListenerArn
+
+  FrontendUrl:
+    Description: URL of the web platform (API Gateway when available, else ALB)
+    Value: !If
+      - HasApiGateway
+      - Fn::ImportValue: !Sub ${ApiGatewayStackName}-PublicUrl
+      - !Sub http://${LoadBalancer.DNSName}

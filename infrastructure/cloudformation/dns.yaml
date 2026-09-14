@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Shared ACM certificate for the RescuFood custom domain (deploy in ap-southeast-1)"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: rescufood
+
+  DomainName:
+    Type: String
+    Description: Registered apex domain, e.g. rescufood.com
+
+  HostedZoneId:
+    Type: String
+    Description: >-
+      Public hosted zone serving DomainName. Route 53 creates this during
+      domain registration - pass that zone id here rather than letting a
+      second zone be created for the same name.
+
+Resources:
+  # ----------------------------------------------------------
+  # Certificate
+  # ----------------------------------------------------------
+
+  # Covers the apex and every single-label subdomain. Regional API Gateway
+  # domains require the certificate in the same region as the API.
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub "*.${DomainName}"
+      ValidationMethod: DNS
+      # Wildcard SAN shares the apex validation CNAME; listing both duplicates it.
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+Outputs:
+  CertificateArn:
+    Description: ACM certificate covering the apex and its subdomains
+    Value: !Ref Certificate
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateArn"
+
+  HostedZoneId:
+    Description: Public hosted zone the per-environment records are written to
+    Value: !Ref HostedZoneId
+    Export:
+      Name: !Sub "${AWS::StackName}-HostedZoneId"
+
+  DomainName:
+    Description: Registered apex domain
+    Value: !Ref DomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-DomainName"

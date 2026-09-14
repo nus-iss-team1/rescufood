@@ -1,0 +1,99 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/google/uuid"
+
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
+)
+
+// OrgGetter loads one organisation.
+type OrgGetter interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Organisation, error)
+}
+
+// MemberLister lists the users belonging to one organisation.
+type MemberLister interface {
+	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error)
+}
+
+type meResponse struct {
+	ID      uuid.UUID    `json:"id"`
+	Email   string       `json:"email"`
+	Name    string       `json:"name"`
+	IsAdmin bool         `json:"is_admin"`
+	Status  string       `json:"status"`
+	Org     *orgResponse `json:"org"`
+}
+
+func getMe(orgs OrgGetter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.UserFromContext(r.Context())
+		if !ok {
+			writeProblem(w, http.StatusUnauthorized, "unauthorized", "no authenticated user")
+			return
+		}
+
+		resp := meResponse{
+			ID:      user.ID,
+			Email:   user.Email,
+			Name:    user.Name,
+			IsAdmin: user.IsAdmin,
+			Status:  string(user.Status),
+		}
+		if user.OrgID != nil {
+			org, err := orgs.GetByID(r.Context(), *user.OrgID)
+			switch {
+			case errors.Is(err, domain.ErrNotFound):
+				// org row gone; report the user as org-less
+			case err != nil:
+				slog.ErrorContext(r.Context(), "load organisation failed", "error", err)
+				writeProblem(w, http.StatusInternalServerError, "internal error", "")
+				return
+			default:
+				o := toOrgResponse(org)
+				resp.Org = &o
+			}
+		}
+		writeJSON(w, http.StatusOK, resp)
+	}
+}
+
+// listMyOrgMembers returns the caller's own organisation members.
+func listMyOrgMembers(users MemberLister, locks LockLookup) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.UserFromContext(r.Context())
+		if !ok {
+			writeProblem(w, http.StatusUnauthorized, "unauthorized", "no authenticated user")
+			return
+		}
+		if user.OrgID == nil {
+			writeProblem(w, http.StatusNotFound, "not found",
+				"you do not belong to an organisation")
+			return
+		}
+
+		list, err := users.ListByOrg(r.Context(), *user.OrgID)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "list org members failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
+		out := make([]userResponse, 0, len(list))
+		for i := range list {
+			out = append(out, toUserResponse(&list[i]))
+		}
+		if err := stampLocked(r.Context(), locks, list, out); err != nil {
+			slog.ErrorContext(r.Context(), "stamp locked members failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+		writeJSON(w, http.StatusOK, out)
+	}
+}

@@ -1,0 +1,18 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=prod",
+  "NetworkStackName=rescufood-core-network",
+  "SecurityStackName=rescufood-prod-security",
+  "DataStackName=rescufood-prod-data",
+  "MessagingStackName=rescufood-prod-messaging",
+  "ApiGatewayStackName=rescufood-prod-api-gateway",
+  "Image=ghcr.io/nus-iss-team1/rescufood/frontend:prod",
+  "ProfileImage=ghcr.io/nus-iss-team1/rescufood/profile:prod",
+  "ListingsImage=ghcr.io/nus-iss-team1/rescufood/listings:prod",
+  "NotificationImage=ghcr.io/nus-iss-team1/rescufood/notifications:prod",
+  "DesiredCount=1",
+  "GhcrPullSecretArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
+  "AppSecretsArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
+  "GmailCredentialsSecretArn=REPLACE_AFTER_CREATING_PROD_SECRETS",
+  "AuthCognitoIssuer=REPLACE_AFTER_PROD_IAM_STACK_DEPLOY"
+]

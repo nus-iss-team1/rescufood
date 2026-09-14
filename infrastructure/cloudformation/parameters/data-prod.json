@@ -1,0 +1,6 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=prod",
+  "NetworkStackName=rescufood-core-network",
+  "SecurityStackName=rescufood-prod-security"
+]

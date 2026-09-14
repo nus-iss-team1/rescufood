@@ -1,0 +1,9 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=qa",
+  "NetworkStackName=rescufood-core-network",
+  "EcsStackName=rescufood-qa-ecs",
+  "SecurityStackName=rescufood-qa-security",
+  "DnsStackName=rescufood-core-dns",
+  "CustomDomainName=qa.rescufood.com"
+]

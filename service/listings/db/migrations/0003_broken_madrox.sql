@@ -1,0 +1,1 @@
+ALTER TABLE "requests" ADD COLUMN "pickup_code_attempts" integer DEFAULT 0 NOT NULL;
