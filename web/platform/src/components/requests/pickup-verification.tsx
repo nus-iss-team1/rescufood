@@ -105,7 +105,7 @@ export function PickupVerification({
         return;
       }
 
-      toast.success("Pickup confirmed", {
+      toast.success("Pickup completed", {
         description: "The lot is marked as collected.",
       });
       resetVerifyModal(false);
@@ -122,7 +122,9 @@ export function PickupVerification({
   const waiting =
     isDonor && request.status === "active" && !request.codeGeneratedBy;
   const awaitingVerification =
-    !isDonor && request.status === "active" && !!request.codeGeneratedBy;
+    !isDonor &&
+    request.status === "active" &&
+    (!!request.codeGeneratedBy || !!credential);
 
   // Polls for the code the partner generates, and for the donor's
   // verification, each in the other party's session.
@@ -141,6 +143,7 @@ export function PickupVerification({
           setError(res.error);
         } else if (res.data) {
           setCredential(res.data);
+          router.refresh();
         }
       })
       .catch(() => setError("Failed to load pickup code."))
@@ -183,31 +186,46 @@ export function PickupVerification({
     return () => clearInterval(timer);
   }, [regenAvailableMs]);
 
-  // Only an active claim has a live pickup code.
-  if (request.status !== "active") {
+  // Close dialogs cleanly when request reaches a terminal state.
+  useEffect(() => {
+    if (request.status !== "active") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCodeOpen(false);
+      setVerifyOpen(false);
+    }
+  }, [request.status]);
+
+  // Only an active claim has a live pickup code or trigger buttons.
+  // When inactive and all dialogs are closed, unmount cleanly.
+  if (request.status !== "active" && !codeOpen && !verifyOpen) {
     return null;
   }
 
   return (
     <>
-      {isDonor ? (
-        waiting ? (
-          <Button size="sm" variant="outline" disabled>
-            Waiting for partner&apos;s code
-          </Button>
+      {request.status === "active" && (
+        isDonor ? (
+          waiting ? (
+            <Button size="sm" variant="outline" disabled>
+              Waiting for partner&apos;s code
+            </Button>
+          ) : (
+            <Button size="sm" onClick={() => setVerifyOpen(true)}>
+              Enter pickup code
+            </Button>
+          )
         ) : (
-          <Button size="sm" onClick={() => setVerifyOpen(true)}>
-            Enter pickup code
+          <Button size="sm" onClick={showCode}>
+            {request.codeGeneratedBy ? "Show pickup code" : "Generate pickup code"}
           </Button>
         )
-      ) : (
-        <Button size="sm" onClick={showCode}>
-          {request.codeGeneratedBy ? "Show pickup code" : "Generate pickup code"}
-        </Button>
       )}
 
       {isDonor ? (
-        <Dialog open={verifyOpen} onOpenChange={resetVerifyModal}>
+        <Dialog
+          open={verifyOpen && request.status === "active"}
+          onOpenChange={resetVerifyModal}
+        >
           <DialogContent className="sm:max-w-md">
             {!confirmStep ? (
               <>
@@ -336,7 +354,10 @@ export function PickupVerification({
           </DialogContent>
         </Dialog>
       ) : (
-        <Dialog open={codeOpen} onOpenChange={setCodeOpen}>
+        <Dialog
+          open={codeOpen && request.status === "active"}
+          onOpenChange={setCodeOpen}
+        >
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle>Your pickup code</DialogTitle>

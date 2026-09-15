@@ -23,7 +23,12 @@ function steps(request: ListingRequest): Step[] {
     ];
   }
 
-  const reached = request.collectedAt ? 3 : request.codeGeneratedBy ? 2 : 1;
+  const reached =
+    request.status === "completed" || request.collectedAt
+      ? 3
+      : request.codeGeneratedBy
+        ? 2
+        : 1;
   return [
     { label: "Reserved", state: "done" },
     { label: "Code ready", state: reached >= 2 ? "done" : "current" },
