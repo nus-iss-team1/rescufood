@@ -1,15 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { useFormStatus } from "react-dom";
 import { Clock } from "lucide-react";
 
-import type { ListingRequest, PickupCode } from "@rescufood/listings-sdk";
+import type { Listing, ListingRequest, PickupCode } from "@rescufood/listings-sdk";
 import { getPickupCredentialAction, verifyPickupCodeAction } from "@/app/requests/actions";
 import { Button } from "@rescufood/ui/components/button";
+import { Input } from "@rescufood/ui/components/input";
+import { Label } from "@rescufood/ui/components/label";
 import { toast } from "@rescufood/ui/components/sonner";
+import { quantity } from "@/lib/listing-labels";
 import {
   Dialog,
   DialogContent,
@@ -19,22 +21,21 @@ import {
 } from "@rescufood/ui/components/dialog";
 import { OtpInput } from "./otp-input";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto min-w-24">
-      {pending ? "Confirming..." : "Confirm pickup"}
-    </Button>
-  );
-}
-
 export function PickupVerification({
   request,
   isDonor,
+  listing,
 }: {
   request: ListingRequest;
   isDonor: boolean;
+  listing?: Listing;
 }) {
+  const router = useRouter();
+  const unit = listing?.unit ?? "units";
+  const defaultQuantity = request.requestedQuantity
+    ? request.requestedQuantity.replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1")
+    : "1";
+
   const [codeOpen, setCodeOpen] = useState(false);
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [credential, setCredential] = useState<PickupCode | null>(null);
@@ -42,25 +43,82 @@ export function PickupVerification({
   const [error, setError] = useState("");
   const [nowMs, setNowMs] = useState(() => Date.now());
 
-  // Reports from the action itself: revalidation unmounts this component, so
-  // an effect would not survive to fire.
-  const verify = async (
-    prev: { success?: boolean; error?: string },
-    formData: FormData,
-  ) => {
-    const result = await verifyPickupCodeAction(prev, formData);
-    if (result.success) {
+  // Donor verification state
+  const [code, setCode] = useState("");
+  const [collectedQuantity, setCollectedQuantity] = useState(defaultQuantity);
+  const [confirmStep, setConfirmStep] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+
+  const resetVerifyModal = (open: boolean) => {
+    setVerifyOpen(open);
+    if (!open) {
+      setCode("");
+      setCollectedQuantity(defaultQuantity);
+      setConfirmStep(false);
+      setVerifyError("");
+      setSubmitting(false);
+    }
+  };
+
+  const handleProceedToConfirm = (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifyError("");
+
+    const cleanCode = code.trim();
+    if (!cleanCode || !/^\d{6}$/.test(cleanCode)) {
+      setVerifyError("Please enter the 6-digit pickup code.");
+      return;
+    }
+
+    const qty = Number(collectedQuantity);
+    if (!collectedQuantity.trim() || !Number.isFinite(qty) || qty <= 0) {
+      setVerifyError("Collected quantity must be greater than zero.");
+      return;
+    }
+
+    if (qty > Number(request.requestedQuantity)) {
+      setVerifyError(
+        `Collected quantity cannot exceed requested ${quantity(request.requestedQuantity, unit)}.`
+      );
+      return;
+    }
+
+    setConfirmStep(true);
+  };
+
+  const handleConfirmPickup = async () => {
+    setSubmitting(true);
+    setVerifyError("");
+
+    const formData = new FormData();
+    formData.set("requestId", request.id);
+    formData.set("code", code.trim());
+    formData.set("collectedQuantity", collectedQuantity.trim());
+
+    try {
+      const result = await verifyPickupCodeAction({}, formData);
+      if (result.error) {
+        setVerifyError(result.error);
+        toast.error("Pickup not confirmed", { description: result.error });
+        setSubmitting(false);
+        return;
+      }
+
       toast.success("Pickup confirmed", {
         description: "The lot is marked as collected.",
       });
-    } else if (result.error) {
-      toast.error("Pickup not confirmed", { description: result.error });
+      resetVerifyModal(false);
+      router.refresh();
+    } catch {
+      setVerifyError("Could not reach the server. Please try again.");
+      toast.error("Pickup not confirmed", {
+        description: "Network error. Please try again.",
+      });
+      setSubmitting(false);
     }
-    return result;
   };
-  const [verifyState, verifyAction] = useActionState(verify, {});
 
-  const router = useRouter();
   const waiting =
     isDonor && request.status === "active" && !request.codeGeneratedBy;
   const awaitingVerification =
@@ -149,34 +207,132 @@ export function PickupVerification({
       )}
 
       {isDonor ? (
-        <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
-          <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Confirm pickup</DialogTitle>
-              <DialogDescription>
-                Enter the rescue partner&apos;s code.
-              </DialogDescription>
-            </DialogHeader>
-            <form action={verifyAction} className="space-y-4">
-              <input type="hidden" name="requestId" value={request.id} />
-              <OtpInput name="code" />
-              {verifyState.error && (
-                <p className="text-sm text-destructive">{verifyState.error}</p>
-              )}
-              {verifyState.success && (
-                <p className="text-sm text-success">Verification successful.</p>
-              )}
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setVerifyOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <SubmitButton />
-              </div>
-            </form>
+        <Dialog open={verifyOpen} onOpenChange={resetVerifyModal}>
+          <DialogContent className="sm:max-w-md">
+            {!confirmStep ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Confirm pickup</DialogTitle>
+                  <DialogDescription>
+                    Enter the rescue partner&apos;s code and verify the collected quantity.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleProceedToConfirm} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label>Verification code</Label>
+                    <OtpInput
+                      name="code"
+                      value={code}
+                      onChange={(val) => {
+                        setCode(val);
+                        setVerifyError("");
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="collectedQuantity">Actual collected quantity</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="collectedQuantity"
+                        name="collectedQuantity"
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        max={Number(request.requestedQuantity)}
+                        value={collectedQuantity}
+                        onChange={(e) => {
+                          setCollectedQuantity(e.target.value);
+                          setVerifyError("");
+                        }}
+                        className="flex-1"
+                        placeholder="Enter quantity"
+                        required
+                      />
+                      <span className="text-sm font-medium text-muted-foreground shrink-0">
+                        {unit}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Claimed: {quantity(request.requestedQuantity, unit)}
+                    </p>
+                  </div>
+
+                  {verifyError && (
+                    <p className="text-sm text-destructive">{verifyError}</p>
+                  )}
+
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => resetVerifyModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Review handover
+                    </Button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Confirm Handover</DialogTitle>
+                  <DialogDescription>
+                    Please verify the details below before finalizing collection.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-2">
+                    <p className="text-sm font-medium text-foreground">
+                      Confirm handover of{" "}
+                      <span className="font-semibold text-foreground">
+                        {collectedQuantity} {unit}
+                      </span>{" "}
+                      to <span className="font-semibold text-foreground">Rescue Partner</span>?
+                    </p>
+                    <div className="text-xs text-muted-foreground border-t border-border/60 pt-2 space-y-1">
+                      <div>
+                        <span className="font-medium text-foreground">Lot:</span>{" "}
+                        {listing?.description || "Food item"}
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">Code:</span>{" "}
+                        <span className="font-mono font-medium">{code}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {verifyError && (
+                    <p className="text-sm text-destructive">{verifyError}</p>
+                  )}
+
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setConfirmStep(false);
+                        setVerifyError("");
+                      }}
+                      disabled={submitting}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleConfirmPickup}
+                      disabled={submitting}
+                    >
+                      {submitting ? "Confirming..." : "Confirm handover"}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       ) : (
