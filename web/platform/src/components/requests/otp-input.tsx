@@ -6,25 +6,41 @@ import { cn } from "@/lib/utils";
 
 const LENGTH = 6;
 
+export interface OtpInputProps {
+  name: string;
+  value?: string;
+  onChange?: (value: string) => void;
+}
+
 /** Six single-digit boxes submitted as one hidden field. */
-export function OtpInput({ name }: { name: string }) {
-  const [digits, setDigits] = useState<string[]>(Array(LENGTH).fill(""));
+export function OtpInput({ name, value, onChange }: OtpInputProps) {
+  const [internalDigits, setInternalDigits] = useState<string[]>(() => Array(LENGTH).fill(""));
   const refs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const isControlled = value !== undefined;
+  const digits = isControlled
+    ? (() => {
+        const arr = value.split("").slice(0, LENGTH);
+        while (arr.length < LENGTH) arr.push("");
+        return arr;
+      })()
+    : internalDigits;
 
   const handleChange = (index: number, raw: string) => {
     const typed = raw.replace(/\D/g, "");
 
-    setDigits((prev) => {
-      const next = [...prev];
-      if (!typed) {
-        next[index] = "";
-        return next;
-      }
+    const next = [...digits];
+    if (!typed) {
+      next[index] = "";
+    } else {
       for (let k = 0; k < typed.length && index + k < LENGTH; k += 1) {
         next[index + k] = typed[k];
       }
-      return next;
-    });
+    }
+    if (!isControlled) {
+      setInternalDigits(next);
+    }
+    onChange?.(next.join(""));
 
     if (typed) {
       refs.current[Math.min(index + typed.length, LENGTH - 1)]?.focus();

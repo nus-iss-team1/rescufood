@@ -70,7 +70,11 @@ export function RequestDetailView({
                 <CancelClaimButton requestId={request.id} size="sm">
                   Cancel claim
                 </CancelClaimButton>
-                <PickupVerification request={request} isDonor={isDonor} />
+                <PickupVerification
+                  request={request}
+                  isDonor={isDonor}
+                  listing={listing}
+                />
               </div>
             )}
           </CardContent>
