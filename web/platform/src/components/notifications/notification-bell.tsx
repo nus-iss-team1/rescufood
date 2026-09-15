@@ -1,9 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  Bell,
+  Clock,
+  MapPin,
+  RefreshCw,
+  User,
+  X,
+} from "lucide-react";
 
-import type { NotificationList } from "@/lib/notification-types";
+import type {
+  InAppNotification,
+  NotificationList,
+  PickupReminderPayload,
+} from "@/lib/notification-types";
+import { Badge } from "@rescufood/ui/components/badge";
+import { Button } from "@rescufood/ui/components/button";
+import { Skeleton } from "@rescufood/ui/components/skeleton";
 import {
   Popover,
   PopoverContent,
@@ -31,10 +47,282 @@ function timeAgo(iso: string): string {
 
 type FeedState = NotificationList & { error?: boolean };
 
-export function NotificationBell() {
+function NotificationSkeletons() {
+  return (
+    <div className="space-y-3 p-3.5">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="rounded-lg border border-border/80 bg-card p-3 space-y-2.5"
+        >
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+          <Skeleton className="h-3.5 w-4/5" />
+          <div className="space-y-1.5 pt-1">
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyRemindersCard() {
+  return (
+    <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-muted/80 text-muted-foreground mb-3 ring-1 ring-border/50">
+        <Bell className="size-5 opacity-60" />
+      </div>
+      <p className="text-sm font-semibold text-foreground">
+        No upcoming pickup reminders
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground max-w-[220px]">
+        You&apos;re all caught up! Pickup alerts, status changes, and reminders will show here.
+      </p>
+    </div>
+  );
+}
+
+function NotificationErrorBanner({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="p-3.5">
+      <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4 text-center space-y-2.5">
+        <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>Could not load notifications</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          There was an issue connecting to the notification feed.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          className="inline-flex items-center gap-1.5 h-8 text-xs border-destructive/30 hover:bg-destructive/15"
+        >
+          <RefreshCw className="size-3.5" />
+          Try again
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReminderCard({
+  notification,
+  unread,
+  onItemClick,
+  onDelete,
+}: {
+  notification: InAppNotification;
+  unread: boolean;
+  onItemClick: () => void;
+  onDelete: () => void;
+}) {
+  const payload = (notification.payload ?? {}) as PickupReminderPayload;
+  const foodTitle =
+    payload.listingDescription ||
+    payload.listingTitle ||
+    "Food lot";
+  const location = payload.pickupLocation;
+  const pickupWindow =
+    payload.pickupWindow ||
+    (payload.pickupWindowStart && payload.pickupWindowEnd
+      ? `${payload.pickupWindowStart} – ${payload.pickupWindowEnd}`
+      : null);
+  const phase = payload.phase;
+  const partnerContext =
+    payload.recipientName ||
+    (payload.rescuePartnerName && payload.rescueOrgName
+      ? `${payload.rescuePartnerName} (${payload.rescueOrgName})`
+      : payload.rescuePartnerName ||
+        payload.rescueOrgName ||
+        payload.donorOrgName ||
+        payload.counterpartyName ||
+        payload.counterpartyOrgName ||
+        null);
+
+  return (
+    <div
+      className={cn(
+        "group relative rounded-lg border p-3 transition-colors text-left",
+        unread
+          ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
+          : "border-border/80 bg-card hover:bg-muted/50",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onItemClick}
+        className="w-full text-left outline-none"
+      >
+        <div className="flex items-start justify-between gap-2 pr-5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {unread && (
+              <span className="size-2 rounded-full bg-primary shrink-0" />
+            )}
+            <span className="text-sm font-semibold text-foreground">
+              {foodTitle}
+            </span>
+            {phase === "closing" && (
+              <Badge variant="warning" className="text-[10px] h-5 px-1.5 py-0">
+                Closing soon
+              </Badge>
+            )}
+            {phase === "opening" && (
+              <Badge variant="info" className="text-[10px] h-5 px-1.5 py-0">
+                Opens soon
+              </Badge>
+            )}
+            {!phase && (
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5 py-0">
+                Pickup Reminder
+              </Badge>
+            )}
+          </div>
+          <span className="text-[11px] text-muted-foreground shrink-0">
+            {notification.createdAt ? timeAgo(notification.createdAt) : ""}
+          </span>
+        </div>
+
+        {notification.body && (
+          <p className="mt-1.5 text-xs text-foreground/80 leading-snug">
+            {notification.body}
+          </p>
+        )}
+
+        <div className="mt-2.5 space-y-1 text-xs text-muted-foreground">
+          {pickupWindow && (
+            <div className="flex items-center gap-1.5">
+              <Clock className="size-3.5 shrink-0 text-muted-foreground" />
+              <span>{pickupWindow}</span>
+            </div>
+          )}
+          {location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{location}</span>
+            </div>
+          )}
+          {partnerContext && (
+            <div className="flex items-center gap-1.5">
+              <User className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{partnerContext}</span>
+            </div>
+          )}
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label="Delete notification"
+        className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+      >
+        <X className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function GenericNotificationCard({
+  notification,
+  unread,
+  onItemClick,
+  onDelete,
+}: {
+  notification: InAppNotification;
+  unread: boolean;
+  onItemClick: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative flex items-start p-3 transition-colors rounded-lg border",
+        unread
+          ? "border-primary/25 bg-primary/5 hover:bg-primary/10"
+          : "border-border/70 bg-card hover:bg-muted/50",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onItemClick}
+        className="flex min-w-0 flex-1 items-start gap-2.5 text-left outline-none pr-6"
+      >
+        <span
+          className={cn(
+            "mt-1.5 size-1.5 shrink-0 rounded-full",
+            unread ? "bg-primary" : "bg-transparent",
+          )}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm text-foreground">
+            {notification.body ?? "You have a new notification."}
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {notification.createdAt ? timeAgo(notification.createdAt) : ""}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label="Delete notification"
+        className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+      >
+        <X className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function isNotificationUnread(n: InAppNotification): boolean {
+  if (typeof (n as unknown as { read?: boolean }).read === "boolean") {
+    return !(n as unknown as { read?: boolean }).read;
+  }
+  return !n.readAt;
+}
+
+export interface NotificationBellProps {
+  initialNotifications?: InAppNotification[];
+  initialUnreadCount?: number;
+}
+
+export function NotificationBell({
+  initialNotifications,
+  initialUnreadCount,
+}: NotificationBellProps = {}) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(0);
-  const [feed, setFeed] = useState<FeedState | null>(null);
+  const [count, setCount] = useState(() => {
+    if (initialUnreadCount !== undefined) return initialUnreadCount;
+    if (initialNotifications !== undefined) {
+      return initialNotifications.filter(isNotificationUnread).length;
+    }
+    return 0;
+  });
+  const [feed, setFeed] = useState<FeedState | null>(() => {
+    if (initialNotifications !== undefined) {
+      return {
+        items: initialNotifications,
+        unreadCount:
+          initialUnreadCount ??
+          initialNotifications.filter(isNotificationUnread).length,
+      };
+    }
+    return null;
+  });
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const polling = useRef(false);
@@ -62,6 +350,7 @@ export function NotificationBell() {
   // Poll the unread count while the tab is visible. pollCount is async - it
   // only calls setState after the fetch resolves, not in this effect body.
   useEffect(() => {
+    if (initialNotifications !== undefined) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void pollCount();
     const timer = setInterval(() => void pollCount(), POLL_MS);
@@ -76,7 +365,7 @@ export function NotificationBell() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onFocus);
     };
-  }, [pollCount]);
+  }, [pollCount, initialNotifications]);
 
   const loadFeed = useCallback(async () => {
     abort.current?.abort();
@@ -141,29 +430,42 @@ export function NotificationBell() {
   const onOpenChange = useCallback(
     (next: boolean) => {
       setOpen(next);
-      if (next) void loadFeed();
+      if (next && initialNotifications === undefined) void loadFeed();
     },
-    [loadFeed],
+    [loadFeed, initialNotifications],
   );
 
   const onItemClick = useCallback(
-    (id: string, alreadyRead: boolean) => {
-      if (alreadyRead) return;
-      setFeed((cur) =>
-        cur
-          ? {
-              ...cur,
-              items: cur.items.map((n) =>
-                n.id === id ? { ...n, readAt: new Date().toISOString() } : n,
-              ),
-              unreadCount: Math.max(0, cur.unreadCount - 1),
-            }
-          : cur,
-      );
-      setCount((c) => Math.max(0, c - 1));
-      void post({ read: id });
+    (n: InAppNotification) => {
+      const unread = !n.readAt;
+      if (unread) {
+        setFeed((cur) =>
+          cur
+            ? {
+                ...cur,
+                items: cur.items.map((item) =>
+                  item.id === n.id
+                    ? { ...item, readAt: new Date().toISOString() }
+                    : item,
+                ),
+                unreadCount: Math.max(0, cur.unreadCount - 1),
+              }
+            : cur,
+        );
+        setCount((c) => Math.max(0, c - 1));
+        void post({ read: n.id });
+      }
+
+      const payload = (n.payload ?? {}) as PickupReminderPayload;
+      if (payload.requestId) {
+        setOpen(false);
+        router.push(`/requests/${payload.requestId}`);
+      } else if (payload.listingId) {
+        setOpen(false);
+        router.push(`/browse/${payload.listingId}`);
+      }
     },
-    [post],
+    [post, router],
   );
 
   const onMarkAll = useCallback(() => {
@@ -263,66 +565,45 @@ export function NotificationBell() {
             </div>
           )}
         </div>
-        <div className="max-h-[min(24rem,60dvh)] overflow-y-auto border-t border-border sm:max-h-[min(32rem,70dvh)]">
+        <div className="max-h-[min(26rem,65dvh)] overflow-y-auto border-t border-border sm:max-h-[min(32rem,70dvh)]">
           {feed === null || (busy && items.length === 0) ? (
-            <p className="px-3.5 py-8 text-center text-sm text-muted-foreground">
-              Loading…
-            </p>
+            <NotificationSkeletons />
           ) : feed.error ? (
-            <p className="px-3.5 py-8 text-center text-sm text-muted-foreground">
-              Couldn’t load notifications. Try again shortly.
-            </p>
+            <NotificationErrorBanner onRetry={() => void loadFeed()} />
           ) : items.length === 0 ? (
-            <p className="px-3.5 py-8 text-center text-sm text-muted-foreground">
-              You’re all caught up.
-            </p>
+            <EmptyRemindersCard />
           ) : (
-            <ul className="divide-y divide-border">
+            <div className="space-y-2 p-3">
               {items.map((n) => {
                 const unread = !n.readAt;
-                return (
-                  <li
+                const isReminder =
+                  n.type === "pickup_reminder" ||
+                  n.type === "claim_created" ||
+                  n.type === "claim_cancelled";
+                return isReminder ? (
+                  <ReminderCard
                     key={n.id}
-                    className={cn(
-                      "group relative flex items-start",
-                      unread && "bg-primary/5",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onItemClick(n.id, !unread)}
-                      className="flex min-w-0 flex-1 items-start gap-2.5 py-3 pl-3.5 pr-9 text-left transition-colors hover:bg-muted/60"
-                    >
-                      <span
-                        className={cn(
-                          "mt-1.5 size-1.5 shrink-0 rounded-full",
-                          unread ? "bg-primary" : "bg-transparent",
-                        )}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm text-foreground">
-                          {n.body ?? "You have a new notification."}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {timeAgo(n.createdAt)}
-                        </span>
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(n.id, unread)}
-                      aria-label="Delete notification"
-                      className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </li>
+                    notification={n}
+                    unread={unread}
+                    onItemClick={() => onItemClick(n)}
+                    onDelete={() => onDelete(n.id, unread)}
+                  />
+                ) : (
+                  <GenericNotificationCard
+                    key={n.id}
+                    notification={n}
+                    unread={unread}
+                    onItemClick={() => onItemClick(n)}
+                    onDelete={() => onDelete(n.id, unread)}
+                  />
                 );
               })}
-            </ul>
+            </div>
           )}
         </div>
       </PopoverContent>
     </Popover>
   );
 }
+
+export const NotificationsPopover = NotificationBell;
