@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 
 import { loginAction, type FormState } from "@/app/actions";
 import { Button } from "@rescufood/ui/components/button";
@@ -12,11 +12,6 @@ export function LoginForm() {
     loginAction,
     {}
   );
-
-  // A whole new document, so the root layout re-renders with the session.
-  useEffect(() => {
-    if (state.success) window.location.href = "/dashboard";
-  }, [state.success]);
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -55,10 +50,10 @@ export function LoginForm() {
       <Button
         type="submit"
         size="lg"
-        disabled={pending || state.success}
+        disabled={pending}
         className="w-full"
       >
-        {pending || state.success ? "Signing in..." : "Sign in"}
+        {pending ? "Signing in..." : "Sign in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
         New to RescuFood?{" "}
