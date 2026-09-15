@@ -26,7 +26,12 @@ import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
-import { listRequests, type ListingRequest } from "@/lib/listings";
+import {
+  getListing,
+  listRequests,
+  type Listing,
+  type ListingRequest,
+} from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -132,10 +137,12 @@ function Workspace({
   org,
   members,
   recent,
+  listings,
 }: {
   org: Org;
   members: User[];
   recent: ListingRequest[];
+  listings?: Map<string, Listing>;
 }) {
   return (
     <>
@@ -145,7 +152,7 @@ function Workspace({
       </AnimateIn>
 
       <AnimateIn className="mt-6">
-        <RecentRequests requests={recent} />
+        <RecentRequests requests={recent} listings={listings} />
       </AnimateIn>
 
       <div className="mt-10">
@@ -174,6 +181,7 @@ export default async function DashboardPage() {
   let me: Me | null = null;
   let members: User[] = [];
   let recent: ListingRequest[] = [];
+  const recentListings = new Map<string, Listing>();
   let staleSession = !session.idToken;
   let apiDown = false;
 
@@ -189,6 +197,15 @@ export default async function DashboardPage() {
             limit: 5,
           });
           recent = page.items;
+          const missing = [...new Set(recent.map((r) => r.listingId))];
+          const results = await Promise.allSettled(
+            missing.map((id) => getListing(session.idToken!, id)),
+          );
+          for (const result of results) {
+            if (result.status === "fulfilled") {
+              recentListings.set(result.value.id, result.value);
+            }
+          }
         } catch {
           // The card renders empty rather than taking the page down.
         }
@@ -294,7 +311,12 @@ export default async function DashboardPage() {
           </Card>
         </AnimateIn>
       ) : me.org.status === "approved" ? (
-        <Workspace org={me.org} members={members} recent={recent} />
+        <Workspace
+          org={me.org}
+          members={members}
+          recent={recent}
+          listings={recentListings}
+        />
       ) : (
         <AnimateIn>
           <Notice
