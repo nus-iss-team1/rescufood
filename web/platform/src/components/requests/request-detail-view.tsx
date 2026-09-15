@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, MapPin, Package, AlertTriangle } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Calendar, CheckCircle2, MapPin, Package, AlertTriangle } from "lucide-react";
 
 import { type Listing, type ListingRequest } from "@rescufood/listings-sdk";
 import {
@@ -21,6 +22,8 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { Badge } from "@rescufood/ui/components/badge";
+import { toast } from "@rescufood/ui/components/sonner";
+import { cn } from "@/lib/utils";
 import { AnimateIn } from "@/components/animate-in";
 import { PickupVerification } from "./pickup-verification";
 import { RequestProgress } from "./request-progress";
@@ -39,6 +42,17 @@ export function RequestDetailView({
       ? quantity(listing.quantity, listing.unit)
       : null;
   const requested = quantity(request.requestedQuantity, listing.unit ?? "").trim();
+
+  const prevStatusRef = useRef(request.status);
+
+  useEffect(() => {
+    if (prevStatusRef.current === "active" && request.status === "completed") {
+      toast.success("Pickup completed", {
+        description: "The lot has been marked as collected.",
+      });
+    }
+    prevStatusRef.current = request.status;
+  }, [request.status]);
 
   return (
     <div className="space-y-6">
@@ -65,18 +79,50 @@ export function RequestDetailView({
               </div>
             )}
 
-            {isActiveRequest(request.status) && (
-              <div className="flex flex-wrap items-center justify-end gap-2">
+            {request.status === "completed" && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm flex items-start gap-3">
+                <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Pickup completed</p>
+                  <p className="text-muted-foreground">
+                    Collected{" "}
+                    <span className="font-medium text-foreground">
+                      {quantity(
+                        request.collectedQuantity || request.requestedQuantity,
+                        listing.unit ?? ""
+                      )}
+                    </span>
+                    {request.collectedAt && (
+                      <>
+                        {" "}on{" "}
+                        <span className="font-medium text-foreground">
+                          {shortDate(request.collectedAt)}
+                        </span>
+                      </>
+                    )}
+                    .
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={cn(
+                "flex flex-wrap items-center justify-end gap-2",
+                !isActiveRequest(request.status) && "hidden"
+              )}
+            >
+              {isActiveRequest(request.status) && (
                 <CancelClaimButton requestId={request.id} size="sm">
                   Cancel claim
                 </CancelClaimButton>
-                <PickupVerification
-                  request={request}
-                  isDonor={isDonor}
-                  listing={listing}
-                />
-              </div>
-            )}
+              )}
+              <PickupVerification
+                request={request}
+                isDonor={isDonor}
+                listing={listing}
+              />
+            </div>
           </CardContent>
         </Card>
       </AnimateIn>
