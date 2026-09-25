@@ -211,6 +211,18 @@ export interface VerifyPickup {
   collectedQuantity?: number;
 }
 
+/** Operational workload summary for the caller's organisation. */
+export interface OrgSummary {
+  orgId: string;
+  listings: Record<string, number> & { total: number };
+  claims: Record<string, number> & { total: number };
+  asOf: string;
+  period?: {
+    from?: string;
+    to?: string;
+  };
+}
+
 /** Every call the platform makes, so a stand-in can satisfy the same shape. */
 export interface ListingsApi {
   listListings(query?: ListingQuery): Promise<Paginated<Listing>>;
@@ -232,4 +244,5 @@ export interface ListingsApi {
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
+  getOrgSummary(): Promise<OrgSummary>;
 }

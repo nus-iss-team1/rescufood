@@ -4,6 +4,7 @@ import {
   ApiError,
   createListingsClient,
   type ListingsApi,
+  type OrgSummary,
   type Listing,
   type ListingQuery,
   type ListingRequest,
@@ -45,6 +46,7 @@ export type {
   ListingUpdate,
   NewListing,
   NewRequest,
+  OrgSummary,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -136,3 +138,8 @@ export function verifyPickupCode(
 ): Promise<ListingRequest> {
   return client(idToken).verifyPickupCode(id, verify);
 }
+
+export function getOrgSummary(idToken: string): Promise<OrgSummary> {
+  return client(idToken).getOrgSummary();
+}
+

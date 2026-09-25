@@ -13,6 +13,7 @@ import type {
   ListingUpdate,
   NewListing,
   NewRequest,
+  OrgSummary,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -359,5 +360,30 @@ export class MockListingsClient implements ListingsApi {
       listing.updatedAt = now();
     }
     return request;
+  }
+
+  async getOrgSummary(): Promise<OrgSummary> {
+    const activeListings = this.listings.filter((l) => !l.deletedAt);
+    return {
+      orgId: "mock-org",
+      listings: {
+        draft: activeListings.filter((l) => l.status === "draft").length,
+        available: activeListings.filter((l) => l.status === "available").length,
+        reserved: activeListings.filter((l) => l.status === "reserved").length,
+        collected: activeListings.filter((l) => l.status === "collected").length,
+        expired: activeListings.filter((l) => l.status === "expired").length,
+        cancelled: activeListings.filter((l) => l.status === "cancelled").length,
+        total: activeListings.length,
+      },
+      claims: {
+        active: this.requests.filter((r) => r.status === "active").length,
+        completed: this.requests.filter((r) => r.status === "completed").length,
+        cancelled: this.requests.filter((r) => r.status === "cancelled").length,
+        no_show: this.requests.filter((r) => r.status === "no_show").length,
+        expired: this.requests.filter((r) => r.status === "expired").length,
+        total: this.requests.length,
+      },
+      asOf: now(),
+    };
   }
 }
