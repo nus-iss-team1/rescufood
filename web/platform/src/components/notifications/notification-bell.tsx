@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Bell,
+  Check,
   Clock,
   MapPin,
   RefreshCw,
@@ -25,7 +26,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@rescufood/ui/components/popover";
+import { toast } from "@rescufood/ui/components/sonner";
 import { cn } from "@/lib/utils";
+import {
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+  deleteNotificationAction,
+  deleteAllNotificationsAction,
+} from "@/app/notifications/actions";
 
 const POLL_MS = 5_000;
 // Abort a poll that hasn't answered in this long, so a slow response can't
@@ -33,8 +41,11 @@ const POLL_MS = 5_000;
 const POLL_TIMEOUT_MS = 3_000;
 const FEED = "/notifications/feed";
 
-function timeAgo(iso: string): string {
-  const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
   if (seconds < 45) return "just now";
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -42,7 +53,50 @@ function timeAgo(iso: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.round(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return date.toLocaleDateString();
+}
+
+function isNotificationUnread(n: InAppNotification): boolean {
+  if (typeof n.read === "boolean") {
+    return !n.read;
+  }
+  return !n.readAt;
+}
+
+function formatNotificationTitle(
+  type: string,
+  payload?: Record<string, unknown>,
+): string {
+  if (
+    payload?.listingDescription &&
+    typeof payload.listingDescription === "string"
+  ) {
+    return payload.listingDescription;
+  }
+  if (payload?.listingTitle && typeof payload.listingTitle === "string") {
+    return payload.listingTitle;
+  }
+  switch (type) {
+    case "pickup_reminder":
+      return "Pickup Reminder";
+    case "claim_created":
+      return "Claim Created";
+    case "claim_cancelled":
+      return "Claim Cancelled";
+    case "listing_material_change":
+      return "Listing Updated";
+    case "pickup_completed":
+      return "Pickup Confirmed";
+    case "listing_expired":
+      return "Listing Expired";
+    case "user_welcome":
+      return "Welcome";
+    default:
+      return type
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+  }
 }
 
 type FeedState = NotificationList & { error?: boolean };
@@ -70,29 +124,35 @@ function NotificationSkeletons() {
   );
 }
 
-function EmptyRemindersCard() {
+function EmptyNotificationsCard() {
   return (
     <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
       <div className="flex size-12 items-center justify-center rounded-full bg-muted/80 text-muted-foreground mb-3 ring-1 ring-border/50">
         <Bell className="size-5 opacity-60" />
       </div>
       <p className="text-sm font-semibold text-foreground">
-        No upcoming pickup reminders
+        No notifications yet
       </p>
       <p className="mt-1 text-xs text-muted-foreground max-w-[220px]">
-        You&apos;re all caught up! Pickup alerts, status changes, and reminders will show here.
+        You&apos;re all caught up! Updates, alerts, and reminders will appear here.
       </p>
     </div>
   );
 }
 
-function NotificationErrorBanner({ onRetry }: { onRetry: () => void }) {
+function NotificationErrorBanner({
+  message = "Could not load notifications",
+  onRetry,
+}: {
+  message?: string;
+  onRetry: () => void;
+}) {
   return (
     <div className="p-3.5">
       <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4 text-center space-y-2.5">
         <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-destructive">
           <AlertCircle className="size-4 shrink-0" />
-          <span>Could not load notifications</span>
+          <span>{message}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           There was an issue connecting to the notification feed.
@@ -105,7 +165,7 @@ function NotificationErrorBanner({ onRetry }: { onRetry: () => void }) {
           className="inline-flex items-center gap-1.5 h-8 text-xs border-destructive/30 hover:bg-destructive/15"
         >
           <RefreshCw className="size-3.5" />
-          Try again
+          Retry
         </Button>
       </div>
     </div>
@@ -116,12 +176,16 @@ function ReminderCard({
   notification,
   unread,
   onItemClick,
+  onMarkRead,
   onDelete,
+  isMarking,
 }: {
   notification: InAppNotification;
   unread: boolean;
   onItemClick: () => void;
+  onMarkRead: () => void;
   onDelete: () => void;
+  isMarking?: boolean;
 }) {
   const payload = (notification.payload ?? {}) as PickupReminderPayload;
   const foodTitle =
@@ -151,21 +215,31 @@ function ReminderCard({
       className={cn(
         "group relative rounded-lg border p-3 transition-colors text-left",
         unread
-          ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
-          : "border-border/80 bg-card hover:bg-muted/50",
+          ? "border-border bg-muted/40 hover:bg-muted/60"
+          : "border-border/70 bg-card hover:bg-muted/30",
       )}
     >
       <button
         type="button"
         onClick={onItemClick}
-        className="w-full text-left outline-none"
+        className="w-full text-left outline-none cursor-pointer"
       >
-        <div className="flex items-start justify-between gap-2 pr-5">
+        <div className="flex items-start justify-between gap-2 pr-14">
           <div className="flex items-center gap-1.5 flex-wrap">
             {unread && (
-              <span className="size-2 rounded-full bg-primary shrink-0" />
+              <span
+                className="size-2 rounded-full bg-primary shrink-0"
+                aria-label="Unread notification"
+              />
             )}
-            <span className="text-sm font-semibold text-foreground">
+            <span
+              className={cn(
+                "text-sm",
+                unread
+                  ? "font-semibold text-foreground"
+                  : "font-normal text-muted-foreground",
+              )}
+            >
               {foodTitle}
             </span>
             {phase === "closing" && (
@@ -190,7 +264,14 @@ function ReminderCard({
         </div>
 
         {notification.body && (
-          <p className="mt-1.5 text-xs text-foreground/80 leading-snug">
+          <p
+            className={cn(
+              "mt-1.5 text-xs leading-snug",
+              unread
+                ? "font-medium text-foreground"
+                : "font-normal text-muted-foreground",
+            )}
+          >
             {notification.body}
           </p>
         )}
@@ -215,19 +296,44 @@ function ReminderCard({
             </div>
           )}
         </div>
+
+        {notification.readAt && (
+          <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Check className="size-3 text-muted-foreground/80" />
+            <span>Read {timeAgo(notification.readAt)}</span>
+          </div>
+        )}
       </button>
 
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        aria-label="Delete notification"
-        className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
-      >
-        <X className="size-3.5" />
-      </button>
+      <div className="absolute right-2 top-2 flex items-center gap-1">
+        {unread && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkRead();
+            }}
+            disabled={isMarking}
+            aria-label="Mark as read"
+            title="Mark as read"
+            className="rounded-md p-1 text-muted-foreground opacity-80 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 disabled:opacity-40 cursor-pointer"
+          >
+            <Check className="size-3.5 text-primary" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete notification"
+          title="Delete notification"
+          className="rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -236,62 +342,110 @@ function GenericNotificationCard({
   notification,
   unread,
   onItemClick,
+  onMarkRead,
   onDelete,
+  isMarking,
 }: {
   notification: InAppNotification;
   unread: boolean;
   onItemClick: () => void;
+  onMarkRead: () => void;
   onDelete: () => void;
+  isMarking?: boolean;
 }) {
+  const title =
+    notification.title ||
+    formatNotificationTitle(notification.type, notification.payload);
+
   return (
     <div
       className={cn(
-        "group relative flex items-start p-3 transition-colors rounded-lg border",
+        "group relative flex items-start p-3 transition-colors rounded-lg border text-left",
         unread
-          ? "border-primary/25 bg-primary/5 hover:bg-primary/10"
-          : "border-border/70 bg-card hover:bg-muted/50",
+          ? "border-border bg-muted/40 hover:bg-muted/60"
+          : "border-border/70 bg-card hover:bg-muted/30",
       )}
     >
       <button
         type="button"
         onClick={onItemClick}
-        className="flex min-w-0 flex-1 items-start gap-2.5 text-left outline-none pr-6"
+        className="flex min-w-0 flex-1 items-start gap-2.5 text-left outline-none pr-14 cursor-pointer"
       >
         <span
           className={cn(
-            "mt-1.5 size-1.5 shrink-0 rounded-full",
+            "mt-1.5 size-2 shrink-0 rounded-full",
             unread ? "bg-primary" : "bg-transparent",
           )}
+          aria-hidden
         />
         <span className="min-w-0 flex-1">
-          <span className="block text-sm text-foreground">
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                "block text-xs uppercase tracking-wider",
+                unread
+                  ? "font-semibold text-primary"
+                  : "font-normal text-muted-foreground",
+              )}
+            >
+              {title}
+            </span>
+            <span className="text-[11px] text-muted-foreground shrink-0">
+              {notification.createdAt ? timeAgo(notification.createdAt) : ""}
+            </span>
+          </div>
+
+          <span
+            className={cn(
+              "mt-1 block text-sm leading-snug",
+              unread
+                ? "font-semibold text-foreground"
+                : "font-normal text-muted-foreground",
+            )}
+          >
             {notification.body ?? "You have a new notification."}
           </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            {notification.createdAt ? timeAgo(notification.createdAt) : ""}
-          </span>
+
+          {notification.readAt && (
+            <span className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Check className="size-3 text-muted-foreground/80" />
+              <span>Read {timeAgo(notification.readAt)}</span>
+            </span>
+          )}
         </span>
       </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        aria-label="Delete notification"
-        className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
-      >
-        <X className="size-3.5" />
-      </button>
+
+      <div className="absolute right-2 top-2 flex items-center gap-1">
+        {unread && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkRead();
+            }}
+            disabled={isMarking}
+            aria-label="Mark as read"
+            title="Mark as read"
+            className="rounded-md p-1 text-muted-foreground opacity-80 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 disabled:opacity-40 cursor-pointer"
+          >
+            <Check className="size-3.5 text-primary" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete notification"
+          title="Delete notification"
+          className="rounded-md p-1 text-muted-foreground opacity-60 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 cursor-pointer"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
     </div>
   );
-}
-
-function isNotificationUnread(n: InAppNotification): boolean {
-  if (typeof (n as unknown as { read?: boolean }).read === "boolean") {
-    return !(n as unknown as { read?: boolean }).read;
-  }
-  return !n.readAt;
 }
 
 export interface NotificationBellProps {
@@ -305,6 +459,8 @@ export function NotificationBell({
 }: NotificationBellProps = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [markingId, setMarkingId] = useState<string | null>(null);
+
   const [count, setCount] = useState(() => {
     if (initialUnreadCount !== undefined) return initialUnreadCount;
     if (initialNotifications !== undefined) {
@@ -312,10 +468,15 @@ export function NotificationBell({
     }
     return 0;
   });
+
   const [feed, setFeed] = useState<FeedState | null>(() => {
     if (initialNotifications !== undefined) {
+      const sorted = initialNotifications.slice().sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
       return {
-        items: initialNotifications,
+        items: sorted,
         unreadCount:
           initialUnreadCount ??
           initialNotifications.filter(isNotificationUnread).length,
@@ -323,6 +484,7 @@ export function NotificationBell({
     }
     return null;
   });
+
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const polling = useRef(false);
@@ -347,8 +509,7 @@ export function NotificationBell({
     }
   }, []);
 
-  // Poll the unread count while the tab is visible. pollCount is async - it
-  // only calls setState after the fetch resolves, not in this effect body.
+  // Poll the unread count while the tab is visible.
   useEffect(() => {
     if (initialNotifications !== undefined) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -378,54 +539,27 @@ export function NotificationBell({
         signal: controller.signal,
       });
       if (!res.ok) {
-        setFeed({ items: [], unreadCount: count, error: true });
+        // Do not expose partial/restricted notification data on failure/unauthorized
+        setFeed({ items: [], unreadCount: 0, error: true });
+        setCount(0);
         return;
       }
       const data = (await res.json()) as NotificationList;
-      setFeed(data);
+      const sorted = (data.items ?? []).slice().sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      setFeed({ items: sorted, unreadCount: data.unreadCount });
       setCount(data.unreadCount);
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        setFeed({ items: [], unreadCount: count, error: true });
+        setFeed({ items: [], unreadCount: 0, error: true });
+        setCount(0);
       }
     } finally {
       setBusy(false);
     }
-  }, [count]);
-
-  // Sends a mutation and syncs to the feed the server returns. If it fails,
-  // re-load so the panel reflects the server's real state rather than the
-  // optimistic change that didn't take.
-  const mutate = useCallback(
-    async (url: string, init: RequestInit) => {
-      setBusy(true);
-      let synced = false;
-      try {
-        const res = await fetch(url, { ...init, cache: "no-store" });
-        if (res.ok) {
-          const data = (await res.json()) as NotificationList;
-          setFeed(data);
-          setCount(data.unreadCount);
-          synced = true;
-        }
-      } catch {
-        /* fall through to the reload below */
-      }
-      setBusy(false);
-      if (!synced) void loadFeed();
-    },
-    [loadFeed],
-  );
-
-  const post = useCallback(
-    (body: { read?: string; readAll?: boolean }) =>
-      mutate(FEED, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      }),
-    [mutate],
-  );
+  }, []);
 
   const onOpenChange = useCallback(
     (next: boolean) => {
@@ -435,25 +569,80 @@ export function NotificationBell({
     [loadFeed, initialNotifications],
   );
 
+  const onMarkRead = useCallback(async (id: string) => {
+    setMarkingId(id);
+    try {
+      const result = await markNotificationReadAction(id);
+      if (result.success) {
+        const now = result.readAt ?? new Date().toISOString();
+        setFeed((cur) => {
+          if (!cur) return cur;
+          return {
+            ...cur,
+            items: cur.items.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    read: true,
+                    readAt: now,
+                  }
+                : item,
+            ),
+            unreadCount: Math.max(0, cur.unreadCount - 1),
+          };
+        });
+        setCount((c) => Math.max(0, c - 1));
+      } else {
+        toast.error("Could not mark as read", {
+          description: result.error ?? "Please try again.",
+        });
+      }
+    } catch (err) {
+      toast.error("Could not mark as read", {
+        description: (err as Error).message ?? "Network error",
+      });
+    } finally {
+      setMarkingId(null);
+    }
+  }, []);
+
   const onItemClick = useCallback(
-    (n: InAppNotification) => {
-      const unread = !n.readAt;
+    async (n: InAppNotification) => {
+      const unread = isNotificationUnread(n);
       if (unread) {
-        setFeed((cur) =>
-          cur
-            ? {
+        try {
+          const result = await markNotificationReadAction(n.id);
+          if (result.success) {
+            const now = result.readAt ?? new Date().toISOString();
+            setFeed((cur) => {
+              if (!cur) return cur;
+              return {
                 ...cur,
                 items: cur.items.map((item) =>
                   item.id === n.id
-                    ? { ...item, readAt: new Date().toISOString() }
+                    ? {
+                        ...item,
+                        read: true,
+                        readAt: now,
+                      }
                     : item,
                 ),
                 unreadCount: Math.max(0, cur.unreadCount - 1),
-              }
-            : cur,
-        );
-        setCount((c) => Math.max(0, c - 1));
-        void post({ read: n.id });
+              };
+            });
+            setCount((c) => Math.max(0, c - 1));
+          } else {
+            toast.error("Could not mark as read", {
+              description: result.error ?? "Please try again.",
+            });
+            return;
+          }
+        } catch (err) {
+          toast.error("Could not mark as read", {
+            description: (err as Error).message ?? "Network error",
+          });
+          return;
+        }
       }
 
       const payload = (n.payload ?? {}) as PickupReminderPayload;
@@ -465,52 +654,100 @@ export function NotificationBell({
         router.push(`/browse/${payload.listingId}`);
       }
     },
-    [post, router],
+    [router],
   );
 
-  const onMarkAll = useCallback(() => {
-    setFeed((cur) =>
-      cur
-        ? {
-            ...cur,
-            items: cur.items.map((n) => ({
-              ...n,
-              readAt: n.readAt ?? new Date().toISOString(),
-            })),
-            unreadCount: 0,
-          }
-        : cur,
-    );
-    setCount(0);
-    void post({ readAll: true });
-  }, [post]);
+  const onMarkAll = useCallback(async () => {
+    setBusy(true);
+    try {
+      const result = await markAllNotificationsReadAction();
+      if (result.success) {
+        const now = new Date().toISOString();
+        setFeed((cur) =>
+          cur
+            ? {
+                ...cur,
+                items: cur.items.map((n) => ({
+                  ...n,
+                  read: true,
+                  readAt: n.readAt ?? now,
+                })),
+                unreadCount: 0,
+              }
+            : cur,
+        );
+        setCount(0);
+      } else {
+        toast.error("Could not mark all as read", {
+          description: result.error ?? "Please try again.",
+        });
+      }
+    } catch (err) {
+      toast.error("Could not mark all as read", {
+        description: (err as Error).message ?? "Network error",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   const onDelete = useCallback(
-    (id: string, wasUnread: boolean) => {
-      setFeed((cur) =>
-        cur
-          ? {
-              ...cur,
-              items: cur.items.filter((n) => n.id !== id),
-              unreadCount: wasUnread
-                ? Math.max(0, cur.unreadCount - 1)
-                : cur.unreadCount,
-            }
-          : cur,
-      );
-      if (wasUnread) setCount((c) => Math.max(0, c - 1));
-      void mutate(`${FEED}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    async (id: string, wasUnread: boolean) => {
+      try {
+        const result = await deleteNotificationAction(id);
+        if (result.success) {
+          setFeed((cur) =>
+            cur
+              ? {
+                  ...cur,
+                  items: cur.items.filter((n) => n.id !== id),
+                  unreadCount: wasUnread
+                    ? Math.max(0, cur.unreadCount - 1)
+                    : cur.unreadCount,
+                }
+              : cur,
+          );
+          if (wasUnread) setCount((c) => Math.max(0, c - 1));
+        } else {
+          toast.error("Could not delete notification", {
+            description: result.error ?? "Please try again.",
+          });
+        }
+      } catch (err) {
+        toast.error("Could not delete notification", {
+          description: (err as Error).message ?? "Network error",
+        });
+      }
     },
-    [mutate],
+    [],
   );
 
-  const onClearAll = useCallback(() => {
-    setFeed({ items: [], unreadCount: 0 });
-    setCount(0);
-    void mutate(FEED, { method: "DELETE" });
-  }, [mutate]);
+  const onClearAll = useCallback(async () => {
+    setBusy(true);
+    try {
+      const result = await deleteAllNotificationsAction();
+      if (result.success) {
+        setFeed({ items: [], unreadCount: 0 });
+        setCount(0);
+      } else {
+        toast.error("Could not clear notifications", {
+          description: result.error ?? "Please try again.",
+        });
+      }
+    } catch (err) {
+      toast.error("Could not clear notifications", {
+        description: (err as Error).message ?? "Network error",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
-  const items = feed?.items ?? [];
+  // Guarantee strict newest-first sorting
+  const items = (feed?.items ?? []).slice().sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -521,7 +758,7 @@ export function NotificationBell({
             aria-label={
               count > 0 ? `Notifications, ${count} unread` : "Notifications"
             }
-            className="relative inline-flex size-9 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-expanded:bg-muted aria-expanded:text-foreground"
+            className="relative inline-flex size-9 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-expanded:bg-muted aria-expanded:text-foreground cursor-pointer"
           >
             <Bell className="size-[18px]" />
             {count > 0 && (
@@ -539,13 +776,13 @@ export function NotificationBell({
           <span className="text-sm font-medium">Notifications</span>
           {items.length > 0 && (
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              {items.some((n) => !n.readAt) && (
+              {items.some(isNotificationUnread) && (
                 <>
                   <button
                     type="button"
                     onClick={onMarkAll}
                     disabled={busy}
-                    className="transition-colors hover:text-foreground disabled:opacity-50"
+                    className="transition-colors hover:text-foreground disabled:opacity-50 cursor-pointer"
                   >
                     Mark all read
                   </button>
@@ -558,7 +795,7 @@ export function NotificationBell({
                 type="button"
                 onClick={onClearAll}
                 disabled={busy}
-                className="transition-colors hover:text-foreground disabled:opacity-50"
+                className="transition-colors hover:text-foreground disabled:opacity-50 cursor-pointer"
               >
                 Clear all
               </button>
@@ -571,11 +808,11 @@ export function NotificationBell({
           ) : feed.error ? (
             <NotificationErrorBanner onRetry={() => void loadFeed()} />
           ) : items.length === 0 ? (
-            <EmptyRemindersCard />
+            <EmptyNotificationsCard />
           ) : (
             <div className="space-y-2 p-3">
               {items.map((n) => {
-                const unread = !n.readAt;
+                const unread = isNotificationUnread(n);
                 const isReminder =
                   n.type === "pickup_reminder" ||
                   n.type === "claim_created" ||
@@ -585,16 +822,20 @@ export function NotificationBell({
                     key={n.id}
                     notification={n}
                     unread={unread}
-                    onItemClick={() => onItemClick(n)}
-                    onDelete={() => onDelete(n.id, unread)}
+                    isMarking={markingId === n.id}
+                    onItemClick={() => void onItemClick(n)}
+                    onMarkRead={() => void onMarkRead(n.id)}
+                    onDelete={() => void onDelete(n.id, unread)}
                   />
                 ) : (
                   <GenericNotificationCard
                     key={n.id}
                     notification={n}
                     unread={unread}
-                    onItemClick={() => onItemClick(n)}
-                    onDelete={() => onDelete(n.id, unread)}
+                    isMarking={markingId === n.id}
+                    onItemClick={() => void onItemClick(n)}
+                    onMarkRead={() => void onMarkRead(n.id)}
+                    onDelete={() => void onDelete(n.id, unread)}
                   />
                 );
               })}
