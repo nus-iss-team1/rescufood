@@ -3,10 +3,12 @@
 export type InAppNotification = {
   id: string;
   type: string;
+  title?: string | null;
   body: string | null;
   payload: Record<string, unknown>;
   readAt: string | null;
   createdAt: string;
+  read?: boolean;
 };
 
 export type PickupReminderPayload = {

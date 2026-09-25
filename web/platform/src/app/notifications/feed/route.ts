@@ -63,6 +63,30 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 }
 
+export async function PATCH(request: Request): Promise<NextResponse> {
+  const token = await idToken();
+  if (!token) return unauthorized;
+
+  const url = new URL(request.url);
+  const idFromQuery = url.searchParams.get("id");
+  const body = (await request.json().catch(() => ({}))) as { id?: string };
+  const id = idFromQuery || body.id;
+
+  if (!id) {
+    return NextResponse.json({ error: "missing id" }, { status: 400 });
+  }
+
+  try {
+    const result = await markNotificationRead(token, id);
+    return NextResponse.json(result);
+  } catch (err) {
+    if (err instanceof NotificationsApiError && err.status === 404) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "unreachable" }, { status: 502 });
+  }
+}
+
 export async function DELETE(request: Request): Promise<NextResponse> {
   const token = await idToken();
   if (!token) return unauthorized;
