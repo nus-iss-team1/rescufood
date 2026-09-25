@@ -26,11 +26,14 @@ import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
+import { OrgSummaryCard } from "@/components/dashboard/org-summary-card";
 import {
   getListing,
+  getOrgSummary,
   listRequests,
   type Listing,
   type ListingRequest,
+  type OrgSummary,
 } from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
@@ -138,17 +141,29 @@ function Workspace({
   members,
   recent,
   listings,
+  summary,
+  summaryError,
 }: {
   org: Org;
   members: User[];
   recent: ListingRequest[];
   listings?: Map<string, Listing>;
+  summary: OrgSummary | null;
+  summaryError?: string | null;
 }) {
   return (
     <>
       <AnimateIn className="grid gap-6 lg:grid-cols-3">
         <Hero org={org} />
         <OrgCard org={org} members={members} />
+      </AnimateIn>
+
+      <AnimateIn className="mt-6">
+        <OrgSummaryCard
+          initialSummary={summary}
+          initialError={summaryError}
+          orgType={org.type}
+        />
       </AnimateIn>
 
       <AnimateIn className="mt-6">
@@ -182,6 +197,8 @@ export default async function DashboardPage() {
   let members: User[] = [];
   let recent: ListingRequest[] = [];
   const recentListings = new Map<string, Listing>();
+  let summary: OrgSummary | null = null;
+  let summaryError: string | null = null;
   let staleSession = !session.idToken;
   let apiDown = false;
 
@@ -190,6 +207,12 @@ export default async function DashboardPage() {
       me = await getMe(session.idToken);
       if (me.org?.status === "approved") {
         members = await getMyOrgMembers(session.idToken);
+        try {
+          summary = await getOrgSummary(session.idToken);
+        } catch (err) {
+          summaryError =
+            (err as Error).message ?? "Unable to load organisation summary";
+        }
         try {
           const page = await listRequests(session.idToken, {
             sortBy: "updatedAt",
@@ -316,6 +339,8 @@ export default async function DashboardPage() {
           members={members}
           recent={recent}
           listings={recentListings}
+          summary={summary}
+          summaryError={summaryError}
         />
       ) : (
         <AnimateIn>

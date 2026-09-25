@@ -6,6 +6,7 @@ import type {
   ListingUpdate,
   NewListing,
   NewRequest,
+  OrgSummary,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -174,6 +175,13 @@ export class ListingsClient implements ListingsApi {
   /** The donor only. */
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest> {
     return this.send("POST", `/requests/${id}/verify`, verify);
+  }
+
+  // ----------------------------------------------------------- summary
+
+  /** Operational summary for the caller's organisation. */
+  getOrgSummary(): Promise<OrgSummary> {
+    return this.request("/summary");
   }
 }
 
