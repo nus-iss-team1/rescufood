@@ -3,6 +3,9 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "fix-svg": "node scripts/fix-svg.mjs",
+    "predev": "node scripts/fix-svg.mjs",
+    "prebuild": "node scripts/fix-svg.mjs",
     "build": "slidev build",
     "dev": "slidev --open",
     "export": "slidev export"
