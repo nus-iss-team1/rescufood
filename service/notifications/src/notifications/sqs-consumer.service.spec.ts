@@ -1,6 +1,6 @@
 import type { Message } from '@aws-sdk/client-sqs';
 import type { ConfigService } from '@nestjs/config';
-import type { MailerService } from './mailer.service';
+import { type MailerService, PermanentDeliveryError } from './mailer.service';
 import type {
   InAppNotificationInput,
   NotificationRecord,
@@ -79,6 +79,7 @@ describe('SqsConsumerService.process', () => {
         type: 'org_approved',
         channel: 'email',
         recipientEmail: 'ops@freshmart.sg',
+        eventId: 'org:abc:approved',
         payload: { orgName: 'Fresh Mart' },
       }),
     );
@@ -136,21 +137,34 @@ describe('SqsConsumerService.process', () => {
     expect(repository.record).not.toHaveBeenCalled();
   });
 
-  it('redelivers when the in-app write fails, without sending the email', async () => {
+  it('redelivers when the in-app write fails, still attempting the email', async () => {
     repository.createInApp.mockRejectedValueOnce(new Error('db down'));
 
     const outcome = await service.process(message(claimCreated()));
 
     expect(outcome).toBe('transient-failure');
+    expect(mailer.send).toHaveBeenCalledTimes(1);
+  });
+
+  // A database outage takes out the in-app write and the delivery check
+  // together; neither may escape as an exception, which would kill the poll
+  // loop rather than redeliver the message.
+  it('redelivers rather than throwing when the database is unreachable', async () => {
+    repository.createInApp.mockRejectedValueOnce(new Error('db down'));
+    repository.alreadyDelivered.mockRejectedValueOnce(new Error('db down'));
+
+    await expect(service.process(message(claimCreated()))).resolves.toBe(
+      'transient-failure',
+    );
     expect(mailer.send).not.toHaveBeenCalled();
   });
 
-  it('still resolves as sent when the in-app row is created but the email fails', async () => {
+  it('redelivers when the in-app row is created but the email fails', async () => {
     mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
 
     const outcome = await service.process(message(claimCreated()));
 
-    expect(outcome).toBe('sent');
+    expect(outcome).toBe('transient-failure');
     expect(repository.createInApp).toHaveBeenCalledTimes(1);
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -159,6 +173,45 @@ describe('SqsConsumerService.process', () => {
         failureReason: 'smtp timeout',
       }),
     );
+  });
+
+  // the redelivery of the case above: the in-app row is already there, so only
+  // the email is retried, and the message finally clears.
+  it('converges on sent when a redelivery completes the outstanding channel', async () => {
+    repository.createInApp.mockResolvedValueOnce('duplicate');
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('sent');
+    expect(repository.trimInAppFeed).not.toHaveBeenCalled();
+    expect(mailer.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry a recipient the provider rejected outright', async () => {
+    mailer.send.mockRejectedValueOnce(
+      new PermanentDeliveryError('550 no such user'),
+    );
+
+    const outcome = await service.process(message(claimCreated()));
+
+    expect(outcome).toBe('permanent-failure');
+    expect(repository.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: 'email',
+        status: 'failed',
+        failureReason: '550 no such user',
+      }),
+    );
+  });
+
+  it('treats a message with no eventId as a permanent failure', async () => {
+    const outcome = await service.process(
+      message(claimCreated({ eventId: undefined })),
+    );
+
+    expect(outcome).toBe('permanent-failure');
+    expect(repository.createInApp).not.toHaveBeenCalled();
+    expect(mailer.send).not.toHaveBeenCalled();
   });
 
   it('skips the email when it was already delivered for this event', async () => {
@@ -187,6 +240,7 @@ describe('SqsConsumerService.process', () => {
         type: 'org_approved',
         channel: 'email',
         recipientEmail: 'not-an-email',
+        eventId: 'org:abc:approved',
       }),
     );
 
@@ -201,6 +255,7 @@ describe('SqsConsumerService.process', () => {
         type: 'listing_material_change',
         channel: 'email',
         recipientEmail: 'donor@example.com',
+        eventId: 'listing:abc:changed',
       }),
     );
 
@@ -220,6 +275,7 @@ describe('SqsConsumerService.process', () => {
         type: 'org_approved',
         channel: 'email',
         recipientEmail: 'ops@freshmart.sg',
+        eventId: 'org:abc:approved',
         payload: { orgName: 'Fresh Mart' },
       }),
     );
@@ -244,6 +300,7 @@ describe('SqsConsumerService.process', () => {
         type: 'org_approved',
         channel: 'email',
         recipientEmail: 'ops@freshmart.sg',
+        eventId: 'org:abc:approved',
         payload: { orgName: 'Fresh Mart' },
       }),
     );
@@ -261,6 +318,7 @@ describe('SqsConsumerService.process', () => {
         type: 'org_approved',
         channel: 'email',
         recipientEmail: 'ops@freshmart.sg',
+        eventId: 'org:abc:approved',
         payload: { orgName: 'Fresh Mart' },
       }),
     );

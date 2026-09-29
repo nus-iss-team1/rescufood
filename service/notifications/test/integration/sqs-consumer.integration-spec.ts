@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { closeTestPool, countRows, resetDb } from './support/db';
+import { PermanentDeliveryError } from '../../src/notifications/mailer.service';
 import { createRepoContext, type RepoContext } from './support/repos';
 
 let ctx: RepoContext;
@@ -101,6 +102,62 @@ describe('SqsConsumerService.process (integration)', () => {
 
     expect(outcome).toBe('transient-failure');
     expect(await countRows("channel = 'email' and status = 'failed'")).toBe(1);
+  });
+
+  // the whole point of retrying: the channel that already landed is skipped,
+  // the one that didn't is attempted again, and nothing is duplicated.
+  it('retries only the outstanding channel on redelivery, then converges', async () => {
+    ctx.mailer.send.mockRejectedValueOnce(new Error('smtp timeout'));
+    const msg = message({
+      type: 'claim_created',
+      channel: 'in_app',
+      recipientEmail: 'donor@example.org',
+      recipientUserId: `sub-${randomUUID().slice(0, 8)}`,
+      eventId: randomUUID(),
+      payload: {},
+    });
+
+    expect(await ctx.consumer.process(msg)).toBe('transient-failure');
+    expect(await ctx.consumer.process(msg)).toBe('sent');
+
+    expect(ctx.mailer.send).toHaveBeenCalledTimes(2);
+    expect(await countRows("channel = 'in_app'")).toBe(1);
+    expect(await countRows("channel = 'email' and status = 'sent'")).toBe(1);
+    expect(await countRows("channel = 'email' and status = 'failed'")).toBe(1);
+  });
+
+  it('does not retry a recipient the provider rejected outright', async () => {
+    ctx.mailer.send.mockRejectedValueOnce(
+      new PermanentDeliveryError('550 no such user'),
+    );
+
+    const outcome = await ctx.consumer.process(
+      message({
+        type: 'org_approved',
+        channel: 'email',
+        recipientEmail: 'partner@example.org',
+        eventId: randomUUID(),
+        payload: {},
+      }),
+    );
+
+    expect(outcome).toBe('permanent-failure');
+    expect(ctx.mailer.send).toHaveBeenCalledTimes(1);
+    expect(await countRows("channel = 'email' and status = 'failed'")).toBe(1);
+  });
+
+  it('rejects a message with no eventId', async () => {
+    const outcome = await ctx.consumer.process(
+      message({
+        type: 'claim_created',
+        channel: 'in_app',
+        recipientEmail: 'donor@example.org',
+        recipientUserId: 'sub-nobody',
+        payload: {},
+      }),
+    );
+    expect(outcome).toBe('permanent-failure');
+    expect(await countRows()).toBe(0);
   });
 
   it('rejects a non-JSON body as a permanent failure', async () => {

@@ -419,6 +419,11 @@ notification queue plus its dead-letter queue:
   delivery attempts land here instead of retrying forever. 14-day
   retention (the SQS maximum) to leave room to notice and replay
   failures.
+- **`rescufood-<env>-notifications-dlq-not-empty`** — CloudWatch alarm
+  that fires as soon as anything is visible on the dead-letter queue,
+  publishing to the `rescufood-<env>-notification-alarms` SNS topic.
+  Set the `AlarmEmail` parameter to subscribe an address; left empty
+  the topic is still created, just without a subscription.
 
 No VPC dependency, so unlike the ECS/data stacks it can be deployed
 independently of the network and security stacks:
@@ -432,10 +437,10 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 ```
 
-Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack name) are
-imported by the ECS stack: `service/profile` and `service/listings` get
-`sqs:SendMessage` on the queue, `service/notifications` gets
-receive/delete.
+Exports (`QueueUrl`, `QueueArn`, `DlqArn`, `AlarmTopicArn`, prefixed with the
+stack name) are imported by the ECS stack: `service/profile` and
+`service/listings` get `sqs:SendMessage` on the queue,
+`service/notifications` gets receive/delete.
 
 ## DNS and custom domain
 
