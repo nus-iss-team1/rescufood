@@ -3,8 +3,16 @@
 // so a request filed here shows up in later reads from the same instance.
 
 import { ApiError } from "./client";
-import { sampleListings, sampleRequests } from "./fixtures";
+import {
+  sampleAuditEvents,
+  sampleListings,
+  sampleRequests,
+} from "./fixtures";
 import type {
+  AuditEntityType,
+  AuditEvent,
+  AuditEventQuery,
+  AuditFilters,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -56,12 +64,14 @@ function within(value: string, from?: string, to?: string) {
 export class MockListingsClient implements ListingsApi {
   private listings: Listing[];
   private requests: ListingRequest[];
+  private auditEvents: AuditEvent[];
   // idempotency key -> the claim it created, so a retry replays it.
   private claimsByIdempotencyKey = new Map<string, ListingRequest>();
 
   constructor() {
     this.listings = sampleListings.map((l) => ({ ...l }));
     this.requests = sampleRequests.map((r) => ({ ...r }));
+    this.auditEvents = sampleAuditEvents.map((e) => ({ ...e }));
   }
 
   private listingOr404(id: string): Listing {
@@ -386,4 +396,39 @@ export class MockListingsClient implements ListingsApi {
       asOf: now(),
     };
   }
+  // ------------------------------------------------------------- audit
+
+  async listAuditEvents(
+    query: AuditEventQuery = {}
+  ): Promise<Paginated<AuditEvent>> {
+    const matched = this.auditEvents
+      .filter((e) => !query.entityType || e.entityType === query.entityType)
+      .filter((e) => matchesAuditFilters(e, query))
+      .sort((a, b) => compareAudit(b, a));
+    return paginate(matched, query.limit ?? 50, query.offset ?? 0);
+  }
+
+  async getEntityAuditHistory(
+    entityType: AuditEntityType,
+    entityId: string,
+    filters: AuditFilters = {}
+  ): Promise<Paginated<AuditEvent>> {
+    const matched = this.auditEvents
+      .filter((e) => e.entityType === entityType && e.entityId === entityId)
+      .filter((e) => matchesAuditFilters(e, filters))
+      .sort((a, b) => compareAudit(a, b));
+    return paginate(matched, filters.limit ?? 50, filters.offset ?? 0);
+  }
+
+}
+
+function matchesAuditFilters(event: AuditEvent, filters: AuditFilters) {
+  if (filters.userId && event.userId !== filters.userId) return false;
+  return within(event.createdAt, filters.createdAtFrom, filters.createdAtTo);
+}
+
+/** Oldest first, with id breaking a same-timestamp tie as the service does. */
+function compareAudit(a: AuditEvent, b: AuditEvent) {
+  if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }

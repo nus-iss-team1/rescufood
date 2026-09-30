@@ -3,7 +3,12 @@
 // Covers every category and status, listings with and without photos,
 // allergens and handling notes, and a request in each state.
 
-import type { Listing, ListingImage, ListingRequest } from "./types";
+import type {
+  AuditEvent,
+  Listing,
+  ListingImage,
+  ListingRequest,
+} from "./types";
 
 const org = "3f1b2c4d-0000-4000-8000-000000000001";
 const donor = "3f1b2c4d-0000-4000-8000-000000000002";
@@ -279,4 +284,75 @@ export const sampleRequests: ListingRequest[] = [
     noShowReason: "Partner did not arrive in the pickup window",
     requestedAt: "2026-08-09T11:00:00.000Z",
   }),
+];
+
+// A short audit trail over the listings above, covering a donor actor, a
+// rescue-partner actor and one system-driven sweep event.
+export const sampleAuditEvents: AuditEvent[] = [
+  {
+    id: "cccc3333-0000-4000-8000-000000000001",
+    userId: donor,
+    orgId: org,
+    action: "listing.created",
+    entityType: "listing",
+    entityId: sampleListings[0].id,
+    reason: "",
+    metadata: { status: "draft" },
+    createdAt: "2026-08-09T09:00:00.000Z",
+  },
+  {
+    id: "cccc3333-0000-4000-8000-000000000002",
+    userId: donor,
+    orgId: org,
+    action: "listing.published",
+    entityType: "listing",
+    entityId: sampleListings[0].id,
+    reason: "",
+    metadata: {},
+    createdAt: "2026-08-09T09:05:00.000Z",
+  },
+  {
+    id: "cccc3333-0000-4000-8000-000000000003",
+    userId: rescue,
+    orgId: org,
+    action: "claim.created",
+    entityType: "claim",
+    entityId: sampleRequests[0].id,
+    reason: "",
+    metadata: { listingId: sampleListings[0].id, donorOrgId: org },
+    createdAt: "2026-08-09T10:15:00.000Z",
+  },
+  {
+    id: "cccc3333-0000-4000-8000-000000000004",
+    userId: donor,
+    orgId: org,
+    action: "listing.updated",
+    entityType: "listing",
+    entityId: sampleListings[1].id,
+    reason: "",
+    metadata: { fields: ["description", "quantity"] },
+    createdAt: "2026-08-10T08:30:00.000Z",
+  },
+  {
+    id: "cccc3333-0000-4000-8000-000000000005",
+    userId: donor,
+    orgId: org,
+    action: "listing.cancelled",
+    entityType: "listing",
+    entityId: sampleListings[9].id,
+    reason: "Donor withdrew the listing before pickup",
+    metadata: { previousStatus: "reserved", withdrawal: true },
+    createdAt: "2026-08-10T11:00:00.000Z",
+  },
+  {
+    id: "cccc3333-0000-4000-8000-000000000006",
+    userId: null,
+    orgId: null,
+    action: "claim.expired",
+    entityType: "claim",
+    entityId: sampleRequests[1].id,
+    reason: "pickup window closed",
+    metadata: { listingId: sampleListings[1].id },
+    createdAt: "2026-08-11T02:00:00.000Z",
+  },
 ];

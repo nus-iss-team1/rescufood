@@ -1,4 +1,8 @@
 import type {
+  AuditEvent,
+  AuditEntityType,
+  AuditEventQuery,
+  AuditFilters,
   Listing,
   ListingsApi,
   ListingQuery,
@@ -182,6 +186,28 @@ export class ListingsClient implements ListingsApi {
   /** Operational summary for the caller's organisation. */
   getOrgSummary(): Promise<OrgSummary> {
     return this.request("/summary");
+  }
+
+  // ------------------------------------------------------------- audit
+
+  /**
+   * Platform admins only. Every retained event across listings and claims,
+   * newest first, so an investigation can start from a time rather than
+   * from an entity id.
+   */
+  listAuditEvents(query: AuditEventQuery = {}): Promise<Paginated<AuditEvent>> {
+    return this.request(`/audit${searchParams(query)}`);
+  }
+
+  /** Platform admins only. One entity's full history, oldest first. */
+  getEntityAuditHistory(
+    entityType: AuditEntityType,
+    entityId: string,
+    filters: AuditFilters = {}
+  ): Promise<Paginated<AuditEvent>> {
+    return this.request(
+      `/audit/${entityType}/${entityId}${searchParams(filters)}`
+    );
   }
 }
 
