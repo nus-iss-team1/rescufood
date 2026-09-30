@@ -3,8 +3,12 @@
 // so a request filed here shows up in later reads from the same instance.
 
 import { ApiError } from "./client";
-import { sampleListings, sampleRequests } from "./fixtures";
+import { sampleAuditEvents, sampleListings, sampleRequests } from "./fixtures";
 import type {
+  AuditEntityType,
+  AuditEvent,
+  AuditEventQuery,
+  AuditFilters,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -58,12 +62,14 @@ function within(value: string, from?: string, to?: string) {
 export class MockListingsClient implements ListingsApi {
   private listings: Listing[];
   private requests: ListingRequest[];
+  private auditEvents: AuditEvent[];
   // idempotency key -> the claim it created, so a retry replays it.
   private claimsByIdempotencyKey = new Map<string, ListingRequest>();
 
   constructor() {
     this.listings = sampleListings.map((l) => ({ ...l }));
     this.requests = sampleRequests.map((r) => ({ ...r }));
+    this.auditEvents = sampleAuditEvents.map((e) => ({ ...e }));
   }
 
   private listingOr404(id: string): Listing {
@@ -86,7 +92,7 @@ export class MockListingsClient implements ListingsApi {
     if (query.pickupLocation) {
       const needle = query.pickupLocation.toLowerCase();
       items = items.filter((l) =>
-        (l.pickupLocation ?? "").toLowerCase().includes(needle)
+        (l.pickupLocation ?? "").toLowerCase().includes(needle),
       );
     }
     items = items.filter(
@@ -94,13 +100,17 @@ export class MockListingsClient implements ListingsApi {
         // "" sorts before any real date, so a null useBy is excluded by an
         // active from/to filter but doesn't affect the unfiltered case.
         within(l.useBy ?? "", query.useByFrom, query.useByTo) &&
-        within(l.createdAt, query.createdAtFrom, query.createdAtTo)
+        within(l.createdAt, query.createdAtFrom, query.createdAtTo),
     );
 
     const key = query.sortBy ?? "useBy";
     const dir = query.sortOrder === "desc" ? -1 : 1;
     items = [...items].sort((a, b) =>
-      String(a[key]) < String(b[key]) ? -dir : String(a[key]) > String(b[key]) ? dir : 0
+      String(a[key]) < String(b[key])
+        ? -dir
+        : String(a[key]) > String(b[key])
+          ? dir
+          : 0,
     );
     return paginate(items, query.limit, query.offset);
   }
@@ -119,10 +129,7 @@ export class MockListingsClient implements ListingsApi {
       // Listing's are all nullable, so an absent field becomes null here.
       category: listing.category ?? null,
       description: listing.description ?? null,
-      quantity:
-        listing.quantity != null
-          ? listing.quantity.toFixed(2)
-          : null,
+      quantity: listing.quantity != null ? listing.quantity.toFixed(2) : null,
       unit: listing.unit ?? null,
       allergens: listing.allergens ?? [],
       handlingInstructions: listing.handlingInstructions ?? "",
@@ -153,7 +160,7 @@ export class MockListingsClient implements ListingsApi {
       if (!LISTING_TRANSITIONS[listing.status].includes(update.status)) {
         throw new ApiError(
           400,
-          `cannot change listing status from ${listing.status} to ${update.status}`
+          `cannot change listing status from ${listing.status} to ${update.status}`,
         );
       }
       listing.status = update.status;
@@ -187,7 +194,7 @@ export class MockListingsClient implements ListingsApi {
   }
 
   async listRequests(
-    query: RequestQuery = {}
+    query: RequestQuery = {},
   ): Promise<Paginated<ListingRequest>> {
     let items = this.requests;
     if (query.status) items = items.filter((r) => r.status === query.status);
@@ -197,7 +204,7 @@ export class MockListingsClient implements ListingsApi {
     const key = query.sortBy ?? "requestedAt";
     const dir = query.sortOrder === "asc" ? 1 : -1;
     items = [...items].sort((a, b) =>
-      a[key] < b[key] ? -dir : a[key] > b[key] ? dir : 0
+      a[key] < b[key] ? -dir : a[key] > b[key] ? dir : 0,
     );
     return paginate(items, query.limit, query.offset);
   }
@@ -249,13 +256,13 @@ export class MockListingsClient implements ListingsApi {
 
   async decideRequest(
     id: string,
-    decision: RequestDecisionInput
+    decision: RequestDecisionInput,
   ): Promise<ListingRequest> {
     const request = this.requestOr404(id);
     if (!REQUEST_TRANSITIONS[request.status].includes(decision.status)) {
       throw new ApiError(
         400,
-        `cannot change request status from ${request.status} to ${decision.status}`
+        `cannot change request status from ${request.status} to ${decision.status}`,
       );
     }
 
@@ -283,7 +290,7 @@ export class MockListingsClient implements ListingsApi {
 
   async generatePickupCode(
     id: string,
-    regenerate = false
+    regenerate = false,
   ): Promise<PickupCode> {
     const request = this.requestOr404(id);
     if (request.status !== "active") {
@@ -319,7 +326,7 @@ export class MockListingsClient implements ListingsApi {
       (r) =>
         r.status === "active" &&
         r.codeExpiresAt != null &&
-        new Date(r.codeExpiresAt) > new Date()
+        new Date(r.codeExpiresAt) > new Date(),
     );
     if (!match) {
       throw new ApiError(404, "no claim matches that code");
@@ -335,7 +342,7 @@ export class MockListingsClient implements ListingsApi {
 
   async verifyPickupCode(
     id: string,
-    verify: VerifyPickup
+    verify: VerifyPickup,
   ): Promise<ListingRequest> {
     const request = this.requestOr404(id);
     if (verify.code !== "123456") {
@@ -370,11 +377,14 @@ export class MockListingsClient implements ListingsApi {
       orgId: "mock-org",
       listings: {
         draft: activeListings.filter((l) => l.status === "draft").length,
-        available: activeListings.filter((l) => l.status === "available").length,
+        available: activeListings.filter((l) => l.status === "available")
+          .length,
         reserved: activeListings.filter((l) => l.status === "reserved").length,
-        collected: activeListings.filter((l) => l.status === "collected").length,
+        collected: activeListings.filter((l) => l.status === "collected")
+          .length,
         expired: activeListings.filter((l) => l.status === "expired").length,
-        cancelled: activeListings.filter((l) => l.status === "cancelled").length,
+        cancelled: activeListings.filter((l) => l.status === "cancelled")
+          .length,
         total: activeListings.length,
       },
       claims: {
@@ -394,7 +404,9 @@ export class MockListingsClient implements ListingsApi {
     const unitTotals = new Map<string, number>();
     let collectedCount = 0;
 
-    const completedRequests = this.requests.filter((r) => r.status === "completed");
+    const completedRequests = this.requests.filter(
+      (r) => r.status === "completed",
+    );
     const collectedListingIds = new Set<string>();
 
     for (const r of completedRequests) {
@@ -405,19 +417,28 @@ export class MockListingsClient implements ListingsApi {
       const qty = r.collectedQuantity
         ? parseFloat(r.collectedQuantity)
         : listing?.quantity
-        ? parseFloat(listing.quantity)
-        : 0;
-      unitTotals.set(unit, (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty));
+          ? parseFloat(listing.quantity)
+          : 0;
+      unitTotals.set(
+        unit,
+        (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty),
+      );
     }
 
     const collectedListings = this.listings.filter(
-      (l) => l.status === "collected" && !l.deletedAt && !collectedListingIds.has(l.id)
+      (l) =>
+        l.status === "collected" &&
+        !l.deletedAt &&
+        !collectedListingIds.has(l.id),
     );
     for (const l of collectedListings) {
       collectedCount++;
       const unit = l.unit?.trim() || "units";
       const qty = l.quantity ? parseFloat(l.quantity) : 0;
-      unitTotals.set(unit, (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty));
+      unitTotals.set(
+        unit,
+        (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty),
+      );
     }
 
     const rescuedByUnit: UnitQuantity[] = Array.from(unitTotals.entries()).map(
@@ -425,7 +446,7 @@ export class MockListingsClient implements ListingsApi {
         unit,
         amount,
         formatted: `${amount % 1 === 0 ? amount : amount.toFixed(1)} ${unit}`,
-      })
+      }),
     );
 
     const durations: number[] = [];
@@ -464,11 +485,15 @@ export class MockListingsClient implements ListingsApi {
       const hours = Math.floor(minutes / 60);
       const remMins = minutes % 60;
       if (hours < 24) {
-        return remMins > 0 ? `${hours} hr${hours === 1 ? "" : "s"} ${remMins} min${remMins === 1 ? "" : "s"}` : `${hours} hr${hours === 1 ? "" : "s"}`;
+        return remMins > 0
+          ? `${hours} hr${hours === 1 ? "" : "s"} ${remMins} min${remMins === 1 ? "" : "s"}`
+          : `${hours} hr${hours === 1 ? "" : "s"}`;
       }
       const days = Math.floor(hours / 24);
       const remHours = hours % 24;
-      return remHours > 0 ? `${days} day${days === 1 ? "" : "s"} ${remHours} hr${remHours === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"}`;
+      return remHours > 0
+        ? `${days} day${days === 1 ? "" : "s"} ${remHours} hr${remHours === 1 ? "" : "s"}`
+        : `${days} day${days === 1 ? "" : "s"}`;
     };
 
     return {
@@ -483,4 +508,38 @@ export class MockListingsClient implements ListingsApi {
       asOf: now(),
     };
   }
+  // ------------------------------------------------------------- audit
+
+  async listAuditEvents(
+    query: AuditEventQuery = {},
+  ): Promise<Paginated<AuditEvent>> {
+    const matched = this.auditEvents
+      .filter((e) => !query.entityType || e.entityType === query.entityType)
+      .filter((e) => matchesAuditFilters(e, query))
+      .sort((a, b) => compareAudit(b, a));
+    return paginate(matched, query.limit ?? 50, query.offset ?? 0);
+  }
+
+  async getEntityAuditHistory(
+    entityType: AuditEntityType,
+    entityId: string,
+    filters: AuditFilters = {},
+  ): Promise<Paginated<AuditEvent>> {
+    const matched = this.auditEvents
+      .filter((e) => e.entityType === entityType && e.entityId === entityId)
+      .filter((e) => matchesAuditFilters(e, filters))
+      .sort((a, b) => compareAudit(a, b));
+    return paginate(matched, filters.limit ?? 50, filters.offset ?? 0);
+  }
+}
+
+function matchesAuditFilters(event: AuditEvent, filters: AuditFilters) {
+  if (filters.userId && event.userId !== filters.userId) return false;
+  return within(event.createdAt, filters.createdAtFrom, filters.createdAtTo);
+}
+
+/** Oldest first, with id breaking a same-timestamp tie as the service does. */
+function compareAudit(a: AuditEvent, b: AuditEvent) {
+  if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }

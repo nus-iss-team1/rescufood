@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { AuditModule } from './audit/audit.module';
 import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
@@ -37,6 +38,7 @@ import { SummaryModule } from './summary/summary.module';
         },
       },
     }),
+    AuditModule,
     ListingsModule,
     RequestsModule,
     SummaryModule,

@@ -59,11 +59,47 @@ All routes are namespaced under `/api` (`app.setGlobalPrefix('api')` in
 |---|---|
 | `/api/listings` | `POST /`, `GET /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` |
 | `/api/requests` | `POST /`, `GET /`, `GET /:id`, `PATCH /:id`, `POST /:id/pickup-code`, `POST /:id/verify` |
+| `/api/audit` | `GET /`, `GET /:entityType/:entityId` — admin only |
 | `/api/health` | Health check — the ECS target group's health check path |
 
 Requests carry a Cognito-issued bearer token; org membership and
 listing/request ownership are enforced per-route (see
 `src/auth/org-membership.guard.ts` and the `*-access.util.ts` helpers).
+
+### Audit history
+
+Two admin-only reads (`AdminGuard`, backed by the Cognito `admin` group):
+
+- `GET /api/audit` — the discovery feed. Every retained event across
+  listings and claims, **newest first**, so an investigation can start from
+  "what just happened" without knowing an entity id. Unfiltered on first
+  load; each row carries its own `entityType` and `entityId`.
+- `GET /api/audit/:entityType/:entityId` — one entity's full history,
+  **oldest first**, which is the order a transaction is reconstructed in.
+  Where the feed is drilled into.
+
+Both take the same optional filters: `userId` (the actor — system-driven
+events have a null actor, so this never matches them), `createdAtFrom` /
+`createdAtTo` (both inclusive) and `limit` / `offset`. The feed also takes
+`entityType`. `total` always reflects the filtered set, not the whole table.
+
+There is deliberately no filter on `entityId` or on organisation/listing
+names: a reporter gives you a name, not an id, and those names live in
+tables this query does not join. Discovery goes through time, actor and
+entity type instead.
+
+Ordering is stable across repeated calls. `created_at` defaults to `now()`,
+which is transaction-start time, so rows written by one transaction tie on
+it and `id` breaks the tie. The page and its `total` are read in one
+repeatable-read, read-only snapshot, so a concurrent append cannot shift
+rows between them. The feed is served by `audit_log_created_at_idx` on
+`(created_at, id)`, scanned backwards; the per-entity read by
+`audit_log_entity_idx`.
+
+`audit_log` is append-only — `AuditRepository` exposes `record()`,
+`findByEntity()` and `findMany()`, and no update or delete path. Claim
+events carry their `listingId` in `metadata`, which is how a claim or
+pickup event is traced back to the listing it belongs to.
 
 ### Lifecycle notifications
 
@@ -190,7 +226,7 @@ src/
 ├── listings/                # Listings CRUD, image upload, expiry job
 ├── requests/                # Request/claim lifecycle, pickup-code verification, idempotency
 ├── notifications/           # SQS publisher for lifecycle notifications
-├── audit/                   # audit_log writer for the listing/claim lifecycle
+├── audit/                   # audit_log writer + admin entity-history endpoint
 ├── storage/                 # S3 upload service
 └── health/                  # Health check controller
 ```

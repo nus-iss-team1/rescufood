@@ -247,7 +247,11 @@ gated on `ListingsImage` the same way the profile service is gated on
 `ProfileImage` — leave it empty and no listings resources are created.
 When set it adds a Fargate service on port 3002, its own target group
 and log group, and one ALB rule routing both `/api/listings/*` and
-`/api/requests/*` to it (one service handles both resource types).
+`/api/requests/*` to it (one service handles both resource types), plus a
+second rule (priority 13) for the admin-only `/api/audit` and
+`/api/audit/*`. That path needs
+its own rule because an ALB rule takes at most 5 condition values and the
+first one is already at 5.
 
 | Parameter | Notes |
 |---|---|

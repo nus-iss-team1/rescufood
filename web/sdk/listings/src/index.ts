@@ -1,4 +1,8 @@
-export { sampleListings, sampleRequests } from "./fixtures";
+export {
+  sampleAuditEvents,
+  sampleListings,
+  sampleRequests,
+} from "./fixtures";
 export { MockListingsClient } from "./mock";
 export { createListingsClient } from "./factory";
 export {
@@ -7,12 +11,17 @@ export {
   type ListingsClientOptions,
 } from "./client";
 export {
+  auditEntityTypes,
   listingCategories,
   listingSortFields,
   listingStatuses,
   requestDecisions,
   requestSortFields,
   requestStatuses,
+  type AuditEntityType,
+  type AuditEvent,
+  type AuditEventQuery,
+  type AuditFilters,
   type Listing,
   type ListingCategory,
   type ListingImage,

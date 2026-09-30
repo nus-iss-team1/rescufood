@@ -314,5 +314,8 @@ export const auditLog = pgTable(
   (table) => [
     index('audit_log_entity_idx').on(table.entityType, table.entityId),
     index('audit_log_user_idx').on(table.userId),
+    // Serves the cross-entity discovery feed, which orders by (created_at,
+    // id) - Postgres scans this backwards for the newest-first default.
+    index('audit_log_created_at_idx').on(table.createdAt, table.id),
   ],
 );
