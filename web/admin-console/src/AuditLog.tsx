@@ -49,6 +49,18 @@ const emptyFilters: Filters = {
   to: "",
 };
 
+const entityLabels: Record<string, string> = {
+  [ALL]: "All entities",
+  listing: "Listings",
+  claim: "Claims",
+};
+
+// The api returns actor ids; names are resolved separately and may not have
+// arrived yet, so fall back to a short id rather than showing a bare uuid.
+function actorName(names: Map<string, string>, id: string): string {
+  return names.get(id) ?? shortId(id);
+}
+
 function isFiltered(filters: Filters): boolean {
   return (
     filters.entityType !== ALL ||
@@ -122,7 +134,7 @@ export function AuditLog() {
   const actorOptions = useMemo(
     () =>
       actorIds
-        .map((id) => ({ id, label: names.get(id) ?? shortId(id) }))
+        .map((id) => ({ id, label: actorName(names, id) }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     [actorIds, names],
   );
@@ -132,7 +144,7 @@ export function AuditLog() {
 
   function actorLabel(event: AuditEvent): string {
     if (event.userId === null) return "System";
-    return names.get(event.userId) ?? shortId(event.userId);
+    return actorName(names, event.userId);
   }
 
   return (
@@ -147,7 +159,10 @@ export function AuditLog() {
             }
           >
             <SelectTrigger id="audit-entity-type" className="w-full">
-              <SelectValue />
+              {/* Base UI renders the raw value unless given a formatter. */}
+              <SelectValue>
+                {(v: string | null) => entityLabels[v ?? ALL] ?? "All entities"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All entities</SelectItem>
@@ -164,7 +179,11 @@ export function AuditLog() {
             onValueChange={(v) => v && update({ userId: v })}
           >
             <SelectTrigger id="audit-actor" className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {(v: string | null) =>
+                  !v || v === ALL ? "Anyone" : actorName(names, v)
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-64">
               <SelectItem value={ALL}>Anyone</SelectItem>
@@ -175,10 +194,6 @@ export function AuditLog() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
-            Actors seen in loaded results. System events have no actor, so
-            choosing one never returns them.
-          </p>
         </div>
 
         <div className="grid gap-1.5">

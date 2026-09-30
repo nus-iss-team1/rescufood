@@ -130,7 +130,7 @@ export default function App() {
       <HeaderBar user={me.name || me.email} onSignOut={logout} />
       <main className="mx-auto max-w-5xl p-4 sm:p-6">
         <Tabs value={view} onValueChange={(v) => v && setView(v as View)}>
-          <TabsList className="mb-6 w-full overflow-x-auto sm:w-auto">
+          <TabsList className="mb-6 w-full overflow-x-auto sm:overflow-x-visible">
             {views.map((v) => (
               <TabsTrigger key={v.id} value={v.id}>
                 {v.label}
