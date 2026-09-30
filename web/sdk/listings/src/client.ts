@@ -11,6 +11,7 @@ import type {
   NewListing,
   NewRequest,
   OrgSummary,
+  RescuedMetrics,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -56,7 +57,10 @@ function multipart(fields: object, files: Blob[]): FormData {
   const form = new FormData();
   for (const [key, value] of Object.entries(fields)) {
     if (value === undefined) continue;
-    form.append(key, Array.isArray(value) ? JSON.stringify(value) : String(value));
+    form.append(
+      key,
+      Array.isArray(value) ? JSON.stringify(value) : String(value),
+    );
   }
   for (const file of files) {
     form.append("files", file);
@@ -124,7 +128,7 @@ export class ListingsClient implements ListingsApi {
   updateListing(
     id: string,
     update: ListingUpdate,
-    images: Blob[] = []
+    images: Blob[] = [],
   ): Promise<Listing> {
     const body = images.length ? multipart(update, images) : update;
     return this.send("PATCH", `/listings/${id}`, body);
@@ -157,7 +161,7 @@ export class ListingsClient implements ListingsApi {
   /** Cancel a claim or report a no-show. */
   decideRequest(
     id: string,
-    decision: RequestDecisionInput
+    decision: RequestDecisionInput,
   ): Promise<ListingRequest> {
     return this.send("PATCH", `/requests/${id}`, decision);
   }
@@ -188,6 +192,11 @@ export class ListingsClient implements ListingsApi {
     return this.request("/summary");
   }
 
+  /** Rescued quantity and time-to-claim metrics for the caller's organisation. */
+  getRescuedMetrics(): Promise<RescuedMetrics> {
+    return this.request("/reports/metrics");
+  }
+
   // ------------------------------------------------------------- audit
 
   /**
@@ -203,10 +212,10 @@ export class ListingsClient implements ListingsApi {
   getEntityAuditHistory(
     entityType: AuditEntityType,
     entityId: string,
-    filters: AuditFilters = {}
+    filters: AuditFilters = {},
   ): Promise<Paginated<AuditEvent>> {
     return this.request(
-      `/audit/${entityType}/${entityId}${searchParams(filters)}`
+      `/audit/${entityType}/${entityId}${searchParams(filters)}`,
     );
   }
 }

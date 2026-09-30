@@ -223,6 +223,39 @@ export interface OrgSummary {
   };
 }
 
+/** Quantity grouped distinctly by unit. */
+export interface UnitQuantity {
+  unit: string;
+  amount: number;
+  formatted: string;
+}
+
+/** Analytical outcomes for rescued quantity and time-to-claim. */
+export interface RescuedMetrics {
+  orgId: string;
+  /** Quantities distinctly grouped by unit (never summed across incompatible units). */
+  rescuedByUnit: UnitQuantity[];
+  /** Total count of successfully collected lots / completed claims. */
+  collectedCount: number;
+  /** Average duration in milliseconds from publication to confirmed claim. */
+  avgTimeToClaimMs: number | null;
+  /** Median duration in milliseconds from publication to confirmed claim. */
+  medianTimeToClaimMs: number | null;
+  /** Human-readable representation of average time to claim (e.g. "1 hr 25 mins", "42 mins", "< 15 mins"). */
+  formattedAvgTimeToClaim: string;
+  /** Human-readable representation of median time to claim. */
+  formattedMedianTimeToClaim: string;
+  /** Number of claimed lots included in time-to-claim metrics. */
+  timeToClaimCount: number;
+  /** Timestamp when metrics were calculated. */
+  asOf: string;
+  /** Applicable reporting period window. */
+  period?: {
+    from?: string;
+    to?: string;
+  };
+}
+
 export const auditEntityTypes = ["listing", "claim"] as const;
 export type AuditEntityType = (typeof auditEntityTypes)[number];
 
@@ -265,7 +298,7 @@ export interface ListingsApi {
   updateListing(
     id: string,
     update: ListingUpdate,
-    images?: Blob[]
+    images?: Blob[],
   ): Promise<Listing>;
   deleteListing(id: string): Promise<void>;
   listRequests(query?: RequestQuery): Promise<Paginated<ListingRequest>>;
@@ -273,16 +306,17 @@ export interface ListingsApi {
   createRequest(request: NewRequest): Promise<ListingRequest>;
   decideRequest(
     id: string,
-    decision: RequestDecisionInput
+    decision: RequestDecisionInput,
   ): Promise<ListingRequest>;
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
   getOrgSummary(): Promise<OrgSummary>;
+  getRescuedMetrics(): Promise<RescuedMetrics>;
   listAuditEvents(query?: AuditEventQuery): Promise<Paginated<AuditEvent>>;
   getEntityAuditHistory(
     entityType: AuditEntityType,
     entityId: string,
-    filters?: AuditFilters
+    filters?: AuditFilters,
   ): Promise<Paginated<AuditEvent>>;
 }

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  BarChart3,
   Bell,
   PackagePlus,
   QrCode,
@@ -27,13 +26,16 @@ import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
 import { OrgSummaryCard } from "@/components/dashboard/org-summary-card";
+import { RescuedMetricsCard } from "@/components/dashboard/rescued-metrics-card";
 import {
   getListing,
   getOrgSummary,
+  getRescuedMetrics,
   listRequests,
   type Listing,
   type ListingRequest,
   type OrgSummary,
+  type RescuedMetrics,
 } from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
@@ -68,7 +70,6 @@ const heroByType = {
 const upcoming = [
   { icon: QrCode, label: "Pickup verification with a single-use code" },
   { icon: Bell, label: "Claim, reminder and expiry notifications" },
-  { icon: BarChart3, label: "Rescued quantity and activity reporting" },
 ];
 
 function Notice({
@@ -143,6 +144,8 @@ function Workspace({
   listings,
   summary,
   summaryError,
+  metrics,
+  metricsError,
 }: {
   org: Org;
   members: User[];
@@ -150,6 +153,8 @@ function Workspace({
   listings?: Map<string, Listing>;
   summary: OrgSummary | null;
   summaryError?: string | null;
+  metrics: RescuedMetrics | null;
+  metricsError?: string | null;
 }) {
   return (
     <>
@@ -162,6 +167,14 @@ function Workspace({
         <OrgSummaryCard
           initialSummary={summary}
           initialError={summaryError}
+          orgType={org.type}
+        />
+      </AnimateIn>
+
+      <AnimateIn className="mt-6">
+        <RescuedMetricsCard
+          initialMetrics={metrics}
+          initialError={metricsError}
           orgType={org.type}
         />
       </AnimateIn>
@@ -199,6 +212,8 @@ export default async function DashboardPage() {
   const recentListings = new Map<string, Listing>();
   let summary: OrgSummary | null = null;
   let summaryError: string | null = null;
+  let metrics: RescuedMetrics | null = null;
+  let metricsError: string | null = null;
   let staleSession = !session.idToken;
   let apiDown = false;
 
@@ -212,6 +227,12 @@ export default async function DashboardPage() {
         } catch (err) {
           summaryError =
             (err as Error).message ?? "Unable to load organisation summary";
+        }
+        try {
+          metrics = await getRescuedMetrics(session.idToken);
+        } catch (err) {
+          metricsError =
+            (err as Error).message ?? "Unable to load rescue metrics";
         }
         try {
           const page = await listRequests(session.idToken, {
@@ -341,6 +362,8 @@ export default async function DashboardPage() {
           listings={recentListings}
           summary={summary}
           summaryError={summaryError}
+          metrics={metrics}
+          metricsError={metricsError}
         />
       ) : (
         <AnimateIn>
