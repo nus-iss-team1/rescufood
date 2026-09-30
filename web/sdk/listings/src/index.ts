@@ -25,6 +25,8 @@ export {
   type NewRequest,
   type ListingsApi,
   type OrgSummary,
+  type RescuedMetrics,
+  type UnitQuantity,
   type Paginated,
   type PickupCode,
   type PickupCodeMatch,

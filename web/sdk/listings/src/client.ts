@@ -7,6 +7,7 @@ import type {
   NewListing,
   NewRequest,
   OrgSummary,
+  RescuedMetrics,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -182,6 +183,11 @@ export class ListingsClient implements ListingsApi {
   /** Operational summary for the caller's organisation. */
   getOrgSummary(): Promise<OrgSummary> {
     return this.request("/summary");
+  }
+
+  /** Rescued quantity and time-to-claim metrics for the caller's organisation. */
+  getRescuedMetrics(): Promise<RescuedMetrics> {
+    return this.request("/reports/metrics");
   }
 }
 

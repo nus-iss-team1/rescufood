@@ -1,7 +1,13 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getOrgSummary, ListingsApiError, type OrgSummary } from "@/lib/listings";
+import {
+  getOrgSummary,
+  getRescuedMetrics,
+  ListingsApiError,
+  type OrgSummary,
+  type RescuedMetrics,
+} from "@/lib/listings";
 
 export type OrgSummaryActionResult = {
   data?: OrgSummary;
@@ -30,5 +36,36 @@ export async function getOrgSummaryAction(): Promise<OrgSummaryActionResult> {
       return { error: err.message };
     }
     return { error: "Could not reach the listings service. Please try again." };
+  }
+}
+
+export type RescuedMetricsActionResult = {
+  data?: RescuedMetrics;
+  error?: string;
+  denied?: boolean;
+};
+
+export async function getRescuedMetricsAction(): Promise<RescuedMetricsActionResult> {
+  const session = await auth();
+  const idToken = session?.idToken;
+  if (!idToken) {
+    return { error: "Session expired. Please sign in again.", denied: true };
+  }
+
+  try {
+    const data = await getRescuedMetrics(idToken);
+    return { data };
+  } catch (err) {
+    if (err instanceof ListingsApiError) {
+      if (err.status === 401 || err.status === 403) {
+        return {
+          error:
+            "You must belong to an approved organisation to view these metrics.",
+          denied: true,
+        };
+      }
+      return { error: err.message };
+    }
+    return { error: "Could not retrieve metrics. Please try again." };
   }
 }
