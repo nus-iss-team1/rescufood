@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 
@@ -26,10 +25,6 @@ func (r *AuditEvents) Record(ctx context.Context, e domain.AuditEntry) error {
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
-	encoded, err := json.Marshal(metadata)
-	if err != nil {
-		return err
-	}
 
 	var entityID any
 	if e.EntityID != uuid.Nil {
@@ -40,11 +35,11 @@ func (r *AuditEvents) Record(ctx context.Context, e domain.AuditEntry) error {
 		subject = e.Subject
 	}
 
-	_, err = r.db.Exec(ctx, `
+	_, err := r.db.Exec(ctx, `
 		INSERT INTO audit_log
 			(user_id, org_id, action, entity_type, entity_id, subject, reason, metadata)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		e.ActorUserID, e.ActorOrgID, e.Action, e.EntityType, entityID, subject,
-		e.Reason, encoded)
+		e.Reason, metadata)
 	return err
 }

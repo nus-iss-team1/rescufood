@@ -479,9 +479,9 @@ describe('audit_log is append-only (integration)', () => {
       entityId: listing.id,
     });
 
-    await expect(
-      testPool().query(`DELETE FROM audit_log`),
-    ).rejects.toThrow(/append-only/);
+    await expect(testPool().query(`DELETE FROM audit_log`)).rejects.toThrow(
+      /append-only/,
+    );
 
     const page = await ctx.audit.findByEntity('listing', listing.id, {
       limit: 50,
