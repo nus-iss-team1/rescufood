@@ -101,6 +101,16 @@ rows between them. The feed is served by `audit_log_created_at_idx` on
 events carry their `listingId` in `metadata`, which is how a claim or
 pickup event is traced back to the listing it belongs to.
 
+### Denied access is reviewable
+
+Every request log carries the caller (`userId`, `role`) via `customProps`,
+and `customLogLevel` raises 4xx to `warn` and 5xx to `error` - pino-http has
+no status-based default, so without that a denial would sit at `info` among
+the successful traffic. A refused report or audit read is therefore
+reviewable by who attempted it, while the response body is never logged, so
+the data they were refused stays out of the logs. See
+`src/common/request-logging.ts`.
+
 ### Lifecycle notifications
 
 After a claim, cancellation, pickup reminder/completion or listing expiry

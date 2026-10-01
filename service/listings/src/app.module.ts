@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AuditModule } from './audit/audit.module';
+import { requestActor, requestLogLevel } from './common/request-logging';
 import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
@@ -27,6 +28,8 @@ import { SummaryModule } from './summary/summary.module';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        customProps: requestActor,
+        customLogLevel: requestLogLevel,
         serializers: {
           req: (req: { method: string; url: string }) => ({
             method: req.method,
