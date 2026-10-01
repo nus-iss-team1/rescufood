@@ -21,8 +21,22 @@ export class AuditEventResponseDto {
   @ApiProperty({ enum: auditEntityTypes })
   entityType!: AuditEntityType;
 
-  @ApiProperty({ format: 'uuid' })
-  entityId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    description:
+      'Null when the subject has no record to point at, such as a failed ' +
+      'login against an unknown username. `subject` names it instead.',
+  })
+  entityId!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    description:
+      'The identifier an auth event was attempted against, as typed. Null ' +
+      'on events whose subject is a known record.',
+  })
+  subject!: string | null;
 
   @ApiProperty({ description: 'Empty string when the action carries none.' })
   reason!: string;

@@ -42,8 +42,10 @@ export function AuditEntitySheet({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!event) {
-      setHistory(null);
+    // An event with no entity - a login attempt on an unknown account - has
+    // no per-entity history to fetch; the selected event is all there is.
+    if (!event || !event.entityId) {
+      setHistory(event ? [] : null);
       setError("");
       return;
     }
@@ -84,7 +86,7 @@ export function AuditEntitySheet({
                 {event.entityType} history
               </SheetTitle>
               <SheetDescription className="font-mono text-xs">
-                {event.entityId}
+                {event.entityId ?? event.subject ?? "unknown"}
               </SheetDescription>
             </SheetHeader>
 

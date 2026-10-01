@@ -28,7 +28,7 @@ import {
 
 import { listingsClient, ListingsApiError } from "./api";
 import { AuditEntitySheet } from "./AuditEntitySheet";
-import { actionLabel, actionTone, shortId } from "./lib/audit";
+import { actionLabel, actionTone, shortId, targetLabel } from "./lib/audit";
 import { resolveActorNames } from "./lib/actor-names";
 import { absolute, endOfDayIso, startOfDayIso, timeAgo } from "./lib/time";
 
@@ -279,7 +279,7 @@ export function AuditLog() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {actorLabel(event)} &middot; {event.entityType}{" "}
-                <span className="font-mono">{shortId(event.entityId)}</span>
+                <span className="font-mono">{targetLabel(event)}</span>
               </p>
               {event.reason && <p className="text-sm">{event.reason}</p>}
             </div>
@@ -328,7 +328,7 @@ export function AuditLog() {
                   <TableCell className="whitespace-nowrap">
                     <span className="capitalize">{event.entityType}</span>{" "}
                     <span className="font-mono text-xs text-muted-foreground">
-                      {shortId(event.entityId)}
+                      {targetLabel(event)}
                     </span>
                   </TableCell>
                   <TableCell className="max-w-64 truncate" title={event.reason}>
