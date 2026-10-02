@@ -1,7 +1,7 @@
 # RescuFood Notifications Service
 
 Consumes one SQS queue. For each event it creates an **in-app notification**
-(the primary channel) and sends an **email** (secondary). Producers
+and sends an **email**; both must land before the message is done. Producers
 (`service/profile`, `service/listings`) publish a JSON message per notification
 instead of calling SES/SMTP themselves - this is the one place that owns mail
 credentials, templates, in-app records and delivery history.
@@ -97,10 +97,9 @@ One SQS message body = one notification for one recipient:
 - **`recipientUserId`** (optional) - the recipient's Cognito sub. When present
   and the type has an in-app template (`src/notifications/in-app-templates.ts`),
   an `in_app` notification row is created.
-- **`eventId`** (optional) - a stable, per-recipient identifier for the domain
-  event (e.g. `claim:<id>:created`). Drives duplicate-processing protection.
-- A message with neither field is handled exactly as before: email only,
-  no de-duplication.
+- **`eventId`** (required) - a stable, per-recipient identifier for the domain
+  event (e.g. `claim:<id>:created`). It is the key both channels de-duplicate
+  on, so retries depend on it; a message without one fails validation.
 
 `service/listings` publishes the claim / pickup / expiry events;
 `service/profile` publishes `org_approved` (email only) and `user_welcome`
@@ -108,27 +107,34 @@ One SQS message body = one notification for one recipient:
 
 ## Delivery semantics
 
-**In-app is the primary channel, email is secondary.** For each message the
-consumer (`SqsConsumerService.process`):
+**Both channels must land.** For each message the consumer
+(`SqsConsumerService.process`) attempts each in turn, then combines the two
+outcomes - while either might still succeed, the message goes back on the
+queue:
 
 1. Creates the in-app row, treating a unique-violation on the
    `(event_id, recipient_user_id)` partial index as a duplicate (no-op), and
-   trims the recipient's feed back to the newest `IN_APP_FEED_LIMIT`. A DB
-   failure here leaves the message on the queue to be redelivered - the
-   in-app record *must* land.
+   trims the recipient's feed back to the newest `IN_APP_FEED_LIMIT`.
 2. Sends the email. A prior successful send for the same `(event_id,
-   recipient_email)` is skipped. A send failure is logged and written as a
-   `status = 'failed'` row, but does **not** redeliver the message or reverse
-   anything when an in-app row was created.
+   recipient_email)` is skipped. A failure is written as a `status = 'failed'`
+   row either way.
+
+Redelivery is safe because both steps are idempotent: whichever channel
+already succeeded is skipped, and only the outstanding one is retried.
+
+Failures are classified. A **permanent** one deletes the message rather than
+burning retries - bad JSON, failed validation, a type with no email template,
+or an SMTP 5xx / rejected recipient (`PermanentDeliveryError`, raised by
+`MailerService`). A **transient** one leaves the message for SQS to redeliver
+(`maxReceiveCount: 5` → DLQ).
+
+Because a permanent failure never reaches the DLQ, it is logged on its own as
+`event: 'email.permanent_failure'`; the DLQ alarm in
+`infrastructure/cloudformation/messaging.yaml` covers the exhausted-retry case.
 
 `notifications` doubles as the delivery-audit / error log - `failed` email
-rows accumulate; the partial unique indexes only constrain successful rows.
-
-A message is deleted from the queue when the in-app row landed (or there was
-no in-app recipient and the email succeeded / is a permanent failure - bad
-JSON, failed validation, or a type with no email template). It's left for SQS
-to redeliver (`maxReceiveCount: 5` → DLQ) only on a transient failure of the
-primary path.
+rows accumulate, one per attempt; the partial unique indexes only constrain
+successful rows.
 
 ## Testing
 

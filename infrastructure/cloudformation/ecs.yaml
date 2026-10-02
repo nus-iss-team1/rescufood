@@ -275,7 +275,11 @@ Resources:
                 - Effect: Allow
                   Action: secretsmanager:GetSecretValue
                   Resource:
-                    - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                    - !If [
+                        HasPullSecret,
+                        !Ref GhcrPullSecretArn,
+                        !Ref AWS::NoValue,
+                      ]
                     - !If [HasAppSecrets, !Ref AppSecretsArn, !Ref AWS::NoValue]
         - !Ref AWS::NoValue
 
@@ -434,7 +438,11 @@ Resources:
                 Resource:
                   - Fn::ImportValue: !Sub ${DataStackName}-DbSecretArn
                   - !Ref ProfileDbSecret
-                  - !If [HasNotification, !Ref NotificationDbSecret, !Ref AWS::NoValue]
+                  - !If [
+                      HasNotification,
+                      !Ref NotificationDbSecret,
+                      !Ref AWS::NoValue,
+                    ]
 
   DbBootstrapLogGroup:
     Type: AWS::Logs::LogGroup
@@ -580,7 +588,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref ProfileDbSecret
 
   ProfileTaskRole:
@@ -773,6 +785,21 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref ListingsTargetGroup
 
+  # Served by the listings service too, but needs a rule of its own: an ALB
+  # rule takes at most 5 condition values and ListingsHttpRule is at 5.
+  ListingsAuditHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasListings
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 13
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/audit, /api/audit/*]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ListingsTargetGroup
+
   ListingsLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: HasListings
@@ -802,7 +829,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref ProfileDbSecret
 
   ListingsTaskRole:
@@ -1096,7 +1127,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref NotificationDbSecret
                   - !Ref GmailCredentialsSecretArn
 

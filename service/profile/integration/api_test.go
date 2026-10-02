@@ -176,6 +176,36 @@ func TestAPI_AdminApproveOrg(t *testing.T) {
 	if reloaded.Status != "approved" {
 		t.Errorf("status = %q, want approved", reloaded.Status)
 	}
+
+	// The change and its audit event commit together, so the row is there by
+	// the time the response is.
+	var (
+		action     string
+		entityType string
+		reason     string
+		metadata   map[string]any
+		actorEmail string
+	)
+	err := testPool.QueryRow(ctxt(), `
+		SELECT a.action, a.entity_type, a.reason, a.metadata, u.email
+		FROM audit_log a JOIN users u ON u.id = a.user_id
+		WHERE a.entity_id = $1`, org.ID).
+		Scan(&action, &entityType, &reason, &metadata, &actorEmail)
+	if err != nil {
+		t.Fatalf("no audit event retained for the approval: %v", err)
+	}
+	if action != "organisation.approved" || entityType != "organisation" {
+		t.Errorf("action = %q, entity_type = %q", action, entityType)
+	}
+	if reason != "verified against ACRA" {
+		t.Errorf("reason = %q, want the reason given on the request", reason)
+	}
+	if actorEmail != "boss@x.example.org" {
+		t.Errorf("actor = %q, want the admin who approved", actorEmail)
+	}
+	if metadata["previousStatus"] != "pending" || metadata["newStatus"] != "approved" {
+		t.Errorf("metadata = %v, want pending -> approved", metadata)
+	}
 }
 
 func TestAPI_LoginLockout(t *testing.T) {

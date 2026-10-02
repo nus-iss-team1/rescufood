@@ -12,6 +12,7 @@ import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { ListingCards } from "@/components/listings/listing-cards";
 import { ListingList } from "@/components/listings/listing-list";
+import { DeleteListingButton } from "@/components/listings/delete-listing-button";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
@@ -226,15 +227,21 @@ export default async function ListingsPage({
             listings={listings}
             empty="No listings here yet."
             action={(listing) => (
-              <Link
-                href={`/listings/${listing.id}`}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "w-full",
-                )}
-              >
-                View / Edit
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/listings/${listing.id}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "flex-1",
+                  )}
+                >
+                  View / Edit
+                </Link>
+                <DeleteListingButton
+                  listingId={listing.id}
+                  listingDescription={listing.description}
+                />
+              </div>
             )}
           />
         ) : (
@@ -242,14 +249,20 @@ export default async function ListingsPage({
             listings={listings}
             empty="No listings here yet."
             action={(listing) => (
-              <Link
-                href={`/listings/${listing.id}`}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                )}
-              >
-                View / Edit
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/listings/${listing.id}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                  )}
+                >
+                  View / Edit
+                </Link>
+                <DeleteListingButton
+                  listingId={listing.id}
+                  listingDescription={listing.description}
+                />
+              </div>
             )}
           />
         )}

@@ -20,6 +20,7 @@ import (
 type fakeOrgAdmin struct {
 	org     *domain.Organisation
 	updated bool
+	entries []domain.AuditEntry
 }
 
 func (f *fakeOrgAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.Organisation, error) {
@@ -28,12 +29,6 @@ func (f *fakeOrgAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.Organis
 	}
 	copy := *f.org
 	return &copy, nil
-}
-
-func (f *fakeOrgAdmin) UpdateStatus(_ context.Context, o *domain.Organisation) error {
-	f.org = o
-	f.updated = true
-	return nil
 }
 
 func (f *fakeOrgAdmin) List(_ context.Context, status domain.OrgStatus) ([]domain.Organisation, error) {
@@ -60,6 +55,7 @@ func (f *fakeOrgAdmin) CountByStatus(_ context.Context) (map[string]int, error) 
 type fakeUserAdmin struct {
 	user    *domain.User
 	updated *domain.UserStatus
+	entries []domain.AuditEntry
 }
 
 func (f *fakeUserAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.User, error) {
@@ -77,8 +73,41 @@ func (f *fakeUserAdmin) ListByOrg(_ context.Context, orgID uuid.UUID) ([]domain.
 	return []domain.User{}, nil
 }
 
-func (f *fakeUserAdmin) UpdateStatus(_ context.Context, _ uuid.UUID, status domain.UserStatus) error {
-	f.updated = &status
+// fakeTransitions stands in for the store's atomic change-plus-audit writes,
+// applying the change to the underlying fake and keeping the entry so a test
+// can assert what was recorded. err makes the audit write fail.
+type fakeTransitions struct {
+	orgs  *fakeOrgAdmin
+	users *fakeUserAdmin
+	locks *fakeLockLookup
+	err   error
+}
+
+func (f *fakeTransitions) SetUserStatus(_ context.Context, _ uuid.UUID, status domain.UserStatus, entry domain.AuditEntry) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.users.updated = &status
+	f.users.entries = append(f.users.entries, entry)
+	return nil
+}
+
+func (f *fakeTransitions) SetOrgStatus(_ context.Context, o *domain.Organisation, entry domain.AuditEntry) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.orgs.org = o
+	f.orgs.updated = true
+	f.orgs.entries = append(f.orgs.entries, entry)
+	return nil
+}
+
+func (f *fakeTransitions) ClearLoginRestriction(_ context.Context, username string, entry domain.AuditEntry) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.locks.unlocked = strings.ToLower(username)
+	f.users.entries = append(f.users.entries, entry)
 	return nil
 }
 
@@ -97,11 +126,6 @@ func (f *fakeLockLookup) GetLockedUntil(_ context.Context, usernames []string) (
 	return out, nil
 }
 
-func (f *fakeLockLookup) AdminUnlock(_ context.Context, username string) error {
-	f.unlocked = strings.ToLower(username)
-	return nil
-}
-
 type fakeMailer struct {
 	to, orgName, orgID string
 	calls              int
@@ -114,10 +138,14 @@ func (f *fakeMailer) SendOrgApproved(_ context.Context, to, orgName, orgID strin
 	return f.err
 }
 
-func adminRouter(orgs OrgAdmin, mailer Mailer) http.Handler {
+func adminRouter(orgs *fakeOrgAdmin, mailer Mailer) http.Handler {
+	return adminRouterWithTransitions(orgs, &fakeTransitions{orgs: orgs}, mailer)
+}
+
+func adminRouterWithTransitions(orgs *fakeOrgAdmin, tr AccountTransitions, mailer Mailer) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", listOrgs(orgs))
-	r.Post("/{id}/approve", transitionOrg(orgs, "approve", (*domain.Organisation).Approve, notifyOrgApproved(mailer)))
+	r.Post("/{id}/approve", transitionOrg(orgs, tr, "approve", domain.ActionOrgApproved, (*domain.Organisation).Approve, notifyOrgApproved(mailer)))
 	return r
 }
 
@@ -223,16 +251,21 @@ func TestTransitionOrg(t *testing.T) {
 	})
 }
 
-func userRouter(users UserAdmin) http.Handler {
+func userRouter(users *fakeUserAdmin) http.Handler {
 	return userRouterWithLocks(users, &fakeLockLookup{})
 }
 
-func userRouterWithLocks(users UserAdmin, locks *fakeLockLookup) http.Handler {
+func userRouterWithLocks(users *fakeUserAdmin, locks *fakeLockLookup) http.Handler {
+	return userRouterWithTransitions(users, locks,
+		&fakeTransitions{users: users, locks: locks})
+}
+
+func userRouterWithTransitions(users *fakeUserAdmin, locks *fakeLockLookup, tr AccountTransitions) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", listUsers(users, locks))
-	r.Post("/{id}/suspend", transitionUser(users, "suspend", domain.UserSuspended))
-	r.Post("/{id}/reactivate", transitionUser(users, "reactivate", domain.UserActive))
-	r.Post("/{id}/unlock", unlockUser(users, locks))
+	r.Post("/{id}/suspend", transitionUser(users, tr, "suspend", domain.ActionUserSuspended, domain.UserSuspended))
+	r.Post("/{id}/reactivate", transitionUser(users, tr, "reactivate", domain.ActionUserReactivated, domain.UserActive))
+	r.Post("/{id}/unlock", unlockUser(users, tr))
 	return r
 }
 
@@ -430,4 +463,147 @@ func TestListOrgs(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("bogus status: status = %d, want 400", rec.Code)
 	}
+}
+
+// Actor, target, previous value, new value and reason are all retained on an
+// administrative account change, and a change whose audit event cannot be
+// written does not happen.
+func TestAdminChangesAreAudited(t *testing.T) {
+	orgID := uuid.New()
+	admin := &domain.User{ID: uuid.New(), OrgID: &orgID, IsAdmin: true}
+
+	assertEntry := func(t *testing.T, got domain.AuditEntry, action, entityType string, entityID uuid.UUID, reason string) {
+		t.Helper()
+		if got.Action != action {
+			t.Errorf("action = %q, want %q", got.Action, action)
+		}
+		if got.EntityType != entityType {
+			t.Errorf("entity type = %q, want %q", got.EntityType, entityType)
+		}
+		if got.EntityID != entityID {
+			t.Errorf("entity id = %s, want %s", got.EntityID, entityID)
+		}
+		if got.ActorUserID != admin.ID {
+			t.Errorf("actor = %s, want %s", got.ActorUserID, admin.ID)
+		}
+		if got.ActorOrgID == nil || *got.ActorOrgID != orgID {
+			t.Errorf("actor org = %v, want %s", got.ActorOrgID, orgID)
+		}
+		if got.Reason != reason {
+			t.Errorf("reason = %q, want %q", got.Reason, reason)
+		}
+	}
+
+	assertStatusChange := func(t *testing.T, got domain.AuditEntry, previous, next string) {
+		t.Helper()
+		if got.Metadata["previousStatus"] != previous {
+			t.Errorf("previousStatus = %v, want %q", got.Metadata["previousStatus"], previous)
+		}
+		if got.Metadata["newStatus"] != next {
+			t.Errorf("newStatus = %v, want %q", got.Metadata["newStatus"], next)
+		}
+	}
+
+	t.Run("org approval records the status it moved from", func(t *testing.T) {
+		fake := &fakeOrgAdmin{org: &domain.Organisation{
+			ID: uuid.New(), Name: "Fresh Mart", Status: domain.OrgPending,
+			ContactEmail: "ops@freshmart.sg",
+		}}
+		rec := doAdmin(t, adminRouter(fake, nil), admin,
+			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{"reason":"docs verified"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if len(fake.entries) != 1 {
+			t.Fatalf("recorded %d events, want 1", len(fake.entries))
+		}
+		assertEntry(t, fake.entries[0], domain.ActionOrgApproved,
+			domain.EntityOrganisation, fake.org.ID, "docs verified")
+		assertStatusChange(t, fake.entries[0], "pending", "approved")
+	})
+
+	t.Run("user suspension records the status it moved from", func(t *testing.T) {
+		memberOrg := uuid.New()
+		fake := &fakeUserAdmin{user: &domain.User{
+			ID: uuid.New(), OrgID: &memberOrg, Status: domain.UserActive,
+		}}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/suspend", `{"reason":"abuse report"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if len(fake.entries) != 1 {
+			t.Fatalf("recorded %d events, want 1", len(fake.entries))
+		}
+		assertEntry(t, fake.entries[0], domain.ActionUserSuspended,
+			domain.EntityUser, fake.user.ID, "abuse report")
+		assertStatusChange(t, fake.entries[0], "active", "suspended")
+	})
+
+	t.Run("reactivation records the reverse transition", func(t *testing.T) {
+		memberOrg := uuid.New()
+		fake := &fakeUserAdmin{user: &domain.User{
+			ID: uuid.New(), OrgID: &memberOrg, Status: domain.UserSuspended,
+		}}
+		rec := doAdmin(t, userRouter(fake), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/reactivate", `{"reason":"appeal upheld"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		assertEntry(t, fake.entries[0], domain.ActionUserReactivated,
+			domain.EntityUser, fake.user.ID, "appeal upheld")
+		assertStatusChange(t, fake.entries[0], "suspended", "active")
+	})
+
+	t.Run("unlock is audited", func(t *testing.T) {
+		memberOrg := uuid.New()
+		fake := &fakeUserAdmin{user: &domain.User{
+			ID: uuid.New(), OrgID: &memberOrg, Status: domain.UserActive,
+			CognitoSub: "sub-member1",
+		}}
+		locks := &fakeLockLookup{}
+		rec := doAdmin(t, userRouterWithLocks(fake, locks), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/unlock", `{"reason":"verified with user"}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		assertEntry(t, fake.entries[0], domain.ActionUserUnlocked,
+			domain.EntityUser, fake.user.ID, "verified with user")
+	})
+
+	t.Run("org change fails when its event cannot be written", func(t *testing.T) {
+		fake := &fakeOrgAdmin{org: &domain.Organisation{
+			ID: uuid.New(), Status: domain.OrgPending, ContactEmail: "ops@freshmart.sg",
+		}}
+		mailer := &fakeMailer{}
+		tr := &fakeTransitions{orgs: fake, err: errors.New("audit_log unavailable")}
+		rec := doAdmin(t, adminRouterWithTransitions(fake, tr, mailer), admin,
+			http.MethodPost, "/"+fake.org.ID.String()+"/approve", `{"reason":"docs verified"}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
+		}
+		if fake.updated {
+			t.Error("status must not be persisted when its event cannot be")
+		}
+		if mailer.calls != 0 {
+			t.Error("approval must not notify when the change did not happen")
+		}
+	})
+
+	t.Run("user change fails when its event cannot be written", func(t *testing.T) {
+		memberOrg := uuid.New()
+		fake := &fakeUserAdmin{user: &domain.User{
+			ID: uuid.New(), OrgID: &memberOrg, Status: domain.UserActive,
+		}}
+		locks := &fakeLockLookup{}
+		tr := &fakeTransitions{users: fake, locks: locks, err: errors.New("audit_log unavailable")}
+		rec := doAdmin(t, userRouterWithTransitions(fake, locks, tr), admin,
+			http.MethodPost, "/"+fake.user.ID.String()+"/suspend", `{"reason":"abuse report"}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
+		}
+		if fake.updated != nil {
+			t.Error("status must not be persisted when its event cannot be")
+		}
+	})
 }

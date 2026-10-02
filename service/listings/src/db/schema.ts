@@ -1,5 +1,5 @@
-// Tables owned by service/listings (FR2-FR6). Managed by drizzle-kit -
-// this file is the `schema` entry in drizzle.config.ts.
+// Tables owned by service/listings. Managed by drizzle-kit - this file is
+// the `schema` entry in drizzle.config.ts.
 //
 // Columns that reference organisations/users (owned by service/profile) are
 // plain `uuid` columns, not `.references()` - both services share one
@@ -60,7 +60,7 @@ export const idempotencyStatus = pgEnum('idempotency_status', [
 ]);
 
 // ---------------------------------------------------------------------------
-// listings (FR2)
+// listings
 // ---------------------------------------------------------------------------
 
 export const listings = pgTable(
@@ -176,7 +176,7 @@ export const listingImages = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// requests (FR3, FR4) - a rescue org's "claim" on a listing. First-come-
+// requests - a rescue org's "claim" on a listing. First-come-
 // first-served: creating a claim reserves the whole listing in one
 // transaction (listing available -> reserved), then it runs to pickup.
 // Born 'active', ends completed/cancelled/no_show/expired. At most one
@@ -291,9 +291,11 @@ export const requestIdempotencyKeys = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// audit_log (FR6) - append-only. No update/delete repository method should
-// ever be written against this table; DB-role write restrictions are
-// applied separately when the service's DB role is provisioned in infra.
+// audit_log - append-only, enforced by the reject-update-delete trigger
+// in migration 0018. No update/delete repository method should ever be written
+// against this table. service/profile also inserts here, for authentication
+// and account administration events, so that a status change and its audit row
+// commit in one transaction.
 // ---------------------------------------------------------------------------
 
 export const auditLog = pgTable(
@@ -304,7 +306,10 @@ export const auditLog = pgTable(
     orgId: uuid('org_id'), // FK -> organisations.id (service/profile)
     action: text('action').notNull(),
     entityType: text('entity_type').notNull(),
-    entityId: uuid('entity_id').notNull(),
+    // Null when the event's subject has no row to point at - a failed login
+    // against an unknown username. `subject` carries the identifier then.
+    entityId: uuid('entity_id'),
+    subject: text('subject'),
     reason: text('reason').notNull().default(''),
     metadata: jsonb('metadata').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -314,5 +319,8 @@ export const auditLog = pgTable(
   (table) => [
     index('audit_log_entity_idx').on(table.entityType, table.entityId),
     index('audit_log_user_idx').on(table.userId),
+    // Serves the cross-entity discovery feed, which orders by (created_at,
+    // id) - Postgres scans this backwards for the newest-first default.
+    index('audit_log_created_at_idx').on(table.createdAt, table.id),
   ],
 );

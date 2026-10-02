@@ -211,6 +211,88 @@ export interface VerifyPickup {
   collectedQuantity?: number;
 }
 
+/** Operational workload summary for the caller's organisation. */
+export interface OrgSummary {
+  orgId: string;
+  listings: Record<string, number> & { total: number };
+  claims: Record<string, number> & { total: number };
+  asOf: string;
+  period?: {
+    from?: string;
+    to?: string;
+  };
+}
+
+/** Quantity grouped distinctly by unit. */
+export interface UnitQuantity {
+  unit: string;
+  amount: number;
+  formatted: string;
+}
+
+/** Analytical outcomes for rescued quantity and time-to-claim. */
+export interface RescuedMetrics {
+  orgId: string;
+  /** Quantities distinctly grouped by unit (never summed across incompatible units). */
+  rescuedByUnit: UnitQuantity[];
+  /** Total count of successfully collected lots / completed claims. */
+  collectedCount: number;
+  /** Average duration in milliseconds from publication to confirmed claim. */
+  avgTimeToClaimMs: number | null;
+  /** Median duration in milliseconds from publication to confirmed claim. */
+  medianTimeToClaimMs: number | null;
+  /** Human-readable representation of average time to claim (e.g. "1 hr 25 mins", "42 mins", "< 15 mins"). */
+  formattedAvgTimeToClaim: string;
+  /** Human-readable representation of median time to claim. */
+  formattedMedianTimeToClaim: string;
+  /** Number of claimed lots included in time-to-claim metrics. */
+  timeToClaimCount: number;
+  /** Timestamp when metrics were calculated. */
+  asOf: string;
+  /** Applicable reporting period window. */
+  period?: {
+    from?: string;
+    to?: string;
+  };
+}
+
+export const auditEntityTypes = ["listing", "claim", "user", "organisation"] as const;
+export type AuditEntityType = (typeof auditEntityTypes)[number];
+
+/** One retained lifecycle change. Append-only: never rewritten. */
+export interface AuditEvent {
+  id: string;
+  /** Null on system-driven events, e.g. the expiry sweep. */
+  userId: string | null;
+  orgId: string | null;
+  /** `<entity>.<event>`, e.g. "listing.published". */
+  action: string;
+  entityType: AuditEntityType;
+  /** Null when the subject has no record to point at; `subject` names it. */
+  entityId: string | null;
+  /** The identifier an auth event was attempted against, as typed. */
+  subject: string | null;
+  /** Empty string when the action carries none. */
+  reason: string;
+  /** Action-specific detail. Claim events carry their `listingId` here. */
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+/** Filters both audit reads accept. */
+export interface AuditFilters {
+  /** Actor. Never matches system-driven events, which have no actor. */
+  userId?: string;
+  createdAtFrom?: string;
+  createdAtTo?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuditEventQuery extends AuditFilters {
+  entityType?: AuditEntityType;
+}
+
 /** Every call the platform makes, so a stand-in can satisfy the same shape. */
 export interface ListingsApi {
   listListings(query?: ListingQuery): Promise<Paginated<Listing>>;
@@ -219,7 +301,7 @@ export interface ListingsApi {
   updateListing(
     id: string,
     update: ListingUpdate,
-    images?: Blob[]
+    images?: Blob[],
   ): Promise<Listing>;
   deleteListing(id: string): Promise<void>;
   listRequests(query?: RequestQuery): Promise<Paginated<ListingRequest>>;
@@ -227,9 +309,17 @@ export interface ListingsApi {
   createRequest(request: NewRequest): Promise<ListingRequest>;
   decideRequest(
     id: string,
-    decision: RequestDecisionInput
+    decision: RequestDecisionInput,
   ): Promise<ListingRequest>;
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
+  getOrgSummary(): Promise<OrgSummary>;
+  getRescuedMetrics(): Promise<RescuedMetrics>;
+  listAuditEvents(query?: AuditEventQuery): Promise<Paginated<AuditEvent>>;
+  getEntityAuditHistory(
+    entityType: AuditEntityType,
+    entityId: string,
+    filters?: AuditFilters,
+  ): Promise<Paginated<AuditEvent>>;
 }
