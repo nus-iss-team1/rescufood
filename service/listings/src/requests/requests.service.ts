@@ -660,7 +660,7 @@ export class RequestsService {
           listing.pickupWindowEnd,
         ),
       };
-      // AC1: notify both the donor and the claiming rescue organisation.
+      // notify both the donor and the claiming rescue organisation.
       if (donor) {
         await this.notifications.claimCreated(
           donor.email,

@@ -17,6 +17,7 @@ loadEnvConfig(
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  compress: false,
   // forbidden() and app/forbidden.tsx
   experimental: { authInterrupts: true },
   images: {

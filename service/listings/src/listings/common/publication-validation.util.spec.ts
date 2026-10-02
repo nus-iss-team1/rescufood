@@ -27,7 +27,7 @@ describe('validateForPublication', () => {
     expect(validateForPublication(validCandidate(), NOW)).toEqual([]);
   });
 
-  describe('AC1 - mandatory fields', () => {
+  describe('mandatory fields', () => {
     it.each(['description', 'pickupLocation', 'unit'] as const)(
       'rejects a whitespace-only %s',
       (field) => {
@@ -149,7 +149,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC2 - quantity', () => {
+  describe('quantity', () => {
     it('rejects a zero quantity (boundary)', () => {
       const errors = validateForPublication(
         validCandidate({ quantity: 0 }),
@@ -190,7 +190,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC3 - pickup time sequence', () => {
+  describe('pickup time sequence', () => {
     it('rejects an end time equal to the start time (boundary)', () => {
       const errors = validateForPublication(
         validCandidate({
@@ -221,7 +221,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC4 - past pickup window', () => {
+  describe('past pickup window', () => {
     it('rejects a window ending exactly now (boundary)', () => {
       const errors = validateForPublication(
         validCandidate({ pickupWindowEnd: NOW }),
@@ -261,7 +261,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC5 - use-by consistency', () => {
+  describe('use-by consistency', () => {
     it('accepts pickupWindowEnd exactly equal to useBy (boundary)', () => {
       const useBy = new Date('2026-08-18T17:00:00Z');
       const errors = validateForPublication(
@@ -289,7 +289,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC6 - allergen validity', () => {
+  describe('allergen validity', () => {
     it('rejects a blank entry in an otherwise non-empty array', () => {
       const errors = validateForPublication(
         validCandidate({ allergens: ['peanuts', '   '] }),
@@ -312,7 +312,7 @@ describe('validateForPublication', () => {
     });
   });
 
-  describe('AC7 - multiple simultaneous failures', () => {
+  describe('multiple simultaneous failures', () => {
     it('reports every failing rule in a single call', () => {
       const errors = validateForPublication(
         validCandidate({

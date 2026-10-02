@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  BarChart3,
   Bell,
   PackagePlus,
   QrCode,
@@ -26,7 +25,18 @@ import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
-import { listRequests, type ListingRequest } from "@/lib/listings";
+import { OrgSummaryCard } from "@/components/dashboard/org-summary-card";
+import { RescuedMetricsCard } from "@/components/dashboard/rescued-metrics-card";
+import {
+  getListing,
+  getOrgSummary,
+  getRescuedMetrics,
+  listRequests,
+  type Listing,
+  type ListingRequest,
+  type OrgSummary,
+  type RescuedMetrics,
+} from "@/lib/listings";
 import { ReviewProgress } from "@/components/dashboard/review-progress";
 import { Button, buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -60,7 +70,6 @@ const heroByType = {
 const upcoming = [
   { icon: QrCode, label: "Pickup verification with a single-use code" },
   { icon: Bell, label: "Claim, reminder and expiry notifications" },
-  { icon: BarChart3, label: "Rescued quantity and activity reporting" },
 ];
 
 function Notice({
@@ -132,10 +141,20 @@ function Workspace({
   org,
   members,
   recent,
+  listings,
+  summary,
+  summaryError,
+  metrics,
+  metricsError,
 }: {
   org: Org;
   members: User[];
   recent: ListingRequest[];
+  listings?: Map<string, Listing>;
+  summary: OrgSummary | null;
+  summaryError?: string | null;
+  metrics: RescuedMetrics | null;
+  metricsError?: string | null;
 }) {
   return (
     <>
@@ -145,7 +164,23 @@ function Workspace({
       </AnimateIn>
 
       <AnimateIn className="mt-6">
-        <RecentRequests requests={recent} />
+        <OrgSummaryCard
+          initialSummary={summary}
+          initialError={summaryError}
+          orgType={org.type}
+        />
+      </AnimateIn>
+
+      <AnimateIn className="mt-6">
+        <RescuedMetricsCard
+          initialMetrics={metrics}
+          initialError={metricsError}
+          orgType={org.type}
+        />
+      </AnimateIn>
+
+      <AnimateIn className="mt-6">
+        <RecentRequests requests={recent} listings={listings} />
       </AnimateIn>
 
       <div className="mt-10">
@@ -174,6 +209,11 @@ export default async function DashboardPage() {
   let me: Me | null = null;
   let members: User[] = [];
   let recent: ListingRequest[] = [];
+  const recentListings = new Map<string, Listing>();
+  let summary: OrgSummary | null = null;
+  let summaryError: string | null = null;
+  let metrics: RescuedMetrics | null = null;
+  let metricsError: string | null = null;
   let staleSession = !session.idToken;
   let apiDown = false;
 
@@ -183,12 +223,33 @@ export default async function DashboardPage() {
       if (me.org?.status === "approved") {
         members = await getMyOrgMembers(session.idToken);
         try {
+          summary = await getOrgSummary(session.idToken);
+        } catch (err) {
+          summaryError =
+            (err as Error).message ?? "Unable to load organisation summary";
+        }
+        try {
+          metrics = await getRescuedMetrics(session.idToken);
+        } catch (err) {
+          metricsError =
+            (err as Error).message ?? "Unable to load rescue metrics";
+        }
+        try {
           const page = await listRequests(session.idToken, {
             sortBy: "updatedAt",
             sortOrder: "desc",
             limit: 5,
           });
           recent = page.items;
+          const missing = [...new Set(recent.map((r) => r.listingId))];
+          const results = await Promise.allSettled(
+            missing.map((id) => getListing(session.idToken!, id)),
+          );
+          for (const result of results) {
+            if (result.status === "fulfilled") {
+              recentListings.set(result.value.id, result.value);
+            }
+          }
         } catch {
           // The card renders empty rather than taking the page down.
         }
@@ -294,7 +355,16 @@ export default async function DashboardPage() {
           </Card>
         </AnimateIn>
       ) : me.org.status === "approved" ? (
-        <Workspace org={me.org} members={members} recent={recent} />
+        <Workspace
+          org={me.org}
+          members={members}
+          recent={recent}
+          listings={recentListings}
+          summary={summary}
+          summaryError={summaryError}
+          metrics={metrics}
+          metricsError={metricsError}
+        />
       ) : (
         <AnimateIn>
           <Notice

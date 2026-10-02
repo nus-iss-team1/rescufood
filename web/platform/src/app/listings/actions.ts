@@ -11,6 +11,7 @@ import {
 import { auth } from "@/auth";
 import {
   createListing,
+  deleteListing,
   updateListing,
   ListingsApiError,
   type ListingUpdate,
@@ -334,3 +335,47 @@ export async function updateListingAction(
     };
   }
 }
+
+export type DeleteListingState = {
+  deletedId?: string;
+  error?: string;
+};
+
+export async function deleteListingAction(
+  _prev: DeleteListingState,
+  formData: FormData,
+): Promise<DeleteListingState> {
+  const session = await auth();
+  const idToken = session?.idToken;
+  if (!idToken) {
+    return { error: "Your session has expired. Please sign in again." };
+  }
+
+  const id = String(formData.get("listingId") ?? "").trim();
+  if (!id) {
+    return { error: "Missing listing ID." };
+  }
+
+  try {
+    await deleteListing(idToken, id);
+    revalidatePath("/listings");
+    revalidatePath(`/listings/${id}`);
+    revalidatePath("/browse");
+    revalidatePath(`/browse/${id}`);
+    revalidatePath("/dashboard");
+    return { deletedId: id };
+  } catch (err) {
+    if (err instanceof ListingsApiError) {
+      if (err.status === 409) {
+        return {
+          error: "This listing has associated requests and cannot be deleted.",
+        };
+      }
+      return { error: err.message };
+    }
+    return {
+      error: "Could not reach the listings service. Please try again.",
+    };
+  }
+}
+

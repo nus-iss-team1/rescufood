@@ -1,0 +1,9 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=prod",
+  "CallbackUrls=https://rescufood.com/api/auth/callback/cognito",
+  "LogoutUrls=https://rescufood.com",
+  "SuperAdminUsername=admin",
+  "SuperAdminPassword=P@ssw0rd",
+  "AutoConfirmSignups=false"
+]

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { ListingRequest } from "@rescufood/listings-sdk";
+import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
 
 import {
   quantity,
@@ -19,7 +19,13 @@ import {
 import { CardContent } from "@rescufood/ui/components/card";
 
 /** The five requests whose status moved most recently. */
-export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
+export function RecentRequests({
+  requests,
+  listings,
+}: {
+  requests: ListingRequest[];
+  listings?: Map<string, Listing>;
+}) {
   return (
     <Card data-animate="field">
       <CardHeader>
@@ -43,31 +49,36 @@ export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
           </p>
         ) : (
           <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2">
-            {requests.map((request) => (
-              <li
-                key={request.id}
-                className="col-span-4 grid grid-cols-subgrid border-b border-border last:border-0"
-              >
-                <Link
-                  href={`/requests/${request.id}`}
-                  className="group col-span-4 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
+            {requests.map((request) => {
+              const listing = listings?.get(request.listingId);
+              const unit = listing?.unit ?? "requested";
+              return (
+                <li
+                  key={request.id}
+                  className="col-span-4 grid grid-cols-subgrid border-b border-border last:border-0"
                 >
-                  <span className="text-sm font-medium group-hover:underline">
-                    {quantity(request.requestedQuantity, "requested")}
-                  </span>
-                  <span className="text-right text-xs tabular-nums text-muted-foreground">
-                    {shortDate(request.updatedAt)}
-                  </span>
-                  <Badge
-                    variant={requestStatusVariant[request.status]}
-                    className="w-full"
+                  <Link
+                    href={`/requests/${request.id}`}
+                    className="group col-span-4 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
                   >
-                    {requestStatusLabels[request.status]}
-                  </Badge>
-                  <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              </li>
-            ))}
+                    <span className="text-sm font-medium group-hover:underline">
+                      {listing?.description ??
+                        quantity(request.requestedQuantity, unit)}
+                    </span>
+                    <span className="text-right text-xs tabular-nums text-muted-foreground">
+                      {shortDate(request.updatedAt)}
+                    </span>
+                    <Badge
+                      variant={requestStatusVariant[request.status]}
+                      className="w-full"
+                    >
+                      {requestStatusLabels[request.status]}
+                    </Badge>
+                    <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>
