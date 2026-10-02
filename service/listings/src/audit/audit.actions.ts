@@ -22,6 +22,8 @@ export const AuditAction = {
 // so the read API and the admin console share one vocabulary; the canonical
 // strings live in service/profile/internal/store/audit.go and must match.
 export const ProfileAuditAction = {
+  LoginSucceeded: 'auth.login_succeeded',
+  LoginFailed: 'auth.login_failed',
   UserSuspended: 'user.suspended',
   UserReactivated: 'user.reactivated',
   UserUnlocked: 'user.unlocked',

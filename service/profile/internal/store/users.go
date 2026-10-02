@@ -27,6 +27,23 @@ func (r *Users) GetBySub(ctx context.Context, sub string) (*domain.User, error) 
 	return scanUser(r.db.QueryRow(ctx, userSelect+` WHERE cognito_sub = $1`, sub))
 }
 
+// ResolveLoginSubject returns the account a login identifier names, or ErrNotFound.
+func (r *Users) ResolveLoginSubject(ctx context.Context, identifier string) (*domain.LoginSubject, error) {
+	identifier = strings.ToLower(strings.TrimSpace(identifier))
+	var s domain.LoginSubject
+	err := r.db.QueryRow(ctx, `
+		SELECT id, org_id, cognito_sub FROM users
+		WHERE lower(username) = $1 OR lower(email) = $1 LIMIT 1`,
+		identifier).Scan(&s.UserID, &s.OrgID, &s.CognitoSub)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 // ResolveCognitoSub maps a login identifier - username or email, since
 // Cognito accepts either - to the account's stable cognito_sub, so
 // failed-login tracking keys on one identity regardless of which form

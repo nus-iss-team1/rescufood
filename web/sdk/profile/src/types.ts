@@ -40,6 +40,16 @@ export interface LoginStatus {
   retry_after?: string | null;
 }
 
+/**
+ * Where a login attempt came from, retained with its audit event. Omit a field
+ * that could not be determined - it is recorded as absent, never guessed.
+ */
+export interface LoginAttemptContext {
+  /** The X-Forwarded-For chain, verbatim. The service picks the trusted hop. */
+  forwardedFor?: string;
+  userAgent?: string;
+}
+
 export interface ResetEligibility {
   eligible: boolean;
 }

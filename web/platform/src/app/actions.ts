@@ -66,6 +66,17 @@ export async function loginAction(
           "Your account is temporarily locked after repeated failed sign-in attempts. Try again later or contact an administrator.",
       };
     }
+    // Credentials may well have been correct; the attempt could not be
+    // recorded, so say so rather than implying they were wrong.
+    if (
+      err instanceof CredentialsSignin &&
+      err.code === "attempt_not_recorded"
+    ) {
+      return {
+        error:
+          "Sign-in is temporarily unavailable. Please try again shortly, and contact an administrator if it persists.",
+      };
+    }
     if (err instanceof AuthError) {
       return {
         error:

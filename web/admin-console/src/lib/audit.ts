@@ -13,6 +13,8 @@ const toneByEvent: Record<string, "default" | "secondary" | "success" | "warning
   approved: "success",
   reactivated: "success",
   unlocked: "success",
+  login_succeeded: "success",
+  login_failed: "warning",
   cancelled: "destructive",
   deleted: "destructive",
   no_show: "destructive",

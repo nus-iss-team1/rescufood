@@ -1,5 +1,6 @@
 import type {
   DomainLookup,
+  LoginAttemptContext,
   LoginStatus,
   Me,
   NewOrganisation,
@@ -80,9 +81,18 @@ export class ProfileClient {
     return this.request(`/auth/login-status?username=${encodeURIComponent(username)}`);
   }
 
-  /** Reports the result of a login attempt against the app's own form. */
-  recordLoginOutcome(username: string, success: boolean): Promise<void> {
-    return this.post("/auth/login-outcome", { username, success });
+  /** Reports a login attempt's result. A rejected call means it was not recorded. */
+  recordLoginOutcome(
+    username: string,
+    success: boolean,
+    context: LoginAttemptContext = {},
+  ): Promise<void> {
+    return this.post("/auth/login-outcome", {
+      username,
+      success,
+      forwarded_for: context.forwardedFor,
+      user_agent: context.userAgent,
+    });
   }
 
   /** Audit-only: call once a password reset has completed. */

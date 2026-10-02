@@ -4,6 +4,7 @@ import {
   ApiError,
   ProfileClient,
   type DomainLookup,
+  type LoginAttemptContext,
   type LoginStatus,
   type Me,
   type NewOrganisation,
@@ -40,8 +41,12 @@ export function loginStatus(username: string): Promise<LoginStatus> {
   return client().loginStatus(username);
 }
 
-export function recordLoginOutcome(username: string, success: boolean): Promise<void> {
-  return client().recordLoginOutcome(username, success);
+export function recordLoginOutcome(
+  username: string,
+  success: boolean,
+  context?: LoginAttemptContext,
+): Promise<void> {
+  return client().recordLoginOutcome(username, success, context);
 }
 
 export function recordPasswordResetCompleted(username: string): Promise<void> {

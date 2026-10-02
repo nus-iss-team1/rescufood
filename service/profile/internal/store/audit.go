@@ -8,24 +8,23 @@ import (
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
 
-// AuditEvents appends to audit_log. That table is created and migrated by
-// service/listings (drizzle), which lives in the same physical database; this
-// service writes authentication and account-administration events to it so a
-// change and its audit row commit in one transaction. Append-only: no update
-// or delete method exists here, and the table rejects both (listings
-// migration 0018).
+// AuditEvents appends to audit_log, the append-only table service/listings owns.
 type AuditEvents struct {
 	db pgxDB
 }
 
-// Record appends one event. A zero EntityID or empty Subject is stored as
-// NULL rather than a zero value, so "no subject" is not confused with one.
+// Record appends one event, storing a zero id or empty subject as NULL.
 func (r *AuditEvents) Record(ctx context.Context, e domain.AuditEntry) error {
 	metadata := e.Metadata
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
 
+	// user_id and entity_id are FKs, so an absent id must be NULL, not zero.
+	var actorUserID any
+	if e.ActorUserID != uuid.Nil {
+		actorUserID = e.ActorUserID
+	}
 	var entityID any
 	if e.EntityID != uuid.Nil {
 		entityID = e.EntityID
@@ -39,7 +38,7 @@ func (r *AuditEvents) Record(ctx context.Context, e domain.AuditEntry) error {
 		INSERT INTO audit_log
 			(user_id, org_id, action, entity_type, entity_id, subject, reason, metadata)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		e.ActorUserID, e.ActorOrgID, e.Action, e.EntityType, entityID, subject,
+		actorUserID, e.ActorOrgID, e.Action, e.EntityType, entityID, subject,
 		e.Reason, metadata)
 	return err
 }

@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/api"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/auth"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
@@ -234,4 +236,111 @@ func TestAPI_LoginLockout(t *testing.T) {
 	if out.Restricted {
 		t.Errorf("still restricted after success: %s", rec.Body)
 	}
+}
+
+// A login attempt is retained with its time, subject, outcome and request
+// context, against a real database and through the real HTTP handler.
+func TestAPI_LoginAttemptsAreAudited(t *testing.T) {
+	h, s := newAPI(t)
+	org := seedOrg(t, s)
+	user, _, err := s.Users.UpsertBySub(ctxt(), "sub-alice",
+		"alice@"+org.Domain, "Alice Tan", "alice", false)
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	type event struct {
+		action     string
+		entityType string
+		entityID   *uuid.UUID
+		subject    *string
+		userID     *uuid.UUID
+		metadata   map[string]any
+		createdAt  time.Time
+	}
+	latest := func(t *testing.T) event {
+		t.Helper()
+		var e event
+		err := testPool.QueryRow(ctxt(), `
+			SELECT action, entity_type, entity_id, subject, user_id, metadata, created_at
+			FROM audit_log ORDER BY created_at DESC, id DESC LIMIT 1`).
+			Scan(&e.action, &e.entityType, &e.entityID, &e.subject, &e.userID, &e.metadata, &e.createdAt)
+		if err != nil {
+			t.Fatalf("no audit event retained: %v", err)
+		}
+		return e
+	}
+
+	t.Run("a known account's success names that account", func(t *testing.T) {
+		body := `{"username":"alice","success":true,"forwarded_for":"203.0.113.9","user_agent":"Mozilla/5.0 (probe)"}`
+		if rec := do(t, h, http.MethodPost, "/api/profile/auth/login-outcome", body, nil); rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+		}
+
+		e := latest(t)
+		if e.action != domain.ActionLoginSucceeded || e.entityType != domain.EntityUser {
+			t.Errorf("action = %q, entity_type = %q", e.action, e.entityType)
+		}
+		if e.entityID == nil || *e.entityID != user.ID {
+			t.Errorf("entity_id = %v, want %s", e.entityID, user.ID)
+		}
+		if e.userID == nil || *e.userID != user.ID {
+			t.Errorf("user_id = %v, want %s", e.userID, user.ID)
+		}
+		if e.subject == nil || *e.subject != "alice" {
+			t.Errorf("subject = %v, want the identifier as typed", e.subject)
+		}
+		if e.metadata["ipAddress"] != "203.0.113.9" {
+			t.Errorf("ipAddress = %v", e.metadata["ipAddress"])
+		}
+		if e.metadata["userAgent"] != "Mozilla/5.0 (probe)" {
+			t.Errorf("userAgent = %v", e.metadata["userAgent"])
+		}
+		if time.Since(e.createdAt) > time.Minute {
+			t.Errorf("created_at = %s, want roughly now", e.createdAt)
+		}
+	})
+
+	t.Run("an unknown username is retained by subject with no account", func(t *testing.T) {
+		body := `{"username":"ghost@example.invalid","success":false,"forwarded_for":"198.51.100.4"}`
+		if rec := do(t, h, http.MethodPost, "/api/profile/auth/login-outcome", body, nil); rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+		}
+
+		e := latest(t)
+		if e.action != domain.ActionLoginFailed {
+			t.Errorf("action = %q, want %q", e.action, domain.ActionLoginFailed)
+		}
+		// This is what nullable entity_id and the subject column are for.
+		if e.entityID != nil || e.userID != nil {
+			t.Errorf("unknown account must leave entity_id and user_id NULL: entity=%v user=%v", e.entityID, e.userID)
+		}
+		if e.subject == nil || *e.subject != "ghost@example.invalid" {
+			t.Errorf("subject = %v", e.subject)
+		}
+	})
+
+	t.Run("a password in the body never reaches the event", func(t *testing.T) {
+		body := `{"username":"alice","success":false,"password":"hunter2"}`
+		if rec := do(t, h, http.MethodPost, "/api/profile/auth/login-outcome", body, nil); rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d", rec.Code)
+		}
+		var n int
+		if err := testPool.QueryRow(ctxt(),
+			`SELECT count(*)::int FROM audit_log WHERE metadata::text LIKE '%hunter2%' OR subject LIKE '%hunter2%' OR reason LIKE '%hunter2%'`).
+			Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Fatalf("%d events contain the password", n)
+		}
+	})
+
+	t.Run("the retained event cannot be rewritten afterwards", func(t *testing.T) {
+		if _, err := testPool.Exec(ctxt(),
+			`UPDATE audit_log SET action = 'tampered' WHERE action = $1`,
+			domain.ActionLoginSucceeded); err == nil {
+			t.Fatal("expected the append-only trigger to reject the update")
+		}
+	})
 }

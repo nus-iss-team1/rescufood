@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
 
 // LoginAttempts tracks failed-login counters and temporary restrictions
@@ -24,6 +26,18 @@ type LoginAttempts interface {
 // keys on one identity no matter which form was typed.
 type SubjectResolver interface {
 	ResolveCognitoSub(ctx context.Context, identifier string) (string, error)
+}
+
+// LoginSubjectResolver resolves a login identifier to the account it names.
+type LoginSubjectResolver interface {
+	ResolveLoginSubject(ctx context.Context, identifier string) (*domain.LoginSubject, error)
+}
+
+// LoginOutcomeRecorder writes an attempt's counter effect and audit event in one
+// transaction. An error denies the sign-in rather than completing it unaudited.
+type LoginOutcomeRecorder interface {
+	RecordLoginSuccess(ctx context.Context, username string, entry domain.AuditEntry) error
+	RecordLoginFailure(ctx context.Context, username string, threshold int, duration time.Duration, entry domain.AuditEntry) (bool, *time.Time, bool, error)
 }
 
 // resolveKey returns the account's cognito_sub when known, otherwise the
@@ -62,14 +76,23 @@ func loginStatus(attempts LoginAttempts, resolver SubjectResolver) http.HandlerF
 	}
 }
 
+// Caps on caller-supplied context retained with a login event.
+const (
+	maxUserAgentLen = 400
+	maxSubjectLen   = 320 // an email address at its practical maximum
+)
+
 type loginOutcomeRequest struct {
 	Username string `json:"username"`
 	Success  bool   `json:"success"`
+	// Forwarded verbatim by the edge; the trusted hop is picked here.
+	ForwardedFor string `json:"forwarded_for"`
+	UserAgent    string `json:"user_agent"`
 }
 
-// loginOutcome records the result of a login attempt, applying the
-// failed-login threshold and resetting it after success.
-func loginOutcome(attempts LoginAttempts, resolver SubjectResolver, threshold int, duration time.Duration) http.HandlerFunc {
+// loginOutcome records a login attempt's audit event and counter together.
+// No password or reset code ever reaches this handler.
+func loginOutcome(recorder LoginOutcomeRecorder, subjects LoginSubjectResolver, threshold int, duration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req loginOutcomeRequest
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&req); err != nil {
@@ -81,10 +104,27 @@ func loginOutcome(attempts LoginAttempts, resolver SubjectResolver, threshold in
 			writeProblem(w, http.StatusBadRequest, "invalid request", "username is required")
 			return
 		}
-		key := resolveKey(r.Context(), resolver, username)
+
+		// An unknown username is recorded by subject, with no account.
+		key := username
+		entry := domain.AuditEntry{
+			EntityType: domain.EntityUser,
+			Subject:    auditText(username, maxSubjectLen),
+			Metadata: domain.RequestContext(
+				clientIP(req.ForwardedFor),
+				auditText(req.UserAgent, maxUserAgentLen),
+			),
+		}
+		if subject, err := subjects.ResolveLoginSubject(r.Context(), username); err == nil {
+			key = subject.CognitoSub
+			entry.ActorUserID = subject.UserID
+			entry.ActorOrgID = subject.OrgID
+			entry.EntityID = subject.UserID
+		}
 
 		if req.Success {
-			if err := attempts.RecordSuccess(r.Context(), key); err != nil {
+			entry.Action = domain.ActionLoginSucceeded
+			if err := recorder.RecordLoginSuccess(r.Context(), key, entry); err != nil {
 				slog.ErrorContext(r.Context(), "record login success failed", "error", err)
 				writeProblem(w, http.StatusInternalServerError, "internal error", "")
 				return
@@ -93,7 +133,8 @@ func loginOutcome(attempts LoginAttempts, resolver SubjectResolver, threshold in
 			return
 		}
 
-		_, until, newlyLocked, err := attempts.RecordFailure(r.Context(), key, threshold, duration)
+		entry.Action = domain.ActionLoginFailed
+		_, until, newlyLocked, err := recorder.RecordLoginFailure(r.Context(), key, threshold, duration, entry)
 		if err != nil {
 			slog.ErrorContext(r.Context(), "record login failure failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
