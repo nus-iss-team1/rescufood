@@ -14,12 +14,24 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { renderInApp } from './in-app-templates';
-import { MailerService } from './mailer.service';
+import { MailerService, PermanentDeliveryError } from './mailer.service';
 import { NotificationMessageDto } from './notification-message.dto';
 import { NotificationsRepository } from './notifications.repository';
 import { renderEmail, UnsupportedNotificationTypeError } from './templates';
 
 type Outcome = 'sent' | 'permanent-failure' | 'transient-failure';
+
+// Combines the two channels' outcomes. Retry wins: while either channel might
+// still succeed, the message goes back on the queue.
+function worstOutcome(a: Outcome, b: Outcome): Outcome {
+  if (a === 'transient-failure' || b === 'transient-failure') {
+    return 'transient-failure';
+  }
+  if (a === 'permanent-failure' || b === 'permanent-failure') {
+    return 'permanent-failure';
+  }
+  return 'sent';
+}
 
 // Success or a poison message deletes it; anything else is left for SQS to retry/dead-letter.
 @Injectable()
@@ -87,9 +99,11 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Handles one message. In-app is the primary channel: its creation must
-  // succeed (a failure redelivers the message). Email is secondary - a failure
-  // is recorded and logged but never redelivers or reverses anything.
+  // Handles one message. Both channels must land: a transient failure on
+  // either returns the whole message to the queue. That is safe because each
+  // channel is idempotent on redelivery - in-app on the
+  // (event_id, recipient_user_id) index, email on alreadyDelivered - so the
+  // one that already succeeded is skipped rather than repeated.
   async process(message: Message): Promise<Outcome> {
     const body = message.Body;
     if (!body) {
@@ -113,65 +127,68 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
     }
 
     const payload = dto.payload ?? {};
-    const inAppBody = dto.recipientUserId
-      ? renderInApp(dto.type, payload)
-      : null;
-
-    // 1. In-app (primary).
-    if (inAppBody !== null && dto.recipientUserId) {
-      try {
-        const result = await this.repository.createInApp({
-          recipientUserId: dto.recipientUserId,
-          recipientEmail: dto.recipientEmail,
-          type: dto.type,
-          eventId: dto.eventId,
-          body: inAppBody,
-          payload,
-        });
-        if (result === 'duplicate') {
-          this.logger.log(
-            { eventId: dto.eventId, type: dto.type },
-            'in-app notification already exists, skipping',
-          );
-        } else {
-          // Keep the feed capped; a trim failure doesn't fail the message.
-          await this.repository
-            .trimInAppFeed(dto.recipientUserId)
-            .catch((err: unknown) =>
-              this.logger.error({ err }, 'in-app feed trim failed'),
-            );
-        }
-      } catch (error) {
-        this.logger.error(
-          { err: error },
-          'in-app notification creation failed',
-        );
-        return 'transient-failure';
-      }
-    }
-
-    // 2. Email (secondary).
+    const inAppOutcome = await this.deliverInApp(dto, payload);
     const emailOutcome = await this.deliverEmail(dto, payload);
+    return worstOutcome(inAppOutcome, emailOutcome);
+  }
 
-    // In-app landed (or there was none) - the email is best-effort from here.
-    if (inAppBody !== null) return 'sent';
-    return emailOutcome;
+  // Writes the in-app notification, or reports 'sent' when this message has
+  // no in-app representation.
+  private async deliverInApp(
+    dto: NotificationMessageDto,
+    payload: Record<string, unknown>,
+  ): Promise<Outcome> {
+    const body = dto.recipientUserId ? renderInApp(dto.type, payload) : null;
+    if (body === null || !dto.recipientUserId) return 'sent';
+
+    try {
+      const result = await this.repository.createInApp({
+        recipientUserId: dto.recipientUserId,
+        recipientEmail: dto.recipientEmail,
+        type: dto.type,
+        eventId: dto.eventId,
+        body,
+        payload,
+      });
+      if (result === 'duplicate') {
+        this.logger.log(
+          { eventId: dto.eventId, type: dto.type },
+          'in-app notification already exists, skipping',
+        );
+        return 'sent';
+      }
+      // Keep the feed capped; a trim failure doesn't fail the message.
+      await this.repository
+        .trimInAppFeed(dto.recipientUserId)
+        .catch((err: unknown) =>
+          this.logger.error({ err }, 'in-app feed trim failed'),
+        );
+      return 'sent';
+    } catch (error) {
+      this.logger.error({ err: error }, 'in-app notification creation failed');
+      return 'transient-failure';
+    }
   }
 
   private async deliverEmail(
     dto: NotificationMessageDto,
     payload: Record<string, unknown>,
   ): Promise<Outcome> {
-    if (
-      dto.eventId &&
-      (await this.repository.alreadyDelivered(
+    // Without this answer the send can't be attempted safely - it might
+    // duplicate one already out - so an unreachable database is a retry, not
+    // an exception escaping into the poll loop.
+    let alreadySent: boolean;
+    try {
+      alreadySent = await this.repository.alreadyDelivered(
         dto.eventId,
         'email',
         dto.recipientEmail,
-      ))
-    ) {
-      return 'sent';
+      );
+    } catch (error) {
+      this.logger.error({ err: error }, 'email delivery check failed');
+      return 'transient-failure';
     }
+    if (alreadySent) return 'sent';
 
     try {
       const email = renderEmail(dto.type, payload);
@@ -198,9 +215,24 @@ export class SqsConsumerService implements OnModuleInit, OnModuleDestroy {
         eventId: dto.eventId,
       });
       this.logger.error({ err: error }, 'notification email delivery failed');
-      return error instanceof UnsupportedNotificationTypeError
-        ? 'permanent-failure'
-        : 'transient-failure';
+      if (
+        error instanceof UnsupportedNotificationTypeError ||
+        error instanceof PermanentDeliveryError
+      ) {
+        // Deleted rather than retried, so it never reaches the dead-letter
+        // queue the exhaustion alarm watches - signal it on its own.
+        this.logger.error(
+          {
+            event: 'email.permanent_failure',
+            eventId: dto.eventId,
+            type: dto.type,
+            failureReason,
+          },
+          'notification email permanently failed, not retrying',
+        );
+        return 'permanent-failure';
+      }
+      return 'transient-failure';
     }
   }
 

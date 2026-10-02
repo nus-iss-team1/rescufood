@@ -29,6 +29,11 @@ beforeEach(resetDb);
 const sub = () => `sub-${randomUUID().slice(0, 8)}`;
 
 describe('Notifications HTTP (integration)', () => {
+  it('serves health under the api prefix', async () => {
+    const res = await request(harness.server).get('/api/health').expect(200);
+    expect(res.body).toEqual({ status: 'ok' });
+  });
+
   it('returns the caller’s own feed and unread count', async () => {
     const me = sub();
     await seedNotification({ recipientUserId: me });

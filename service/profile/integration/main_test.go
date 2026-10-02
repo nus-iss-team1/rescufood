@@ -56,6 +56,10 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, "pool:", err)
 		os.Exit(1)
 	}
+	if err := createAuditLog(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "create audit_log:", err)
+		os.Exit(1)
+	}
 
 	code := m.Run()
 
@@ -81,13 +85,50 @@ func runMigrations(dsn string) error {
 	return nil
 }
 
+// createAuditLog mirrors the audit_log table that service/listings owns and
+// migrates, because this service writes account-administration events to it
+// and golang-migrate above only applies this service's own migrations.
+//
+// Keep in sync with service/listings/src/db/schema.ts. Only
+// what this service depends on is reproduced - listings' read indexes are not.
+func createAuditLog(ctx context.Context) error {
+	_, err := testPool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS audit_log (
+			id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id uuid REFERENCES users(id),
+			org_id uuid REFERENCES organisations(id),
+			action text NOT NULL,
+			entity_type text NOT NULL,
+			entity_id uuid,
+			subject text,
+			reason text NOT NULL DEFAULT '',
+			metadata jsonb NOT NULL DEFAULT '{}',
+			created_at timestamptz NOT NULL DEFAULT now()
+		);
+
+		CREATE OR REPLACE FUNCTION audit_log_reject_mutation() RETURNS trigger
+			LANGUAGE plpgsql AS $$
+		BEGIN
+			RAISE EXCEPTION 'audit_log is append-only: % is not permitted', TG_OP
+				USING ERRCODE = 'restrict_violation';
+		END;
+		$$;
+
+		DROP TRIGGER IF EXISTS audit_log_append_only ON audit_log;
+		CREATE TRIGGER audit_log_append_only
+			BEFORE UPDATE OR DELETE ON audit_log
+			FOR EACH ROW EXECUTE FUNCTION audit_log_reject_mutation();
+	`)
+	return err
+}
+
 func ctxt() context.Context { return context.Background() }
 
 // resetDB truncates every table; call at the top of each test.
 func resetDB(t *testing.T) {
 	t.Helper()
 	_, err := testPool.Exec(ctxt(),
-		"TRUNCATE users, organisations, login_restrictions RESTART IDENTITY CASCADE")
+		"TRUNCATE users, organisations, login_restrictions, audit_log RESTART IDENTITY CASCADE")
 	if err != nil {
 		t.Fatalf("reset: %v", err)
 	}

@@ -4,9 +4,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { AuditModule } from './audit/audit.module';
+import { requestActor, requestLogLevel } from './common/request-logging';
 import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -23,32 +26,25 @@ import { RequestsModule } from './requests/requests.module';
         ],
       }),
     }),
-    LoggerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        pinoHttp: {
-          // dev = colorized text logs; anything else = JSON (see .env.example)
-          transport:
-            config.get<string>('ENV') === 'dev'
-              ? {
-                  target: 'pino-pretty',
-                  options: { colorize: true, singleLine: true },
-                }
-              : undefined,
-          serializers: {
-            req: (req: { method: string; url: string }) => ({
-              method: req.method,
-              url: req.url,
-            }),
-            res: (res: { statusCode: number }) => ({
-              statusCode: res.statusCode,
-            }),
-          },
+    LoggerModule.forRoot({
+      pinoHttp: {
+        customProps: requestActor,
+        customLogLevel: requestLogLevel,
+        serializers: {
+          req: (req: { method: string; url: string }) => ({
+            method: req.method,
+            url: req.url,
+          }),
+          res: (res: { statusCode: number }) => ({
+            statusCode: res.statusCode,
+          }),
         },
-      }),
+      },
     }),
+    AuditModule,
     ListingsModule,
     RequestsModule,
+    SummaryModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -49,7 +49,7 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub ${ProjectName}-${EnvironmentName}-users
-      # FR1: users register themselves; admins approve organisations at the
+      # Users register themselves; admins approve organisations at the
       # application level, so self-signup stays enabled.
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false

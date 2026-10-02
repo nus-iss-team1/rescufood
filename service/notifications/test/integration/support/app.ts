@@ -61,6 +61,7 @@ export async function createTestApp(): Promise<TestApp> {
 
   const app = moduleRef.createNestApplication({ logger: false });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.setGlobalPrefix('api');
   await app.init();
 
   const pool = app.get<Pool>(PG_POOL);

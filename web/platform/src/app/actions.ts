@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError, CredentialsSignin } from "next-auth";
 
@@ -26,6 +28,7 @@ export async function signInWithCognito() {
 }
 
 export async function signOutAction() {
+  revalidatePath("/", "layout");
   await signOut({ redirectTo: "/" });
 }
 
@@ -50,15 +53,11 @@ export async function loginAction(
   }
 
   try {
-    // Returns instead of redirecting, so the caller can load /dashboard as a
-    // new document: the header reads the session in the root layout, which a
-    // client-side navigation would not re-render.
     await signIn("credentials", {
       username,
       password,
       redirect: false,
     });
-    return { success: true };
   } catch (err) {
     if (isRedirectError(err)) throw err;
     if (err instanceof CredentialsSignin && err.code === "account_restricted") {
@@ -73,8 +72,13 @@ export async function loginAction(
           "Sign-in failed. Check your username and password, and make sure your account is verified.",
       };
     }
-    throw err;
+    return {
+      error: "Could not sign in right now. Please try again shortly.",
+    };
   }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
 }
 
 const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;

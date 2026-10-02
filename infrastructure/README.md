@@ -9,10 +9,11 @@ Region: **ap-southeast-1** (Singapore).
 |---|---|---|---|
 | dev | `develop` | `dev.json`, `*-dev.json` | `dev.rescufood.com` |
 | qa | `qa` | `qa.json`, `*-qa.json` | `qa.rescufood.com` |
+| prod | `main` | `prod.json`, `*-prod.json` | `rescufood.com` |
 
-Both share `rescufood-core-network` and `rescufood-core-dns`; everything else
-is per environment — its own security groups, Cognito user pool, ECS cluster,
-RDS instance, S3 bucket, SQS queues and API Gateway.
+All three share `rescufood-core-network` and `rescufood-core-dns`; everything
+else is per environment — its own security groups, Cognito user pool, ECS
+cluster, RDS instance, S3 bucket, SQS queues and API Gateway.
 
 Pushing to an environment's branch builds the components whose paths changed
 and rolls that environment's ECS services. See
@@ -40,10 +41,9 @@ security groups, ECS services, and databases, tagged with
 The ALB is **internal** — nothing reaches it from the internet directly.
 Browser traffic goes through an **API Gateway HTTP API** over a VPC Link,
 and listing images through **CloudFront** (`*.cloudfront.net`) in front of
-S3. Each environment's HTTP API answers on its own subdomain
-(`dev.rescufood.com`, `qa.rescufood.com`) once the DNS stack is deployed, and
-on its `*.execute-api` URL until then. The apex `rescufood.com` is not mapped
-to an environment yet.
+S3. Each environment's HTTP API answers on its own domain once the DNS stack
+is deployed, and on its `*.execute-api` URL until then: `dev.rescufood.com`,
+`qa.rescufood.com`, and the apex `rescufood.com` for prod.
 
 ```
 browser → API Gateway (HTTP API) → VPC Link → internal ALB → ECS services
@@ -81,8 +81,8 @@ then cluster by scope.
 [`CDN-API-GATEWAY-ENHANCEMENT.md`](CDN-API-GATEWAY-ENHANCEMENT.md) for the
 migration writeup.
 
-`dev` and `qa` are deployed. A prod environment follows the same pattern:
-`rescufood-prod-security`, `rescufood-prod-ecs`, ...
+`dev`, `qa` and `prod` are all deployed, each a full set of the per-environment
+stacks above.
 
 Deploy order: network first — the security groups stack imports the VPC id
 from the network stack's exports, and the ECS and data stacks import both.
@@ -95,7 +95,7 @@ independently at any time.
 
 - **Cognito User Pool** (`rescufood-<env>-users`) — email sign-in,
   self-signup enabled (admins approve organisations at the application
-  level per FR1), verified-email recovery, 12-char minimum passwords.
+  level), verified-email recovery, 12-char minimum passwords.
 - **Hosted UI domain** — `rescufood-<env>.auth.ap-southeast-1.amazoncognito.com`.
 - **Web app client** — confidential client (secret generated) using the
   OAuth authorization-code flow with `openid email profile` scopes; the
@@ -247,7 +247,11 @@ gated on `ListingsImage` the same way the profile service is gated on
 `ProfileImage` — leave it empty and no listings resources are created.
 When set it adds a Fargate service on port 3002, its own target group
 and log group, and one ALB rule routing both `/api/listings/*` and
-`/api/requests/*` to it (one service handles both resource types).
+`/api/requests/*` to it (one service handles both resource types), plus a
+second rule (priority 13) for the admin-only `/api/audit` and
+`/api/audit/*`. That path needs
+its own rule because an ALB rule takes at most 5 condition values and the
+first one is already at 5.
 
 | Parameter | Notes |
 |---|---|
@@ -309,7 +313,7 @@ security group opens `NotificationPort` to the ALB, and the task gets
 | Parameter | Notes |
 |---|---|
 | `NotificationImage` | `ghcr.io/nus-iss-team1/rescufood/notifications:develop` |
-| `NotificationPort` | Default `3003` — container health check (`/health`) and the ALB target group for `/api/notifications*` |
+| `NotificationPort` | Default `3003` — the ALB target group for `/api/notifications*` |
 | `MessagingStackName` | Messaging stack `NOTIFICATION_QUEUE_URL` is imported from. No default, same reasoning as `DataStackName` |
 | `GmailCredentialsSecretArn` | Secrets Manager secret ARN with `user`/`appPassword` JSON keys - create it by hand (`aws secretsmanager create-secret`), same as `GhcrPullSecretArn` |
 
@@ -332,9 +336,10 @@ come from `GmailCredentialsSecretArn` via the execution role's
 `read-secrets` policy, not a task-role AWS permission (see
 `mailer.service.ts`).
 
-Since there's no ALB in front of it, health is checked with a
-container-level `HealthCheck` (`wget` against `/health` from inside the
-container) rather than a target group.
+Health is checked by the ALB target group against `/api/health`, the same
+as the other services. The service was a queue consumer with no ALB when it
+was first deployed, so it used to carry a container-level `HealthCheck` on
+the same endpoint as well.
 
 ### Applying migrations
 
@@ -418,6 +423,11 @@ notification queue plus its dead-letter queue:
   delivery attempts land here instead of retrying forever. 14-day
   retention (the SQS maximum) to leave room to notice and replay
   failures.
+- **`rescufood-<env>-notifications-dlq-not-empty`** — CloudWatch alarm
+  that fires as soon as anything is visible on the dead-letter queue,
+  publishing to the `rescufood-<env>-notification-alarms` SNS topic.
+  Set the `AlarmEmail` parameter to subscribe an address; left empty
+  the topic is still created, just without a subscription.
 
 No VPC dependency, so unlike the ECS/data stacks it can be deployed
 independently of the network and security stacks:
@@ -431,10 +441,10 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset
 ```
 
-Exports (`QueueUrl`, `QueueArn`, `DlqArn`, prefixed with the stack name) are
-imported by the ECS stack: `service/profile` and `service/listings` get
-`sqs:SendMessage` on the queue, `service/notifications` gets
-receive/delete.
+Exports (`QueueUrl`, `QueueArn`, `DlqArn`, `AlarmTopicArn`, prefixed with the
+stack name) are imported by the ECS stack: `service/profile` and
+`service/listings` get `sqs:SendMessage` on the queue,
+`service/notifications` gets receive/delete.
 
 ## DNS and custom domain
 
@@ -634,10 +644,10 @@ Finally, add a **qa** GitHub Environment with its own `BASE_URL` variable and
 test-account secrets so `e2e-test.yml` runs against it — see
 [`.github/workflows/README.md`](../.github/workflows/README.md).
 
-For prod later: copy each `parameters/*-qa.json` to a `*-prod.json`, set
-`EnvironmentName=prod` (and a pinned image tag for ECS), override
-`MultiAz=true` and `DeletionProtection=true` in `data-prod.json`, then deploy
-the same way.
+`parameters/*-prod.json` mirror the qa set, sized the same. For a real
+production workload, override `MultiAz=true`, `DeletionProtection=true` and a
+larger `InstanceClass` in `data-prod.json`, and set the Cognito user pool's
+`DeletionProtection` to `ACTIVE`.
 
 ## Teardown
 

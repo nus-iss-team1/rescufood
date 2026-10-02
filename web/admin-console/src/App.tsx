@@ -3,18 +3,28 @@ import type { Me } from "@rescufood/profile-sdk";
 
 import { Button } from "@rescufood/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@rescufood/ui/components/card";
+import { Tabs, TabsList, TabsTrigger } from "@rescufood/ui/components/tabs";
 
 import { client, ApiError } from "./api";
+import { AuditLog } from "./AuditLog";
 import { getToken, signOut } from "./auth";
 import { HeaderBar } from "./HeaderBar";
 import { LoginForm } from "./LoginForm";
 import { OrgQueue } from "./OrgQueue";
+
+const views = [
+  { id: "orgs", label: "Organisation approvals" },
+  { id: "audit", label: "Audit log" },
+] as const;
+
+type View = (typeof views)[number]["id"];
 
 export default function App() {
   const [authed, setAuthed] = useState(() => getToken() !== null);
   const [notice, setNotice] = useState("");
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState("");
+  const [view, setView] = useState<View>("orgs");
 
   useEffect(() => {
     const onExpired = () => {
@@ -119,10 +129,21 @@ export default function App() {
     <>
       <HeaderBar user={me.name || me.email} onSignOut={logout} />
       <main className="mx-auto max-w-5xl p-4 sm:p-6">
+        <Tabs value={view} onValueChange={(v) => v && setView(v as View)}>
+          <TabsList className="mb-6 w-full overflow-x-auto sm:overflow-x-visible">
+            {views.map((v) => (
+              <TabsTrigger key={v.id} value={v.id}>
+                {v.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
         <h1 className="mb-6 text-lg font-semibold sm:text-xl">
-          Organisation approvals
+          {views.find((v) => v.id === view)?.label}
         </h1>
-        <OrgQueue />
+
+        {view === "orgs" ? <OrgQueue /> : <AuditLog />}
       </main>
     </>
   );

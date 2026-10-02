@@ -17,3 +17,15 @@ export const AuditAction = {
   PickupCodeGenerated: 'pickup_code.generated',
   PickupCodeExhausted: 'pickup_code.exhausted',
 } as const;
+
+// Written by service/profile, which owns users and organisations. Listed here
+// so the read API and the admin console share one vocabulary; the canonical
+// strings live in service/profile/internal/store/audit.go and must match.
+export const ProfileAuditAction = {
+  UserSuspended: 'user.suspended',
+  UserReactivated: 'user.reactivated',
+  UserUnlocked: 'user.unlocked',
+  OrganisationApproved: 'organisation.approved',
+  OrganisationRejected: 'organisation.rejected',
+  OrganisationSuspended: 'organisation.suspended',
+} as const;

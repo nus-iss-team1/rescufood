@@ -1,0 +1,9 @@
+[
+  "ProjectName=rescufood",
+  "EnvironmentName=prod",
+  "NetworkStackName=rescufood-core-network",
+  "EcsStackName=rescufood-prod-ecs",
+  "SecurityStackName=rescufood-prod-security",
+  "DnsStackName=rescufood-core-dns",
+  "CustomDomainName=rescufood.com"
+]

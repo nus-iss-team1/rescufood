@@ -140,6 +140,13 @@ Parameters:
       How long the listings service keeps claim idempotency records. After
       this window a reused idempotency key is treated as a new request.
 
+  ListingsPickupReminderLeadHours:
+    Type: Number
+    Default: 24
+    Description: >-
+      How far ahead of a pickup window opening/closing the listings service
+      fires a pickup reminder.
+
   NotificationImage:
     Type: String
     Default: ""
@@ -268,7 +275,11 @@ Resources:
                 - Effect: Allow
                   Action: secretsmanager:GetSecretValue
                   Resource:
-                    - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                    - !If [
+                        HasPullSecret,
+                        !Ref GhcrPullSecretArn,
+                        !Ref AWS::NoValue,
+                      ]
                     - !If [HasAppSecrets, !Ref AppSecretsArn, !Ref AWS::NoValue]
         - !Ref AWS::NoValue
 
@@ -427,7 +438,11 @@ Resources:
                 Resource:
                   - Fn::ImportValue: !Sub ${DataStackName}-DbSecretArn
                   - !Ref ProfileDbSecret
-                  - !If [HasNotification, !Ref NotificationDbSecret, !Ref AWS::NoValue]
+                  - !If [
+                      HasNotification,
+                      !Ref NotificationDbSecret,
+                      !Ref AWS::NoValue,
+                    ]
 
   DbBootstrapLogGroup:
     Type: AWS::Logs::LogGroup
@@ -573,7 +588,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref ProfileDbSecret
 
   ProfileTaskRole:
@@ -636,6 +655,8 @@ Resources:
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref ProfilePort
             - Name: AUTH_COGNITO_ISSUER
@@ -750,14 +771,31 @@ Resources:
       Conditions:
         - Field: path-pattern
           # /api/listings and /api/requests are themselves routes, not just
-          # prefixes, so both the bare path and /* are needed.
+          # prefixes, so both the bare path and /* are needed. /api/summary
+          # is a single route with nothing below it.
           Values:
             [
               /api/listings,
               /api/listings/*,
               /api/requests,
               /api/requests/*,
+              /api/summary,
             ]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ListingsTargetGroup
+
+  # Served by the listings service too, but needs a rule of its own: an ALB
+  # rule takes at most 5 condition values and ListingsHttpRule is at 5.
+  ListingsAuditHttpRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasListings
+    Properties:
+      ListenerArn: !Ref HttpListener
+      Priority: 13
+      Conditions:
+        - Field: path-pattern
+          Values: [/api/audit, /api/audit/*]
       Actions:
         - Type: forward
           TargetGroupArn: !Ref ListingsTargetGroup
@@ -791,7 +829,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref ProfileDbSecret
 
   ListingsTaskRole:
@@ -878,6 +920,8 @@ Resources:
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref ListingsPort
             - Name: AUTH_COGNITO_ISSUER
@@ -917,6 +961,8 @@ Resources:
                 Fn::ImportValue: !Sub ${MessagingStackName}-QueueUrl
             - Name: IDEMPOTENCY_RETENTION_DAYS
               Value: !Ref ListingsIdempotencyRetentionDays
+            - Name: PICKUP_REMINDER_LEAD_HOURS
+              Value: !Ref ListingsPickupReminderLeadHours
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"
@@ -1081,7 +1127,11 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource:
-                  - !If [HasPullSecret, !Ref GhcrPullSecretArn, !Ref AWS::NoValue]
+                  - !If [
+                      HasPullSecret,
+                      !Ref GhcrPullSecretArn,
+                      !Ref AWS::NoValue,
+                    ]
                   - !Ref NotificationDbSecret
                   - !Ref GmailCredentialsSecretArn
 
@@ -1153,15 +1203,9 @@ Resources:
             - HasPullSecret
             - CredentialsParameter: !Ref GhcrPullSecretArn
             - !Ref AWS::NoValue
-          HealthCheck:
-            Command:
-              - CMD-SHELL
-              - !Sub wget -qO- http://localhost:${NotificationPort}/health || exit 1
-            Interval: 30
-            Timeout: 5
-            Retries: 3
-            StartPeriod: 30
           Environment:
+            - Name: ENVIRONMENT_NAME
+              Value: !Ref EnvironmentName
             - Name: PORT
               Value: !Ref NotificationPort
             - Name: AWS_REGION
@@ -1219,7 +1263,7 @@ Resources:
         Fn::ImportValue: !Sub ${NetworkStackName}-VpcId
       Protocol: HTTP
       Port: !Ref NotificationPort
-      HealthCheckPath: /health
+      HealthCheckPath: /api/health
       HealthCheckIntervalSeconds: 30
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3

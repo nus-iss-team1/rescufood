@@ -143,6 +143,9 @@ for (const [file, svcName, sdkName] of [
   ["requests/dto/verify-pickup-code.dto.ts", "VerifyPickupCodeDto", "VerifyPickup"],
   ["requests/dto/query-requests.dto.ts", "QueryRequestsDto", "RequestQuery"],
   ["requests/dto/pickup-code-response.dto.ts", "PickupCodeResponseDto", "PickupCode"],
+  ["audit/dto/audit-event-response.dto.ts", "AuditEventResponseDto", "AuditEvent"],
+  ["audit/dto/audit-filters.dto.ts", "AuditFiltersDto", "AuditFilters"],
+  ["audit/dto/query-audit-events.dto.ts", "QueryAuditEventsDto", "AuditEventQuery"],
 ]) {
   compareShape(
     `${svcName} -> ${sdkName}`,
@@ -168,6 +171,11 @@ compareValues(
   "requestSortFields -> requestSortFields",
   constArray(svc("requests/dto/query-requests.dto.ts"), "requestSortFields"),
   constArray(types, "requestSortFields")
+);
+compareValues(
+  "auditEntityTypes -> auditEntityTypes",
+  constArray(svc("audit/audit.repository.ts"), "auditEntityTypes"),
+  constArray(types, "auditEntityTypes")
 );
 compareValues(
   "sortOrders -> SortOrder",

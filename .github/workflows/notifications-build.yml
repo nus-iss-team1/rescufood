@@ -2,7 +2,7 @@ name: Build & Push Notifications Image
 
 on:
   push:
-    branches: [develop, qa]
+    branches: [develop, qa, main]
     paths:
       - "service/notifications/**"
       - ".github/workflows/notifications-build.yml"
@@ -63,6 +63,7 @@ jobs:
             type=ref,event=branch
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=prod,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -81,10 +82,10 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-    environment: ${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
+    environment: ${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'qa' && 'qa' || 'dev' }}
     env:
       AWS_REGION: ap-southeast-1
-      CLUSTER: rescufood-${{ github.ref_name == 'qa' && 'qa' || 'dev' }}
+      CLUSTER: rescufood-${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'qa' && 'qa' || 'dev' }}
       SERVICE: notification
 
     steps:

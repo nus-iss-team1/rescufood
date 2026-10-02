@@ -17,20 +17,18 @@ import (
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
 
-// OrgAdmin reads and updates organisations for admin workflows.
+// OrgAdmin reads organisations for admin workflows.
 type OrgAdmin interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Organisation, error)
-	UpdateStatus(ctx context.Context, o *domain.Organisation) error
 	List(ctx context.Context, status domain.OrgStatus) ([]domain.Organisation, error)
 	ListAll(ctx context.Context) ([]domain.Organisation, error)
 	CountByStatus(ctx context.Context) (map[string]int, error)
 }
 
-// UserAdmin reads and updates users for admin workflows.
+// UserAdmin reads users for admin workflows.
 type UserAdmin interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus) error
 }
 
 // LockLookup reports which of a set of usernames are currently
@@ -39,9 +37,13 @@ type LockLookup interface {
 	GetLockedUntil(ctx context.Context, usernames []string) (map[string]time.Time, error)
 }
 
-// LoginUnlocker clears a failed-login restriction.
-type LoginUnlocker interface {
-	AdminUnlock(ctx context.Context, username string) error
+// AccountTransitions applies an administrative account change together with
+// its audit event, in one transaction. A change whose event cannot be written
+// does not happen: these return an error and the handler fails the request.
+type AccountTransitions interface {
+	SetUserStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus, entry domain.AuditEntry) error
+	SetOrgStatus(ctx context.Context, o *domain.Organisation, entry domain.AuditEntry) error
+	ClearLoginRestriction(ctx context.Context, username string, entry domain.AuditEntry) error
 }
 
 // Mailer notifies an organisation's contact once it's approved.
@@ -203,7 +205,7 @@ func listUsers(users UserAdmin, locks LockLookup) http.HandlerFunc {
 // unlockUser clears a user's failed-login restriction, requiring a reason.
 // Unlike suspend/reactivate, this is idempotent: clearing an
 // already-unlocked account is not an error.
-func unlockUser(users UserAdmin, unlocker LoginUnlocker) http.HandlerFunc {
+func unlockUser(users UserAdmin, transitions AccountTransitions) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		admin, ok := auth.UserFromContext(r.Context())
 		if !ok {
@@ -238,7 +240,15 @@ func unlockUser(users UserAdmin, unlocker LoginUnlocker) http.HandlerFunc {
 			return
 		}
 
-		if err := unlocker.AdminUnlock(r.Context(), user.CognitoSub); err != nil {
+		entry := domain.AuditEntry{
+			ActorUserID: admin.ID,
+			ActorOrgID:  admin.OrgID,
+			Action:      domain.ActionUserUnlocked,
+			EntityType:  domain.EntityUser,
+			EntityID:    user.ID,
+			Reason:      req.Reason,
+		}
+		if err := transitions.ClearLoginRestriction(r.Context(), user.CognitoSub, entry); err != nil {
 			slog.ErrorContext(r.Context(), "unlock user failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
 			return
@@ -254,7 +264,7 @@ func unlockUser(users UserAdmin, unlocker LoginUnlocker) http.HandlerFunc {
 }
 
 // transitionUser suspends or reactivates one user, requiring a reason.
-func transitionUser(users UserAdmin, action string, target domain.UserStatus) http.HandlerFunc {
+func transitionUser(users UserAdmin, transitions AccountTransitions, action, auditAction string, target domain.UserStatus) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		admin, ok := auth.UserFromContext(r.Context())
 		if !ok {
@@ -302,7 +312,16 @@ func transitionUser(users UserAdmin, action string, target domain.UserStatus) ht
 			return
 		}
 
-		if err := users.UpdateStatus(r.Context(), user.ID, target); err != nil {
+		entry := domain.AuditEntry{
+			ActorUserID: admin.ID,
+			ActorOrgID:  admin.OrgID,
+			Action:      auditAction,
+			EntityType:  domain.EntityUser,
+			EntityID:    user.ID,
+			Reason:      req.Reason,
+			Metadata:    domain.StatusChange(string(user.Status), string(target)),
+		}
+		if err := transitions.SetUserStatus(r.Context(), user.ID, target, entry); err != nil {
 			slog.ErrorContext(r.Context(), "update user failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
 			return
@@ -327,7 +346,7 @@ type transitionRequest struct {
 // notify is non-nil it runs after the transition is persisted; a
 // notification failure is logged but doesn't fail the request, since
 // the status change already succeeded.
-func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation) error, notify func(context.Context, *domain.Organisation) error) http.HandlerFunc {
+func transitionOrg(orgs OrgAdmin, transitions AccountTransitions, action, auditAction string, apply func(*domain.Organisation) error, notify func(context.Context, *domain.Organisation) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		admin, ok := auth.UserFromContext(r.Context())
 		if !ok {
@@ -362,13 +381,25 @@ func transitionOrg(orgs OrgAdmin, action string, apply func(*domain.Organisation
 			return
 		}
 
+		// apply() mutates org.Status, so the prior value has to be read first.
+		previous := string(org.Status)
+
 		if err := apply(org); errors.Is(err, domain.ErrInvalidTransition) {
 			writeProblem(w, http.StatusConflict, "conflict",
 				"cannot "+action+" an organisation in status "+string(org.Status))
 			return
 		}
 
-		if err := orgs.UpdateStatus(r.Context(), org); err != nil {
+		entry := domain.AuditEntry{
+			ActorUserID: admin.ID,
+			ActorOrgID:  admin.OrgID,
+			Action:      auditAction,
+			EntityType:  domain.EntityOrganisation,
+			EntityID:    org.ID,
+			Reason:      req.Reason,
+			Metadata:    domain.StatusChange(previous, string(org.Status)),
+		}
+		if err := transitions.SetOrgStatus(r.Context(), org, entry); err != nil {
 			slog.ErrorContext(r.Context(), "update organisation failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
 			return

@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
@@ -27,10 +28,11 @@ export class NotificationMessageDto {
   @IsString()
   recipientUserId?: string;
 
-  // Stable per-recipient identifier for the domain event; drives de-duplication.
-  @IsOptional()
+  // Stable per-recipient identifier for the domain event. Required: it is the
+  // key both channels de-duplicate on, so without it a redelivery double-sends.
   @IsString()
-  eventId?: string;
+  @IsNotEmpty()
+  eventId!: string;
 
   @IsOptional()
   @IsObject()

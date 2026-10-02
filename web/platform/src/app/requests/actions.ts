@@ -141,8 +141,22 @@ export async function verifyPickupCodeAction(
   const code = String(formData.get("code") ?? "").trim();
   if (!code) return { error: "Verification code is required." };
 
+  const rawQuantity = formData.get("collectedQuantity") ?? formData.get("actualQuantity");
+  let collectedQuantity: number | undefined;
+
+  if (rawQuantity !== null && rawQuantity !== undefined && String(rawQuantity).trim() !== "") {
+    const parsed = Number(rawQuantity);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return { error: "Collected quantity must be greater than zero." };
+    }
+    collectedQuantity = parsed;
+  }
+
   try {
-    const updated = await verifyPickupCode(token, id, { code });
+    const updated = await verifyPickupCode(token, id, {
+      code,
+      collectedQuantity,
+    });
     
     revalidatePath("/requests");
     revalidatePath(`/requests/${id}`);
@@ -160,3 +174,5 @@ export async function verifyPickupCodeAction(
     return { error: unreachable };
   }
 }
+
+export const completePickupAction = verifyPickupCodeAction;

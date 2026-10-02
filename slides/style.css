@@ -1,0 +1,100 @@
+/* Slidev auto-loads ./style.css at the deck root. This file owns the deck's
+   look: a warm cream canvas with a green accent. It is written to hold up
+   even if the browser or Slidev is in dark mode — the deck is always light. */
+
+:root {
+  --deck-green: #1f6b45;
+  --deck-green-dark: #17533a;
+  --deck-ink: #111111;
+  --deck-muted: #444444;
+  --deck-line: #0000001a;
+  --deck-surface: #ffffff;
+  --deck-subtle: #f2f0ed;
+
+  --slidev-theme-primary: var(--deck-green);
+}
+
+/* Force the light canvas regardless of color scheme. The screenshot showed a
+   dark background with near-black text — this is the guard against that. */
+html.dark,
+html {
+  color-scheme: light;
+  background: #f6f4f1;
+}
+
+.slidev-layout,
+html.dark .slidev-layout {
+  background: #f6f4f1 !important;
+  color: var(--deck-ink) !important;
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3,
+html.dark .slidev-layout h1,
+html.dark .slidev-layout h2,
+html.dark .slidev-layout h3 {
+  color: var(--deck-ink) !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.slidev-layout h1 {
+  font-size: 3.5rem;
+  line-height: 1.05;
+}
+
+.slidev-layout p,
+.slidev-layout li,
+.slidev-layout td,
+.slidev-layout th {
+  color: var(--deck-ink);
+}
+
+.slidev-layout a {
+  color: var(--deck-green);
+  border-bottom-color: var(--deck-green);
+}
+
+.slidev-layout code {
+  color: var(--deck-green-dark);
+}
+
+/* Green accent applied to one word or phrase inside a statement. */
+.accent {
+  color: var(--deck-green) !important;
+}
+
+/* Short rule under a title. */
+.rule-green {
+  width: 4rem;
+  height: 4px;
+  background: var(--deck-green);
+  border-radius: 2px;
+}
+
+/* The deck uses a few faint inline greys for captions. On the cream canvas
+   these are legible but light; nudge them darker so nothing is a strain to
+   read from the back of a room. These target the exact inline values used. */
+.slidev-layout [style*="color:#00000099"] {
+  color: #3a3a3a !important;
+}
+.slidev-layout [style*="color:#00000066"] {
+  color: #5a5a5a !important;
+}
+.slidev-layout [style*="color:#00000044"] {
+  color: #8a8a8a !important;
+}
+
+/* Diagram labels: small uppercase, wide tracking. */
+.dgm {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.dgm-wide {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+}

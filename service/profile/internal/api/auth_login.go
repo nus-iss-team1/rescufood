@@ -42,7 +42,7 @@ type loginStatusResponse struct {
 }
 
 // loginStatus reports whether username is currently restricted, so the
-// caller can refuse to even attempt authentication (AC6).
+// caller can refuse to even attempt authentication.
 func loginStatus(attempts LoginAttempts, resolver SubjectResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := strings.TrimSpace(r.URL.Query().Get("username"))
@@ -68,8 +68,7 @@ type loginOutcomeRequest struct {
 }
 
 // loginOutcome records the result of a login attempt, applying the
-// failed-login threshold and resetting it after success (AC5, AC7 relies
-// on locked_until alone; "reset on success" satisfied here).
+// failed-login threshold and resetting it after success.
 func loginOutcome(attempts LoginAttempts, resolver SubjectResolver, threshold int, duration time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req loginOutcomeRequest
