@@ -1,6 +1,10 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // Audit action names this service writes. `<entity>.<event>`. Keep in sync
 // with ProfileAuditAction in service/listings/src/audit/audit.actions.ts.
@@ -13,6 +17,7 @@ const (
 	ActionOrgSuspended    = "organisation.suspended"
 	ActionLoginSucceeded  = "auth.login_succeeded"
 	ActionLoginFailed     = "auth.login_failed"
+	ActionAccountLocked   = "auth.account_locked"
 )
 
 // Audit entity types this service writes.
@@ -44,6 +49,20 @@ type AuditEntry struct {
 // StatusChange returns the previous and new value of a status transition.
 func StatusChange(previous, next string) map[string]any {
 	return map[string]any{"previousStatus": previous, "newStatus": next}
+}
+
+// AccountLocked returns the lockout event for the attempt that tripped the threshold.
+func AccountLocked(attempt AuditEntry, until *time.Time) AuditEntry {
+	metadata := map[string]any{}
+	for k, v := range attempt.Metadata {
+		metadata[k] = v
+	}
+	if until != nil {
+		metadata["lockedUntil"] = until.UTC().Format(time.RFC3339)
+	}
+	attempt.Action = ActionAccountLocked
+	attempt.Metadata = metadata
+	return attempt
 }
 
 // RequestContext returns a login event's where-from metadata, omitting absent values.

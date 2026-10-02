@@ -70,8 +70,15 @@ func (f *fakeLoginAttempts) RecordLoginFailure(ctx context.Context, username str
 	if f.auditErr != nil {
 		return false, nil, false, f.auditErr
 	}
+	locked, until, newlyLocked, err := f.RecordFailure(ctx, username, threshold, d)
+	if err != nil {
+		return locked, until, newlyLocked, err
+	}
 	f.entries = append(f.entries, entry)
-	return f.RecordFailure(ctx, username, threshold, d)
+	if newlyLocked {
+		f.entries = append(f.entries, domain.AccountLocked(entry, until))
+	}
+	return locked, until, newlyLocked, nil
 }
 
 func (f *fakeLoginAttempts) lastEntry() domain.AuditEntry {
@@ -435,6 +442,82 @@ func TestLoginOutcomeIsAudited(t *testing.T) {
 		}
 		if ua, _ := fake.lastEntry().Metadata["userAgent"].(string); len(ua) != maxUserAgentLen {
 			t.Errorf("user agent length = %d, want %d", len(ua), maxUserAgentLen)
+		}
+	})
+}
+
+// The attempt that trips the threshold is retained as its own event, so a
+// lockout is in the trail rather than only in the logs.
+func TestLockoutIsAudited(t *testing.T) {
+	const threshold = 3
+	known := fakeSubjectResolver{"alice": "sub-alice"}
+	attempt := `{"username":"alice","success":false,"forwarded_for":"203.0.113.7"}`
+
+	t.Run("below the threshold records only the attempt", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold-1; i++ {
+			if rec := doAuth(t, h, http.MethodPost, "/login-outcome", attempt); rec.Code != http.StatusNoContent {
+				t.Fatalf("attempt %d: status = %d", i, rec.Code)
+			}
+		}
+		for _, e := range fake.entries {
+			if e.Action == domain.ActionAccountLocked {
+				t.Fatal("recorded a lockout before the threshold was reached")
+			}
+		}
+		if len(fake.entries) != threshold-1 {
+			t.Errorf("recorded %d events, want %d", len(fake.entries), threshold-1)
+		}
+	})
+
+	t.Run("crossing the threshold records the attempt and the lockout", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold; i++ {
+			if rec := doAuth(t, h, http.MethodPost, "/login-outcome", attempt); rec.Code != http.StatusNoContent {
+				t.Fatalf("attempt %d: status = %d", i, rec.Code)
+			}
+		}
+
+		// threshold attempts, plus one lockout event on the last of them.
+		if len(fake.entries) != threshold+1 {
+			t.Fatalf("recorded %d events, want %d", len(fake.entries), threshold+1)
+		}
+		got := fake.lastEntry()
+		if got.Action != domain.ActionAccountLocked {
+			t.Errorf("last action = %q, want %q", got.Action, domain.ActionAccountLocked)
+		}
+		if got.Subject != "alice" {
+			t.Errorf("subject = %q, want the identifier as typed", got.Subject)
+		}
+		if got.EntityID != fakeUserID("sub-alice") {
+			t.Errorf("lockout does not name the account: %s", got.EntityID)
+		}
+		if got.Metadata["lockedUntil"] == nil {
+			t.Error("lockout event must record how long the restriction lasts")
+		}
+		// The request context of the attempt that caused it carries over.
+		if got.Metadata["ipAddress"] != "203.0.113.7" {
+			t.Errorf("ipAddress = %v, want it carried from the attempt", got.Metadata["ipAddress"])
+		}
+	})
+
+	t.Run("the attempt's own event is not rewritten into the lockout", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold; i++ {
+			doAuth(t, h, http.MethodPost, "/login-outcome", attempt)
+		}
+
+		// The one before the lockout is still the failed attempt, and it must
+		// not have picked up lockedUntil through a shared metadata map.
+		failed := fake.entries[len(fake.entries)-2]
+		if failed.Action != domain.ActionLoginFailed {
+			t.Errorf("action = %q, want %q", failed.Action, domain.ActionLoginFailed)
+		}
+		if _, present := failed.Metadata["lockedUntil"]; present {
+			t.Error("the failed-attempt event must not carry lockedUntil")
 		}
 	})
 }

@@ -68,7 +68,15 @@ func (s *Store) RecordLoginFailure(ctx context.Context, username string, thresho
 		if txErr != nil {
 			return txErr
 		}
-		return tx.AuditEvents.Record(ctx, entry)
+		if txErr = tx.AuditEvents.Record(ctx, entry); txErr != nil {
+			return txErr
+		}
+		// The attempt that trips the threshold carries a second event, so the
+		// lockout is in the trail and not only in the logs.
+		if !newlyLocked {
+			return nil
+		}
+		return tx.AuditEvents.Record(ctx, domain.AccountLocked(entry, until))
 	})
 	if err != nil {
 		return false, nil, false, err

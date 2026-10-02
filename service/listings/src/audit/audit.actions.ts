@@ -18,12 +18,11 @@ export const AuditAction = {
   PickupCodeExhausted: 'pickup_code.exhausted',
 } as const;
 
-// Written by service/profile, which owns users and organisations. Listed here
-// so the read API and the admin console share one vocabulary; the canonical
-// strings live in service/profile/internal/store/audit.go and must match.
+// Written by service/profile. Canonical strings: its internal/domain/audit.go.
 export const ProfileAuditAction = {
   LoginSucceeded: 'auth.login_succeeded',
   LoginFailed: 'auth.login_failed',
+  AccountLocked: 'auth.account_locked',
   UserSuspended: 'user.suspended',
   UserReactivated: 'user.reactivated',
   UserUnlocked: 'user.unlocked',

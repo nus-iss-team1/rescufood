@@ -344,3 +344,64 @@ func TestAPI_LoginAttemptsAreAudited(t *testing.T) {
 		}
 	})
 }
+
+// Crossing the failed-login threshold is retained as its own event, in the
+// same transaction as the attempt that caused it.
+func TestAPI_LockoutIsAudited(t *testing.T) {
+	h, _ := newAPI(t) // newAPI sets FailedLoginThreshold to 3
+	attempt := `{"username":"victim","success":false,"forwarded_for":"203.0.113.7"}`
+
+	for i := 0; i < 3; i++ {
+		if rec := do(t, h, http.MethodPost, "/api/profile/auth/login-outcome", attempt, nil); rec.Code != http.StatusNoContent {
+			t.Fatalf("attempt %d: status = %d, body = %s", i, rec.Code, rec.Body)
+		}
+	}
+
+	counts := map[string]int{}
+	rows, err := testPool.Query(ctxt(), `SELECT action FROM audit_log`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			t.Fatal(err)
+		}
+		counts[a]++
+	}
+	rows.Close()
+
+	if counts[domain.ActionLoginFailed] != 3 || counts[domain.ActionAccountLocked] != 1 || len(counts) != 2 {
+		t.Fatalf("events = %v, want 3 failed attempts and 1 lockout", counts)
+	}
+
+	// The lockout commits with the attempt that caused it, so created_at -
+	// transaction-start time - is identical, not merely close.
+	var sameInstant bool
+	if err := testPool.QueryRow(ctxt(), `
+		SELECT (SELECT created_at FROM audit_log WHERE action = $1)
+		     = (SELECT max(created_at) FROM audit_log WHERE action = $2)`,
+		domain.ActionAccountLocked, domain.ActionLoginFailed).Scan(&sameInstant); err != nil {
+		t.Fatal(err)
+	}
+	if !sameInstant {
+		t.Error("lockout must commit in the same transaction as the attempt that tripped it")
+	}
+
+	var subject *string
+	var metadata map[string]any
+	if err := testPool.QueryRow(ctxt(),
+		`SELECT subject, metadata FROM audit_log WHERE action = $1`,
+		domain.ActionAccountLocked).Scan(&subject, &metadata); err != nil {
+		t.Fatalf("lockout event not retained: %v", err)
+	}
+	if subject == nil || *subject != "victim" {
+		t.Errorf("subject = %v, want the identifier as typed", subject)
+	}
+	if metadata["lockedUntil"] == nil {
+		t.Error("lockout event must record how long the restriction lasts")
+	}
+	if metadata["ipAddress"] != "203.0.113.7" {
+		t.Errorf("ipAddress = %v, want it carried from the attempt", metadata["ipAddress"])
+	}
+}
