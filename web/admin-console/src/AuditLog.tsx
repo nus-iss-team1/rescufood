@@ -143,8 +143,10 @@ export function AuditLog() {
   const showing = events?.length ?? 0;
 
   function actorLabel(event: AuditEvent): string {
-    if (event.userId === null) return "System";
-    return actorName(names, event.userId);
+    if (event.userId !== null) return actorName(names, event.userId);
+    // An event naming a subject came from whoever used that identifier - an
+    // anonymous login attempt, not us. Only a truly actorless event is System.
+    return event.subject ?? "System";
   }
 
   return (

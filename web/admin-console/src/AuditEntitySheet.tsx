@@ -72,9 +72,9 @@ export function AuditEntitySheet({
   }, [event]);
 
   const actor = (item: AuditEvent) =>
-    item.userId === null
-      ? "System"
-      : (names.get(item.userId) ?? shortId(item.userId));
+    item.userId !== null
+      ? (names.get(item.userId) ?? shortId(item.userId))
+      : (item.subject ?? "System");
 
   return (
     <Sheet open={event !== null} onOpenChange={(o) => !o && onClose()}>
