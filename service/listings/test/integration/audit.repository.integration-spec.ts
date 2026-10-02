@@ -444,3 +444,87 @@ describe('AuditRepository.findMany (integration)', () => {
     expect(page.total).toBe(1);
   });
 });
+
+// A retained event does not change when the record it describes does.
+// Enforced by the trigger in migration 0018, not by convention, so these
+// assert against the database rather than against the repository surface.
+describe('audit_log is append-only (integration)', () => {
+  it('rejects an update to a retained event', async () => {
+    const { actor, listing } = await seedListingWithActor();
+    await ctx.audit.record({
+      actor,
+      action: 'listing.created',
+      entityType: 'listing',
+      entityId: listing.id,
+      reason: 'as entered',
+    });
+
+    await expect(
+      testPool().query(`UPDATE audit_log SET reason = 'rewritten'`),
+    ).rejects.toThrow(/append-only/);
+
+    const page = await ctx.audit.findByEntity('listing', listing.id, {
+      limit: 50,
+      offset: 0,
+    });
+    expect(page.items.map((e) => e.reason)).toEqual(['as entered']);
+  });
+
+  it('rejects a delete of a retained event', async () => {
+    const { actor, listing } = await seedListingWithActor();
+    await ctx.audit.record({
+      actor,
+      action: 'listing.created',
+      entityType: 'listing',
+      entityId: listing.id,
+    });
+
+    await expect(testPool().query(`DELETE FROM audit_log`)).rejects.toThrow(
+      /append-only/,
+    );
+
+    const page = await ctx.audit.findByEntity('listing', listing.id, {
+      limit: 50,
+      offset: 0,
+    });
+    expect(page.total).toBe(1);
+  });
+
+  it('keeps a listing event after the listing itself is deleted', async () => {
+    const { actor, listing } = await seedListingWithActor();
+    await ctx.audit.record({
+      actor,
+      action: 'listing.deleted',
+      entityType: 'listing',
+      entityId: listing.id,
+    });
+
+    await testPool().query(`DELETE FROM listings WHERE id = $1`, [listing.id]);
+
+    const page = await ctx.audit.findByEntity('listing', listing.id, {
+      limit: 50,
+      offset: 0,
+    });
+    expect(page.items.map((e) => e.action)).toEqual(['listing.deleted']);
+  });
+});
+
+// An event whose subject has no record to point at.
+describe('audit_log subject-only events (integration)', () => {
+  it('round-trips an event with no entity_id', async () => {
+    await testPool().query(
+      `INSERT INTO audit_log (action, entity_type, subject, metadata)
+       VALUES ('auth.login_failed', 'user', 'nobody@example.com', '{}')`,
+    );
+
+    const page = await ctx.audit.findMany({
+      entityType: 'user',
+      limit: 50,
+      offset: 0,
+    });
+
+    expect(page.total).toBe(1);
+    expect(page.items[0].entityId).toBeNull();
+    expect(page.items[0].subject).toBe('nobody@example.com');
+  });
+});

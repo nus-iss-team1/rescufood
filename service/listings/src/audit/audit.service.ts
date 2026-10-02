@@ -64,6 +64,7 @@ function toResponse(event: AuditEvent): AuditEventResponseDto {
     action: event.action,
     entityType: event.entityType as AuditEntityType,
     entityId: event.entityId,
+    subject: event.subject,
     reason: event.reason,
     metadata: event.metadata as Record<string, unknown>,
     createdAt: event.createdAt,

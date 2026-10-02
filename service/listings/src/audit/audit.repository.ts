@@ -6,7 +6,14 @@ import { auditLog } from '../db/schema';
 // Set on system-driven events (the expiry sweep) - no user or org acted.
 export const SYSTEM_ACTOR: AuditActor = { userId: null, orgId: null };
 
-export const auditEntityTypes = ['listing', 'claim'] as const;
+// `user` and `organisation` events are written by service/profile, which owns
+// those tables; this service only reads them back.
+export const auditEntityTypes = [
+  'listing',
+  'claim',
+  'user',
+  'organisation',
+] as const;
 export type AuditEntityType = (typeof auditEntityTypes)[number];
 
 export type AuditActor = { userId: string | null; orgId: string | null };
@@ -34,8 +41,11 @@ export type AuditFilters = {
 
 export type AuditFeedQuery = AuditFilters & { entityType?: AuditEntityType };
 
-// Append-only writer for audit_log (FR6). record() is the only write path;
-// no update or delete method exists here by design.
+// Append-only writer for audit_log. record() is this service's only
+// write path; no update or delete method exists here by design. service/profile
+// inserts its own rows for auth and account events, so append-only is enforced
+// at the table by the trigger in migration 0018 rather than by this class
+// alone.
 @Injectable()
 export class AuditRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}

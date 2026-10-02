@@ -21,6 +21,7 @@ type Store struct {
 	Users             *Users
 	Organisations     *Organisations
 	LoginRestrictions *LoginRestrictions
+	AuditEvents       *AuditEvents
 }
 
 func New(pool *pgxpool.Pool) *Store {
@@ -29,5 +30,6 @@ func New(pool *pgxpool.Pool) *Store {
 		Users:             &Users{db: pool},
 		Organisations:     &Organisations{db: pool},
 		LoginRestrictions: &LoginRestrictions{db: pool},
+		AuditEvents:       &AuditEvents{db: pool},
 	}
 }

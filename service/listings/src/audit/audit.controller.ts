@@ -25,9 +25,11 @@ export class AuditController {
   @ApiOperation({
     summary: 'Browse retained audit events',
     description:
-      'Every retained event across listings and claims, newest first, so an ' +
-      'investigation can start from "what just happened" without knowing an ' +
-      'entity id. Called with no filters it returns the most recent page. ' +
+      'Every retained event, newest first, so an investigation can start ' +
+      'from "what just happened" without knowing an entity id. Covers ' +
+      'listing and claim lifecycle events written here, and the account ' +
+      'administration events written by service/profile. Called with no ' +
+      'filters it returns the most recent page. ' +
       'Optional filters narrow it to one actor (`userId`), a timestamp range ' +
       '(`createdAtFrom`, `createdAtTo`, both inclusive) or one kind of ' +
       'entity (`entityType`); `total` then counts the filtered set. Each row ' +
@@ -43,7 +45,7 @@ export class AuditController {
   @ApiOperation({
     summary: 'Lifecycle history for one entity',
     description:
-      'Every retained audit event for one listing or claim, oldest first - ' +
+      'Every retained audit event for one entity, oldest first - ' +
       'the order a transaction is reconstructed in - and in a stable order ' +
       'across repeated calls. Accepts the same optional filters as the feed. ' +
       'Returns an empty page rather than a 404 for an entity with no ' +

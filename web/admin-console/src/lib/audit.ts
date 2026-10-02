@@ -10,10 +10,15 @@ const toneByEvent: Record<string, "default" | "secondary" | "success" | "warning
   generated: "secondary",
   collected: "success",
   completed: "success",
+  approved: "success",
+  reactivated: "success",
+  unlocked: "success",
   cancelled: "destructive",
   deleted: "destructive",
   no_show: "destructive",
   exhausted: "destructive",
+  suspended: "destructive",
+  rejected: "destructive",
   idempotency_conflict: "warning",
   expired: "outline",
 };
@@ -33,6 +38,12 @@ export function actionLabel(action: string): string {
 // Enough of a uuid to recognise and to copy-match against, without the width.
 export function shortId(id: string): string {
   return id.slice(0, 8);
+}
+
+/** What the event points at: the entity's short id, or the subject it names. */
+export function targetLabel(event: AuditEvent): string {
+  if (event.entityId) return shortId(event.entityId);
+  return event.subject ?? "unknown";
 }
 
 /** The listing a claim or pickup event belongs to, when the event names one. */

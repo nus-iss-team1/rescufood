@@ -256,7 +256,7 @@ export interface RescuedMetrics {
   };
 }
 
-export const auditEntityTypes = ["listing", "claim"] as const;
+export const auditEntityTypes = ["listing", "claim", "user", "organisation"] as const;
 export type AuditEntityType = (typeof auditEntityTypes)[number];
 
 /** One retained lifecycle change. Append-only: never rewritten. */
@@ -268,7 +268,10 @@ export interface AuditEvent {
   /** `<entity>.<event>`, e.g. "listing.published". */
   action: string;
   entityType: AuditEntityType;
-  entityId: string;
+  /** Null when the subject has no record to point at; `subject` names it. */
+  entityId: string | null;
+  /** The identifier an auth event was attempted against, as typed. */
+  subject: string | null;
   /** Empty string when the action carries none. */
   reason: string;
   /** Action-specific detail. Claim events carry their `listingId` here. */

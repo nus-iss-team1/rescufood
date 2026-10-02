@@ -95,7 +95,7 @@ independently at any time.
 
 - **Cognito User Pool** (`rescufood-<env>-users`) — email sign-in,
   self-signup enabled (admins approve organisations at the application
-  level per FR1), verified-email recovery, 12-char minimum passwords.
+  level), verified-email recovery, 12-char minimum passwords.
 - **Hosted UI domain** — `rescufood-<env>.auth.ap-southeast-1.amazoncognito.com`.
 - **Web app client** — confidential client (secret generated) using the
   OAuth authorization-code flow with `openid email profile` scopes; the
