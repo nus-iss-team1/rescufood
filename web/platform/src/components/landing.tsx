@@ -180,6 +180,9 @@ export function Landing() {
                 </a>{" "}
                 to get started.
               </p>
+              <p className="text-sm font-medium text-red-900">
+                🚀
+              </p>
             </div>
           </div>
         </section>
