@@ -16,6 +16,16 @@ Parameters:
     AllowedValues: [dev, qa, prod]
     Description: Environment this queue belongs to
 
+  AlarmEmail:
+    Type: String
+    Default: ""
+    Description: >-
+      Address subscribed to notification delivery alarms. Leave empty to
+      create the topic without a subscription and wire one up later.
+
+Conditions:
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+
 Resources:
   NotificationDlq:
     Type: AWS::SQS::Queue
@@ -44,6 +54,48 @@ Resources:
         - Key: Environment
           Value: !Ref EnvironmentName
 
+  NotificationAlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${ProjectName}-${EnvironmentName}-notification-alarms
+      DisplayName: RescuFood notification delivery alarms
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  NotificationAlarmSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlarmEmail
+    Properties:
+      TopicArn: !Ref NotificationAlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  # A message only lands here after maxReceiveCount delivery attempts, so
+  # anything visible on the DLQ is a notification the service gave up on.
+  NotificationDlqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ProjectName}-${EnvironmentName}-notifications-dlq-not-empty
+      AlarmDescription: >-
+        One or more notifications exhausted their delivery attempts and were
+        dead-lettered.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt NotificationDlq.QueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref NotificationAlarmTopic
+      OKActions:
+        - !Ref NotificationAlarmTopic
+
 Outputs:
   NotificationQueueUrl:
     Value: !Ref NotificationQueue
@@ -59,3 +111,8 @@ Outputs:
     Value: !GetAtt NotificationDlq.Arn
     Export:
       Name: !Sub ${AWS::StackName}-DlqArn
+
+  NotificationAlarmTopicArn:
+    Value: !Ref NotificationAlarmTopic
+    Export:
+      Name: !Sub ${AWS::StackName}-AlarmTopicArn

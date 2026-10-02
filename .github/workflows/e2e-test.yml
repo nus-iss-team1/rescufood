@@ -6,6 +6,10 @@ name: End-to-End Tests
 # any branch-protection required check. A failure here should show up red in
 # the Actions tab and in the uploaded report - not be silently masked - so
 # don't add continue-on-error to the test step.
+#
+# dev and qa only. The suite posts listings, claims them and completes
+# pickups, so running it against prod would write test data into the live
+# site.
 on:
   workflow_run:
     workflows: ["Build & Push Platform Image"]
@@ -24,12 +28,15 @@ concurrency:
 jobs:
   e2e:
     name: Playwright E2E
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      (github.event_name == 'workflow_dispatch'
+        || github.event.workflow_run.conclusion == 'success')
+      && (github.event.workflow_run.head_branch || github.ref_name) != 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'prod' || (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
+    environment: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
     defaults:
       run:
         working-directory: e2e
@@ -51,6 +58,38 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      # Only the platform build triggers this workflow, so a commit touching
+      # several services can leave the others mid-rollout while the suite
+      # runs against them.
+      - name: Wait for the environment to settle
+        working-directory: .
+        env:
+          CLUSTER: rescufood-${{ (github.event.workflow_run.head_branch || github.ref_name) == 'qa' && 'qa' || 'dev' }}
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            rolling=$(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services web-platform profile listings notification \
+              --query "length(services[?deployments[?status=='PRIMARY' && rolloutState!='COMPLETED']])" \
+              --output text)
+            if [ "$rolling" = "0" ]; then
+              echo "all services stable"
+              exit 0
+            fi
+            echo "$rolling service(s) still rolling"
+            sleep 10
+          done
+          echo "::error::$CLUSTER did not settle within 10 minutes"
+          exit 1
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

@@ -4,6 +4,9 @@ import {
   ApiError,
   createListingsClient,
   type ListingsApi,
+  type OrgSummary,
+  type RescuedMetrics,
+  type UnitQuantity,
   type Listing,
   type ListingQuery,
   type ListingRequest,
@@ -17,6 +20,7 @@ import {
   type RequestQuery,
   type VerifyPickup,
 } from "@rescufood/listings-sdk";
+import { formatDuration } from "@/lib/format-duration";
 
 const base = process.env.LISTINGS_API_URL ?? "http://localhost:3002";
 
@@ -45,6 +49,9 @@ export type {
   ListingUpdate,
   NewListing,
   NewRequest,
+  OrgSummary,
+  RescuedMetrics,
+  UnitQuantity,
   Paginated,
   PickupCode,
   PickupCodeMatch,
@@ -136,3 +143,165 @@ export function verifyPickupCode(
 ): Promise<ListingRequest> {
   return client(idToken).verifyPickupCode(id, verify);
 }
+
+export function getOrgSummary(idToken: string): Promise<OrgSummary> {
+  return client(idToken).getOrgSummary();
+}
+
+export async function getRescuedMetrics(
+  idToken: string,
+): Promise<RescuedMetrics> {
+  const c = client(idToken);
+  try {
+    return await c.getRescuedMetrics();
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      // Backend dedicated reporting endpoint not yet deployed; compute from requests & listings
+      return await computeRescuedMetrics(idToken);
+    }
+    throw err;
+  }
+}
+
+async function computeRescuedMetrics(idToken: string): Promise<RescuedMetrics> {
+  const c = client(idToken);
+
+  // Fetch listings across pages (up to 500)
+  const allListings: Listing[] = [];
+  let listingOffset = 0;
+  while (true) {
+    const page = await c.listListings({
+      limit: 100,
+      offset: listingOffset,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+    allListings.push(...page.items);
+    if (allListings.length >= page.total || page.items.length === 0) break;
+    listingOffset += 100;
+    if (listingOffset >= 500) break;
+  }
+  const listingMap = new Map<string, Listing>(allListings.map((l) => [l.id, l]));
+
+  // Fetch requests across pages (up to 500)
+  const allRequests: ListingRequest[] = [];
+  let requestOffset = 0;
+  while (true) {
+    const page = await c.listRequests({
+      limit: 100,
+      offset: requestOffset,
+      sortBy: "requestedAt",
+      sortOrder: "desc",
+    });
+    allRequests.push(...page.items);
+    if (allRequests.length >= page.total || page.items.length === 0) break;
+    requestOffset += 100;
+    if (requestOffset >= 500) break;
+  }
+
+  // Pre-fetch listings needed by requests that were not returned in the initial search
+  // (e.g. for rescue partners, completed/reserved listings owned by donor orgs are not returned by listListings)
+  const missingListingIds = Array.from(
+    new Set(
+      allRequests
+        .map((r) => r.listingId)
+        .filter((id) => id && !listingMap.has(id)),
+    ),
+  );
+  if (missingListingIds.length > 0) {
+    const batchSize = 10;
+    for (let i = 0; i < missingListingIds.length; i += batchSize) {
+      const batch = missingListingIds.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (id) => {
+          try {
+            const listing = await c.getListing(id);
+            listingMap.set(id, listing);
+          } catch {
+            // listing could be deleted or forbidden
+          }
+        }),
+      );
+    }
+  }
+
+  // Multi-unit grouping for completed rescues
+  const unitTotals = new Map<string, number>();
+  let collectedCount = 0;
+  const collectedListingIds = new Set<string>();
+
+  const completedRequests = allRequests.filter((r) => r.status === "completed");
+  for (const r of completedRequests) {
+    collectedListingIds.add(r.listingId);
+    collectedCount++;
+    const listing = listingMap.get(r.listingId);
+    const unit = listing?.unit?.trim() || "units";
+    const qty = r.collectedQuantity
+      ? parseFloat(r.collectedQuantity)
+      : listing?.quantity
+      ? parseFloat(listing.quantity)
+      : 0;
+    unitTotals.set(unit, (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty));
+  }
+
+  // Also include listings with status 'collected' not accounted for by completedRequests
+  const collectedListings = allListings.filter(
+    (l) => l.status === "collected" && !l.deletedAt && !collectedListingIds.has(l.id),
+  );
+  for (const l of collectedListings) {
+    collectedCount++;
+    const unit = l.unit?.trim() || "units";
+    const qty = l.quantity ? parseFloat(l.quantity) : 0;
+    unitTotals.set(unit, (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty));
+  }
+
+  const rescuedByUnit: UnitQuantity[] = Array.from(unitTotals.entries()).map(
+    ([unit, amount]) => ({
+      unit,
+      amount,
+      formatted: `${amount % 1 === 0 ? amount : amount.toFixed(1)} ${unit}`,
+    }),
+  );
+
+  // Time-to-claim: elapsed time from publication (listing.createdAt) to claim acceptance (request.requestedAt)
+  const durations: number[] = [];
+  for (const r of allRequests) {
+    const listing = listingMap.get(r.listingId);
+    if (listing?.createdAt && r.requestedAt) {
+      const pubTime = new Date(listing.createdAt).getTime();
+      const claimTime = new Date(r.requestedAt).getTime();
+      const diffMs = claimTime - pubTime;
+      if (!isNaN(diffMs) && diffMs >= 0) {
+        durations.push(diffMs);
+      }
+    }
+  }
+
+  durations.sort((a, b) => a - b);
+  const timeToClaimCount = durations.length;
+  let avgTimeToClaimMs: number | null = null;
+  let medianTimeToClaimMs: number | null = null;
+
+  if (timeToClaimCount > 0) {
+    avgTimeToClaimMs =
+      durations.reduce((sum, d) => sum + d, 0) / timeToClaimCount;
+    const mid = Math.floor(timeToClaimCount / 2);
+    medianTimeToClaimMs =
+      timeToClaimCount % 2 === 1
+        ? durations[mid]
+        : (durations[mid - 1] + durations[mid]) / 2;
+  }
+
+  return {
+    orgId: "org",
+    rescuedByUnit,
+    collectedCount,
+    avgTimeToClaimMs,
+    medianTimeToClaimMs,
+    formattedAvgTimeToClaim: formatDuration(avgTimeToClaimMs),
+    formattedMedianTimeToClaim: formatDuration(medianTimeToClaimMs),
+    timeToClaimCount,
+    asOf: new Date().toISOString(),
+  };
+}
+

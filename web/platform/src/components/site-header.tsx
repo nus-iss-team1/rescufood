@@ -1,15 +1,26 @@
+"use client";
+
 import Link from "next/link";
 import { House, LogOut, Settings } from "lucide-react";
+import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 
-import { auth, authConfigured } from "@/auth";
 import { SignOutButton } from "@/components/auth/sign-out-dialog";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navItemClass =
   "inline-flex size-9 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export async function SiteHeader() {
-  const session = authConfigured ? await auth() : null;
+export function SiteHeader({
+  initialSession,
+}: {
+  initialSession?: Session | null;
+} = {}) {
+  const { data: clientSession, status } = useSession();
+  const session =
+    status === "loading" && initialSession !== undefined
+      ? initialSession
+      : (clientSession ?? initialSession ?? null);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur">
@@ -23,23 +34,23 @@ export async function SiteHeader() {
 
         {session?.user ? (
           <nav className="flex items-center gap-1">
-            <a
+            <Link
               href="/dashboard"
               className={navItemClass}
               aria-label="Home"
               title="Home"
             >
               <House className="size-[18px]" />
-            </a>
+            </Link>
             <NotificationBell />
-            <a
+            <Link
               href="/settings"
               className={navItemClass}
               aria-label="Settings"
               title="Settings"
             >
               <Settings className="size-[18px]" />
-            </a>
+            </Link>
             <SignOutButton
               className={navItemClass}
               aria-label="Sign out"
