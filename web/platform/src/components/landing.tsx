@@ -180,7 +180,7 @@ export function Landing() {
                 </a>{" "}
                 to get started.
               </p>
-              <p className="text-sm font-medium text-green-600">
+              <p className="text-sm font-medium text-red-900">
                 🚀 Deployed via CI/CD — dev → qa → prod
               </p>
             </div>
