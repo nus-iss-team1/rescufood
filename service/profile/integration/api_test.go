@@ -405,3 +405,56 @@ func TestAPI_LockoutIsAudited(t *testing.T) {
 		t.Errorf("ipAddress = %v, want it carried from the attempt", metadata["ipAddress"])
 	}
 }
+
+// A completed password reset is retained against a real database, and the
+// restriction it clears is cleared in the same transaction.
+func TestAPI_PasswordResetIsAudited(t *testing.T) {
+	h, s := newAPI(t)
+	org := seedOrg(t, s)
+	user, _, err := s.Users.UpsertBySub(ctxt(), "sub-alice",
+		"alice@"+org.Domain, "Alice Tan", "alice", false)
+	if err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	// Lock the account first, so the reset has a restriction to clear.
+	for i := 0; i < 3; i++ {
+		do(t, h, http.MethodPost, "/api/profile/auth/login-outcome",
+			`{"username":"alice","success":false}`, nil)
+	}
+
+	body := `{"username":"alice","forwarded_for":"203.0.113.7","user_agent":"curl/8"}`
+	if rec := do(t, h, http.MethodPost, "/api/profile/auth/password-reset-completed", body, nil); rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+	}
+
+	var (
+		entityID *uuid.UUID
+		subject  *string
+		metadata map[string]any
+	)
+	if err := testPool.QueryRow(ctxt(), `
+		SELECT entity_id, subject, metadata FROM audit_log WHERE action = $1`,
+		domain.ActionPasswordReset).Scan(&entityID, &subject, &metadata); err != nil {
+		t.Fatalf("password reset not retained: %v", err)
+	}
+	if entityID == nil || *entityID != user.ID {
+		t.Errorf("entity_id = %v, want %s", entityID, user.ID)
+	}
+	if subject == nil || *subject != "alice" {
+		t.Errorf("subject = %v", subject)
+	}
+	if metadata["ipAddress"] != "203.0.113.7" || metadata["userAgent"] != "curl/8" {
+		t.Errorf("request context not retained: %v", metadata)
+	}
+
+	// The reset lifted the lockout.
+	rec := do(t, h, http.MethodGet, "/api/profile/auth/login-status?username=alice", "", nil)
+	var out struct {
+		Restricted bool `json:"restricted"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if out.Restricted {
+		t.Errorf("still restricted after a completed reset: %s", rec.Body)
+	}
+}

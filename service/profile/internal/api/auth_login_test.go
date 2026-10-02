@@ -81,6 +81,14 @@ func (f *fakeLoginAttempts) RecordLoginFailure(ctx context.Context, username str
 	return locked, until, newlyLocked, nil
 }
 
+func (f *fakeLoginAttempts) ClearLoginRestriction(ctx context.Context, username string, entry domain.AuditEntry) error {
+	if f.auditErr != nil {
+		return f.auditErr
+	}
+	f.entries = append(f.entries, entry)
+	return f.RecordSuccess(ctx, username)
+}
+
 func (f *fakeLoginAttempts) lastEntry() domain.AuditEntry {
 	if len(f.entries) == 0 {
 		return domain.AuditEntry{}
@@ -518,6 +526,86 @@ func TestLockoutIsAudited(t *testing.T) {
 		}
 		if _, present := failed.Metadata["lockedUntil"]; present {
 			t.Error("the failed-attempt event must not carry lockedUntil")
+		}
+	})
+}
+
+// A completed password reset is retained, with no reset code or password.
+func TestPasswordResetIsAudited(t *testing.T) {
+	known := fakeSubjectResolver{"alice": "sub-alice"}
+
+	t.Run("records the reset against the account", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed",
+			`{"username":"alice","forwarded_for":"203.0.113.7","user_agent":"curl/8"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204; body: %s", rec.Code, rec.Body)
+		}
+
+		got := fake.lastEntry()
+		if got.Action != domain.ActionPasswordReset {
+			t.Errorf("action = %q, want %q", got.Action, domain.ActionPasswordReset)
+		}
+		if got.EntityID != fakeUserID("sub-alice") {
+			t.Errorf("event does not name the account: %s", got.EntityID)
+		}
+		if got.Subject != "alice" {
+			t.Errorf("subject = %q", got.Subject)
+		}
+		if got.Metadata["ipAddress"] != "203.0.113.7" || got.Metadata["userAgent"] != "curl/8" {
+			t.Errorf("request context not retained: %v", got.Metadata)
+		}
+		// The reset also clears any active restriction, keyed on the account.
+		if !fake.successes["sub-alice"] {
+			t.Error("restriction not cleared for the account")
+		}
+	})
+
+	t.Run("an unknown username is retained by subject", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed", `{"username":"ghost@example.invalid"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		if got.EntityID != uuid.Nil || got.ActorUserID != uuid.Nil {
+			t.Errorf("unknown account must leave the id columns unset: %s / %s", got.EntityID, got.ActorUserID)
+		}
+		if got.Subject != "ghost@example.invalid" {
+			t.Errorf("subject = %q", got.Subject)
+		}
+	})
+
+	t.Run("a code or password in the body is never retained", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed",
+			`{"username":"alice","code":"123456","password":"hunter2"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		for key, value := range got.Metadata {
+			if s, ok := value.(string); ok && (strings.Contains(s, "hunter2") || strings.Contains(s, "123456")) {
+				t.Fatalf("metadata[%s] leaked a secret: %q", key, s)
+			}
+		}
+		if strings.Contains(got.Subject, "hunter2") || strings.Contains(got.Subject, "123456") {
+			t.Fatal("secret leaked into the subject")
+		}
+	})
+
+	t.Run("an unwritable event fails the request", func(t *testing.T) {
+		fake := &fakeLoginAttempts{auditErr: errors.New("audit_log unavailable")}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed", `{"username":"alice"}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
+		}
+		if fake.successes["sub-alice"] {
+			t.Error("restriction must not be cleared when the event could not be written")
 		}
 	})
 }

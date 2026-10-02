@@ -18,6 +18,7 @@ const (
 	ActionLoginSucceeded  = "auth.login_succeeded"
 	ActionLoginFailed     = "auth.login_failed"
 	ActionAccountLocked   = "auth.account_locked"
+	ActionPasswordReset   = "auth.password_reset"
 )
 
 // Audit entity types this service writes.

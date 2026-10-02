@@ -96,8 +96,15 @@ export class ProfileClient {
   }
 
   /** Audit-only: call once a password reset has completed. */
-  recordPasswordResetCompleted(username: string): Promise<void> {
-    return this.post("/auth/password-reset-completed", { username });
+  recordPasswordResetCompleted(
+    username: string,
+    context: LoginAttemptContext = {},
+  ): Promise<void> {
+    return this.post("/auth/password-reset-completed", {
+      username,
+      forwarded_for: context.forwardedFor,
+      user_agent: context.userAgent,
+    });
   }
 
   /** Whether identifier (username or email) may reset its password. */

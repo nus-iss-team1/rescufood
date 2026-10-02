@@ -54,7 +54,7 @@ func NewRouter(d Deps) http.Handler {
 		r.Route("/auth", func(r chi.Router) {
 			r.Get("/login-status", loginStatus(d.Store.LoginRestrictions, d.Store.Users))
 			r.Post("/login-outcome", loginOutcome(d.Store, d.Store.Users, d.FailedLoginThreshold, d.RestrictionDuration))
-			r.Post("/password-reset-completed", passwordResetCompleted(d.Store.LoginRestrictions, d.Store.Users))
+			r.Post("/password-reset-completed", passwordResetCompleted(d.Store, d.Store.Users))
 			r.Get("/reset-eligibility", resetEligibility(d.Store.Users))
 		})
 

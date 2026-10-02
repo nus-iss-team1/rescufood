@@ -19,6 +19,7 @@ import {
   lookupOrganisation,
   recordPasswordResetCompleted,
   registerOrganisation,
+  requestContext,
   resetEligibility,
   ProfileApiError,
 } from "@/lib/profile";
@@ -448,9 +449,13 @@ export async function confirmPasswordResetAction(
     }
   }
 
-  // Best-effort: also clears any failed-login lockout server-side. Never
-  // blocks the user-visible success on an audit-log hiccup.
-  recordPasswordResetCompleted(username).catch(() => {});
+  // Cognito has already changed the password, so this cannot be made to block
+  // the result the way a login can - but a lost event is reported, not ignored.
+  recordPasswordResetCompleted(username, await requestContext()).catch(
+    (err: unknown) => {
+      console.error("password reset completed but not audited", err);
+    },
+  );
 
   return { step: "confirm", username, done: true };
 }

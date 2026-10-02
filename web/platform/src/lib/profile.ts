@@ -1,5 +1,7 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
 import {
   ApiError,
   ProfileClient,
@@ -49,8 +51,20 @@ export function recordLoginOutcome(
   return client().recordLoginOutcome(username, success, context);
 }
 
-export function recordPasswordResetCompleted(username: string): Promise<void> {
-  return client().recordPasswordResetCompleted(username);
+export function recordPasswordResetCompleted(
+  username: string,
+  context?: LoginAttemptContext,
+): Promise<void> {
+  return client().recordPasswordResetCompleted(username, context);
+}
+
+/** Request context of the current server action, for an audit event. */
+export async function requestContext(): Promise<LoginAttemptContext> {
+  const incoming = await headers();
+  return {
+    forwardedFor: incoming.get("x-forwarded-for") ?? undefined,
+    userAgent: incoming.get("user-agent") ?? undefined,
+  };
 }
 
 /**

@@ -150,14 +150,22 @@ func loginOutcome(recorder LoginOutcomeRecorder, subjects LoginSubjectResolver, 
 	}
 }
 
-type passwordResetCompletedRequest struct {
-	Username string `json:"username"`
+// PasswordResetRecorder clears any restriction and appends the reset event in
+// one transaction.
+type PasswordResetRecorder interface {
+	ClearLoginRestriction(ctx context.Context, username string, entry domain.AuditEntry) error
 }
 
-// passwordResetCompleted records the security audit event for a
-// completed password reset and clears any active failed-login
-// restriction. No password or code ever reaches this handler.
-func passwordResetCompleted(attempts LoginAttempts, resolver SubjectResolver) http.HandlerFunc {
+type passwordResetCompletedRequest struct {
+	Username string `json:"username"`
+	// Forwarded verbatim by the edge; the trusted hop is picked here.
+	ForwardedFor string `json:"forwarded_for"`
+	UserAgent    string `json:"user_agent"`
+}
+
+// passwordResetCompleted retains the event for a completed password reset and
+// clears any active failed-login restriction. No password or code reaches it.
+func passwordResetCompleted(recorder PasswordResetRecorder, subjects LoginSubjectResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req passwordResetCompletedRequest
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&req); err != nil {
@@ -170,8 +178,24 @@ func passwordResetCompleted(attempts LoginAttempts, resolver SubjectResolver) ht
 			return
 		}
 
-		key := resolveKey(r.Context(), resolver, username)
-		if err := attempts.RecordSuccess(r.Context(), key); err != nil {
+		key := username
+		entry := domain.AuditEntry{
+			Action:     domain.ActionPasswordReset,
+			EntityType: domain.EntityUser,
+			Subject:    auditText(username, maxSubjectLen),
+			Metadata: domain.RequestContext(
+				clientIP(req.ForwardedFor),
+				auditText(req.UserAgent, maxUserAgentLen),
+			),
+		}
+		if subject, err := subjects.ResolveLoginSubject(r.Context(), username); err == nil {
+			key = subject.CognitoSub
+			entry.ActorUserID = subject.UserID
+			entry.ActorOrgID = subject.OrgID
+			entry.EntityID = subject.UserID
+		}
+
+		if err := recorder.ClearLoginRestriction(r.Context(), key, entry); err != nil {
 			slog.ErrorContext(r.Context(), "clear lockout after password reset failed", "error", err)
 			writeProblem(w, http.StatusInternalServerError, "internal error", "")
 			return

@@ -16,6 +16,7 @@ const toneByEvent: Record<string, "default" | "secondary" | "success" | "warning
   login_succeeded: "success",
   login_failed: "warning",
   account_locked: "destructive",
+  password_reset: "secondary",
   cancelled: "destructive",
   deleted: "destructive",
   no_show: "destructive",

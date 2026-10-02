@@ -23,6 +23,7 @@ export const ProfileAuditAction = {
   LoginSucceeded: 'auth.login_succeeded',
   LoginFailed: 'auth.login_failed',
   AccountLocked: 'auth.account_locked',
+  PasswordReset: 'auth.password_reset',
   UserSuspended: 'user.suspended',
   UserReactivated: 'user.reactivated',
   UserUnlocked: 'user.unlocked',
