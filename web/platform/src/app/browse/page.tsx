@@ -196,8 +196,10 @@ export default async function BrowsePage({
                 showStatus={false}
                 empty="Nothing available right now. Check back after the next drop-off."
                 action={(listing) => (
+                  // Prefetching every card hits the listings API once per card and trips its rate limit.
                   <Link
                     href={`/browse/${listing.id}`}
+                    prefetch={false}
                     className={cn(
                       buttonVariants({ variant: "outline", size: "sm" }),
                       "w-full",
