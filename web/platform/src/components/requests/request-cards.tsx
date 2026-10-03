@@ -41,7 +41,11 @@ export function RequestCards({ requests }: { requests: ListingRequest[] }) {
               !isActiveRequest(request.status) && "opacity-60",
             )}
           >
-            <Link href={`/requests/${request.id}`} className="block group">
+            <Link
+              href={`/requests/${request.id}`}
+              prefetch={false}
+              className="block group"
+            >
               <ListingPhoto
                 imageUrl={request.listingImageUrl}
                 overlay={
@@ -58,7 +62,11 @@ export function RequestCards({ requests }: { requests: ListingRequest[] }) {
             </Link>
 
             <div className="flex items-start justify-between gap-2">
-              <Link href={`/requests/${request.id}`} className="font-medium hover:underline">
+              <Link
+                href={`/requests/${request.id}`}
+                prefetch={false}
+                className="font-medium hover:underline"
+              >
                 {request.listingDescription ??
                   quantity(request.requestedQuantity, unit)}
               </Link>
@@ -103,6 +111,7 @@ export function RequestCards({ requests }: { requests: ListingRequest[] }) {
             <div className="mt-auto flex flex-wrap gap-2 items-center">
               <Link
                 href={`/requests/${request.id}`}
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
                 View Details
