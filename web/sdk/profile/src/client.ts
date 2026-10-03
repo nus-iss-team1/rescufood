@@ -9,6 +9,7 @@ import type {
   OrgStatus,
   ResetEligibility,
   User,
+  UserName,
 } from "./types";
 
 export class ApiError extends Error {
@@ -147,6 +148,13 @@ export class ProfileClient {
 
   listOrgMembers(orgId: string): Promise<User[]> {
     return this.request(`/admin/users/?org_id=${orgId}`);
+  }
+
+  /** Display names for user ids. At most 200 per call. */
+  resolveUserNames(ids: string[]): Promise<UserName[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    const query = ids.map((id) => encodeURIComponent(id)).join(",");
+    return this.request(`/admin/users/names?ids=${query}`);
   }
 
   suspendUser(id: string, reason: string): Promise<User> {

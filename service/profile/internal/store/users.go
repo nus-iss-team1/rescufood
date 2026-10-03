@@ -27,6 +27,28 @@ func (r *Users) GetBySub(ctx context.Context, sub string) (*domain.User, error) 
 	return scanUser(r.db.QueryRow(ctx, userSelect+` WHERE cognito_sub = $1`, sub))
 }
 
+// NamesByIDs returns a display name per id, falling back to the email when a
+// user has no name. Ids with no user are simply absent from the result.
+func (r *Users) NamesByIDs(ctx context.Context, ids []uuid.UUID) ([]domain.UserName, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, COALESCE(NULLIF(name, ''), email) FROM users
+		WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	names := []domain.UserName{}
+	for rows.Next() {
+		var n domain.UserName
+		if err := rows.Scan(&n.ID, &n.Name); err != nil {
+			return nil, err
+		}
+		names = append(names, n)
+	}
+	return names, rows.Err()
+}
+
 // ResolveLoginSubject returns the account a login identifier names, or ErrNotFound.
 func (r *Users) ResolveLoginSubject(ctx context.Context, identifier string) (*domain.LoginSubject, error) {
 	identifier = strings.ToLower(strings.TrimSpace(identifier))

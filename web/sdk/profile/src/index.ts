@@ -11,4 +11,5 @@ export type {
   OrgType,
   ResetEligibility,
   User,
+  UserName,
 } from "./types";

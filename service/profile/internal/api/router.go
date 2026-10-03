@@ -78,6 +78,7 @@ func NewRouter(d Deps) http.Handler {
 
 				r.Route("/users", func(r chi.Router) {
 					r.Get("/", listUsers(users, d.Store.LoginRestrictions))
+					r.Get("/names", userNames(users))
 					r.Post("/{id}/suspend", transitionUser(users, d.Store, "suspend", domain.ActionUserSuspended, domain.UserSuspended))
 					r.Post("/{id}/reactivate", transitionUser(users, d.Store, "reactivate", domain.ActionUserReactivated, domain.UserActive))
 					r.Post("/{id}/unlock", unlockUser(users, d.Store))

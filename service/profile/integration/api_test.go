@@ -458,3 +458,94 @@ func TestAPI_PasswordResetIsAudited(t *testing.T) {
 		t.Errorf("still restricted after a completed reset: %s", rec.Body)
 	}
 }
+
+// Actor names resolve by id, so an actor whose audit event carries no
+// organisation still gets a name - which is the whole point of the endpoint.
+func TestAPI_UserNames(t *testing.T) {
+	h, s := newAPI(t)
+	org := seedOrg(t, s)
+
+	named, _, err := s.Users.UpsertBySub(ctxt(), "sub-named",
+		"alice@"+org.Domain, "Alice Tan", "alice", false)
+	if err != nil {
+		t.Fatalf("seed named user: %v", err)
+	}
+	// No display name, so the email has to stand in.
+	unnamed, _, err := s.Users.UpsertBySub(ctxt(), "sub-unnamed",
+		"bob@"+org.Domain, "", "bob", false)
+	if err != nil {
+		t.Fatalf("seed unnamed user: %v", err)
+	}
+
+	get := func(t *testing.T, ids string) map[string]string {
+		t.Helper()
+		rec := do(t, h, http.MethodGet, "/api/profile/admin/users/names?ids="+ids, "",
+			map[string]string{"X-Test-Sub": "boss", "X-Test-Email": "boss@x.example.org", "X-Test-Admin": "true"})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+		}
+		var out []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		got := map[string]string{}
+		for _, n := range out {
+			got[n.ID] = n.Name
+		}
+		return got
+	}
+
+	t.Run("resolves names and falls back to the email", func(t *testing.T) {
+		got := get(t, named.ID.String()+","+unnamed.ID.String())
+		if got[named.ID.String()] != "Alice Tan" {
+			t.Errorf("named = %q, want Alice Tan", got[named.ID.String()])
+		}
+		if got[unnamed.ID.String()] != "bob@"+org.Domain {
+			t.Errorf("unnamed = %q, want the email", got[unnamed.ID.String()])
+		}
+	})
+
+	t.Run("an id with no user is absent", func(t *testing.T) {
+		ghost := uuid.NewString()
+		got := get(t, named.ID.String()+","+ghost)
+		if _, present := got[ghost]; present {
+			t.Error("an unknown id must not appear in the result")
+		}
+		if len(got) != 1 {
+			t.Errorf("got %d names, want 1", len(got))
+		}
+	})
+
+	t.Run("a non-admin is refused", func(t *testing.T) {
+		rec := do(t, h, http.MethodGet,
+			"/api/profile/admin/users/names?ids="+named.ID.String(), "",
+			map[string]string{"X-Test-Sub": "member", "X-Test-Email": "m@" + org.Domain})
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("status = %d, want 403", rec.Code)
+		}
+	})
+
+	t.Run("every actor in the audit log can be named", func(t *testing.T) {
+		// The failure this endpoint exists to fix: an audit event with no
+		// org_id, whose actor the org-scoped lookup could never resolve.
+		if _, err := testPool.Exec(ctxt(), `
+			INSERT INTO audit_log (user_id, org_id, action, entity_type, entity_id)
+			VALUES ($1, NULL, 'claim.created', 'claim', $2)`,
+			named.ID, uuid.New()); err != nil {
+			t.Fatal(err)
+		}
+
+		var actor string
+		if err := testPool.QueryRow(ctxt(),
+			`SELECT user_id::text FROM audit_log WHERE org_id IS NULL AND user_id IS NOT NULL`).
+			Scan(&actor); err != nil {
+			t.Fatal(err)
+		}
+		if got := get(t, actor); got[actor] != "Alice Tan" {
+			t.Errorf("orgless event's actor = %q, want Alice Tan", got[actor])
+		}
+	})
+}

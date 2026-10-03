@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -56,6 +57,10 @@ type fakeUserAdmin struct {
 	user    *domain.User
 	updated *domain.UserStatus
 	entries []domain.AuditEntry
+	// names answers NamesByIDs; lookedUp records what it was asked for.
+	names    map[uuid.UUID]string
+	lookedUp []uuid.UUID
+	namesErr error
 }
 
 func (f *fakeUserAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.User, error) {
@@ -64,6 +69,20 @@ func (f *fakeUserAdmin) GetByID(_ context.Context, id uuid.UUID) (*domain.User, 
 	}
 	copy := *f.user
 	return &copy, nil
+}
+
+func (f *fakeUserAdmin) NamesByIDs(_ context.Context, ids []uuid.UUID) ([]domain.UserName, error) {
+	if f.namesErr != nil {
+		return nil, f.namesErr
+	}
+	f.lookedUp = ids
+	out := []domain.UserName{}
+	for _, id := range ids {
+		if name, ok := f.names[id]; ok {
+			out = append(out, domain.UserName{ID: id, Name: name})
+		}
+	}
+	return out, nil
 }
 
 func (f *fakeUserAdmin) ListByOrg(_ context.Context, orgID uuid.UUID) ([]domain.User, error) {
@@ -604,6 +623,104 @@ func TestAdminChangesAreAudited(t *testing.T) {
 		}
 		if fake.updated != nil {
 			t.Error("status must not be persisted when its event cannot be")
+		}
+	})
+}
+
+func TestUserNames(t *testing.T) {
+	alice, bob, ghost := uuid.New(), uuid.New(), uuid.New()
+	fake := func() *fakeUserAdmin {
+		return &fakeUserAdmin{names: map[uuid.UUID]string{
+			alice: "Alice Tan",
+			bob:   "bob@example.org", // no name, so the email stands in
+		}}
+	}
+	route := func(users *fakeUserAdmin) http.Handler {
+		r := chi.NewRouter()
+		r.Get("/names", userNames(users))
+		return r
+	}
+
+	t.Run("labels the ids it is given", func(t *testing.T) {
+		f := fake()
+		rec := doAdmin(t, route(f), nil, http.MethodGet,
+			"/names?ids="+alice.String()+","+bob.String(), "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		var out []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		got := map[string]string{}
+		for _, n := range out {
+			got[n.ID] = n.Name
+		}
+		if got[alice.String()] != "Alice Tan" || got[bob.String()] != "bob@example.org" {
+			t.Fatalf("names = %v", got)
+		}
+	})
+
+	t.Run("an unknown id is absent rather than an error", func(t *testing.T) {
+		f := fake()
+		rec := doAdmin(t, route(f), nil, http.MethodGet,
+			"/names?ids="+alice.String()+","+ghost.String(), "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200", rec.Code)
+		}
+		if strings.Contains(rec.Body.String(), ghost.String()) {
+			t.Errorf("unknown id should not appear: %s", rec.Body)
+		}
+	})
+
+	t.Run("no ids returns an empty list, not an error", func(t *testing.T) {
+		rec := doAdmin(t, route(fake()), nil, http.MethodGet, "/names", "")
+		if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != "[]" {
+			t.Fatalf("code=%d body=%s", rec.Code, rec.Body)
+		}
+	})
+
+	t.Run("a malformed id is rejected", func(t *testing.T) {
+		rec := doAdmin(t, route(fake()), nil, http.MethodGet,
+			"/names?ids="+alice.String()+",not-a-uuid", "")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("more ids than the cap is rejected", func(t *testing.T) {
+		ids := make([]string, maxNameLookup+1)
+		for i := range ids {
+			ids[i] = uuid.NewString()
+		}
+		rec := doAdmin(t, route(fake()), nil, http.MethodGet,
+			"/names?ids="+strings.Join(ids, ","), "")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want 400", rec.Code)
+		}
+	})
+
+	t.Run("surrounding whitespace is tolerated", func(t *testing.T) {
+		f := fake()
+		rec := doAdmin(t, route(f), nil, http.MethodGet,
+			"/names?ids="+url.QueryEscape(" "+alice.String()+" , "+bob.String()+" "), "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body)
+		}
+		if len(f.lookedUp) != 2 {
+			t.Errorf("looked up %d ids, want 2", len(f.lookedUp))
+		}
+	})
+
+	t.Run("a lookup failure is a server error", func(t *testing.T) {
+		f := fake()
+		f.namesErr = errors.New("db down")
+		rec := doAdmin(t, route(f), nil, http.MethodGet, "/names?ids="+alice.String(), "")
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
 		}
 	})
 }
