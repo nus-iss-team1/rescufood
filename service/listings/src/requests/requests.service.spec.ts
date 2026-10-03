@@ -31,6 +31,7 @@ function makeRepository() {
     findActiveWithLiveCodeForDonor: jest.fn().mockResolvedValue([]),
     findOrgContacts: jest.fn().mockResolvedValue([]),
     findUserContacts: jest.fn().mockResolvedValue([]),
+    findFirstImageKeys: jest.fn().mockResolvedValue(new Map()),
   };
 }
 
@@ -62,6 +63,10 @@ function makeNotifications() {
   };
 }
 
+function makeS3() {
+  return { getImageUrl: jest.fn((key: string) => `https://cdn.test/${key}`) };
+}
+
 function makeIdempotency() {
   return {
     find: jest.fn().mockResolvedValue(undefined),
@@ -90,6 +95,7 @@ function makeService(
     idempotency as never,
     audit as never,
     notifications as never,
+    makeS3() as never,
     db as never,
     logger as never,
     config as never,
@@ -137,6 +143,7 @@ const availableListing = {
   createdBy: 'user-donor',
   status: 'available' as const,
   description: 'Surplus food',
+  category: null,
   quantity: '10.00',
   unit: 'kg',
   pickupLocation: 'Loc A',
@@ -147,6 +154,22 @@ const availableListing = {
 const reservedListing = {
   ...availableListing,
   status: 'reserved' as const,
+};
+
+// What the write paths report for the lot's display fields.
+const noLot = {
+  listingDescription: null,
+  listingUnit: null,
+  listingCategory: null,
+  listingImageUrl: null,
+};
+
+// What the read paths resolve from availableListing.
+const baseRequestWithLot = {
+  listingDescription: 'Surplus food',
+  listingUnit: 'kg',
+  listingCategory: null,
+  listingImageUrl: null,
 };
 
 const baseRequest = {
@@ -171,7 +194,7 @@ describe('RequestsService', () => {
 
       const result = await service.create(dto, rescueUser);
 
-      expect(result).toEqual(baseRequest);
+      expect(result).toEqual({ ...baseRequest, ...noLot });
       expect(db.transaction).toHaveBeenCalledTimes(1);
       expect(repository.reserveListingForClaim).toHaveBeenCalledWith(
         'listing-1',
@@ -373,9 +396,10 @@ describe('RequestsService', () => {
       idempotency.find.mockResolvedValue(completedRecord());
       const { service } = makeService(repository, idempotency);
 
-      await expect(service.create(dto, rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
+      await expect(service.create(dto, rescueUser)).resolves.toEqual({
+        ...baseRequest,
+        ...noLot,
+      });
       expect(idempotency.find).toHaveBeenCalledWith('org-rescue', 'idem-1');
       expect(repository.findListingById).not.toHaveBeenCalled();
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
@@ -390,9 +414,10 @@ describe('RequestsService', () => {
       const { service } = makeService(repository, idempotency);
 
       // No listing lookup happens, so a now-reserved listing can't 400 the retry.
-      await expect(service.create(dto, rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
+      await expect(service.create(dto, rescueUser)).resolves.toEqual({
+        ...baseRequest,
+        ...noLot,
+      });
     });
 
     it('409s a key reused with a different request and leaves the claim alone', async () => {
@@ -441,9 +466,10 @@ describe('RequestsService', () => {
       idempotency.claimSlot.mockResolvedValue(undefined);
       const { service } = makeService(repository, idempotency);
 
-      await expect(service.create(dto, rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
+      await expect(service.create(dto, rescueUser)).resolves.toEqual({
+        ...baseRequest,
+        ...noLot,
+      });
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
@@ -567,9 +593,10 @@ describe('RequestsService', () => {
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
 
-      await expect(service.findOne('request-1', rescueUser)).resolves.toEqual(
-        baseRequest,
-      );
+      await expect(service.findOne('request-1', rescueUser)).resolves.toEqual({
+        ...baseRequest,
+        ...baseRequestWithLot,
+      });
     });
 
     it('returns the claim when the viewer is the donor org', async () => {
@@ -578,9 +605,10 @@ describe('RequestsService', () => {
       repository.findListingById.mockResolvedValue(availableListing);
       const { service } = makeService(repository);
 
-      await expect(service.findOne('request-1', donorUser)).resolves.toEqual(
-        baseRequest,
-      );
+      await expect(service.findOne('request-1', donorUser)).resolves.toEqual({
+        ...baseRequest,
+        ...baseRequestWithLot,
+      });
     });
 
     it('404s an outsider rather than exposing existence', async () => {

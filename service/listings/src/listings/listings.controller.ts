@@ -33,7 +33,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Logger } from 'nestjs-pino';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   OrgContextGuard,
   OrgMembershipGuard,
@@ -93,7 +92,6 @@ const writeWithImagesThrottle = Throttle({
 @ApiExtraModels(CreateListingDto, UpdateListingDto)
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @Controller('listings')
-@UseGuards(JwtAuthGuard)
 export class ListingsController {
   constructor(
     private readonly listingsService: ListingsService,

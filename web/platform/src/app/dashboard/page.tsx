@@ -28,11 +28,9 @@ import { OrgCard } from "@/components/dashboard/org-card";
 import { OrgSummaryCard } from "@/components/dashboard/org-summary-card";
 import { RescuedMetricsCard } from "@/components/dashboard/rescued-metrics-card";
 import {
-  getListing,
   getOrgSummary,
   getRescuedMetrics,
   listRequests,
-  type Listing,
   type ListingRequest,
   type OrgSummary,
   type RescuedMetrics,
@@ -141,7 +139,6 @@ function Workspace({
   org,
   members,
   recent,
-  listings,
   summary,
   summaryError,
   metrics,
@@ -150,7 +147,6 @@ function Workspace({
   org: Org;
   members: User[];
   recent: ListingRequest[];
-  listings?: Map<string, Listing>;
   summary: OrgSummary | null;
   summaryError?: string | null;
   metrics: RescuedMetrics | null;
@@ -180,7 +176,7 @@ function Workspace({
       </AnimateIn>
 
       <AnimateIn className="mt-6">
-        <RecentRequests requests={recent} listings={listings} />
+        <RecentRequests requests={recent} />
       </AnimateIn>
 
       <div className="mt-10">
@@ -209,7 +205,6 @@ export default async function DashboardPage() {
   let me: Me | null = null;
   let members: User[] = [];
   let recent: ListingRequest[] = [];
-  const recentListings = new Map<string, Listing>();
   let summary: OrgSummary | null = null;
   let summaryError: string | null = null;
   let metrics: RescuedMetrics | null = null;
@@ -241,15 +236,6 @@ export default async function DashboardPage() {
             limit: 5,
           });
           recent = page.items;
-          const missing = [...new Set(recent.map((r) => r.listingId))];
-          const results = await Promise.allSettled(
-            missing.map((id) => getListing(session.idToken!, id)),
-          );
-          for (const result of results) {
-            if (result.status === "fulfilled") {
-              recentListings.set(result.value.id, result.value);
-            }
-          }
         } catch {
           // The card renders empty rather than taking the page down.
         }
@@ -359,7 +345,6 @@ export default async function DashboardPage() {
           org={me.org}
           members={members}
           recent={recent}
-          listings={recentListings}
           summary={summary}
           summaryError={summaryError}
           metrics={metrics}

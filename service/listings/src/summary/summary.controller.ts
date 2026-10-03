@@ -6,7 +6,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrgMembershipGuard } from '../auth/org-membership.guard';
 import { OrgSummaryResponseDto } from './dto/org-summary-response.dto';
 import { SummaryService } from './summary.service';
@@ -15,7 +14,6 @@ import { SummaryService } from './summary.service';
 @ApiBearerAuth()
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @Controller('summary')
-@UseGuards(JwtAuthGuard)
 export class SummaryController {
   constructor(private readonly summaryService: SummaryService) {}
 

@@ -164,6 +164,11 @@ export interface ListingRequest {
   noShowReason: string;
   createdAt: string;
   updatedAt: string;
+  /** Lot display fields: set by the read endpoints, null on write responses. */
+  listingDescription: string | null;
+  listingUnit: string | null;
+  listingCategory: ListingCategory | null;
+  listingImageUrl: string | null;
 }
 
 export interface NewRequest {

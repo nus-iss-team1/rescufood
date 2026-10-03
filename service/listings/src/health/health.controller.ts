@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
+import { Public } from '../auth/public.decorator';
 
-// Unauthenticated on purpose: every other route in this service sits
-// behind JwtAuthGuard, but the ALB target group has no bearer token to
-// send. Liveness only - doesn't touch the database or S3.
+// Liveness only; exempt from auth and throttling - the ALB sends no token.
+@SkipThrottle()
+@Public()
 @Controller('health')
 export class HealthController {
   @Get()

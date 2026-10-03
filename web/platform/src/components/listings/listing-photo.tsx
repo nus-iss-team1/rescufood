@@ -5,17 +5,20 @@ import type { Listing } from "@rescufood/listings-sdk";
 /** The listing's first photo, or a placeholder while listings have none. */
 export function ListingPhoto({
   listing,
+  imageUrl,
   overlay,
 }: {
   listing?: Listing;
+  /** For callers holding only a url rather than a whole listing. */
+  imageUrl?: string | null;
   overlay?: React.ReactNode;
 }) {
-  const image = listing?.images[0];
+  const url = imageUrl ?? listing?.images[0]?.url;
 
   return (
     <div className="relative aspect-video w-full">
-      {image ? (
-        <Image src={image.url} alt="" fill className="rounded-lg object-cover" />
+      {url ? (
+        <Image src={url} alt="" fill className="rounded-lg object-cover" />
       ) : (
         <div className="flex size-full items-center justify-center rounded-lg bg-muted">
           <ImageOff className="size-6 text-muted-foreground" aria-hidden />

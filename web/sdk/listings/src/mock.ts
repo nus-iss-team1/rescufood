@@ -248,6 +248,10 @@ export class MockListingsClient implements ListingsApi {
       noShowReason: "",
       createdAt: stamp,
       updatedAt: stamp,
+      listingDescription: listing.description,
+      listingUnit: listing.unit,
+      listingCategory: listing.category,
+      listingImageUrl: listing.images[0]?.url ?? null,
     };
     this.requests.unshift(created);
     this.claimsByIdempotencyKey.set(request.idempotencyKey, created);
