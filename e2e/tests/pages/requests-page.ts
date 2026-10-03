@@ -8,14 +8,22 @@ export class RequestsPage {
     await this.page.waitForLoadState('networkidle');
   }
 
-  /** Row for the request against the tagged QA listing. */
-  rowFor(tag: string): Locator {
-    return this.page.getByRole('listitem').filter({ hasText: tag });
+  /** Opens the detail page for the request against the tagged QA listing.
+   * Donor-side only: GET /listings only returns someone else's listings
+   * while "available", so a rescue partner's active claim never resolves a
+   * description here (falls back to quantity text) - only the owning
+   * donor's own listings stay visible in every status. Rescue-partner
+   * lookups should use mostRecentActiveRequest() instead. */
+  async openRequestFor(tag: string) {
+    const row = this.page.getByRole('listitem').filter({ hasText: tag });
+    await this.open(row);
   }
 
-  /** Opens the detail page for the request against the tagged QA listing. */
-  async openRequestFor(tag: string) {
-    await this.open(this.rowFor(tag));
+  /** Rescue-partner side: the request just filed always sorts first
+   * (requests default to newest first), so this is reliable even though
+   * the row itself can't be matched by tag/description. */
+  mostRecentActiveRequest(): Locator {
+    return this.page.getByRole('listitem').filter({ hasText: 'requested' }).first();
   }
 
   async open(row: Locator) {
