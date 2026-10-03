@@ -35,6 +35,12 @@ export interface User {
   locked_until?: string | null;
 }
 
+/** A user id and how to display them. Ids with no user are simply absent. */
+export interface UserName {
+  id: string;
+  name: string;
+}
+
 export interface LoginStatus {
   restricted: boolean;
   retry_after?: string | null;

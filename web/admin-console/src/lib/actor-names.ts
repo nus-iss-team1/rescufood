@@ -3,32 +3,35 @@ import type { AuditEvent } from "@rescufood/listings-sdk";
 import { client } from "../api";
 
 // The audit api returns actor ids, not names - it deliberately joins nothing.
-// Names come from the profile service instead, one call per organisation the
-// loaded events mention (usually one or two). Results are cached for the life
-// of the page, and a failed lookup is not fatal: the caller falls back to the
-// short id.
-const byOrg = new Map<string, Promise<Map<string, string>>>();
+// Names come from the profile service, resolved by id so that an actor whose
+// event carries no organisation, or who has since moved, still resolves.
+// Cached for the life of the page; a failed lookup is not fatal, the caller
+// falls back to the short id.
+const known = new Map<string, string>();
 
-function membersOf(orgId: string): Promise<Map<string, string>> {
-  const cached = byOrg.get(orgId);
-  if (cached) return cached;
+// The endpoint takes at most 200 ids per call.
+const BATCH = 200;
 
-  const pending = client
-    .listOrgMembers(orgId)
-    .then((members) => new Map(members.map((m) => [m.id, m.name || m.email])))
-    .catch(() => new Map<string, string>());
-
-  byOrg.set(orgId, pending);
-  return pending;
-}
-
-/** actor id -> display name, for every org the given events mention. */
+/** actor id -> display name, for every actor the given events name. */
 export async function resolveActorNames(
   events: AuditEvent[],
 ): Promise<Map<string, string>> {
-  const orgIds = [
-    ...new Set(events.map((e) => e.orgId).filter((id): id is string => !!id)),
+  const missing = [
+    ...new Set(
+      events
+        .map((e) => e.userId)
+        .filter((id): id is string => !!id && !known.has(id)),
+    ),
   ];
-  const maps = await Promise.all(orgIds.map(membersOf));
-  return new Map(maps.flatMap((m) => [...m]));
+
+  for (let i = 0; i < missing.length; i += BATCH) {
+    try {
+      const found = await client.resolveUserNames(missing.slice(i, i + BATCH));
+      for (const { id, name } of found) known.set(id, name);
+    } catch {
+      break;
+    }
+  }
+
+  return new Map(known);
 }

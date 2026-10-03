@@ -25,6 +25,13 @@ type User struct {
 	CreatedAt  time.Time
 }
 
+// UserName is a user's id and how to display them, for callers that hold ids
+// and need labels - the audit log's actors, for one.
+type UserName struct {
+	ID   uuid.UUID
+	Name string
+}
+
 // UserProvisioning reports the outcome of UpsertBySub: whether the row
 // was newly inserted and the type of the organisation it resolved to
 // (empty when the user has no organisation).
