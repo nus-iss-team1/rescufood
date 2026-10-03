@@ -52,6 +52,7 @@ export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
                 >
                   <Link
                     href={`/requests/${request.id}`}
+                    prefetch={false}
                     className="group col-span-4 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
                   >
                     <span className="text-sm font-medium group-hover:underline">

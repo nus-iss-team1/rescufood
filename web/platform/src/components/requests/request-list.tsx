@@ -43,6 +43,7 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/requests/${request.id}`}
+                  prefetch={false}
                   className="font-medium hover:underline"
                 >
                   {request.listingDescription ??
@@ -82,6 +83,7 @@ export function RequestList({ requests }: { requests: ListingRequest[] }) {
             <div className="flex items-center gap-2 sm:justify-end">
               <Link
                 href={`/requests/${request.id}`}
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
                 View Details
