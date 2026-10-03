@@ -3,13 +3,7 @@ import type { Metadata } from "next";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
-import {
-  getListing,
-  listListings,
-  listRequests,
-  type Listing,
-  type ListingRequest,
-} from "@/lib/listings";
+import { listRequests, type ListingRequest } from "@/lib/listings";
 import { requestStatuses } from "@rescufood/listings-sdk";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
@@ -137,29 +131,6 @@ export default async function RequestsPage({
   const requests =
     active === "all" ? all : all.filter((r) => r.status === active);
 
-  // Requests carry only a listingId; both views name the lot from these.
-  let listings = new Map<string, Listing>();
-  if (!unavailable) {
-    try {
-      const page = await listListings(session.idToken!, { limit: 100 });
-      listings = new Map(page.items.map((l) => [l.id, l]));
-    } catch {
-      // Both views fall back to the requested quantity.
-    }
-    // The browse query drops anything not available, claimed lots included.
-    const missing = [...new Set(all.map((r) => r.listingId))].filter(
-      (id) => !listings.has(id),
-    );
-    const rest = await Promise.allSettled(
-      missing.map((id) => getListing(session.idToken!, id)),
-    );
-    for (const result of rest) {
-      if (result.status === "fulfilled") {
-        listings.set(result.value.id, result.value);
-      }
-    }
-  }
-
   return (
     <PageShell>
       <AnimateIn className="flex flex-col gap-6">
@@ -245,9 +216,9 @@ export default async function RequestsPage({
         ) : (
           <div data-animate="field">
             {layout === "card" ? (
-              <RequestCards requests={requests} listings={listings} />
+              <RequestCards requests={requests} />
             ) : (
-              <RequestList requests={requests} listings={listings} />
+              <RequestList requests={requests} />
             )}
           </div>
         )}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
+import type { ListingRequest } from "@rescufood/listings-sdk";
 
 import {
   quantity,
@@ -19,13 +19,7 @@ import {
 import { CardContent } from "@rescufood/ui/components/card";
 
 /** The five requests whose status moved most recently. */
-export function RecentRequests({
-  requests,
-  listings,
-}: {
-  requests: ListingRequest[];
-  listings?: Map<string, Listing>;
-}) {
+export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
   return (
     <Card data-animate="field">
       <CardHeader>
@@ -50,8 +44,7 @@ export function RecentRequests({
         ) : (
           <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2">
             {requests.map((request) => {
-              const listing = listings?.get(request.listingId);
-              const unit = listing?.unit ?? "requested";
+              const unit = request.listingUnit ?? "requested";
               return (
                 <li
                   key={request.id}
@@ -62,7 +55,7 @@ export function RecentRequests({
                     className="group col-span-4 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
                   >
                     <span className="text-sm font-medium group-hover:underline">
-                      {listing?.description ??
+                      {request.listingDescription ??
                         quantity(request.requestedQuantity, unit)}
                     </span>
                     <span className="text-right text-xs tabular-nums text-muted-foreground">

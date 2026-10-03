@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
-import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
+import type { ListingRequest } from "@rescufood/listings-sdk";
 
 import { CancelClaimButton } from "./cancel-claim-button";
 import {
@@ -16,14 +16,7 @@ import { Badge } from "@rescufood/ui/components/badge";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
-export function RequestCards({
-  requests,
-  listings,
-}: {
-  requests: ListingRequest[];
-  /** The listings these requests point at, keyed by id. */
-  listings?: Map<string, Listing>;
-}) {
+export function RequestCards({ requests }: { requests: ListingRequest[] }) {
   if (requests.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -35,8 +28,7 @@ export function RequestCards({
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {requests.map((request) => {
-        const listing = listings?.get(request.listingId);
-        const unit = listing?.unit ?? "requested";
+        const unit = request.listingUnit ?? "requested";
         return (
           <li
             key={request.id}
@@ -51,14 +43,14 @@ export function RequestCards({
           >
             <Link href={`/requests/${request.id}`} className="block group">
               <ListingPhoto
-                listing={listing}
+                imageUrl={request.listingImageUrl}
                 overlay={
-                  listing?.category && (
+                  request.listingCategory && (
                     <Badge
                       variant="secondary"
                       className="bg-background/90 backdrop-blur-sm"
                     >
-                      {categoryLabels[listing.category]}
+                      {categoryLabels[request.listingCategory]}
                     </Badge>
                   )
                 }
@@ -67,7 +59,7 @@ export function RequestCards({
 
             <div className="flex items-start justify-between gap-2">
               <Link href={`/requests/${request.id}`} className="font-medium hover:underline">
-                {listing?.description ??
+                {request.listingDescription ??
                   quantity(request.requestedQuantity, unit)}
               </Link>
               <Badge
@@ -92,7 +84,7 @@ export function RequestCards({
                 <PackageCheck className="size-4 shrink-0" aria-hidden />
                 Collected {shortDate(request.collectedAt)}
                 {request.collectedQuantity
-                  ? ` · ${quantity(request.collectedQuantity, listing?.unit ?? "picked up")}`
+                  ? ` · ${quantity(request.collectedQuantity, request.listingUnit ?? "picked up")}`
                   : ""}
               </p>
             )}
