@@ -6,7 +6,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuditService } from './audit.service';
 import { AuditFiltersDto } from './dto/audit-filters.dto';
 import { AuditHistoryParamsDto } from './dto/audit-history-params.dto';
@@ -18,7 +17,7 @@ import { QueryAuditEventsDto } from './dto/query-audit-events.dto';
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @ApiResponse({ status: 403, description: 'Caller is not an administrator.' })
 @Controller('audit')
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(AdminGuard)
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

@@ -1,8 +1,7 @@
 import type { listings } from '../../db/schema';
 import type { ListingRequest } from '../requests.repository';
 
-// The lot's display fields, as the read endpoints return them alongside a
-// request. Null throughout where the caller has no listing to hand.
+// The lot's display fields, returned alongside a request by the read endpoints.
 export type RequestListingSummary = {
   listingDescription: string | null;
   listingUnit: string | null;

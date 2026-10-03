@@ -12,7 +12,13 @@ import { RequestsRepository } from './requests.repository';
 import { RequestsService } from './requests.service';
 
 @Module({
-  imports: [AuditModule, AuthModule, DbModule, NotificationsModule, StorageModule],
+  imports: [
+    AuditModule,
+    AuthModule,
+    DbModule,
+    NotificationsModule,
+    StorageModule,
+  ],
   controllers: [RequestsController],
   providers: [
     RequestsService,

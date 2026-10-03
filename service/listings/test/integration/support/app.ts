@@ -7,31 +7,17 @@ import type { Pool } from 'pg';
 import { databaseUrl } from './db';
 import type { SeededUser } from './db';
 
+const ISSUER = 'https://cognito.test/pool';
+
 // Config the app's providers read at construction.
 function setEnv(): void {
   process.env.DATABASE_URL = databaseUrl();
-  process.env.AUTH_COGNITO_ISSUER ??= 'https://cognito.test/pool';
+  process.env.AUTH_COGNITO_ISSUER = ISSUER;
   process.env.AWS_REGION ??= 'ap-southeast-1';
   process.env.S3_BUCKET_NAME ??= 'test-bucket';
   process.env.LISTING_IMAGES_CDN_URL ??= 'https://cdn.test';
   process.env.CORS_ALLOWED_ORIGINS ??= 'http://localhost:5173';
 }
-
-// Replaces JwtAuthGuard: reads the Cognito sub from a header instead of a token.
-const jwtStub = {
-  canActivate: (context: {
-    switchToHttp: () => { getRequest: () => Record<string, unknown> };
-  }) => {
-    const req = context.switchToHttp().getRequest() as {
-      headers: Record<string, string | undefined>;
-      user?: unknown;
-    };
-    const sub = req.headers['x-test-sub'];
-    if (!sub) return false;
-    req.user = { userId: sub, role: req.headers['x-test-role'] ?? 'user' };
-    return true;
-  },
-};
 
 export interface TestApp {
   app: INestApplication;
@@ -43,13 +29,11 @@ export async function createTestApp(): Promise<TestApp> {
   setEnv();
 
   const { AppModule } = await import('../../../src/app.module');
-  const { JwtAuthGuard } = await import('../../../src/auth/jwt-auth.guard');
   const { PG_POOL } = await import('../../../src/db/db.module');
   const { PARAMS_PROVIDER_TOKEN } = await import('nestjs-pino');
 
+  // The throttler is stubbed: a spec file exceeds one caller's budget.
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-    .overrideGuard(JwtAuthGuard)
-    .useValue(jwtStub)
     .overrideGuard(ThrottlerGuard)
     .useValue({ canActivate: () => true })
     .overrideProvider(PARAMS_PROVIDER_TOKEN)
@@ -84,10 +68,29 @@ export function body<T>(res: { body: unknown }): T {
   return res.body as T;
 }
 
-// Auth headers the jwtStub and org guards resolve to this user.
+const segment = (value: object): string =>
+  Buffer.from(JSON.stringify(value)).toString('base64url');
+
+// A Cognito-shaped ID token; unsigned, as jose is stubbed here.
+function mintToken(sub: string, role: 'user' | 'admin'): string {
+  const now = Math.floor(Date.now() / 1000);
+  return [
+    segment({ alg: 'RS256', kid: 'integration-test-key', typ: 'JWT' }),
+    segment({
+      iss: ISSUER,
+      sub,
+      iat: now,
+      exp: now + 3600,
+      ...(role === 'admin' ? { 'cognito:groups': ['admin'] } : {}),
+    }),
+    'integration-test-signature',
+  ].join('.');
+}
+
+// A bearer token JwtAuthGuard accepts and the org guards resolve to this user.
 export function authHeaders(
   user: Pick<SeededUser, 'cognitoSub'>,
   role: 'user' | 'admin' = 'user',
 ): Record<string, string> {
-  return { 'x-test-sub': user.cognitoSub, 'x-test-role': role };
+  return { Authorization: `Bearer ${mintToken(user.cognitoSub, role)}` };
 }

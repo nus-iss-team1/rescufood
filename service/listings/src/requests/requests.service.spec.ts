@@ -156,7 +156,7 @@ const reservedListing = {
   status: 'reserved' as const,
 };
 
-// The write paths have no listing to hand, so they report no lot details.
+// What the write paths report for the lot's display fields.
 const noLot = {
   listingDescription: null,
   listingUnit: null,
@@ -164,7 +164,7 @@ const noLot = {
   listingImageUrl: null,
 };
 
-// Read paths resolve them from the listing (see availableListing).
+// What the read paths resolve from availableListing.
 const baseRequestWithLot = {
   listingDescription: 'Surplus food',
   listingUnit: 'kg',

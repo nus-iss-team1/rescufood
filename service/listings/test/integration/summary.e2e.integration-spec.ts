@@ -287,6 +287,6 @@ describe('Summary HTTP (integration)', () => {
   // the auth guard runs before the org lookup, so an unidentified
   // caller is turned away without one.
   it('rejects a caller with no credentials', async () => {
-    await request(harness.server).get('/api/summary').expect(403);
+    await request(harness.server).get('/api/summary').expect(401);
   });
 });

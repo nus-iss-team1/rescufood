@@ -62,8 +62,7 @@ export class RequestResponseDto {
   @ApiProperty()
   updatedAt!: Date;
 
-  // Display fields of the lot this request points at. Populated by the read
-  // endpoints (list, get); null on the responses to create/decide/verify.
+  // Set by the read endpoints; null on create, decide and verify responses.
   @ApiProperty({ type: String, nullable: true })
   listingDescription!: string | null;
 
