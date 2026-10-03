@@ -104,10 +104,7 @@ test.describe.serial('Listing claim lifecycle', () => {
     const requestsPage = new RequestsPage(page);
     await requestsPage.goto();
 
-    // getByRole('listitem') also matches the breadcrumb's <li> elements, so
-    // mostRecentActiveRequest() filters down to actual request rows before
-    // taking the first one.
-    const request = requestsPage.mostRecentActiveRequest();
+    const request = requestsPage.rowFor(tag);
     await expect(request.getByText('Active')).toBeVisible();
 
     // Opens a confirmation dialog first; the real submit lives inside it.
@@ -174,15 +171,7 @@ test.describe.serial('Listing pickup-code confirmation', () => {
     const requestsPage = new RequestsPage(page);
     await requestsPage.goto();
 
-    // Can't match by tag here: a rescue partner's own active claim doesn't
-    // resolve a listing description on this page (GET /listings only
-    // returns someone else's listing while it's "available") - see
-    // RequestsPage.openRequestFor for the full explanation.
-    // TODO: once that's fixed, switch back to
-    // `await requestsPage.openRequestFor(tag)` here (matches the donor-side
-    // lookup below) and drop mostRecentActiveRequest() along with the
-    // `workers: 1` pin in playwright.config.ts.
-    const request = requestsPage.mostRecentActiveRequest();
+    const request = requestsPage.rowFor(tag);
     await expect(request.getByText('Active')).toBeVisible();
     await requestsPage.open(request);
 
