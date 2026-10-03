@@ -53,6 +53,8 @@ const entityLabels: Record<string, string> = {
   [ALL]: "All entities",
   listing: "Listings",
   claim: "Claims",
+  user: "Users",
+  organisation: "Organisations",
 };
 
 // The api returns actor ids; names are resolved separately and may not have
@@ -170,6 +172,8 @@ export function AuditLog() {
               <SelectItem value={ALL}>All entities</SelectItem>
               <SelectItem value="listing">Listings</SelectItem>
               <SelectItem value="claim">Claims</SelectItem>
+              <SelectItem value="user">Users</SelectItem>
+              <SelectItem value="organisation">Organisations</SelectItem>
             </SelectContent>
           </Select>
         </div>
