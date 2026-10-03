@@ -205,6 +205,10 @@ function request(
     noShowReason: "",
     createdAt: "2026-08-11T03:00:00.000Z",
     updatedAt: "2026-08-11T03:00:00.000Z",
+    listingDescription: sampleListings[0].description,
+    listingUnit: sampleListings[0].unit,
+    listingCategory: sampleListings[0].category,
+    listingImageUrl: null,
     ...over,
   };
 }

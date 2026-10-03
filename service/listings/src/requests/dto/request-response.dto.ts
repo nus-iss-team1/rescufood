@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { requestStatus } from '../../db/schema';
+import { listingCategory, requestStatus } from '../../db/schema';
 
 // Mirrors PublicListingRequest (request-response.util.ts) - the pickup-code
 // hash and attempt counter are server-internal and never serialized here.
@@ -61,4 +61,18 @@ export class RequestResponseDto {
 
   @ApiProperty()
   updatedAt!: Date;
+
+  // Display fields of the lot this request points at. Populated by the read
+  // endpoints (list, get); null on the responses to create/decide/verify.
+  @ApiProperty({ type: String, nullable: true })
+  listingDescription!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  listingUnit!: string | null;
+
+  @ApiProperty({ enum: listingCategory.enumValues, nullable: true })
+  listingCategory!: (typeof listingCategory.enumValues)[number] | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  listingImageUrl!: string | null;
 }
