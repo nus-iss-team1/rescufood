@@ -43,7 +43,7 @@ vi.mock("@aws-sdk/client-cognito-identity-provider", () => {
 });
 
 function secretHash(username: string) {
-  return createHmac("sha256", "test-client-secret")
+  return createHmac("sha256", process.env.AUTH_COGNITO_SECRET!)
     .update(username + "test-client-id")
     .digest("base64");
 }
