@@ -61,6 +61,13 @@ export class ListingResponseDto {
   @ApiProperty()
   updatedAt!: Date;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Start of the current publication; null while in draft.',
+  })
+  publishedAt!: Date | null;
+
   @ApiProperty({ type: String, nullable: true })
   deletedAt!: Date | null;
 

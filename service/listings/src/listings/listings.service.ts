@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { sql, type SQL } from 'drizzle-orm';
 import { Logger } from 'nestjs-pino';
 import { AuditAction } from '../audit/audit.actions';
 import { AuditRepository } from '../audit/audit.repository';
@@ -332,6 +333,7 @@ export class ListingsService {
                 pickupWindowEnd: new Date(dto.pickupWindowEnd),
               }),
               ...(dto.status !== undefined && { status: dto.status }),
+              ...publicationChange(existing.status, dto.status),
               ...(dto.cancelledReason !== undefined && {
                 cancelledReason: dto.cancelledReason,
               }),
@@ -527,6 +529,20 @@ export class ListingsService {
 }
 
 type ListingStatus = Listing['status'];
+
+// Stamps published_at on publish and clears it on unpublish, on the database clock.
+function publicationChange(
+  current: ListingStatus,
+  next: ListingStatus | undefined,
+): { publishedAt?: SQL | null } {
+  if (current === 'draft' && next === 'available') {
+    return { publishedAt: sql`now()` };
+  }
+  if (current === 'available' && next === 'draft') {
+    return { publishedAt: null };
+  }
+  return {};
+}
 
 // The audit event for one update() call, or null when nothing auditable changed.
 function deriveUpdateAudit(
