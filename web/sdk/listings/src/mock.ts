@@ -29,6 +29,20 @@ import type {
   VerifyPickup,
 } from "./types";
 
+// Same display rule as the service's formatDuration.
+function formatDuration(ms: number | null): string {
+  if (ms === null || ms < 0) return "--";
+  const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+  const pair = (a: number, au: string, b: number, bu: string) =>
+    b === 0 ? plural(a, au) : `${plural(a, au)} ${plural(b, bu)}`;
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 15) return "< 15 mins";
+  if (minutes < 60) return `${minutes} mins`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return pair(hours, "hr", minutes % 60, "min");
+  return pair(Math.floor(hours / 24), "day", hours % 24, "hr");
+}
+
 // Mirrors the service's transition maps, so the ui hits the same rules.
 const LISTING_TRANSITIONS: Record<ListingStatus, readonly ListingStatus[]> = {
   draft: ["available", "cancelled"],
@@ -144,6 +158,7 @@ export class MockListingsClient implements ListingsApi {
       cancelledReason: "",
       createdAt: stamp,
       updatedAt: stamp,
+      publishedAt: null,
       deletedAt: null,
       images: [],
     };
@@ -162,6 +177,11 @@ export class MockListingsClient implements ListingsApi {
           400,
           `cannot change listing status from ${listing.status} to ${update.status}`,
         );
+      }
+      if (listing.status === "draft" && update.status === "available") {
+        listing.publishedAt = now();
+      } else if (listing.status === "available" && update.status === "draft") {
+        listing.publishedAt = null;
       }
       listing.status = update.status;
     }
@@ -404,111 +424,70 @@ export class MockListingsClient implements ListingsApi {
   }
 
   async getRescuedMetrics(): Promise<RescuedMetrics> {
-    const listingMap = new Map(this.listings.map((l) => [l.id, l]));
-    const unitTotals = new Map<string, number>();
-    let collectedCount = 0;
-
-    const completedRequests = this.requests.filter(
-      (r) => r.status === "completed",
-    );
-    const collectedListingIds = new Set<string>();
-
-    for (const r of completedRequests) {
-      collectedListingIds.add(r.listingId);
-      collectedCount++;
-      const listing = listingMap.get(r.listingId);
-      const unit = listing?.unit?.trim() || "units";
-      const qty = r.collectedQuantity
-        ? parseFloat(r.collectedQuantity)
-        : listing?.quantity
-          ? parseFloat(listing.quantity)
-          : 0;
-      unitTotals.set(
-        unit,
-        (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty),
-      );
-    }
-
-    const collectedListings = this.listings.filter(
-      (l) =>
-        l.status === "collected" &&
-        !l.deletedAt &&
-        !collectedListingIds.has(l.id),
-    );
-    for (const l of collectedListings) {
-      collectedCount++;
-      const unit = l.unit?.trim() || "units";
-      const qty = l.quantity ? parseFloat(l.quantity) : 0;
-      unitTotals.set(
-        unit,
-        (unitTotals.get(unit) ?? 0) + (isNaN(qty) ? 0 : qty),
-      );
-    }
-
-    const rescuedByUnit: UnitQuantity[] = Array.from(unitTotals.entries()).map(
-      ([unit, amount]) => ({
-        unit,
-        amount,
-        formatted: `${amount % 1 === 0 ? amount : amount.toFixed(1)} ${unit}`,
-      }),
-    );
-
+    const listings = new Map(this.listings.map((l) => [l.id, l]));
+    const groups = new Map<
+      string,
+      { spellings: Map<string, number>; amount: number; lots: Set<string> }
+    >();
     const durations: number[] = [];
+    let claimsCompleted = 0;
+
     for (const r of this.requests) {
-      const listing = listingMap.get(r.listingId);
-      if (listing?.createdAt && r.requestedAt) {
-        const pubTime = new Date(listing.createdAt).getTime();
-        const claimTime = new Date(r.requestedAt).getTime();
-        const diffMs = claimTime - pubTime;
-        if (!isNaN(diffMs) && diffMs >= 0) {
-          durations.push(diffMs);
-        }
+      const listing = listings.get(r.listingId);
+      if (r.status !== "completed" || !listing) continue;
+      claimsCompleted++;
+
+      const spelling = (listing.unit ?? "").trim();
+      const group = groups.get(spelling.toLowerCase()) ?? {
+        spellings: new Map(),
+        amount: 0,
+        lots: new Set(),
+      };
+      group.spellings.set(spelling, (group.spellings.get(spelling) ?? 0) + 1);
+      group.amount += Number(r.collectedQuantity ?? 0);
+      group.lots.add(listing.id);
+      groups.set(spelling.toLowerCase(), group);
+
+      if (listing.publishedAt) {
+        const ms = Date.parse(r.requestedAt) - Date.parse(listing.publishedAt);
+        if (ms >= 0) durations.push(ms);
       }
     }
+
+    const rescuedByUnit: UnitQuantity[] = [...groups.values()]
+      .map((g) => ({
+        unit: [...g.spellings].sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+        )[0][0],
+        amount: g.amount,
+        formattedAmount: g.amount.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        }),
+        lots: g.lots.size,
+      }))
+      .sort((a, b) => b.lots - a.lots || a.unit.localeCompare(b.unit));
 
     durations.sort((a, b) => a - b);
-    const timeToClaimCount = durations.length;
-    let avgTimeToClaimMs: number | null = null;
-    let medianTimeToClaimMs: number | null = null;
-
-    if (timeToClaimCount > 0) {
-      avgTimeToClaimMs =
-        durations.reduce((sum, d) => sum + d, 0) / timeToClaimCount;
-      const mid = Math.floor(timeToClaimCount / 2);
-      medianTimeToClaimMs =
-        timeToClaimCount % 2 === 1
-          ? durations[mid]
-          : (durations[mid - 1] + durations[mid]) / 2;
-    }
-
-    const formatDuration = (ms: number | null) => {
-      if (ms == null || isNaN(ms) || ms < 0) return "--";
-      const minutes = Math.floor(ms / (60 * 1000));
-      if (minutes < 15) return "< 15 mins";
-      if (minutes < 60) return `${minutes} mins`;
-      const hours = Math.floor(minutes / 60);
-      const remMins = minutes % 60;
-      if (hours < 24) {
-        return remMins > 0
-          ? `${hours} hr${hours === 1 ? "" : "s"} ${remMins} min${remMins === 1 ? "" : "s"}`
-          : `${hours} hr${hours === 1 ? "" : "s"}`;
-      }
-      const days = Math.floor(hours / 24);
-      const remHours = hours % 24;
-      return remHours > 0
-        ? `${days} day${days === 1 ? "" : "s"} ${remHours} hr${remHours === 1 ? "" : "s"}`
-        : `${days} day${days === 1 ? "" : "s"}`;
-    };
+    const mid = Math.floor(durations.length / 2);
+    const avgMs = durations.length
+      ? Math.round(durations.reduce((n, d) => n + d, 0) / durations.length)
+      : null;
+    const medianMs = !durations.length
+      ? null
+      : durations.length % 2
+        ? durations[mid]
+        : Math.round((durations[mid - 1] + durations[mid]) / 2);
 
     return {
       orgId: "mock-org",
       rescuedByUnit,
-      collectedCount,
-      avgTimeToClaimMs,
-      medianTimeToClaimMs,
-      formattedAvgTimeToClaim: formatDuration(avgTimeToClaimMs),
-      formattedMedianTimeToClaim: formatDuration(medianTimeToClaimMs),
-      timeToClaimCount,
+      lotsCollected: rescuedByUnit.reduce((n, u) => n + u.lots, 0),
+      claimsCompleted,
+      avgTimeToClaimMs: avgMs,
+      medianTimeToClaimMs: medianMs,
+      formattedAvgTimeToClaim: formatDuration(avgMs),
+      formattedMedianTimeToClaim: formatDuration(medianMs),
+      timeToClaimCount: durations.length,
       asOf: now(),
     };
   }

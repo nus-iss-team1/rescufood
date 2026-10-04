@@ -11,7 +11,7 @@ import { requestActor, requestLogLevel } from './common/request-logging';
 import { HealthController } from './health/health.controller';
 import { ListingsModule } from './listings/listings.module';
 import { RequestsModule } from './requests/requests.module';
-import { SummaryModule } from './summary/summary.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -52,7 +52,7 @@ import { SummaryModule } from './summary/summary.module';
     AuthModule,
     ListingsModule,
     RequestsModule,
-    SummaryModule,
+    StatisticsModule,
   ],
   controllers: [HealthController],
   // JwtAuthGuard first: the throttler keys on the caller it resolves.
