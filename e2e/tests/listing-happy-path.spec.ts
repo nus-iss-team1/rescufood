@@ -62,14 +62,10 @@ test.describe.serial('Listing pickup-code confirmation', () => {
     await pickupPage.openCodeDialog();
 
     // Asserting via the toast rather than the dialog's own inline message:
-    // a successful verify revalidates the request, which flips its status
-    // away from "active" and unmounts the whole dialog component (see the
-    // comment on PickupVerification's `verify` callback) - the inline
-    // "Verification successful." text can vanish before this observes it.
-    // The toast lives in a separate region, so it isn't racing its own
-    // trigger's unmount. It also avoids a strict-mode ambiguity: the wrong-
-    // code text appears in both the toast and the (still-open, since that
-    // attempt fails) dialog paragraph - scoping to the toast picks one.
+    // a successful verify closes the dialog, leaving no inline message to
+    // observe. It also avoids a strict-mode ambiguity: the wrong-code text
+    // appears in both the toast and the (still-open, since that attempt
+    // fails) dialog paragraph - scoping to the toast picks one.
     const notifications = page.getByLabel(/Notifications/i);
 
     // A wrong code first, mirroring how a real donor would retry rather
@@ -82,8 +78,9 @@ test.describe.serial('Listing pickup-code confirmation', () => {
       .soft(notifications.getByText('invalid pickup code'))
       .toBeVisible({ timeout: 10_000 });
 
+    await pickupPage.backToCodeEntry();
     await pickupPage.submitCode(code);
-    await expect(notifications.getByText('Pickup confirmed')).toBeVisible({
+    await expect(notifications.getByText('Pickup completed')).toBeVisible({
       timeout: 10_000,
     });
   });
