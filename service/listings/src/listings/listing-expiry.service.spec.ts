@@ -5,7 +5,8 @@ import { ListingsRepository } from './listings.repository';
 
 function makeRepository() {
   return {
-    expireOverdue: jest.fn(),
+    findOverdueListingIds: jest.fn().mockResolvedValue([]),
+    expireListing: jest.fn(),
     findExpiredListingTargets: jest.fn().mockResolvedValue([]),
     findExpiredClaimTargets: jest.fn().mockResolvedValue([]),
   };
@@ -50,16 +51,23 @@ function make(repository: ReturnType<typeof makeRepository>) {
 }
 
 describe('ListingExpiryService', () => {
-  it('audits each expired listing and claim and logs the counts', async () => {
+  it('expires each overdue listing in its own transaction, audits it and logs the counts', async () => {
     const repository = makeRepository();
-    repository.expireOverdue.mockResolvedValue({
-      listingIds: ['l1', 'l2', 'l3'],
-      claimIds: ['c1', 'c2'],
-    });
-    const { service, audit, logger } = make(repository);
+    repository.findOverdueListingIds.mockResolvedValue(['l1', 'l2', 'l3']);
+    repository.expireListing
+      .mockResolvedValueOnce({ claimId: 'c1' })
+      .mockResolvedValueOnce({ claimId: undefined })
+      .mockResolvedValueOnce({ claimId: 'c3' });
+    const { service, audit, db, logger } = make(repository);
 
     await service.sweepExpiredListings();
 
+    expect(db.transaction).toHaveBeenCalledTimes(3);
+    expect(repository.expireListing).toHaveBeenCalledWith(
+      'l1',
+      expect.any(Date),
+      'tx',
+    );
     expect(repository.findExpiredListingTargets).toHaveBeenCalledWith([
       'l1',
       'l2',
@@ -67,7 +75,7 @@ describe('ListingExpiryService', () => {
     ]);
     expect(repository.findExpiredClaimTargets).toHaveBeenCalledWith([
       'c1',
-      'c2',
+      'c3',
     ]);
     expect(audit.record).toHaveBeenCalledTimes(5);
     expect(audit.record).toHaveBeenCalledWith(
@@ -87,17 +95,70 @@ describe('ListingExpiryService', () => {
       'tx',
     );
     expect(logger.log).toHaveBeenCalledWith(
-      { expiredListings: 3, expiredClaims: 2 },
+      { expiredListings: 3, expiredClaims: 2, failedListings: 0 },
       'expired overdue listings',
+    );
+  });
+
+  it('skips a listing that is no longer overdue without auditing or notifying it', async () => {
+    const repository = makeRepository();
+    repository.findOverdueListingIds.mockResolvedValue(['l1']);
+    repository.expireListing.mockResolvedValue(undefined);
+    const { service, audit, notifications, logger } = make(repository);
+
+    await service.sweepExpiredListings();
+
+    expect(audit.record).not.toHaveBeenCalled();
+    expect(notifications.listingExpired).not.toHaveBeenCalled();
+    expect(logger.log).not.toHaveBeenCalled();
+  });
+
+  it('logs a failing listing and still expires the others', async () => {
+    const repository = makeRepository();
+    repository.findOverdueListingIds.mockResolvedValue(['l1', 'l2', 'l3']);
+    const boom = new Error('constraint violated');
+    repository.expireListing
+      .mockResolvedValueOnce({ claimId: undefined })
+      .mockRejectedValueOnce(boom)
+      .mockResolvedValueOnce({ claimId: undefined });
+    const { service, logger } = make(repository);
+
+    await expect(service.sweepExpiredListings()).resolves.toBeUndefined();
+
+    expect(repository.expireListing).toHaveBeenCalledTimes(3);
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: boom, listingId: 'l2' },
+      'failed to expire listing',
+    );
+    expect(logger.log).toHaveBeenCalledWith(
+      { expiredListings: 2, expiredClaims: 0, failedListings: 1 },
+      'expired overdue listings',
+    );
+    expect(repository.findExpiredListingTargets).toHaveBeenCalledWith([
+      'l1',
+      'l3',
+    ]);
+  });
+
+  it('logs and stops when the overdue lookup fails', async () => {
+    const repository = makeRepository();
+    const boom = new Error('connection refused');
+    repository.findOverdueListingIds.mockRejectedValue(boom);
+    const { service, logger } = make(repository);
+
+    await expect(service.sweepExpiredListings()).resolves.toBeUndefined();
+
+    expect(repository.expireListing).not.toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith(
+      { err: boom },
+      'listing expiry sweep failed',
     );
   });
 
   it('notifies each expired listing donor and stranded claimant', async () => {
     const repository = makeRepository();
-    repository.expireOverdue.mockResolvedValue({
-      listingIds: ['l1'],
-      claimIds: ['c1'],
-    });
+    repository.findOverdueListingIds.mockResolvedValue(['l1']);
+    repository.expireListing.mockResolvedValue({ claimId: 'c1' });
     repository.findExpiredListingTargets.mockResolvedValue([
       {
         id: 'l1',
@@ -136,16 +197,51 @@ describe('ListingExpiryService', () => {
     );
   });
 
-  it('does not log or audit when nothing was overdue', async () => {
+  it('tells each donor whether their own listing was claimed', async () => {
     const repository = makeRepository();
-    repository.expireOverdue.mockResolvedValue({
-      listingIds: [],
-      claimIds: [],
-    });
-    const { service, audit, logger } = make(repository);
+    repository.findOverdueListingIds.mockResolvedValue(['l1', 'l2']);
+    repository.expireListing
+      .mockResolvedValueOnce({ claimId: 'c1' })
+      .mockResolvedValueOnce({ claimId: undefined });
+    repository.findExpiredListingTargets.mockResolvedValue([
+      {
+        id: 'l1',
+        description: 'Milk',
+        donorName: 'Priya Nair',
+        donorEmail: 'claimed@x.com',
+        donorSub: 'sub-1',
+      },
+      {
+        id: 'l2',
+        description: 'Bread',
+        donorName: 'Wei Ling',
+        donorEmail: 'unclaimed@x.com',
+        donorSub: 'sub-2',
+      },
+    ]);
+    const { service, notifications } = make(repository);
 
     await service.sweepExpiredListings();
 
+    expect(notifications.listingExpired).toHaveBeenCalledWith(
+      'claimed@x.com',
+      expect.objectContaining({ wasClaimed: true }),
+      expect.anything(),
+    );
+    expect(notifications.listingExpired).toHaveBeenCalledWith(
+      'unclaimed@x.com',
+      expect.objectContaining({ wasClaimed: false }),
+      expect.anything(),
+    );
+  });
+
+  it('does not log or audit when nothing was overdue', async () => {
+    const repository = makeRepository();
+    const { service, audit, db, logger } = make(repository);
+
+    await service.sweepExpiredListings();
+
+    expect(db.transaction).not.toHaveBeenCalled();
     expect(audit.record).not.toHaveBeenCalled();
     expect(logger.log).not.toHaveBeenCalled();
   });

@@ -289,50 +289,47 @@ export class ListingsRepository {
     return row.value;
   }
 
-  // Expiry sweep: any listing past its pickup window goes `expired`, along
-  // with any `active` claim on it. Covers both an `available` listing
-  // nobody claimed in time and a `reserved` one whose window closed before
-  // the claim was collected. Scoped to match listings_expiry_scan_idx;
-  // bumps `version` so a racing donor edit 409s instead of overwriting
-  // `expired`. Runs on the caller's executor so the sweep's audit writes
-  // land in the same transaction.
-  async expireOverdue(
+  // Available or reserved listings past their pickup window.
+  async findOverdueListingIds(now: Date): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: listings.id })
+      .from(listings)
+      .where(this.overdue(now));
+    return rows.map((row) => row.id);
+  }
+
+  // Expires a still-overdue listing and its active claim; undefined if no longer overdue.
+  async expireListing(
+    id: string,
     now: Date,
     executor: Database,
-  ): Promise<{ listingIds: string[]; claimIds: string[] }> {
-    const expired = await executor
+  ): Promise<{ claimId: string | undefined } | undefined> {
+    const [expired] = await executor
       .update(listings)
       .set({
         status: 'expired',
         version: sql`${listings.version} + 1`,
         updatedAt: now,
       })
-      .where(
-        and(
-          inArray(listings.status, ['available', 'reserved']),
-          lte(listings.pickupWindowEnd, now),
-          isNull(listings.deletedAt),
-        ),
-      )
+      .where(and(eq(listings.id, id), this.overdue(now)))
       .returning({ id: listings.id });
+    if (!expired) return undefined;
 
-    if (expired.length === 0) {
-      return { listingIds: [], claimIds: [] };
-    }
-    const listingIds = expired.map((row) => row.id);
-
-    const expiredClaims = await executor
+    const [claim] = await executor
       .update(requests)
       .set({ status: 'expired', updatedAt: now })
-      .where(
-        and(
-          inArray(requests.listingId, listingIds),
-          eq(requests.status, 'active'),
-        ),
-      )
+      .where(and(eq(requests.listingId, id), eq(requests.status, 'active')))
       .returning({ id: requests.id });
 
-    return { listingIds, claimIds: expiredClaims.map((row) => row.id) };
+    return { claimId: claim?.id };
+  }
+
+  private overdue(now: Date): SQL | undefined {
+    return and(
+      inArray(listings.status, ['available', 'reserved']),
+      lte(listings.pickupWindowEnd, now),
+      isNull(listings.deletedAt),
+    );
   }
 
   private buildConditions(
