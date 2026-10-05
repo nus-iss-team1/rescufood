@@ -163,11 +163,12 @@ describe('Listings HTTP (integration)', () => {
       id: string,
       version: number,
       status: string,
+      extra: object = {},
     ) {
       return request(harness.server)
         .patch(`/api/listings/${id}`)
         .set(authHeaders(user))
-        .send({ version, status })
+        .send({ version, status, ...extra })
         .expect(200);
     }
 
@@ -236,9 +237,126 @@ describe('Listings HTTP (integration)', () => {
       });
       const before = (await getListingRow(listing.id))?.published_at;
 
-      await setStatus(donor.user, listing.id, 1, 'cancelled');
+      await setStatus(donor.user, listing.id, 1, 'cancelled', {
+        cancelledReason: 'Fridge failed',
+      });
 
       expect((await getListingRow(listing.id))?.published_at).toEqual(before);
+    });
+  });
+
+  describe('cancelling a listing', () => {
+    async function seedOwned(status: 'draft' | 'available') {
+      const donor = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status,
+      });
+      return { donor, listing };
+    }
+
+    it.each(['draft', 'available'] as const)(
+      'cancels a %s listing with a reason',
+      async (status) => {
+        const { donor, listing } = await seedOwned(status);
+
+        const res = await request(harness.server)
+          .patch(`/api/listings/${listing.id}`)
+          .set(authHeaders(donor.user))
+          .send({
+            version: 1,
+            status: 'cancelled',
+            cancelledReason: ' Fridge failed ',
+          })
+          .expect(200);
+
+        expect(
+          body<ListingBody & { cancelledReason: string }>(res),
+        ).toMatchObject({
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        });
+      },
+    );
+
+    it.each([
+      ['missing', {}],
+      ['blank', { cancelledReason: '   ' }],
+    ])('rejects a cancellation whose reason is %s', async (_label, extra) => {
+      const { donor, listing } = await seedOwned('available');
+
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({ version: 1, status: 'cancelled', ...extra })
+        .expect(400);
+
+      expect((await getListingRow(listing.id))?.status).toBe('available');
+    });
+
+    it('records the actor, reason and time in the listing history', async () => {
+      const { donor, listing } = await seedOwned('available');
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({
+          version: 1,
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        })
+        .expect(200);
+
+      const admin = await seedUser({ orgId: null });
+      const res = await request(harness.server)
+        .get(`/api/audit/listing/${listing.id}`)
+        .set(authHeaders(admin, 'admin'))
+        .expect(200);
+
+      const events = body<{
+        items: {
+          action: string;
+          userId: string | null;
+          orgId: string | null;
+          reason: string;
+          createdAt: string;
+        }[];
+      }>(res).items;
+      const cancelled = events.find((e) => e.action === 'listing.cancelled');
+      expect(cancelled).toMatchObject({
+        userId: donor.user.id,
+        orgId: donor.org.id,
+        reason: 'Fridge failed',
+      });
+      expect(Date.parse(cancelled!.createdAt)).not.toBeNaN();
+    });
+
+    it('hides a cancelled listing from browse and refuses a claim on it', async () => {
+      const { donor, listing } = await seedOwned('available');
+      const rescue = await seedRescuePartner();
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({
+          version: 1,
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        })
+        .expect(200);
+
+      const page = body<ListingPage>(
+        await request(harness.server)
+          .get('/api/listings')
+          .set(authHeaders(rescue.user))
+          .expect(200),
+      );
+      expect(page.items.map((l) => l.id)).not.toContain(listing.id);
+
+      await request(harness.server)
+        .post('/api/requests')
+        .set(authHeaders(rescue.user))
+        .send({ listingId: listing.id, idempotencyKey: randomUUID() })
+        .expect(400);
     });
   });
 });

@@ -256,6 +256,41 @@ describe("updateListingAction", () => {
     expect(listings.updateListing.mock.calls[1][2]).not.toHaveProperty("status");
   });
 
+  it("forwards the donor's reason when cancelling", async () => {
+    await updateListingAction(
+      {},
+      form({ ...editing, status: "cancelled", cancelledReason: " Fridge failed " }),
+    );
+
+    expect(listings.updateListing.mock.calls[0][2]).toMatchObject({
+      status: "cancelled",
+      cancelledReason: "Fridge failed",
+    });
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { cancelledReason: "   " }],
+  ])("sends a fallback reason when it is %s", async (_label, extra) => {
+    await updateListingAction(
+      {},
+      form({ ...editing, status: "cancelled", ...extra }),
+    );
+
+    expect(listings.updateListing.mock.calls[0][2]).toMatchObject({
+      status: "cancelled",
+      cancelledReason: "No reason given",
+    });
+  });
+
+  it("sends no reason when not cancelling", async () => {
+    await updateListingAction({}, form({ ...editing, status: "available" }));
+
+    expect(listings.updateListing.mock.calls[0][2]).not.toHaveProperty(
+      "cancelledReason",
+    );
+  });
+
   it("explains a version conflict from a concurrent edit", async () => {
     listings.updateListing.mockRejectedValue(new ListingsApiError(409, "stale"));
 

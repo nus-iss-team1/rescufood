@@ -20,7 +20,7 @@ export class ListingEditPage {
     await this.page.getByLabel('Handling info').fill(text);
   }
 
-  /** A reserved, collected or expired listing opens read-only. */
+  /** A reserved, collected, expired or cancelled listing opens read-only. */
   async expectLocked() {
     await expect(
       this.page.getByText('This listing can no longer be edited.'),
