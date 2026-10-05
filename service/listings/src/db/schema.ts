@@ -209,6 +209,9 @@ export const requests = pgTable(
 
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     cancellationReason: text('cancellation_reason').notNull().default(''),
+    cancelledBy: uuid('cancelled_by'), // FK -> users.id (service/profile)
+    // Null when an org-less admin cancelled.
+    cancelledByOrgId: uuid('cancelled_by_org_id'), // FK -> organisations.id (service/profile)
 
     // Pickup verification - one shared code, shown as QR or typed as OTP.
     // Stored in the clear so the generating party can be shown it again after

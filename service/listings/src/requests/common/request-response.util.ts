@@ -45,6 +45,8 @@ export function toPublicRequest(
     requestedAt: request.requestedAt,
     cancelledAt: request.cancelledAt,
     cancellationReason: request.cancellationReason,
+    cancelledBy: request.cancelledBy,
+    cancelledByOrgId: request.cancelledByOrgId,
     codeExpiresAt: request.codeExpiresAt,
     codeGeneratedBy: request.codeGeneratedBy,
     verifiedBy: request.verifiedBy,

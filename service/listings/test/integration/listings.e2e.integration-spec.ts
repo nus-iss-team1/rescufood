@@ -204,6 +204,8 @@ describe('Listings HTTP (integration)', () => {
         donorOrgId: donor.org.id,
         createdBy: donor.user.id,
         status: 'available',
+        pickupWindowStart: new Date(Date.now() + 5 * 60 * 60 * 1000),
+        pickupWindowEnd: new Date(Date.now() + 9 * 60 * 60 * 1000),
       });
       const before = (await getListingRow(listing.id))?.published_at;
 
@@ -217,7 +219,7 @@ describe('Listings HTTP (integration)', () => {
       await request(harness.server)
         .patch(`/api/requests/${claim.id}`)
         .set(authHeaders(rescue.user))
-        .send({ status: 'cancelled' })
+        .send({ status: 'cancelled', cancellationReason: 'Van broke down' })
         .expect(200);
 
       const after = await getListingRow(listing.id);

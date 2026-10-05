@@ -168,6 +168,7 @@ export class ListingsRepository {
   async cancelActiveClaim(
     listingId: string,
     donorReason: string,
+    actor: { userId: string; orgId: string | null },
     executor: Database = this.db,
   ): Promise<
     { id: string; rescueOrgId: string; claimedBy: string } | undefined
@@ -178,6 +179,8 @@ export class ListingsRepository {
       .set({
         status: 'cancelled',
         cancelledAt: now,
+        cancelledBy: actor.userId,
+        cancelledByOrgId: actor.orgId,
         cancellationReason: donorReason
           ? `Listing withdrawn by the donor: ${donorReason}`
           : 'Listing withdrawn by the donor',

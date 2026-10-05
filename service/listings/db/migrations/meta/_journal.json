@@ -141,6 +141,13 @@
       "when": 1791152616779,
       "tag": "0019_listing_published_at",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791234667362,
+      "tag": "0020_claim_cancelled_by",
+      "breakpoints": true
     }
   ]
 }

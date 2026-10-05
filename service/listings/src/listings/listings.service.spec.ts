@@ -1361,6 +1361,7 @@ describe('ListingsService', () => {
       expect(repository.cancelActiveClaim).toHaveBeenCalledWith(
         'listing-1',
         'Van broke down',
+        { userId: 'user-1', orgId: 'org-1' },
         expect.anything(),
       );
       expect(audit.record).toHaveBeenCalledWith(

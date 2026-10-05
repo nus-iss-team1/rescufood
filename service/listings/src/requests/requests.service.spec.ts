@@ -26,6 +26,7 @@ function makeRepository() {
     reserveListingForClaim: jest.fn(),
     updateStatus: jest.fn(),
     reopenListingAfterClaimEnded: jest.fn(),
+    expireListingAfterClaimEnded: jest.fn(),
     incrementPickupCodeAttempts: jest.fn(),
     markListingCollectedIfDone: jest.fn().mockResolvedValue(false),
     findActiveWithLiveCodeForDonor: jest.fn().mockResolvedValue([]),
@@ -84,12 +85,13 @@ function makeConfig(values: Record<string, unknown> = {}) {
 function makeService(
   repository: ReturnType<typeof makeRepository>,
   idempotency: ReturnType<typeof makeIdempotency> = makeIdempotency(),
+  configValues: Record<string, unknown> = {},
 ) {
   const db = makeDb();
   const logger = makeLogger();
   const audit = makeAudit();
   const notifications = makeNotifications();
-  const config = makeConfig();
+  const config = makeConfig(configValues);
   const service = new RequestsService(
     repository as unknown as RequestsRepository,
     idempotency as never,
@@ -665,8 +667,13 @@ describe('RequestsService', () => {
 
       const result = await service.decide('request-1', dto, rescueUser);
 
-      expect(result.status).toBe('cancelled');
+      expect(result).toMatchObject({
+        status: 'cancelled',
+        listingRelisted: true,
+        relistBlockedReason: null,
+      });
       expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(repository.expireListingAfterClaimEnded).not.toHaveBeenCalled();
       expect(repository.reopenListingAfterClaimEnded).toHaveBeenCalledWith(
         'listing-1',
         TX_TOKEN,
@@ -677,6 +684,8 @@ describe('RequestsService', () => {
         expect.objectContaining({
           status: 'cancelled',
           cancellationReason: 'no longer needed',
+          cancelledBy: 'user-rescue',
+          cancelledByOrgId: 'org-rescue',
         }),
         TX_TOKEN,
       );
@@ -754,6 +763,15 @@ describe('RequestsService', () => {
       await expect(
         service.decide('request-1', dto, donorUser),
       ).resolves.toMatchObject({ status: 'cancelled' });
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'active',
+        expect.objectContaining({
+          cancelledBy: 'user-donor',
+          cancelledByOrgId: 'org-donor',
+        }),
+        TX_TOKEN,
+      );
     });
 
     it('rejects an outsider', async () => {
@@ -793,6 +811,122 @@ describe('RequestsService', () => {
       await expect(
         service.decide('request-1', dto, rescueUser),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
+  describe('decide - cancel relist policy', () => {
+    const HOUR = 60 * 60 * 1000;
+    const dto = {
+      status: 'cancelled' as const,
+      cancellationReason: 'no longer needed',
+    };
+    const listingWithWindow = (startHours: number, endHours: number) => ({
+      ...reservedListing,
+      pickupWindowStart: new Date(Date.now() + startHours * HOUR),
+      pickupWindowEnd: new Date(Date.now() + endHours * HOUR),
+    });
+
+    function setUp(
+      listing: typeof reservedListing,
+      config: Record<string, unknown> = {},
+    ) {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue(baseRequest);
+      repository.findListingById.mockResolvedValue(listing);
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'cancelled',
+      });
+      return { repository, ...makeService(repository, undefined, config) };
+    }
+
+    it('relists when cancelled before the default 3h cutoff', async () => {
+      const { service, repository } = setUp(listingWithWindow(4, 8));
+
+      await expect(
+        service.decide('request-1', dto, rescueUser),
+      ).resolves.toMatchObject({ listingRelisted: true });
+      expect(repository.reopenListingAfterClaimEnded).toHaveBeenCalled();
+    });
+
+    it('cancels the claim but expires the listing past the cutoff', async () => {
+      const { service, repository, audit } = setUp(listingWithWindow(2, 6));
+
+      const result = await service.decide('request-1', dto, rescueUser);
+
+      expect(result).toMatchObject({
+        status: 'cancelled',
+        listingRelisted: false,
+        relistBlockedReason: 'past_cutoff',
+      });
+      expect(repository.expireListingAfterClaimEnded).toHaveBeenCalledWith(
+        'listing-1',
+        TX_TOKEN,
+      );
+      expect(repository.reopenListingAfterClaimEnded).not.toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'claim.cancelled',
+          metadata: {
+            previousStatus: 'active',
+            listingId: 'listing-1',
+            listingReopened: false,
+            relistBlockedReason: 'past_cutoff',
+          },
+        }),
+        TX_TOKEN,
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actor: { userId: 'user-rescue', orgId: 'org-rescue' },
+          action: 'listing.expired',
+          entityType: 'listing',
+          entityId: 'listing-1',
+          reason: 'past_cutoff',
+          metadata: { claimId: 'request-1' },
+        }),
+        TX_TOKEN,
+      );
+    });
+
+    it('expires the listing when too little pickup time remains', async () => {
+      const { service, repository } = setUp(listingWithWindow(2, 2.5), {
+        CLAIM_CANCEL_CUTOFF_HOURS: 1,
+        RELIST_MIN_PICKUP_HOURS: 3,
+      });
+
+      await expect(
+        service.decide('request-1', dto, donorUser),
+      ).resolves.toMatchObject({
+        listingRelisted: false,
+        relistBlockedReason: 'insufficient_pickup_time',
+      });
+      expect(repository.expireListingAfterClaimEnded).toHaveBeenCalled();
+    });
+
+    it('reads the thresholds from config', async () => {
+      const { service } = setUp(listingWithWindow(2, 6), {
+        CLAIM_CANCEL_CUTOFF_HOURS: '1',
+        RELIST_MIN_PICKUP_HOURS: '1',
+      });
+
+      await expect(
+        service.decide('request-1', dto, rescueUser),
+      ).resolves.toMatchObject({ listingRelisted: true });
+    });
+
+    it('still reopens the listing on a no-show inside the cutoff', async () => {
+      const { service, repository } = setUp(listingWithWindow(-1, 1));
+      repository.updateStatus.mockResolvedValue({
+        ...baseRequest,
+        status: 'no_show',
+      });
+
+      await expect(
+        service.decide('request-1', { status: 'no_show' }, donorUser),
+      ).resolves.toMatchObject({ listingRelisted: true });
+      expect(repository.reopenListingAfterClaimEnded).toHaveBeenCalled();
+      expect(repository.expireListingAfterClaimEnded).not.toHaveBeenCalled();
     });
   });
 
