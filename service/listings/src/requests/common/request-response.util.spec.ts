@@ -54,6 +54,12 @@ describe('toPublicRequest', () => {
     void pickupOpenReminderSentAt;
     void pickupCloseReminderSentAt;
 
-    expect(toPublicRequest(fullRequest)).toEqual(expected);
+    expect(toPublicRequest(fullRequest)).toEqual({
+      ...expected,
+      listingDescription: null,
+      listingUnit: null,
+      listingCategory: null,
+      listingImageUrl: null,
+    });
   });
 });

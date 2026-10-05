@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import {
   closeTestPool,
@@ -15,6 +16,7 @@ interface ListingBody {
   status: string;
   description: string | null;
   createdBy: string;
+  publishedAt: string | null;
 }
 
 interface ListingPage {
@@ -138,5 +140,103 @@ describe('Listings HTTP (integration)', () => {
       .get(`/api/listings/${listing.id}`)
       .set(authHeaders(donor.user))
       .expect(404);
+  });
+
+  describe('published_at', () => {
+    function completeDraft() {
+      const start = Date.now() + 24 * 60 * 60 * 1000;
+      return {
+        category: 'bakery',
+        description: 'Sourdough loaves',
+        quantity: 12,
+        unit: 'loaves',
+        allergens: ['gluten'],
+        pickupLocation: '12 Baker St',
+        pickupWindowStart: new Date(start).toISOString(),
+        pickupWindowEnd: new Date(start + 8 * 60 * 60 * 1000).toISOString(),
+        useBy: new Date(start + 32 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+
+    function setStatus(
+      user: { cognitoSub: string },
+      id: string,
+      version: number,
+      status: string,
+    ) {
+      return request(harness.server)
+        .patch(`/api/listings/${id}`)
+        .set(authHeaders(user))
+        .send({ version, status })
+        .expect(200);
+    }
+
+    it('stamps it on publish, clears it on unpublish and restamps on republish', async () => {
+      const donor = await seedDonor();
+      const created = body<ListingBody>(
+        await request(harness.server)
+          .post('/api/listings')
+          .set(authHeaders(donor.user))
+          .send(completeDraft())
+          .expect(201),
+      );
+      expect((await getListingRow(created.id))?.published_at).toBeNull();
+
+      const published = body<ListingBody>(
+        await setStatus(donor.user, created.id, 1, 'available'),
+      );
+      const first = (await getListingRow(created.id))?.published_at;
+      expect(first).toBeInstanceOf(Date);
+      expect(Date.parse(published.publishedAt!)).toBe(first!.getTime());
+
+      await setStatus(donor.user, created.id, 2, 'draft');
+      expect((await getListingRow(created.id))?.published_at).toBeNull();
+
+      await setStatus(donor.user, created.id, 3, 'available');
+      const second = (await getListingRow(created.id))?.published_at;
+      expect(second!.getTime()).toBeGreaterThan(first!.getTime());
+    });
+
+    it('keeps it when a cancelled claim releases the listing', async () => {
+      const donor = await seedDonor();
+      const rescue = await seedRescuePartner();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'available',
+      });
+      const before = (await getListingRow(listing.id))?.published_at;
+
+      const claim = body<{ id: string }>(
+        await request(harness.server)
+          .post('/api/requests')
+          .set(authHeaders(rescue.user))
+          .send({ listingId: listing.id, idempotencyKey: randomUUID() })
+          .expect(201),
+      );
+      await request(harness.server)
+        .patch(`/api/requests/${claim.id}`)
+        .set(authHeaders(rescue.user))
+        .send({ status: 'cancelled' })
+        .expect(200);
+
+      const after = await getListingRow(listing.id);
+      expect(after?.status).toBe('available');
+      expect(after?.published_at).toEqual(before);
+    });
+
+    it('keeps it when a donor cancels a published listing', async () => {
+      const donor = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'available',
+      });
+      const before = (await getListingRow(listing.id))?.published_at;
+
+      await setStatus(donor.user, listing.id, 1, 'cancelled');
+
+      expect((await getListingRow(listing.id))?.published_at).toEqual(before);
+    });
   });
 });

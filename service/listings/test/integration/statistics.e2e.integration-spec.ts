@@ -18,6 +18,28 @@ interface OrgSummaryBody {
   asOf: string;
 }
 
+interface RescuedMetricsBody {
+  orgId: string;
+  rescuedByUnit: {
+    unit: string;
+    amount: number;
+    formattedAmount: string;
+    lots: number;
+  }[];
+  lotsCollected: number;
+  claimsCompleted: number;
+  avgTimeToClaimMs: number | null;
+  medianTimeToClaimMs: number | null;
+  formattedAvgTimeToClaim: string;
+  formattedMedianTimeToClaim: string;
+  timeToClaimCount: number;
+  asOf: string;
+}
+
+const MIN = 60_000;
+const HR = 60 * MIN;
+const DAY = 24 * HR;
+
 let harness: TestApp;
 
 beforeAll(async () => {
@@ -36,11 +58,11 @@ function getSummary(
   role: 'user' | 'admin' = 'user',
 ) {
   return request(harness.server)
-    .get('/api/summary')
+    .get('/api/stats/summary')
     .set(authHeaders(user, role));
 }
 
-describe('Summary HTTP (integration)', () => {
+describe('GET /api/stats/summary (integration)', () => {
   it('counts the listings a donor org posted and the claims against them', async () => {
     const donor = await seedDonor();
     const rescue = await seedRescuePartner();
@@ -287,6 +309,228 @@ describe('Summary HTTP (integration)', () => {
   // the auth guard runs before the org lookup, so an unidentified
   // caller is turned away without one.
   it('rejects a caller with no credentials', async () => {
-    await request(harness.server).get('/api/summary').expect(403);
+    await request(harness.server).get('/api/stats/summary').expect(401);
+  });
+});
+
+function getMetrics(
+  user: { cognitoSub: string },
+  role: 'user' | 'admin' = 'user',
+) {
+  return request(harness.server)
+    .get('/api/stats/metrics')
+    .set(authHeaders(user, role));
+}
+
+describe('GET /api/stats/metrics (integration)', () => {
+  // Published a day after the rows are created, so measuring from created_at would be off by a day.
+  const publishedAt = new Date(Date.now() + DAY);
+  const at = (ms: number) => new Date(publishedAt.getTime() + ms);
+
+  // Collected and claimed lots for one donor, two rescue partners and an outside donor.
+  async function seedControlledData() {
+    const donor = await seedDonor();
+    const otherDonor = await seedDonor();
+    const r1 = await seedRescuePartner();
+    const r2 = await seedRescuePartner();
+
+    const lot = (
+      owner: typeof donor,
+      status: 'collected' | 'available' | 'reserved',
+      unit: string,
+      quantity: string,
+    ) =>
+      seedListing({
+        donorOrgId: owner.org.id,
+        createdBy: owner.user.id,
+        status,
+        unit,
+        quantity,
+        publishedAt,
+      });
+    const claim = (
+      listingId: string,
+      by: typeof r1,
+      status: 'completed' | 'cancelled' | 'no_show' | 'expired' | 'active',
+      requestedAt: Date,
+      collectedQuantity?: string,
+    ) =>
+      seedRequest({
+        listingId,
+        rescueOrgId: by.org.id,
+        claimedBy: by.user.id,
+        status,
+        requestedAt,
+        collectedQuantity,
+      });
+
+    // Completed: listed quantity always exceeds collected, so the source column is observable.
+    const l1 = await lot(donor, 'collected', 'kg', '20.00');
+    await claim(l1.id, r1, 'completed', at(30 * MIN), '18.50');
+    const l2 = await lot(donor, 'collected', 'Kg ', '10.00');
+    await claim(l2.id, r2, 'completed', at(90 * MIN), '6.00');
+    const l3 = await lot(donor, 'collected', 'kg', '5.00');
+    await claim(l3.id, r1, 'completed', at(4 * HR), '1.25');
+    const l4 = await lot(donor, 'collected', 'bottles', '50.00');
+    await claim(l4.id, r2, 'completed', at(2 * HR), '44.00');
+
+    // Not completed: each would distort both metrics if it were counted.
+    const l5 = await lot(donor, 'available', 'kg', '7.00');
+    await claim(l5.id, r1, 'cancelled', at(10 * DAY));
+    const l6 = await lot(donor, 'available', 'kg', '3.00');
+    await claim(l6.id, r2, 'no_show', at(5 * DAY));
+    const l7 = await lot(donor, 'available', 'kg', '9.00');
+    await claim(l7.id, r1, 'expired', at(3 * DAY));
+    const l8 = await lot(donor, 'reserved', 'kg', '4.00');
+    await claim(l8.id, r2, 'active', at(MIN));
+
+    // Another donor's lot: in r1's scope, not the donor's.
+    const l9 = await lot(otherDonor, 'collected', 'loaves', '12.00');
+    await claim(l9.id, r1, 'completed', at(15 * MIN), '12.00');
+
+    return { donor, otherDonor, r1, r2 };
+  }
+
+  it('reconciles a donor org with hand-computed totals', async () => {
+    const { donor } = await seedControlledData();
+
+    const res = await getMetrics(donor.user).expect(200);
+
+    // kg: 18.50 + 6.00 + 1.25 over 3 lots; durations 30, 90, 240, 120 mins.
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      orgId: donor.org.id,
+      rescuedByUnit: [
+        { unit: 'kg', amount: 25.75, formattedAmount: '25.75', lots: 3 },
+        { unit: 'bottles', amount: 44, formattedAmount: '44', lots: 1 },
+      ],
+      lotsCollected: 4,
+      claimsCompleted: 4,
+      avgTimeToClaimMs: 120 * MIN,
+      medianTimeToClaimMs: 105 * MIN,
+      formattedAvgTimeToClaim: '2 hrs',
+      formattedMedianTimeToClaim: '1 hr 45 mins',
+      timeToClaimCount: 4,
+    });
+  });
+
+  it('reconciles a rescue partner over the claims it filed, across donors', async () => {
+    const { r1 } = await seedControlledData();
+
+    const res = await getMetrics(r1.user).expect(200);
+
+    // kg: 18.50 + 1.25; loaves: 12.00; durations 30, 240, 15 mins.
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      orgId: r1.org.id,
+      rescuedByUnit: [
+        { unit: 'kg', amount: 19.75, formattedAmount: '19.75', lots: 2 },
+        { unit: 'loaves', amount: 12, formattedAmount: '12', lots: 1 },
+      ],
+      lotsCollected: 3,
+      claimsCompleted: 3,
+      avgTimeToClaimMs: 95 * MIN,
+      medianTimeToClaimMs: 30 * MIN,
+      formattedAvgTimeToClaim: '1 hr 35 mins',
+      formattedMedianTimeToClaim: '30 mins',
+      timeToClaimCount: 3,
+    });
+  });
+
+  it('labels a unit group with the spelling its lots used', async () => {
+    const { r2 } = await seedControlledData();
+
+    const res = await getMetrics(r2.user).expect(200);
+
+    expect(body<RescuedMetricsBody>(res).rescuedByUnit).toEqual([
+      { unit: 'bottles', amount: 44, formattedAmount: '44', lots: 1 },
+      { unit: 'Kg', amount: 6, formattedAmount: '6', lots: 1 },
+    ]);
+  });
+
+  it('counts a lot claimed before its publication time in quantity but not time-to-claim', async () => {
+    const donor = await seedDonor();
+    const rescue = await seedRescuePartner();
+    const listing = await seedListing({
+      donorOrgId: donor.org.id,
+      createdBy: donor.user.id,
+      status: 'collected',
+      unit: 'kg',
+      publishedAt,
+    });
+    await seedRequest({
+      listingId: listing.id,
+      rescueOrgId: rescue.org.id,
+      claimedBy: rescue.user.id,
+      status: 'completed',
+      requestedAt: at(-30 * HR),
+      collectedQuantity: '8.00',
+    });
+
+    const res = await getMetrics(donor.user).expect(200);
+
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      rescuedByUnit: [{ unit: 'kg', amount: 8, lots: 1 }],
+      claimsCompleted: 1,
+      avgTimeToClaimMs: null,
+      formattedAvgTimeToClaim: '--',
+      timeToClaimCount: 0,
+    });
+  });
+
+  it("returns zeros and no durations for an org with no completed claims, despite others' data", async () => {
+    await seedControlledData();
+    const quiet = await seedDonor();
+
+    const res = await getMetrics(quiet.user).expect(200);
+
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      orgId: quiet.org.id,
+      rescuedByUnit: [],
+      lotsCollected: 0,
+      claimsCompleted: 0,
+      avgTimeToClaimMs: null,
+      medianTimeToClaimMs: null,
+      formattedAvgTimeToClaim: '--',
+      formattedMedianTimeToClaim: '--',
+      timeToClaimCount: 0,
+    });
+  });
+
+  it('scopes an admin caller to their own organisation', async () => {
+    const { otherDonor } = await seedControlledData();
+    const admin = await seedUser({ orgId: otherDonor.org.id, isAdmin: true });
+
+    const res = await getMetrics(admin, 'admin').expect(200);
+
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      orgId: otherDonor.org.id,
+      rescuedByUnit: [{ unit: 'loaves', amount: 12, lots: 1 }],
+      claimsCompleted: 1,
+    });
+  });
+
+  it('stamps the response with the snapshot the metrics were read at', async () => {
+    const donor = await seedDonor();
+
+    const requestedAt = Date.now();
+    const metrics = body<RescuedMetricsBody>(
+      await getMetrics(donor.user).expect(200),
+    );
+
+    const asOf = Date.parse(metrics.asOf);
+    expect(asOf).toBeGreaterThan(requestedAt - 60_000);
+    expect(asOf).toBeLessThan(Date.now() + 60_000);
+  });
+
+  it('denies a caller with no organisation, returning no metrics', async () => {
+    const orgless = await seedUser({ orgId: null });
+
+    const res = await getMetrics(orgless).expect(403);
+
+    expect(res.body).not.toHaveProperty('rescuedByUnit');
+    expect(res.body).not.toHaveProperty('avgTimeToClaimMs');
+  });
+
+  it('rejects a caller with no credentials', async () => {
+    await request(harness.server).get('/api/stats/metrics').expect(401);
   });
 });
