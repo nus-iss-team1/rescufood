@@ -20,6 +20,16 @@ export class ListingEditPage {
     await this.page.getByLabel('Handling info').fill(text);
   }
 
+  /** A reserved or collected listing opens read-only. */
+  async expectLocked() {
+    await expect(
+      this.page.getByText('This listing can no longer be edited.'),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole('button', { name: 'Save changes' }),
+    ).toBeDisabled();
+  }
+
   async save() {
     await this.page.getByRole('button', { name: 'Save changes' }).click();
     await expect(

@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/sessions';
 import { ListingFormPage } from './pages/listing-form-page';
-import { BrowsePage } from './pages/browse-page';
+import { YourListingsPage } from './pages/your-listings-page';
+import { ListingEditPage } from './pages/listing-edit-page';import { BrowsePage } from './pages/browse-page';
 import { RequestsPage } from './pages/requests-page';
 import { PickupVerificationPage } from './pages/pickup-verification-page';
 import { buildQaListing } from './fixtures/listing-data';
@@ -21,6 +22,22 @@ test.describe.serial('Listing pickup-code confirmation', () => {
     await browsePage.goto();
     await browsePage.openListing(tag);
     await browsePage.claim();
+  });
+
+  test('claimed listing is no longer offered on browse', async ({ partnerPage }) => {
+    const browsePage = new BrowsePage(partnerPage);
+    await browsePage.goto();
+    await expect(
+      partnerPage.getByRole('heading', { name: 'Find surplus food' }),
+    ).toBeVisible();
+    await expect(browsePage.cardFor(tag)).toHaveCount(0);
+  });
+
+  test('donor cannot edit the claimed listing', async ({ donorPage }) => {
+    const yourListings = new YourListingsPage(donorPage);
+    await yourListings.goto();
+    await yourListings.openEdit(tag);
+    await new ListingEditPage(donorPage).expectLocked();
   });
 
   test('rescue partner can generate a pickup code', async ({ partnerPage }) => {
@@ -67,5 +84,12 @@ test.describe.serial('Listing pickup-code confirmation', () => {
     await expect(notifications.getByText('Pickup completed')).toBeVisible({
       timeout: 10_000,
     });
+  });
+
+  test('donor cannot edit the collected listing', async ({ donorPage }) => {
+    const yourListings = new YourListingsPage(donorPage);
+    await yourListings.goto();
+    await yourListings.openEdit(tag);
+    await new ListingEditPage(donorPage).expectLocked();
   });
 });

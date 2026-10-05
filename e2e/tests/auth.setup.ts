@@ -5,8 +5,8 @@ import { DONOR_AUTH, PARTNER_AUTH } from './helpers/auth';
 // Signs each role in once per run and saves the session, so specs start
 // already signed in instead of logging in and out between steps. Sessions
 // are cookie-only (NextAuth JWT) and sign-out doesn't revoke anything in
-// Cognito, so login.spec signing out its own fresh session can't
-// invalidate these.
+// Cognito, so login.spec signing out one context's copy can't invalidate
+// the saved session for the others.
 
 setup('sign in as donor', async ({ page }) => {
   await new LoginPage(page).loginAsDonor();

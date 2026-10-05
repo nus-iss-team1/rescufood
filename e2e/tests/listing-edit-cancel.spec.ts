@@ -2,6 +2,7 @@ import { test, expect } from './fixtures/sessions';
 import { ListingFormPage } from './pages/listing-form-page';
 import { YourListingsPage } from './pages/your-listings-page';
 import { ListingEditPage } from './pages/listing-edit-page';
+import { NotificationBell } from './pages/notification-bell';
 import { BrowsePage } from './pages/browse-page';
 import { RequestsPage } from './pages/requests-page';
 import { buildQaListing } from './fixtures/listing-data';
@@ -55,11 +56,35 @@ test.describe.serial('Listing claim lifecycle', () => {
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test('rescue partner can claim the tagged QA listing', async ({ partnerPage }) => {
+  // Both roles at once: the donor sits on the dashboard in a session of
+  // their own while the rescue partner claims. Lives in this spec rather
+  // than the pickup one so a notification failure only skips the cancel
+  // steps after it, not the pickup flow.
+  test('rescue partner can claim the tagged QA listing, and the donor is notified live', async ({
+    donorPage,
+    partnerPage,
+  }) => {
+    await donorPage.goto('/dashboard');
+    await donorPage.waitForLoadState('networkidle');
+    const bell = new NotificationBell(donorPage);
+    await bell.markAllRead();
+
     const browsePage = new BrowsePage(partnerPage);
     await browsePage.goto();
     await browsePage.openListing(tag);
     await browsePage.claim();
+
+    // No reload: the bell re-polls its count every 5s, after the
+    // notification has gone through a queue to the notification service.
+    await expect
+      .poll(() => bell.unreadCount(), { timeout: 30_000 })
+      .toBeGreaterThan(0);
+
+    // The count can't say which notification arrived; the feed can.
+    await bell.open();
+    const notification = bell.claimNotificationFor(tag);
+    await expect(notification).toBeVisible({ timeout: 10_000 });
+    await bell.markRead(notification);
   });
 
   test('rescue partner can cancel the claimed request', async ({ partnerPage }) => {
