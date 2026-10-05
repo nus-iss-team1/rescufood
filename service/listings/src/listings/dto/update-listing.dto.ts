@@ -4,14 +4,19 @@ import {
   IsArray,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
+  ValidateIf,
 } from 'class-validator';
 import { listingStatus } from '../../db/schema';
 import { CreateListingDto } from './create-listing.dto';
 import { parseMultipartJsonArray } from './transforms/multipart-json-array.transform';
+
+const trim = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim() : value;
 
 export class UpdateListingDto extends PartialType(CreateListingDto) {
   // Optimistic concurrency: caller must echo back the version they last
@@ -31,9 +36,13 @@ export class UpdateListingDto extends PartialType(CreateListingDto) {
   @IsIn(listingStatus.enumValues)
   status?: (typeof listingStatus.enumValues)[number];
 
-  @ApiPropertyOptional({ description: 'Only used when status is "cancelled".' })
-  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Required, and non-blank, when status is "cancelled".',
+  })
+  @ValidateIf((dto: UpdateListingDto) => dto.status === 'cancelled')
+  @Transform(trim)
   @IsString()
+  @IsNotEmpty({ message: 'a cancellation reason is required' })
   cancelledReason?: string;
 
   // Existing images to remove in the same request, alongside any new
