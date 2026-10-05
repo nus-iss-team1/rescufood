@@ -69,7 +69,7 @@ function makeDb() {
   };
   return {
     ...db,
-    // expireOverdue runs inside a transaction - reusing the same mock
+    // expireListing runs inside a transaction - reusing the same mock
     // object as `tx` lets its `update` mock (set up per-test via
     // mockReturnValueOnce) serve both the listings and requests updates
     // issued inside the callback.
@@ -268,10 +268,32 @@ describe('ListingsRepository', () => {
     });
   });
 
-  describe('expireOverdue', () => {
-    it('flips available and reserved listings past their pickup window to expired and bumps their version', async () => {
+  describe('findOverdueListingIds', () => {
+    it('selects available and reserved listings past their pickup window', async () => {
       const db = makeDb();
-      const listingsChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
+      const queryChain = chain([{ id: 'listing-1' }, { id: 'listing-2' }]);
+      db.select.mockReturnValue(queryChain);
+      const repository = new ListingsRepository(db as unknown as Database);
+      const now = new Date('2026-08-10T00:00:00Z');
+
+      await expect(repository.findOverdueListingIds(now)).resolves.toEqual([
+        'listing-1',
+        'listing-2',
+      ]);
+      const { sql, params } = renderWhere(queryChain.where as jest.Mock);
+      expect(sql).toContain('"status" in');
+      expect(sql).toContain('"pickup_window_end" <=');
+      expect(sql).toContain('"deleted_at" is null');
+      expect(params).toEqual(
+        expect.arrayContaining(['available', 'reserved', now.toISOString()]),
+      );
+    });
+  });
+
+  describe('expireListing', () => {
+    it('expires a still-overdue listing, bumps its version and expires its active claim', async () => {
+      const db = makeDb();
+      const listingsChain = chain([{ id: 'listing-1' }]);
       const requestsChain = chain([{ id: 'request-1' }]);
       db.update
         .mockReturnValueOnce(listingsChain)
@@ -279,51 +301,63 @@ describe('ListingsRepository', () => {
       const repository = new ListingsRepository(db as unknown as Database);
       const now = new Date('2026-08-10T00:00:00Z');
 
-      const result = await repository.expireOverdue(now, db as never);
+      const result = await repository.expireListing(
+        'listing-1',
+        now,
+        db as never,
+      );
 
       expect(db.update).toHaveBeenNthCalledWith(1, listings);
       expect(listingsChain.set).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'expired', updatedAt: now }),
       );
       const { sql, params } = renderWhere(listingsChain.where as jest.Mock);
+      expect(sql).toContain('"id" =');
       expect(sql).toContain('"status" in');
       expect(sql).toContain('"pickup_window_end" <=');
       expect(params).toEqual(
-        expect.arrayContaining(['available', 'reserved', now.toISOString()]),
+        expect.arrayContaining([
+          'listing-1',
+          'available',
+          'reserved',
+          now.toISOString(),
+        ]),
       );
 
-      // Same sweep expires that listing's still-active claim too, scoped to
-      // the ids just expired and to the 'active' claim (not already
-      // cancelled/no_show/etc).
       expect(db.update).toHaveBeenNthCalledWith(2, requests);
       expect(requestsChain.set).toHaveBeenCalledWith({
         status: 'expired',
         updatedAt: now,
       });
       const requestsWhere = renderWhere(requestsChain.where as jest.Mock);
-      expect(requestsWhere.sql).toContain('"listing_id" in');
-      expect(requestsWhere.sql).toContain('"status" =');
+      expect(requestsWhere.sql).toContain('"listing_id" =');
       expect(requestsWhere.params).toEqual(
-        expect.arrayContaining(['listing-1', 'listing-2', 'active']),
+        expect.arrayContaining(['listing-1', 'active']),
       );
 
-      expect(result).toEqual({
-        listingIds: ['listing-1', 'listing-2'],
-        claimIds: ['request-1'],
-      });
+      expect(result).toEqual({ claimId: 'request-1' });
     });
 
-    it('returns empty id lists and never touches requests when nothing is overdue', async () => {
+    it('reports no claim when the listing had none active', async () => {
+      const db = makeDb();
+      db.update
+        .mockReturnValueOnce(chain([{ id: 'listing-1' }]))
+        .mockReturnValueOnce(chain([]));
+      const repository = new ListingsRepository(db as unknown as Database);
+
+      await expect(
+        repository.expireListing('listing-1', new Date(), db as never),
+      ).resolves.toEqual({ claimId: undefined });
+    });
+
+    it('returns undefined and never touches requests when the listing is no longer overdue', async () => {
       const db = makeDb();
       db.update.mockReturnValueOnce(chain([]));
       const repository = new ListingsRepository(db as unknown as Database);
 
       await expect(
-        repository.expireOverdue(new Date(), db as never),
-      ).resolves.toEqual({
-        listingIds: [],
-        claimIds: [],
-      });
+        repository.expireListing('listing-1', new Date(), db as never),
+      ).resolves.toBeUndefined();
       expect(db.update).toHaveBeenCalledTimes(1);
     });
   });

@@ -300,6 +300,20 @@ describe('RequestsService', () => {
       expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
     });
 
+    it('rejects a listing that has expired', async () => {
+      const repository = makeRepository();
+      repository.findListingById.mockResolvedValue({
+        ...availableListing,
+        status: 'expired',
+      });
+      const { service } = makeService(repository);
+
+      await expect(service.create(dto, rescueUser)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(repository.reserveListingForClaim).not.toHaveBeenCalled();
+    });
+
     it('rejects a listing whose pickup window has already closed', async () => {
       const repository = makeRepository();
       repository.findListingById.mockResolvedValue({
