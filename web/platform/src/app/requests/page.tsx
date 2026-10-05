@@ -3,13 +3,7 @@ import type { Metadata } from "next";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
-import {
-  getListing,
-  listListings,
-  listRequests,
-  type Listing,
-  type ListingRequest,
-} from "@/lib/listings";
+import { listRequests, type ListingRequest } from "@/lib/listings";
 import { requestStatuses } from "@rescufood/listings-sdk";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
@@ -34,8 +28,6 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Requests — RescuFood",
 };
-
-const LISTING_LOOKUP_BATCH = 4;
 
 const tabs = ["all", ...requestStatuses] as const;
 
@@ -139,36 +131,6 @@ export default async function RequestsPage({
   const requests =
     active === "all" ? all : all.filter((r) => r.status === active);
 
-  // Requests carry only a listingId; both views name the lot from these.
-  let listings = new Map<string, Listing>();
-  if (!unavailable) {
-    try {
-      const page = await listListings(session.idToken!, { limit: 100 });
-      listings = new Map(page.items.map((l) => [l.id, l]));
-    } catch {
-      // Both views fall back to the requested quantity.
-    }
-    // The browse query drops anything not available, claimed lots included,
-    // and the list endpoint has no bulk form for them. Fetched a few at a
-    // time: every server-side call shares one rate-limit budget, so a wide
-    // burst here throttles the whole app.
-    const missing = [...new Set(requests.map((r) => r.listingId))].filter(
-      (id) => !listings.has(id),
-    );
-    for (let i = 0; i < missing.length; i += LISTING_LOOKUP_BATCH) {
-      const batch = await Promise.allSettled(
-        missing
-          .slice(i, i + LISTING_LOOKUP_BATCH)
-          .map((id) => getListing(session.idToken!, id)),
-      );
-      for (const result of batch) {
-        if (result.status === "fulfilled") {
-          listings.set(result.value.id, result.value);
-        }
-      }
-    }
-  }
-
   return (
     <PageShell>
       <AnimateIn className="flex flex-col gap-6">
@@ -254,9 +216,9 @@ export default async function RequestsPage({
         ) : (
           <div data-animate="field">
             {layout === "card" ? (
-              <RequestCards requests={requests} listings={listings} />
+              <RequestCards requests={requests} />
             ) : (
-              <RequestList requests={requests} listings={listings} />
+              <RequestList requests={requests} />
             )}
           </div>
         )}

@@ -5,6 +5,7 @@ import { decodeJwt } from "jose";
 
 import { passwordAuth } from "@/lib/cognito";
 import { loginStatus, recordLoginOutcome } from "@/lib/profile";
+import type { LoginAttemptContext } from "@rescufood/profile-sdk";
 
 /**
  * Thrown from `authorize` when the failed-login threshold has restricted
@@ -13,6 +14,19 @@ import { loginStatus, recordLoginOutcome } from "@/lib/profile";
  */
 export class AccountRestricted extends CredentialsSignin {
   code = "account_restricted";
+}
+
+/** Thrown when the attempt could not be recorded; the sign-in is refused. */
+export class AttemptNotRecorded extends CredentialsSignin {
+  code = "attempt_not_recorded";
+}
+
+/** Headers forwarded verbatim; the profile service picks the trusted hop. */
+function attemptContext(request: Request): LoginAttemptContext {
+  return {
+    forwardedFor: request.headers.get("x-forwarded-for") ?? undefined,
+    userAgent: request.headers.get("user-agent") ?? undefined,
+  };
 }
 
 declare module "next-auth" {
@@ -58,7 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         username: {},
         password: {},
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const username = String(credentials?.username ?? "");
         const password = String(credentials?.password ?? "");
         if (!username || !password) return null;
@@ -73,33 +87,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new AccountRestricted();
         }
 
+        // Wrong password, unconfirmed account, unknown user - all land here as
+        // a failed attempt rather than an error.
+        let idToken: string | undefined;
         try {
-          const result = await passwordAuth(username, password);
-          if (!result?.IdToken) {
-            await recordLoginOutcome(username, false).catch(() => {});
-            return null;
-          }
-
-          await recordLoginOutcome(username, true).catch(() => {});
-
-          // The ID token comes straight from Cognito over TLS.
-          const claims = decodeJwt(result.IdToken);
-          return {
-            id: String(claims.sub),
-            username: String(claims["cognito:username"] ?? username),
-            email:
-              typeof claims.email === "string" ? claims.email : undefined,
-            name: typeof claims.name === "string" ? claims.name : undefined,
-            groups: Array.isArray(claims["cognito:groups"])
-              ? (claims["cognito:groups"] as string[])
-              : [],
-            idToken: result.IdToken,
-          };
+          idToken = (await passwordAuth(username, password))?.IdToken;
         } catch {
-          // Wrong password, unconfirmed account, unknown user, ...
-          await recordLoginOutcome(username, false).catch(() => {});
-          return null;
+          idToken = undefined;
         }
+
+        // Recorded before anything is granted, and not best-effort: an attempt
+        // that cannot be recorded is refused rather than completed unaudited.
+        try {
+          await recordLoginOutcome(
+            username,
+            Boolean(idToken),
+            attemptContext(request),
+          );
+        } catch {
+          throw new AttemptNotRecorded();
+        }
+
+        if (!idToken) return null;
+
+        // The ID token comes straight from Cognito over TLS.
+        const claims = decodeJwt(idToken);
+        return {
+          id: String(claims.sub),
+          username: String(claims["cognito:username"] ?? username),
+          email: typeof claims.email === "string" ? claims.email : undefined,
+          name: typeof claims.name === "string" ? claims.name : undefined,
+          groups: Array.isArray(claims["cognito:groups"])
+            ? (claims["cognito:groups"] as string[])
+            : [],
+          idToken,
+        };
       },
     }),
   ],
