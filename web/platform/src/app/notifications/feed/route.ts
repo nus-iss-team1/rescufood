@@ -22,14 +22,13 @@ async function idToken(): Promise<string | null> {
   return session?.idToken ?? null;
 }
 
-const unauthorized = NextResponse.json(
-  { error: "unauthenticated" },
-  { status: 401 },
-);
+// A new response per call: a Response body can only be consumed once.
+const unauthorized = () =>
+  NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
 export async function GET(request: Request): Promise<NextResponse> {
   const token = await idToken();
-  if (!token) return unauthorized;
+  if (!token) return unauthorized();
 
   const view = new URL(request.url).searchParams.get("view");
   try {
@@ -45,7 +44,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   const token = await idToken();
-  if (!token) return unauthorized;
+  if (!token) return unauthorized();
 
   const body = (await request.json().catch(() => ({}))) as {
     read?: string;
@@ -65,7 +64,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 export async function PATCH(request: Request): Promise<NextResponse> {
   const token = await idToken();
-  if (!token) return unauthorized;
+  if (!token) return unauthorized();
 
   const url = new URL(request.url);
   const idFromQuery = url.searchParams.get("id");
@@ -89,7 +88,7 @@ export async function PATCH(request: Request): Promise<NextResponse> {
 
 export async function DELETE(request: Request): Promise<NextResponse> {
   const token = await idToken();
-  if (!token) return unauthorized;
+  if (!token) return unauthorized();
 
   // No id -> clear the whole feed.
   const id = new URL(request.url).searchParams.get("id");

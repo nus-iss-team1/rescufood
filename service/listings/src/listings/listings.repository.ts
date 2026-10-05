@@ -15,6 +15,7 @@ import {
   type Column,
   type SQL,
 } from 'drizzle-orm';
+import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { organisations, users } from '../db/external.schema';
@@ -23,7 +24,7 @@ import type { QueryListingsDto } from './dto/query-listings.dto';
 
 export type Listing = typeof listings.$inferSelect;
 export type NewListing = typeof listings.$inferInsert;
-export type ListingUpdate = Partial<NewListing>;
+export type ListingUpdate = PgUpdateSetSource<typeof listings>;
 
 // The poster's current eligibility, from service/profile's tables.
 export type CreatorContext = {

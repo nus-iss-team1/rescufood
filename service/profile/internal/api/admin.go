@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -29,6 +30,7 @@ type OrgAdmin interface {
 type UserAdmin interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]domain.User, error)
+	NamesByIDs(ctx context.Context, ids []uuid.UUID) ([]domain.UserName, error)
 }
 
 // LockLookup reports which of a set of usernames are currently
@@ -173,6 +175,57 @@ func stampLocked(ctx context.Context, locks LockLookup, users []domain.User, out
 		}
 	}
 	return nil
+}
+
+// Cap on one names lookup, matching the audit feed's maximum page size - a
+// page of events cannot name more actors than it holds.
+const maxNameLookup = 200
+
+type userNameResponse struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+// userNames labels a set of user ids. Callers that hold ids and need display
+// names - the audit log's actors - would otherwise have to list whole
+// organisations to find them.
+func userNames(users UserAdmin) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		raw := strings.TrimSpace(r.URL.Query().Get("ids"))
+		if raw == "" {
+			writeJSON(w, http.StatusOK, []userNameResponse{})
+			return
+		}
+
+		parts := strings.Split(raw, ",")
+		if len(parts) > maxNameLookup {
+			writeProblem(w, http.StatusBadRequest, "invalid request",
+				fmt.Sprintf("at most %d ids per request", maxNameLookup))
+			return
+		}
+		ids := make([]uuid.UUID, 0, len(parts))
+		for _, part := range parts {
+			id, err := uuid.Parse(strings.TrimSpace(part))
+			if err != nil {
+				writeProblem(w, http.StatusBadRequest, "invalid request", "ids must be uuids")
+				return
+			}
+			ids = append(ids, id)
+		}
+
+		names, err := users.NamesByIDs(r.Context(), ids)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "resolve user names failed", "error", err)
+			writeProblem(w, http.StatusInternalServerError, "internal error", "")
+			return
+		}
+
+		out := make([]userNameResponse, 0, len(names))
+		for _, n := range names {
+			out = append(out, userNameResponse{ID: n.ID, Name: n.Name})
+		}
+		writeJSON(w, http.StatusOK, out)
+	}
 }
 
 // listUsers returns the members of one organisation.

@@ -134,6 +134,13 @@
       "when": 1790855157010,
       "tag": "0018_audit_log_append_only_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791152616779,
+      "tag": "0019_listing_published_at",
+      "breakpoints": true
     }
   ]
 }

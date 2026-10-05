@@ -22,10 +22,10 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { Badge } from "@rescufood/ui/components/badge";
-import { toast } from "@rescufood/ui/components/sonner";
 import { cn } from "@/lib/utils";
 import { AnimateIn } from "@/components/animate-in";
 import { PickupVerification } from "./pickup-verification";
+import { toastPickupCompleted } from "./pickup-completed-toast";
 import { RequestProgress } from "./request-progress";
 
 export function RequestDetailView({
@@ -47,12 +47,10 @@ export function RequestDetailView({
 
   useEffect(() => {
     if (prevStatusRef.current === "active" && request.status === "completed") {
-      toast.success("Pickup completed", {
-        description: "The lot has been marked as collected.",
-      });
+      toastPickupCompleted(request.id);
     }
     prevStatusRef.current = request.status;
-  }, [request.status]);
+  }, [request.status, request.id]);
 
   return (
     <div className="space-y-6">

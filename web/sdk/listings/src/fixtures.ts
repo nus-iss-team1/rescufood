@@ -48,6 +48,7 @@ function listing(over: Partial<Listing> & Pick<Listing, "id">): Listing {
     cancelledReason: "",
     createdAt: "2026-08-11T02:00:00.000Z",
     updatedAt: "2026-08-11T02:00:00.000Z",
+    publishedAt: "2026-08-11T02:00:00.000Z",
     deletedAt: null,
     images: [],
     ...over,
@@ -147,6 +148,8 @@ export const sampleListings: Listing[] = [
     unit: "platters",
     allergens: ["Gluten", "Egg", "Mustard"],
     status: "collected",
+    createdAt: "2026-08-09T15:00:00.000Z",
+    publishedAt: "2026-08-09T15:00:00.000Z",
     useBy: "2026-08-10T15:00:00.000Z",
     pickupWindowStart: "2026-08-10T13:00:00.000Z",
     pickupWindowEnd: "2026-08-10T15:00:00.000Z",
@@ -170,6 +173,7 @@ export const sampleListings: Listing[] = [
     unit: "items",
     status: "cancelled",
     cancelledReason: "Collected by a different charity",
+    publishedAt: null,
   }),
   listing({
     id: "aaaa1111-0000-4000-8000-00000000000b",
@@ -179,6 +183,7 @@ export const sampleListings: Listing[] = [
     unit: "pieces",
     allergens: ["Gluten", "Egg", "Milk"],
     status: "draft",
+    publishedAt: null,
     useBy: "2026-08-15T12:00:00.000Z",
     pickupWindowStart: "2026-08-15T07:00:00.000Z",
     pickupWindowEnd: "2026-08-15T09:00:00.000Z",
@@ -205,6 +210,10 @@ function request(
     noShowReason: "",
     createdAt: "2026-08-11T03:00:00.000Z",
     updatedAt: "2026-08-11T03:00:00.000Z",
+    listingDescription: sampleListings[0].description,
+    listingUnit: sampleListings[0].unit,
+    listingCategory: sampleListings[0].category,
+    listingImageUrl: null,
     ...over,
   };
 }

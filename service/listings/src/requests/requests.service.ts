@@ -42,6 +42,7 @@ import {
 } from './idempotency/idempotency.repository';
 import { requestFingerprint } from './idempotency/request-fingerprint.util';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
+import { S3Service } from '../storage/s3.service';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
@@ -79,6 +80,7 @@ export class RequestsService {
     private readonly idempotency: IdempotencyRepository,
     private readonly auditRepository: AuditRepository,
     private readonly notifications: NotificationsPublisher,
+    private readonly s3: S3Service,
     @Inject(DATABASE) private readonly db: Database,
     private readonly logger: Logger,
     config: ConfigService,
@@ -87,6 +89,11 @@ export class RequestsService {
       config.get<number>('IDEMPOTENCY_RETENTION_DAYS') ??
       DEFAULT_RETENTION_DAYS;
     this.retentionMs = days * 24 * 60 * 60 * 1000;
+  }
+
+  // An image key becomes a CDN url; no key means the lot has no photo.
+  private imageUrl(key: string | undefined): string | null {
+    return key ? this.s3.getImageUrl(key) : null;
   }
 
   // First-come-first-served: claim the whole listing and reserve it for the
@@ -264,7 +271,20 @@ export class RequestsService {
       this.requestsRepository.findMany(query, viewer),
       this.requestsRepository.countMany(query, viewer),
     ]);
-    return { items: items.map(toPublicRequest), total };
+    const imageKeys = await this.requestsRepository.findFirstImageKeys([
+      ...new Set(items.map((item) => item.listingId)),
+    ]);
+    return {
+      items: items.map((item) =>
+        toPublicRequest(item, {
+          listingDescription: item.listingDescription,
+          listingUnit: item.listingUnit,
+          listingCategory: item.listingCategory,
+          listingImageUrl: this.imageUrl(imageKeys.get(item.listingId)),
+        }),
+      ),
+      total,
+    };
   }
 
   async findOne(
@@ -276,7 +296,15 @@ export class RequestsService {
     if (!isRequestVisible(request, listing, viewer)) {
       throw new NotFoundException(`request ${id} not found`);
     }
-    return toPublicRequest(request);
+    const imageKeys = await this.requestsRepository.findFirstImageKeys([
+      listing.id,
+    ]);
+    return toPublicRequest(request, {
+      listingDescription: listing.description,
+      listingUnit: listing.unit,
+      listingCategory: listing.category,
+      listingImageUrl: this.imageUrl(imageKeys.get(listing.id)),
+    });
   }
 
   // Either party to an active claim may cancel it or report a no-show; both

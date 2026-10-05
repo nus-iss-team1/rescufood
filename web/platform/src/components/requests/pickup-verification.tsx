@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@rescufood/ui/components/dialog";
 import { OtpInput } from "./otp-input";
+import { toastPickupCompleted } from "./pickup-completed-toast";
 
 export function PickupVerification({
   request,
@@ -105,9 +106,7 @@ export function PickupVerification({
         return;
       }
 
-      toast.success("Pickup completed", {
-        description: "The lot is marked as collected.",
-      });
+      toastPickupCompleted(request.id);
       resetVerifyModal(false);
       router.refresh();
     } catch {

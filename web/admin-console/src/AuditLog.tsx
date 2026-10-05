@@ -53,6 +53,8 @@ const entityLabels: Record<string, string> = {
   [ALL]: "All entities",
   listing: "Listings",
   claim: "Claims",
+  user: "Users",
+  organisation: "Organisations",
 };
 
 // The api returns actor ids; names are resolved separately and may not have
@@ -143,8 +145,10 @@ export function AuditLog() {
   const showing = events?.length ?? 0;
 
   function actorLabel(event: AuditEvent): string {
-    if (event.userId === null) return "System";
-    return actorName(names, event.userId);
+    if (event.userId !== null) return actorName(names, event.userId);
+    // An event naming a subject came from whoever used that identifier - an
+    // anonymous login attempt, not us. Only a truly actorless event is System.
+    return event.subject ?? "System";
   }
 
   return (
@@ -168,6 +172,8 @@ export function AuditLog() {
               <SelectItem value={ALL}>All entities</SelectItem>
               <SelectItem value="listing">Listings</SelectItem>
               <SelectItem value="claim">Claims</SelectItem>
+              <SelectItem value="user">Users</SelectItem>
+              <SelectItem value="organisation">Organisations</SelectItem>
             </SelectContent>
           </Select>
         </div>

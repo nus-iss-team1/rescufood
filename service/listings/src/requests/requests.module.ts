@@ -3,6 +3,7 @@ import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import { DbModule } from '../db/db.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { StorageModule } from '../storage/storage.module';
 import { IdempotencyRetentionService } from './idempotency/idempotency-retention.service';
 import { IdempotencyRepository } from './idempotency/idempotency.repository';
 import { PickupReminderService } from './pickup-reminder.service';
@@ -11,7 +12,13 @@ import { RequestsRepository } from './requests.repository';
 import { RequestsService } from './requests.service';
 
 @Module({
-  imports: [AuditModule, AuthModule, DbModule, NotificationsModule],
+  imports: [
+    AuditModule,
+    AuthModule,
+    DbModule,
+    NotificationsModule,
+    StorageModule,
+  ],
   controllers: [RequestsController],
   providers: [
     RequestsService,

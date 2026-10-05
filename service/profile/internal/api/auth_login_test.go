@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
 )
@@ -26,6 +28,20 @@ func (f fakeSubjectResolver) ResolveCognitoSub(_ context.Context, identifier str
 	return "", domain.ErrNotFound
 }
 
+// fakeUserID derives a stable uuid from a cognito_sub, so a test can assert
+// which account a login event names.
+func fakeUserID(sub string) uuid.UUID {
+	return uuid.NewSHA1(uuid.Nil, []byte(sub))
+}
+
+func (f fakeSubjectResolver) ResolveLoginSubject(_ context.Context, identifier string) (*domain.LoginSubject, error) {
+	sub, ok := f[strings.ToLower(identifier)]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return &domain.LoginSubject{UserID: fakeUserID(sub), CognitoSub: sub}, nil
+}
+
 type fakeLoginAttempts struct {
 	restricted  bool
 	until       *time.Time
@@ -33,6 +49,51 @@ type fakeLoginAttempts struct {
 	successes   map[string]bool
 	threshold   int
 	newlyLocked bool
+	// entries holds the audit events recorded alongside each attempt;
+	// auditErr makes the audit write fail, which must fail the whole attempt.
+	entries  []domain.AuditEntry
+	auditErr error
+}
+
+// RecordLoginSuccess / RecordLoginFailure stand in for the store's atomic
+// counter-plus-audit writes. When auditErr is set, the counter is left
+// untouched - which is what a rolled-back transaction looks like.
+func (f *fakeLoginAttempts) RecordLoginSuccess(ctx context.Context, username string, entry domain.AuditEntry) error {
+	if f.auditErr != nil {
+		return f.auditErr
+	}
+	f.entries = append(f.entries, entry)
+	return f.RecordSuccess(ctx, username)
+}
+
+func (f *fakeLoginAttempts) RecordLoginFailure(ctx context.Context, username string, threshold int, d time.Duration, entry domain.AuditEntry) (bool, *time.Time, bool, error) {
+	if f.auditErr != nil {
+		return false, nil, false, f.auditErr
+	}
+	locked, until, newlyLocked, err := f.RecordFailure(ctx, username, threshold, d)
+	if err != nil {
+		return locked, until, newlyLocked, err
+	}
+	f.entries = append(f.entries, entry)
+	if newlyLocked {
+		f.entries = append(f.entries, domain.AccountLocked(entry, until))
+	}
+	return locked, until, newlyLocked, nil
+}
+
+func (f *fakeLoginAttempts) ClearLoginRestriction(ctx context.Context, username string, entry domain.AuditEntry) error {
+	if f.auditErr != nil {
+		return f.auditErr
+	}
+	f.entries = append(f.entries, entry)
+	return f.RecordSuccess(ctx, username)
+}
+
+func (f *fakeLoginAttempts) lastEntry() domain.AuditEntry {
+	if len(f.entries) == 0 {
+		return domain.AuditEntry{}
+	}
+	return f.entries[len(f.entries)-1]
 }
 
 func (f *fakeLoginAttempts) Check(_ context.Context, username string) (bool, *time.Time, error) {
@@ -258,6 +319,293 @@ func TestResetEligibility(t *testing.T) {
 			if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"eligible":true`) {
 				t.Fatalf("identifier=%s: code=%d body=%s", identifier, rec.Code, rec.Body)
 			}
+		}
+	})
+}
+
+// A login attempt records time, subject, outcome and the available request
+// context, and never the password.
+func TestLoginOutcomeIsAudited(t *testing.T) {
+	const threshold = 5
+	known := fakeSubjectResolver{"alice": "sub-alice", "alice@example.org": "sub-alice"}
+
+	t.Run("success names the account and keeps the request context", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome",
+			`{"username":"alice","success":true,"forwarded_for":"203.0.113.7","user_agent":"Mozilla/5.0 (probe)"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204; body: %s", rec.Code, rec.Body)
+		}
+
+		got := fake.lastEntry()
+		if got.Action != domain.ActionLoginSucceeded {
+			t.Errorf("action = %q, want %q", got.Action, domain.ActionLoginSucceeded)
+		}
+		if got.EntityType != domain.EntityUser {
+			t.Errorf("entity type = %q, want %q", got.EntityType, domain.EntityUser)
+		}
+		if got.EntityID != fakeUserID("sub-alice") || got.ActorUserID != fakeUserID("sub-alice") {
+			t.Errorf("event does not name the resolved account: entity=%s actor=%s", got.EntityID, got.ActorUserID)
+		}
+		if got.Subject != "alice" {
+			t.Errorf("subject = %q, want the identifier as typed", got.Subject)
+		}
+		if got.Metadata["ipAddress"] != "203.0.113.7" {
+			t.Errorf("ipAddress = %v", got.Metadata["ipAddress"])
+		}
+		if got.Metadata["userAgent"] != "Mozilla/5.0 (probe)" {
+			t.Errorf("userAgent = %v", got.Metadata["userAgent"])
+		}
+	})
+
+	t.Run("failure against an unknown username still records the attempt", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome",
+			`{"username":"nobody@example.invalid","success":false,"forwarded_for":"198.51.100.3"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204; body: %s", rec.Code, rec.Body)
+		}
+
+		got := fake.lastEntry()
+		if got.Action != domain.ActionLoginFailed {
+			t.Errorf("action = %q, want %q", got.Action, domain.ActionLoginFailed)
+		}
+		// No account to point at - these must stay zero so they store as NULL.
+		if got.EntityID != uuid.Nil || got.ActorUserID != uuid.Nil {
+			t.Errorf("unknown account must leave the id columns unset: entity=%s actor=%s", got.EntityID, got.ActorUserID)
+		}
+		if got.Subject != "nobody@example.invalid" {
+			t.Errorf("subject = %q, want the identifier as typed", got.Subject)
+		}
+	})
+
+	t.Run("a password in the body is never retained", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome",
+			`{"username":"alice","success":true,"password":"hunter2","user_agent":"curl/8"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		for key, value := range got.Metadata {
+			if s, ok := value.(string); ok && strings.Contains(s, "hunter2") {
+				t.Fatalf("metadata[%s] leaked the password: %q", key, s)
+			}
+		}
+		if strings.Contains(got.Subject, "hunter2") || strings.Contains(got.Reason, "hunter2") {
+			t.Fatal("password leaked into the event")
+		}
+	})
+
+	t.Run("an unwritable event fails the attempt and leaves the counter alone", func(t *testing.T) {
+		fake := &fakeLoginAttempts{auditErr: errors.New("audit_log unavailable")}
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome", `{"username":"alice","success":true}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
+		}
+		if fake.successes["sub-alice"] {
+			t.Error("counter must not be reset when the event could not be written")
+		}
+
+		fake = &fakeLoginAttempts{auditErr: errors.New("audit_log unavailable")}
+		rec = doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome", `{"username":"alice","success":false}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("failed login: status = %d, want 500", rec.Code)
+		}
+		if len(fake.failures) != 0 {
+			t.Error("counter must not advance when the event could not be written")
+		}
+	})
+
+	t.Run("unusable request context is dropped rather than stored", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome",
+			`{"username":"alice","success":true,"forwarded_for":"not-an-ip","user_agent":"ua\nwith\rbreaks"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		if _, present := got.Metadata["ipAddress"]; present {
+			t.Errorf("an unparseable address must be omitted, got %v", got.Metadata["ipAddress"])
+		}
+		if ua, _ := got.Metadata["userAgent"].(string); strings.ContainsAny(ua, "\n\r") {
+			t.Errorf("user agent kept control characters: %q", ua)
+		}
+	})
+
+	t.Run("an oversized user agent is capped", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		long := strings.Repeat("A", maxUserAgentLen+200)
+		rec := doAuth(t, authRouterWithResolver(fake, known, threshold, 15*time.Minute),
+			http.MethodPost, "/login-outcome",
+			`{"username":"alice","success":true,"user_agent":"`+long+`"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		if ua, _ := fake.lastEntry().Metadata["userAgent"].(string); len(ua) != maxUserAgentLen {
+			t.Errorf("user agent length = %d, want %d", len(ua), maxUserAgentLen)
+		}
+	})
+}
+
+// The attempt that trips the threshold is retained as its own event, so a
+// lockout is in the trail rather than only in the logs.
+func TestLockoutIsAudited(t *testing.T) {
+	const threshold = 3
+	known := fakeSubjectResolver{"alice": "sub-alice"}
+	attempt := `{"username":"alice","success":false,"forwarded_for":"203.0.113.7"}`
+
+	t.Run("below the threshold records only the attempt", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold-1; i++ {
+			if rec := doAuth(t, h, http.MethodPost, "/login-outcome", attempt); rec.Code != http.StatusNoContent {
+				t.Fatalf("attempt %d: status = %d", i, rec.Code)
+			}
+		}
+		for _, e := range fake.entries {
+			if e.Action == domain.ActionAccountLocked {
+				t.Fatal("recorded a lockout before the threshold was reached")
+			}
+		}
+		if len(fake.entries) != threshold-1 {
+			t.Errorf("recorded %d events, want %d", len(fake.entries), threshold-1)
+		}
+	})
+
+	t.Run("crossing the threshold records the attempt and the lockout", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold; i++ {
+			if rec := doAuth(t, h, http.MethodPost, "/login-outcome", attempt); rec.Code != http.StatusNoContent {
+				t.Fatalf("attempt %d: status = %d", i, rec.Code)
+			}
+		}
+
+		// threshold attempts, plus one lockout event on the last of them.
+		if len(fake.entries) != threshold+1 {
+			t.Fatalf("recorded %d events, want %d", len(fake.entries), threshold+1)
+		}
+		got := fake.lastEntry()
+		if got.Action != domain.ActionAccountLocked {
+			t.Errorf("last action = %q, want %q", got.Action, domain.ActionAccountLocked)
+		}
+		if got.Subject != "alice" {
+			t.Errorf("subject = %q, want the identifier as typed", got.Subject)
+		}
+		if got.EntityID != fakeUserID("sub-alice") {
+			t.Errorf("lockout does not name the account: %s", got.EntityID)
+		}
+		if got.Metadata["lockedUntil"] == nil {
+			t.Error("lockout event must record how long the restriction lasts")
+		}
+		// The request context of the attempt that caused it carries over.
+		if got.Metadata["ipAddress"] != "203.0.113.7" {
+			t.Errorf("ipAddress = %v, want it carried from the attempt", got.Metadata["ipAddress"])
+		}
+	})
+
+	t.Run("the attempt's own event is not rewritten into the lockout", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		h := authRouterWithResolver(fake, known, threshold, 15*time.Minute)
+		for i := 0; i < threshold; i++ {
+			doAuth(t, h, http.MethodPost, "/login-outcome", attempt)
+		}
+
+		// The one before the lockout is still the failed attempt, and it must
+		// not have picked up lockedUntil through a shared metadata map.
+		failed := fake.entries[len(fake.entries)-2]
+		if failed.Action != domain.ActionLoginFailed {
+			t.Errorf("action = %q, want %q", failed.Action, domain.ActionLoginFailed)
+		}
+		if _, present := failed.Metadata["lockedUntil"]; present {
+			t.Error("the failed-attempt event must not carry lockedUntil")
+		}
+	})
+}
+
+// A completed password reset is retained, with no reset code or password.
+func TestPasswordResetIsAudited(t *testing.T) {
+	known := fakeSubjectResolver{"alice": "sub-alice"}
+
+	t.Run("records the reset against the account", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed",
+			`{"username":"alice","forwarded_for":"203.0.113.7","user_agent":"curl/8"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204; body: %s", rec.Code, rec.Body)
+		}
+
+		got := fake.lastEntry()
+		if got.Action != domain.ActionPasswordReset {
+			t.Errorf("action = %q, want %q", got.Action, domain.ActionPasswordReset)
+		}
+		if got.EntityID != fakeUserID("sub-alice") {
+			t.Errorf("event does not name the account: %s", got.EntityID)
+		}
+		if got.Subject != "alice" {
+			t.Errorf("subject = %q", got.Subject)
+		}
+		if got.Metadata["ipAddress"] != "203.0.113.7" || got.Metadata["userAgent"] != "curl/8" {
+			t.Errorf("request context not retained: %v", got.Metadata)
+		}
+		// The reset also clears any active restriction, keyed on the account.
+		if !fake.successes["sub-alice"] {
+			t.Error("restriction not cleared for the account")
+		}
+	})
+
+	t.Run("an unknown username is retained by subject", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed", `{"username":"ghost@example.invalid"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		if got.EntityID != uuid.Nil || got.ActorUserID != uuid.Nil {
+			t.Errorf("unknown account must leave the id columns unset: %s / %s", got.EntityID, got.ActorUserID)
+		}
+		if got.Subject != "ghost@example.invalid" {
+			t.Errorf("subject = %q", got.Subject)
+		}
+	})
+
+	t.Run("a code or password in the body is never retained", func(t *testing.T) {
+		fake := &fakeLoginAttempts{}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed",
+			`{"username":"alice","code":"123456","password":"hunter2"}`)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want 204", rec.Code)
+		}
+		got := fake.lastEntry()
+		for key, value := range got.Metadata {
+			if s, ok := value.(string); ok && (strings.Contains(s, "hunter2") || strings.Contains(s, "123456")) {
+				t.Fatalf("metadata[%s] leaked a secret: %q", key, s)
+			}
+		}
+		if strings.Contains(got.Subject, "hunter2") || strings.Contains(got.Subject, "123456") {
+			t.Fatal("secret leaked into the subject")
+		}
+	})
+
+	t.Run("an unwritable event fails the request", func(t *testing.T) {
+		fake := &fakeLoginAttempts{auditErr: errors.New("audit_log unavailable")}
+		rec := doAuth(t, authRouterWithResolver(fake, known, 5, 15*time.Minute),
+			http.MethodPost, "/password-reset-completed", `{"username":"alice"}`)
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d, want 500", rec.Code)
+		}
+		if fake.successes["sub-alice"] {
+			t.Error("restriction must not be cleared when the event could not be written")
 		}
 	})
 }

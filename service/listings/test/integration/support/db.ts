@@ -170,11 +170,21 @@ export async function seedListing(args: {
   pickupWindowStart?: Date;
   pickupWindowEnd?: Date;
   quantity?: string;
+  unit?: string;
+  // Defaults to now for every status but draft.
+  publishedAt?: Date | null;
 }): Promise<SeededListing> {
   const status = args.status ?? 'available';
   const start = args.pickupWindowStart ?? new Date(Date.now() + 60 * 60 * 1000);
   const end = args.pickupWindowEnd ?? new Date(Date.now() + 4 * 60 * 60 * 1000);
   const quantity = args.quantity ?? '10.00';
+  const unit = args.unit ?? 'loaves';
+  const publishedAt =
+    args.publishedAt !== undefined
+      ? args.publishedAt
+      : status === 'draft'
+        ? null
+        : new Date();
   const id = randomUUID();
 
   const complete = status !== 'draft';
@@ -182,8 +192,9 @@ export async function seedListing(args: {
     `INSERT INTO listings (
        id, donor_org_id, created_by, status,
        category, description, quantity, unit, allergens,
-       use_by, pickup_location, pickup_window_start, pickup_window_end
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+       use_by, pickup_location, pickup_window_start, pickup_window_end,
+       published_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
     [
       id,
       args.donorOrgId,
@@ -192,12 +203,13 @@ export async function seedListing(args: {
       complete ? 'bakery' : null,
       complete ? 'A tray of day-old sourdough' : null,
       complete ? quantity : null,
-      complete ? 'loaves' : null,
+      complete ? unit : null,
       complete ? ['gluten'] : [],
       complete ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
       complete ? 'Bakery back door, 12 Baker St' : null,
       complete ? start : null,
       complete ? end : null,
+      publishedAt,
     ],
   );
 
@@ -208,7 +220,7 @@ export async function seedListing(args: {
     status,
     version: 1,
     quantity,
-    unit: 'loaves',
+    unit,
     pickupWindowEnd: end,
   };
 }
@@ -232,19 +244,30 @@ export async function seedRequest(args: {
   claimedBy: string;
   status?: RequestStatus;
   requestedQuantity?: string;
+  requestedAt?: Date;
+  // Defaults to the requested quantity on a completed claim, as pickup verification does.
+  collectedQuantity?: string;
 }): Promise<SeededRequest> {
   const id = randomUUID();
   const status = args.status ?? 'active';
+  const requestedQuantity = args.requestedQuantity ?? '10.00';
+  const collectedQuantity =
+    args.collectedQuantity ??
+    (status === 'completed' ? requestedQuantity : null);
   await testPool().query(
-    `INSERT INTO requests (id, listing_id, rescue_org_id, claimed_by, status, requested_quantity)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO requests (
+       id, listing_id, rescue_org_id, claimed_by, status, requested_quantity,
+       requested_at, collected_quantity
+     ) VALUES ($1, $2, $3, $4, $5, $6, coalesce($7, now()), $8)`,
     [
       id,
       args.listingId,
       args.rescueOrgId,
       args.claimedBy,
       status,
-      args.requestedQuantity ?? '10.00',
+      requestedQuantity,
+      args.requestedAt ?? null,
+      collectedQuantity,
     ],
   );
   return {
@@ -260,13 +283,14 @@ export interface ListingRow {
   status: string;
   version: number;
   deleted_at: Date | null;
+  published_at: Date | null;
 }
 
 export async function getListingRow(
   id: string,
 ): Promise<ListingRow | undefined> {
   const { rows } = await testPool().query<ListingRow>(
-    `SELECT status, version, deleted_at FROM listings WHERE id = $1`,
+    `SELECT status, version, deleted_at, published_at FROM listings WHERE id = $1`,
     [id],
   );
   return rows[0];

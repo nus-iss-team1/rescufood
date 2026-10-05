@@ -230,6 +230,7 @@ export default async function ListingsPage({
               <div className="flex items-center gap-2">
                 <Link
                   href={`/listings/${listing.id}`}
+                  prefetch={false}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
                     "flex-1",
@@ -252,6 +253,7 @@ export default async function ListingsPage({
               <div className="flex items-center gap-2">
                 <Link
                   href={`/listings/${listing.id}`}
+                  prefetch={false}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
                   )}

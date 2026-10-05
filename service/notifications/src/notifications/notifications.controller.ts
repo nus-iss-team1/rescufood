@@ -9,7 +9,6 @@ import {
   Post,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,7 +18,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ListNotificationsQuery } from './dto/list-notifications.query';
 import {
   DeleteAllResponseDto,
@@ -36,7 +34,6 @@ import { NotificationsRepository } from './notifications.repository';
 @ApiTags('notifications')
 @ApiBearerAuth()
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
-@UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly repository: NotificationsRepository) {}

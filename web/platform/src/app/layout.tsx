@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Every route reads the session from cookies, so none of them may prerender.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "RescuFood",
   description:

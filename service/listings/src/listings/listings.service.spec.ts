@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { SQL } from 'drizzle-orm';
 import type { AuthenticatedUser } from '../common/types/express';
+import type { UpdateListingDto } from './dto/update-listing.dto';
 import { ListingImageUploadService } from './images/listing-image-upload.service';
 import { ListingImagesRepository } from './images/listing-images.repository';
 import { ListingsRepository } from './listings.repository';
@@ -167,6 +169,16 @@ const baseListing = {
   createdAt: new Date('2026-08-06T00:00:00Z'),
   updatedAt: new Date('2026-08-06T00:00:00Z'),
 };
+
+// The values the service handed to its first updateWithVersion call.
+function writtenValues(repository: ReturnType<typeof makeRepository>) {
+  const [, , values] = repository.updateWithVersion.mock.calls[0] as [
+    unknown,
+    unknown,
+    Record<string, unknown>,
+  ];
+  return values;
+}
 
 // baseListing's fixed dates fail the past-window rule once "now" moves
 // past them - use these overrides instead for publish-path tests.
@@ -929,6 +941,81 @@ describe('ListingsService', () => {
         expect.objectContaining({ action: 'listing.unpublished' }),
         expect.anything(),
       );
+    });
+
+    it('stamps publishedAt from the database clock on publish', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'available' },
+        [],
+        owner,
+      );
+
+      const values = writtenValues(repository);
+      expect(values.publishedAt).toBeInstanceOf(SQL);
+    });
+
+    it('clears publishedAt on unpublish', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'available',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'draft',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        { version: 1, status: 'draft' },
+        [],
+        owner,
+      );
+
+      const values = writtenValues(repository);
+      expect(values).toHaveProperty('publishedAt', null);
+    });
+
+    it.each<[string, UpdateListingDto]>([
+      ['a field edit', { version: 1, description: 'new' }],
+      ['a no-op status touch', { version: 1, status: 'available' }],
+      [
+        'a cancellation',
+        { version: 1, status: 'cancelled', cancelledReason: 'gone' },
+      ],
+    ])('leaves publishedAt alone on %s', async (_, dto) => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        ...publishableFields(),
+        status: 'available',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: dto.status ?? 'available',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await service.update('listing-1', dto, [], owner);
+
+      const values = writtenValues(repository);
+      expect(values).not.toHaveProperty('publishedAt');
     });
 
     it('audits a field-only edit with the changed field names', async () => {

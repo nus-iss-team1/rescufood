@@ -1,5 +1,6 @@
 import type {
   DomainLookup,
+  LoginAttemptContext,
   LoginStatus,
   Me,
   NewOrganisation,
@@ -8,6 +9,7 @@ import type {
   OrgStatus,
   ResetEligibility,
   User,
+  UserName,
 } from "./types";
 
 export class ApiError extends Error {
@@ -80,14 +82,30 @@ export class ProfileClient {
     return this.request(`/auth/login-status?username=${encodeURIComponent(username)}`);
   }
 
-  /** Reports the result of a login attempt against the app's own form. */
-  recordLoginOutcome(username: string, success: boolean): Promise<void> {
-    return this.post("/auth/login-outcome", { username, success });
+  /** Reports a login attempt's result. A rejected call means it was not recorded. */
+  recordLoginOutcome(
+    username: string,
+    success: boolean,
+    context: LoginAttemptContext = {},
+  ): Promise<void> {
+    return this.post("/auth/login-outcome", {
+      username,
+      success,
+      forwarded_for: context.forwardedFor,
+      user_agent: context.userAgent,
+    });
   }
 
   /** Audit-only: call once a password reset has completed. */
-  recordPasswordResetCompleted(username: string): Promise<void> {
-    return this.post("/auth/password-reset-completed", { username });
+  recordPasswordResetCompleted(
+    username: string,
+    context: LoginAttemptContext = {},
+  ): Promise<void> {
+    return this.post("/auth/password-reset-completed", {
+      username,
+      forwarded_for: context.forwardedFor,
+      user_agent: context.userAgent,
+    });
   }
 
   /** Whether identifier (username or email) may reset its password. */
@@ -130,6 +148,13 @@ export class ProfileClient {
 
   listOrgMembers(orgId: string): Promise<User[]> {
     return this.request(`/admin/users/?org_id=${orgId}`);
+  }
+
+  /** Display names for user ids. At most 200 per call. */
+  resolveUserNames(ids: string[]): Promise<UserName[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    const query = ids.map((id) => encodeURIComponent(id)).join(",");
+    return this.request(`/admin/users/names?ids=${query}`);
   }
 
   suspendUser(id: string, reason: string): Promise<User> {

@@ -94,6 +94,8 @@ export interface Listing {
   cancelledReason: string;
   createdAt: string;
   updatedAt: string;
+  /** Start of the current publication; null while in draft. */
+  publishedAt: string | null;
   /** Set once soft-deleted; deleted listings are absent from every read. */
   deletedAt: string | null;
   images: ListingImage[];
@@ -164,6 +166,11 @@ export interface ListingRequest {
   noShowReason: string;
   createdAt: string;
   updatedAt: string;
+  /** Lot display fields: set by the read endpoints, null on write responses. */
+  listingDescription: string | null;
+  listingUnit: string | null;
+  listingCategory: ListingCategory | null;
+  listingImageUrl: string | null;
 }
 
 export interface NewRequest {
@@ -217,43 +224,33 @@ export interface OrgSummary {
   listings: Record<string, number> & { total: number };
   claims: Record<string, number> & { total: number };
   asOf: string;
-  period?: {
-    from?: string;
-    to?: string;
-  };
 }
 
-/** Quantity grouped distinctly by unit. */
+/** Collected quantity for one unit; units are never summed together. */
 export interface UnitQuantity {
   unit: string;
   amount: number;
-  formatted: string;
+  /** Display form of amount, e.g. "1,250.5". */
+  formattedAmount: string;
+  /** Distinct lots collected in this unit. */
+  lots: number;
 }
 
-/** Analytical outcomes for rescued quantity and time-to-claim. */
+/** Lifetime rescued quantity and time-to-claim for the caller's organisation. */
 export interface RescuedMetrics {
   orgId: string;
-  /** Quantities distinctly grouped by unit (never summed across incompatible units). */
+  /** Ordered by lots, most first. */
   rescuedByUnit: UnitQuantity[];
-  /** Total count of successfully collected lots / completed claims. */
-  collectedCount: number;
-  /** Average duration in milliseconds from publication to confirmed claim. */
+  lotsCollected: number;
+  claimsCompleted: number;
+  /** Publication to claim, over completed claims. */
   avgTimeToClaimMs: number | null;
-  /** Median duration in milliseconds from publication to confirmed claim. */
   medianTimeToClaimMs: number | null;
-  /** Human-readable representation of average time to claim (e.g. "1 hr 25 mins", "42 mins", "< 15 mins"). */
+  /** e.g. "1 hr 25 mins"; "--" when there is no data. */
   formattedAvgTimeToClaim: string;
-  /** Human-readable representation of median time to claim. */
   formattedMedianTimeToClaim: string;
-  /** Number of claimed lots included in time-to-claim metrics. */
   timeToClaimCount: number;
-  /** Timestamp when metrics were calculated. */
   asOf: string;
-  /** Applicable reporting period window. */
-  period?: {
-    from?: string;
-    to?: string;
-  };
 }
 
 export const auditEntityTypes = ["listing", "claim", "user", "organisation"] as const;

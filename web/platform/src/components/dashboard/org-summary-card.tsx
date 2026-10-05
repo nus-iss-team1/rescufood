@@ -71,18 +71,6 @@ export function formatAsOf(dateOrIso?: string | Date | null): string {
   return `${day} ${month} ${year}, ${hour}:${minute} SGT`;
 }
 
-function formatPeriod(
-  period?: { from?: string | Date; to?: string | Date } | null,
-): string | null {
-  if (!period || (!period.from && !period.to)) return null;
-  const fromStr = period.from ? formatAsOf(period.from) : null;
-  const toStr = period.to ? formatAsOf(period.to) : null;
-  if (fromStr && toStr) return `Period: ${fromStr} – ${toStr}`;
-  if (fromStr) return `Period from: ${fromStr}`;
-  if (toStr) return `Period until: ${toStr}`;
-  return null;
-}
-
 function getListingCount(
   listings: Record<string, number> | undefined,
   key: string,
@@ -277,7 +265,6 @@ export function OrgSummaryCard({
   }
 
   const asOfFormatted = formatAsOf(summary.asOf);
-  const periodFormatted = formatPeriod(summary.period);
 
   const listingTotal =
     summary.listings?.total ??
@@ -312,14 +299,6 @@ export function OrgSummaryCard({
                     {asOfFormatted}
                   </strong>
                 </span>
-              )}
-              {periodFormatted && (
-                <>
-                  <span aria-hidden className="text-border">
-                    |
-                  </span>
-                  <span>{periodFormatted}</span>
-                </>
               )}
             </CardDescription>
           </div>

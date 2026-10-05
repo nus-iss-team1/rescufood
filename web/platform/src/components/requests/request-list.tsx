@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, PackageCheck } from "lucide-react";
-import type { Listing, ListingRequest } from "@rescufood/listings-sdk";
+import type { ListingRequest } from "@rescufood/listings-sdk";
 
 import { CancelClaimButton } from "./cancel-claim-button";
 import {
@@ -14,13 +14,7 @@ import { Badge } from "@rescufood/ui/components/badge";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
 
-export function RequestList({
-  requests,
-  listings,
-}: {
-  requests: ListingRequest[];
-  listings?: Map<string, Listing>;
-}) {
+export function RequestList({ requests }: { requests: ListingRequest[] }) {
   if (requests.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -34,8 +28,7 @@ export function RequestList({
   return (
     <ul className="grid gap-3">
       {requests.map((request) => {
-        const listing = listings?.get(request.listingId);
-        const unit = listing?.unit ?? "requested";
+        const unit = request.listingUnit ?? "requested";
         return (
           <li
             key={request.id}
@@ -50,9 +43,10 @@ export function RequestList({
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/requests/${request.id}`}
+                  prefetch={false}
                   className="font-medium hover:underline"
                 >
-                  {listing?.description ??
+                  {request.listingDescription ??
                     quantity(request.requestedQuantity, unit)}
                 </Link>
                 <Badge variant={requestStatusVariant[request.status]}>
@@ -74,7 +68,7 @@ export function RequestList({
                   <PackageCheck className="size-4 shrink-0" aria-hidden />
                   Collected {shortDate(request.collectedAt)}
                   {request.collectedQuantity
-                    ? ` · ${quantity(request.collectedQuantity, listing?.unit ?? "picked up")}`
+                    ? ` · ${quantity(request.collectedQuantity, request.listingUnit ?? "picked up")}`
                     : ""}
                 </p>
               )}
@@ -89,6 +83,7 @@ export function RequestList({
             <div className="flex items-center gap-2 sm:justify-end">
               <Link
                 href={`/requests/${request.id}`}
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
                 View Details

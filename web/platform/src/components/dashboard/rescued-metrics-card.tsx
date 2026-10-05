@@ -46,18 +46,6 @@ export function formatAsOf(dateOrIso?: string | Date | null): string {
   return `${day} ${month} ${year}, ${hour}:${minute} SGT`;
 }
 
-function formatPeriod(
-  period?: { from?: string | Date; to?: string | Date } | null,
-): string | null {
-  if (!period || (!period.from && !period.to)) return null;
-  const fromStr = period.from ? formatAsOf(period.from) : null;
-  const toStr = period.to ? formatAsOf(period.to) : null;
-  if (fromStr && toStr) return `Period: ${fromStr} – ${toStr}`;
-  if (fromStr) return `Period from: ${fromStr}`;
-  if (toStr) return `Period until: ${toStr}`;
-  return null;
-}
-
 export function RescuedMetricsSkeleton() {
   return (
     <Card className="w-full gap-3">
@@ -204,7 +192,6 @@ export function RescuedMetricsCard({
   }
 
   const asOfFormatted = formatAsOf(metrics.asOf);
-  const periodFormatted = formatPeriod(metrics.period);
   const hasRescuedUnits = metrics.rescuedByUnit.length > 0;
   const hasTimeToClaim = metrics.timeToClaimCount > 0;
 
@@ -225,14 +212,6 @@ export function RescuedMetricsCard({
                     {asOfFormatted}
                   </strong>
                 </span>
-              )}
-              {periodFormatted && (
-                <>
-                  <span aria-hidden className="text-border">
-                    |
-                  </span>
-                  <span>{periodFormatted}</span>
-                </>
               )}
             </CardDescription>
           </div>
@@ -270,10 +249,10 @@ export function RescuedMetricsCard({
                     </p>
                   </div>
                 </div>
-                {metrics.collectedCount > 0 && (
+                {metrics.lotsCollected > 0 && (
                   <Badge variant="success" className="text-[11px] font-medium h-5">
-                    {metrics.collectedCount}{" "}
-                    {metrics.collectedCount === 1 ? "lot" : "lots"} collected
+                    {metrics.lotsCollected}{" "}
+                    {metrics.lotsCollected === 1 ? "lot" : "lots"} collected
                   </Badge>
                 )}
               </div>
@@ -288,10 +267,13 @@ export function RescuedMetricsCard({
                         className="inline-flex items-baseline gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-1.5"
                       >
                         <span className="text-2xl font-bold tracking-tight text-foreground">
-                          {item.amount % 1 === 0 ? item.amount : item.amount.toFixed(1)}
+                          {item.formattedAmount}
                         </span>
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                           {item.unit}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          · {item.lots} {item.lots === 1 ? "lot" : "lots"}
                         </span>
                       </div>
                     ))}
@@ -299,10 +281,10 @@ export function RescuedMetricsCard({
                 ) : (
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold tracking-tight text-muted-foreground">
-                      0 kg
+                      0
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      (No completed rescue outcomes in this period)
+                      (No completed rescue outcomes yet)
                     </span>
                   </div>
                 )}

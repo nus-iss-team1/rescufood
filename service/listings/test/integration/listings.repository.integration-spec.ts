@@ -151,6 +151,40 @@ describe('ListingsRepository (integration)', () => {
     });
   });
 
+  describe('draft_has_no_published_at CHECK', () => {
+    it('rejects a draft carrying a publication time', async () => {
+      const { org, user } = await seedDonor();
+      const draft = await seedListing({
+        donorOrgId: org.id,
+        createdBy: user.id,
+        status: 'draft',
+      });
+
+      await expect(
+        ctx.listings.updateWithVersion(draft.id, 1, {
+          publishedAt: new Date(),
+          version: 2,
+        }),
+      ).rejects.toMatchObject({ cause: { code: '23514' } });
+    });
+
+    it('rejects unpublishing without clearing the publication time', async () => {
+      const { org, user } = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: org.id,
+        createdBy: user.id,
+        status: 'available',
+      });
+
+      await expect(
+        ctx.listings.updateWithVersion(listing.id, 1, {
+          status: 'draft',
+          version: 2,
+        }),
+      ).rejects.toMatchObject({ cause: { code: '23514' } });
+    });
+  });
+
   describe('findMany visibility', () => {
     it('shows outsiders only available listings, owners every status', async () => {
       const donor = await seedDonor();

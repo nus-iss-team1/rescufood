@@ -771,15 +771,15 @@ Resources:
       Conditions:
         - Field: path-pattern
           # /api/listings and /api/requests are themselves routes, not just
-          # prefixes, so both the bare path and /* are needed. /api/summary
-          # is a single route with nothing below it.
+          # prefixes, so both the bare path and /* are needed. /api/stats
+          # has no route of its own, so /* alone covers it.
           Values:
             [
               /api/listings,
               /api/listings/*,
               /api/requests,
               /api/requests/*,
-              /api/summary,
+              /api/stats/*,
             ]
       Actions:
         - Type: forward

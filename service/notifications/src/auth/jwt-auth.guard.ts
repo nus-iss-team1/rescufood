@@ -5,8 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
+import { IS_PUBLIC } from './public.decorator';
 
 // Cognito group whose members are platform admins (see service/profile's adminGroup).
 const ADMIN_GROUP = 'admin';
@@ -18,7 +20,10 @@ export class JwtAuthGuard implements CanActivate {
   private readonly issuer: string;
   private readonly jwks: JWTVerifyGetKey;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly reflector: Reflector,
+  ) {
     this.issuer = config.getOrThrow<string>('AUTH_COGNITO_ISSUER');
     this.jwks = createRemoteJWKSet(
       new URL(`${this.issuer}/.well-known/jwks.json`),
@@ -26,6 +31,12 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     const request = context.switchToHttp().getRequest<Request>();
     const token = extractBearerToken(request.headers.authorization);
     if (!token) {

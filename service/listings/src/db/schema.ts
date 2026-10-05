@@ -107,6 +107,8 @@ export const listings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Start of the current publication; null while in draft.
+    publishedAt: timestamp('published_at', { withTimezone: true }),
     // Soft delete: null means active. Every read path (findById, findMany,
     // updateWithVersion) filters this out, so a deleted listing behaves as
     // gone to callers while the row - and its history - is retained.
@@ -118,6 +120,10 @@ export const listings = pgTable(
       sql`${table.pickupWindowEnd} > ${table.pickupWindowStart}`,
     ),
     check('quantity_non_negative', sql`${table.quantity} >= 0`),
+    check(
+      'draft_has_no_published_at',
+      sql`${table.status} <> 'draft' or ${table.publishedAt} is null`,
+    ),
     // Backstop for the publish gate in ListingsService.update() - status
     // can't become 'available' with an incomplete Draft, even via raw SQL.
     check(

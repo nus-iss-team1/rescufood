@@ -23,7 +23,6 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Logger } from 'nestjs-pino';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   OrgContextGuard,
   OrgMembershipGuard,
@@ -57,7 +56,6 @@ const lookupThrottle = Throttle({ default: { limit: 5, ttl: 60_000 } });
 @ApiBearerAuth()
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @Controller('requests')
-@UseGuards(JwtAuthGuard)
 export class RequestsController {
   constructor(
     private readonly requestsService: RequestsService,

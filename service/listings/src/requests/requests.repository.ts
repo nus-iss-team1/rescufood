@@ -5,6 +5,7 @@ import {
   count,
   desc,
   eq,
+  getTableColumns,
   gt,
   inArray,
   isNull,
@@ -19,7 +20,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { AuthenticatedUser } from '../common/types/express';
 import { DATABASE, type Database } from '../db/db.module';
 import { organisations, users } from '../db/external.schema';
-import { listings, requests } from '../db/schema';
+import { listingImages, listings, requests } from '../db/schema';
 import type { QueryRequestsDto } from './dto/query-requests.dto';
 
 export type PickupReminderPhase = 'opening' | 'closing';
@@ -51,11 +52,19 @@ export type RequestedListing = {
   createdBy: string;
   status: (typeof listings.$inferSelect)['status'];
   description: string | null;
+  category: (typeof listings.$inferSelect)['category'];
   quantity: string | null;
   unit: string | null;
   pickupLocation: string | null;
   pickupWindowStart: Date | null;
   pickupWindowEnd: Date | null;
+};
+
+// A request row plus the display fields of the lot it points at.
+export type ListingRequestWithListing = ListingRequest & {
+  listingDescription: string | null;
+  listingUnit: string | null;
+  listingCategory: (typeof listings.$inferSelect)['category'];
 };
 
 // An org's contact details, for addressing notifications.
@@ -102,15 +111,22 @@ export class RequestsRepository {
   findMany(
     query: QueryRequestsDto,
     viewer: AuthenticatedUser,
-  ): Promise<ListingRequest[]> {
+  ): Promise<ListingRequestWithListing[]> {
     const conditions = this.buildConditions(query, viewer);
     const sortColumn = requests[query.sortBy ?? 'requestedAt'];
     const order =
       query.sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
+    // Joined so a row can name its lot without a lookup per request.
     return this.db
-      .select()
+      .select({
+        ...getTableColumns(requests),
+        listingDescription: listings.description,
+        listingUnit: listings.unit,
+        listingCategory: listings.category,
+      })
       .from(requests)
+      .innerJoin(listings, eq(listings.id, requests.listingId))
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(order)
       .limit(query.limit ?? 20)
@@ -138,6 +154,7 @@ export class RequestsRepository {
         createdBy: listings.createdBy,
         status: listings.status,
         description: listings.description,
+        category: listings.category,
         quantity: listings.quantity,
         unit: listings.unit,
         pickupLocation: listings.pickupLocation,
@@ -182,6 +199,25 @@ export class RequestsRepository {
           gt(requests.codeExpiresAt, now),
         ),
       );
+  }
+
+  // Lowest-position image per listing, in one query.
+  async findFirstImageKeys(listingIds: string[]): Promise<Map<string, string>> {
+    if (listingIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        listingId: listingImages.listingId,
+        s3Key: listingImages.s3Key,
+      })
+      .from(listingImages)
+      .where(inArray(listingImages.listingId, listingIds))
+      .orderBy(asc(listingImages.position));
+
+    const first = new Map<string, string>();
+    for (const row of rows) {
+      if (!first.has(row.listingId)) first.set(row.listingId, row.s3Key);
+    }
+    return first;
   }
 
   // Contact details for the given org ids, for addressing notifications.
@@ -336,6 +372,7 @@ export class RequestsRepository {
         createdBy: listings.createdBy,
         status: listings.status,
         description: listings.description,
+        category: listings.category,
         quantity: listings.quantity,
         unit: listings.unit,
         pickupLocation: listings.pickupLocation,
