@@ -24,6 +24,7 @@ function makeListing(overrides: Partial<Listing> = {}): Listing {
     cancelledReason: "",
     createdAt: "2025-06-14T00:00:00.000Z",
     updatedAt: "2025-06-14T00:00:00.000Z",
+    publishedAt: null,
     deletedAt: null,
     images: [],
     ...overrides,
