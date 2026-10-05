@@ -18,4 +18,14 @@ test.describe('Login', () => {
     const errorAlert = page.getByRole('alert').filter({ hasText: 'Sign-in failed' });
     await expect(errorAlert).toBeVisible();
   });
+
+  // The other specs reuse sessions saved by auth.setup.ts and never sign
+  // out, so this is where signing out is covered. A fresh sign-in of its
+  // own, not a saved session: signing out only clears this context's
+  // cookie, so the saved sessions stay valid for the rest of the run.
+  test('donor can sign in and sign out', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.loginAsDonor();
+    await loginPage.logout();
+  });
 });
