@@ -84,7 +84,7 @@ export class StatisticsService {
 
 // Always scoped to the caller's own org, admins included: organisation
 // statistics are per-org figures, so there is no cross-org view of them to
-// grant. OrgMembershipGuard already rejects org-less callers - the check
+// grant. ActiveOrgMemberGuard already rejects org-less callers - the check
 // here is what makes that hold if a route is ever wired without it.
 function requireOrgId(user: AuthenticatedUser): string {
   if (!user.orgId) {

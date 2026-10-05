@@ -6,7 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { OrgMembershipGuard } from '../auth/org-membership.guard';
+import { ActiveOrgMemberGuard } from '../auth/active-org-member.guard';
 import { OrgSummaryResponseDto } from './dto/org-summary-response.dto';
 import { RescuedMetricsResponseDto } from './dto/rescued-metrics-response.dto';
 import { StatisticsService } from './statistics.service';
@@ -16,10 +16,11 @@ import { StatisticsService } from './statistics.service';
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @ApiResponse({
   status: 403,
-  description: 'Caller does not belong to an organisation.',
+  description:
+    "Caller has no organisation, is not active, or their organisation isn't approved.",
 })
 @Controller('stats')
-@UseGuards(OrgMembershipGuard)
+@UseGuards(ActiveOrgMemberGuard)
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 

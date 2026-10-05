@@ -5,9 +5,11 @@ import {
   resetDb,
   seedDonor,
   seedListing,
+  seedOrg,
   seedRequest,
   seedRescuePartner,
   seedUser,
+  type SeededOrg,
 } from './support/db';
 import { authHeaders, body, createTestApp, type TestApp } from './support/app';
 
@@ -532,5 +534,68 @@ describe('GET /api/stats/metrics (integration)', () => {
 
   it('rejects a caller with no credentials', async () => {
     await request(harness.server).get('/api/stats/metrics').expect(401);
+  });
+});
+
+describe('GET /api/stats/* access (integration)', () => {
+  const paths = ['/api/stats/summary', '/api/stats/metrics'];
+
+  async function memberOf(
+    orgStatus: SeededOrg['status'],
+    userStatus = 'active',
+  ) {
+    const org = await seedOrg({ type: 'donor', status: orgStatus });
+    const user = await seedUser({ orgId: org.id, status: userStatus });
+    return { org, user };
+  }
+
+  it.each([
+    ['a member of a pending org', () => memberOf('pending')],
+    ['a member of a rejected org', () => memberOf('rejected')],
+    [
+      'a suspended user in an approved org',
+      () => memberOf('approved', 'suspended'),
+    ],
+  ])('denies %s on both endpoints', async (_, seedCaller) => {
+    const { user } = await seedCaller();
+
+    for (const path of paths) {
+      const res = await request(harness.server)
+        .get(path)
+        .set(authHeaders(user))
+        .expect(403);
+      expect(res.body).not.toHaveProperty('orgId');
+    }
+  });
+
+  it('denies a suspended org without returning its history', async () => {
+    const { org, user } = await memberOf('suspended');
+    const rescue = await seedRescuePartner();
+    const listing = await seedListing({
+      donorOrgId: org.id,
+      createdBy: user.id,
+      status: 'collected',
+    });
+    await seedRequest({
+      listingId: listing.id,
+      rescueOrgId: rescue.org.id,
+      claimedBy: rescue.user.id,
+      status: 'completed',
+    });
+
+    for (const path of paths) {
+      const res = await request(harness.server)
+        .get(path)
+        .set(authHeaders(user))
+        .expect(403);
+      expect(res.body).not.toHaveProperty('rescuedByUnit');
+      expect(res.body).not.toHaveProperty('claims');
+    }
+
+    // The same claim still counts for the active partner on the other side.
+    const partner = body<RescuedMetricsBody>(
+      await getMetrics(rescue.user).expect(200),
+    );
+    expect(partner.claimsCompleted).toBe(1);
   });
 });
