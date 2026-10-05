@@ -1,5 +1,7 @@
 import { test, expect } from './fixtures/sessions';
 import { ListingFormPage } from './pages/listing-form-page';
+import { YourListingsPage } from './pages/your-listings-page';
+import { ListingEditPage } from './pages/listing-edit-page';
 import { BrowsePage } from './pages/browse-page';
 import { RequestsPage } from './pages/requests-page';
 import { buildQaListing } from './fixtures/listing-data';
@@ -16,28 +18,13 @@ test.describe.serial('Listing claim lifecycle', () => {
   });
 
   test('donor can edit the tagged QA listing', async ({ donorPage }) => {
-    await donorPage.goto('/listings');
-    await donorPage.waitForLoadState('networkidle');
+    const yourListings = new YourListingsPage(donorPage);
+    await yourListings.goto();
+    await yourListings.openEdit(tag);
 
-    const row = donorPage.getByRole('listitem').filter({ hasText: tag });
-    await expect(row).toBeVisible();
-
-    // Same hydration race as the browse page link above - retrying the
-    // click is safe, it's just a link.
-    await expect(async () => {
-      await row.getByRole('link', { name: 'View / Edit' }).click();
-      await donorPage.waitForURL(/\/listings\/[^/]+$/, { timeout: 3_000 });
-    }).toPass({ timeout: 20_000 });
-    await donorPage.waitForLoadState('networkidle');
-
-    await donorPage
-      .getByLabel('Handling info')
-      .fill(`Updated by automated QA edit ${tag}`);
-    await donorPage.getByRole('button', { name: 'Save changes' }).click();
-
-    await expect(donorPage.getByText('Listing updated successfully!')).toBeVisible(
-      { timeout: 10_000 },
-    );
+    const editPage = new ListingEditPage(donorPage);
+    await editPage.fillHandlingInfo(`Updated by automated QA edit ${tag}`);
+    await editPage.save();
   });
 
   test('rescue partner can view listings', async ({ partnerPage }) => {
@@ -92,9 +79,45 @@ test.describe.serial('Listing claim lifecycle', () => {
     await expect(request.getByText('Cancelled')).toBeVisible({ timeout: 10_000 });
   });
 
-  // TODO: once the donor UI exposes a "Delete listing" action (the
-  // deleteListing API client already exists in
-  // web/platform/src/lib/listings.ts, it's just not wired to any button
-  // yet), add a final step here where the donor deletes this tagged
-  // listing to fully clean up after the run.
+  // The listings service keeps any listing that has had a request, even a
+  // cancelled one, for audit history - so this run's listing can't be
+  // cleaned up by deleting it. (Deleting is covered in
+  // listing-draft-delete.spec.ts, on a listing that's never claimed.)
+  test('donor cannot delete a listing that has had a request', async ({ donorPage }) => {
+    const yourListings = new YourListingsPage(donorPage);
+    await yourListings.goto();
+    await yourListings.delete(tag);
+
+    const notifications = donorPage.getByLabel(/Notifications/i);
+    await expect(notifications.getByText('Could not delete listing')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      notifications.getByText('This listing has associated requests and cannot be deleted.'),
+    ).toBeVisible();
+
+    await yourListings.goto();
+    await expect(yourListings.rowFor(tag)).toBeVisible();
+  });
+
+  // Cancelling the claim put the listing back on offer. Withdrawing it is
+  // the cleanup available instead, so rescue partners stop seeing it.
+  test('donor can withdraw the listing', async ({ donorPage }) => {
+    const yourListings = new YourListingsPage(donorPage);
+    await yourListings.goto();
+    await yourListings.openEdit(tag);
+
+    const editPage = new ListingEditPage(donorPage);
+    await editPage.setStatus('Cancelled');
+    await editPage.save();
+  });
+
+  test('rescue partner no longer sees the withdrawn listing', async ({ partnerPage }) => {
+    const browsePage = new BrowsePage(partnerPage);
+    await browsePage.goto();
+    await expect(
+      partnerPage.getByRole('heading', { name: 'Find surplus food' }),
+    ).toBeVisible();
+    await expect(browsePage.cardFor(tag)).toHaveCount(0);
+  });
 });

@@ -19,12 +19,7 @@ export class ListingFormPage {
   }
 
   async publish(fields: ListingFields) {
-    await this.page.getByLabel('Quantity').fill(fields.quantity);
-    await this.page.getByLabel('Unit').fill(fields.unit);
-    await this.page.getByLabel('Description').fill(fields.description);
-    await this.page.getByLabel('Allergens').fill(fields.allergens);
-    await this.page.getByLabel('Pickup location').fill(fields.pickupLocation);
-
+    await this.fill(fields);
     await this.page.getByRole('button', { name: 'Publish listing' }).click();
 
     await expect(
@@ -35,5 +30,24 @@ export class ListingFormPage {
     await expect(
       this.page.getByRole('link', { name: 'Post another' }),
     ).toBeVisible();
+  }
+
+  async saveDraft(fields: ListingFields) {
+    await this.fill(fields);
+    await this.page.getByRole('button', { name: 'Save as draft' }).click();
+
+    await expect(
+      this.page.getByText(
+        'Your listing has been saved as a draft. You can edit or publish it anytime from your listings.',
+      ),
+    ).toBeVisible({ timeout: 10_000 });
+  }
+
+  private async fill(fields: ListingFields) {
+    await this.page.getByLabel('Quantity').fill(fields.quantity);
+    await this.page.getByLabel('Unit').fill(fields.unit);
+    await this.page.getByLabel('Description').fill(fields.description);
+    await this.page.getByLabel('Allergens').fill(fields.allergens);
+    await this.page.getByLabel('Pickup location').fill(fields.pickupLocation);
   }
 }
