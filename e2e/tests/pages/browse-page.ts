@@ -1,4 +1,4 @@
-import { type Page, expect } from '@playwright/test';
+import { type Page, type Locator, expect } from '@playwright/test';
 
 export class BrowsePage {
   constructor(private readonly page: Page) {}
@@ -10,8 +10,15 @@ export class BrowsePage {
     await this.page.waitForLoadState('networkidle');
   }
 
+  /** Card for the tagged QA listing. The page renders on the server, so
+   * once goto() has settled an absent card means the listing isn't
+   * offered, not that it hasn't loaded yet. */
+  cardFor(tag: string): Locator {
+    return this.page.getByRole('listitem').filter({ hasText: tag });
+  }
+
   async openListing(tag: string) {
-    const card = this.page.getByRole('listitem').filter({ hasText: tag });
+    const card = this.cardFor(tag);
     await expect(card).toBeVisible();
 
     // The click occasionally lands before the page finishes hydrating and
