@@ -224,6 +224,9 @@ const LOCKED_STATUSES = new Set([
   "cancelled",
 ]);
 
+// TODO(frontend): temporary fallback - remove once cancelling a listing asks for a reason; the service rejects a blank one.
+const fallbackCancelledReason = "No reason given";
+
 /**
  * Updates an existing listing via PATCH /listings/:id.
  * Enforces dual validation modes (strict when published/available, looser for draft)
@@ -309,6 +312,12 @@ export async function updateListingAction(
     pickupWindowEnd: listingData.pickupWindowEnd,
     ...(targetStatus && listingStatuses.includes(targetStatus as ListingStatus)
       ? { status: targetStatus as ListingStatus }
+      : {}),
+    ...(targetStatus === "cancelled"
+      ? {
+          cancelledReason:
+            text(formData, "cancelledReason") || fallbackCancelledReason,
+        }
       : {}),
     ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
   };
