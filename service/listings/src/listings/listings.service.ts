@@ -355,6 +355,7 @@ export class ListingsService {
             cancelledClaim = await this.listingsRepository.cancelActiveClaim(
               id,
               dto.cancelledReason ?? '',
+              actor,
               tx,
             );
             if (cancelledClaim) {

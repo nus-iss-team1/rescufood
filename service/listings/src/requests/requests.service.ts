@@ -32,6 +32,13 @@ import {
 import { formatWindow } from './common/pickup-window.util';
 import { assertValidRequestStatusTransition } from './common/request-status.util';
 import {
+  DEFAULT_CLAIM_CANCEL_CUTOFF_HOURS,
+  DEFAULT_RELIST_MIN_PICKUP_HOURS,
+  relistBlockedReason,
+  type RelistBlockedReason,
+  type RelistPolicy,
+} from './common/relist-policy.util';
+import {
   IdempotencyConflictException,
   IdempotencyProcessingException,
 } from './idempotency/idempotency.exceptions';
@@ -63,6 +70,13 @@ import {
 
 const ACTIVE_CLAIM_CONSTRAINT = 'requests_active_claim_per_listing_uq';
 const DEFAULT_RETENTION_DAYS = 7;
+const HOUR_MS = 60 * 60 * 1000;
+
+// A decided claim plus what happened to its listing.
+export type DecidedRequest = PublicListingRequest & {
+  listingRelisted: boolean;
+  relistBlockedReason: RelistBlockedReason | null;
+};
 
 // Earliest a replacement pickup code may be minted, given when the current
 // one was. Falls back to "now" when nothing was ever generated.
@@ -74,6 +88,7 @@ function regenAvailableAt(generatedAt: Date | null): Date {
 @Injectable()
 export class RequestsService {
   private readonly retentionMs: number;
+  private readonly relistPolicy: RelistPolicy;
 
   constructor(
     private readonly requestsRepository: RequestsRepository,
@@ -88,7 +103,17 @@ export class RequestsService {
     const days =
       config.get<number>('IDEMPOTENCY_RETENTION_DAYS') ??
       DEFAULT_RETENTION_DAYS;
-    this.retentionMs = days * 24 * 60 * 60 * 1000;
+    this.retentionMs = days * 24 * HOUR_MS;
+    const cutoffHours =
+      config.get<number>('CLAIM_CANCEL_CUTOFF_HOURS') ??
+      DEFAULT_CLAIM_CANCEL_CUTOFF_HOURS;
+    const minPickupHours =
+      config.get<number>('RELIST_MIN_PICKUP_HOURS') ??
+      DEFAULT_RELIST_MIN_PICKUP_HOURS;
+    this.relistPolicy = {
+      cutoffMs: cutoffHours * HOUR_MS,
+      minPickupMs: minPickupHours * HOUR_MS,
+    };
   }
 
   // An image key becomes a CDN url; no key means the lot has no photo.
@@ -307,21 +332,32 @@ export class RequestsService {
     });
   }
 
-  // Either party to an active claim may cancel it or report a no-show; both
-  // reopen the listing for another org.
+  // Either party to an active claim may cancel it or report a no-show. A
+  // no-show reopens the listing; a cancellation reopens it only when the
+  // relist policy allows, otherwise the listing expires.
   async decide(
     id: string,
     dto: UpdateRequestDto,
     user: AuthenticatedUser,
-  ): Promise<PublicListingRequest> {
+  ): Promise<DecidedRequest> {
     const existing = await this.getOrThrow(id);
     const listing = await this.getListingOrThrow(existing.listingId);
     assertValidRequestStatusTransition(existing.status, dto.status);
     assertIsParty(existing, listing, user);
 
+    const blockedReason =
+      dto.status === 'cancelled'
+        ? relistBlockedReason(listing, new Date(), this.relistPolicy)
+        : null;
+
     try {
       const result = await this.db.transaction(async (tx) => {
-        if (existing.status === 'active') {
+        if (blockedReason) {
+          await this.requestsRepository.expireListingAfterClaimEnded(
+            existing.listingId,
+            tx,
+          );
+        } else {
           await this.requestsRepository.reopenListingAfterClaimEnded(
             existing.listingId,
             tx,
@@ -336,6 +372,8 @@ export class RequestsService {
             ...(dto.status === 'cancelled' && {
               cancelledAt: new Date(),
               cancellationReason: dto.cancellationReason ?? '',
+              cancelledBy: user.userId,
+              cancelledByOrgId: user.orgId ?? null,
             }),
             ...(dto.status === 'no_show' && {
               noShowReason: dto.noShowReason ?? '',
@@ -367,13 +405,32 @@ export class RequestsService {
             metadata: {
               previousStatus: existing.status,
               listingId: existing.listingId,
-              listingReopened: existing.status === 'active',
+              listingReopened: !blockedReason,
+              ...(blockedReason && { relistBlockedReason: blockedReason }),
             },
           },
           tx,
         );
 
-        return toPublicRequest(updated);
+        if (blockedReason) {
+          await this.auditRepository.record(
+            {
+              actor: { userId: user.userId, orgId: user.orgId ?? null },
+              action: AuditAction.ListingExpired,
+              entityType: 'listing',
+              entityId: existing.listingId,
+              reason: blockedReason,
+              metadata: { claimId: id },
+            },
+            tx,
+          );
+        }
+
+        return {
+          ...toPublicRequest(updated),
+          listingRelisted: !blockedReason,
+          relistBlockedReason: blockedReason,
+        };
       });
       await this.notifyClaimEnded(existing, listing, dto, user);
       return result;

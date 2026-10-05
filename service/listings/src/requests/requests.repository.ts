@@ -464,6 +464,27 @@ export class RequestsRepository {
       .where(and(eq(listings.id, listingId), isNull(listings.deletedAt)));
   }
 
+  // Closes a reserved listing whose claim ended too late to relist: `reserved -> expired`.
+  async expireListingAfterClaimEnded(
+    listingId: string,
+    executor: Database = this.db,
+  ): Promise<void> {
+    await executor
+      .update(listings)
+      .set({
+        status: 'expired',
+        version: sql`${listings.version} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(listings.id, listingId),
+          eq(listings.status, 'reserved'),
+          isNull(listings.deletedAt),
+        ),
+      );
+  }
+
   private buildConditions(
     query: QueryRequestsDto,
     viewer: AuthenticatedUser,

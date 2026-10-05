@@ -31,6 +31,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { PaginatedRequestsResponseDto } from './dto/paginated-requests-response.dto';
 import { PickupCodeResponseDto } from './dto/pickup-code-response.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
+import { DecideRequestResponseDto } from './dto/decide-request-response.dto';
 import { RequestResponseDto } from './dto/request-response.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { LookupPickupCodeDto } from './dto/lookup-pickup-code.dto';
@@ -122,13 +123,14 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Cancel a claim or report a no-show',
     description:
-      "Either party to an accepted claim may cancel it or report a no-show; both reopen the listing for another org. See the request-status transition map for which decisions are valid from the claim's current status.",
+      "Either party to an accepted claim may cancel it (with a reason) or report a no-show. A no-show reopens the listing for another org. A cancellation reopens it only if made before the cancellation cutoff (CLAIM_CANCEL_CUTOFF_HOURS before the pickup window opens) with at least RELIST_MIN_PICKUP_HOURS of the window left; otherwise the claim is still cancelled but the listing is expired, and the response reports `listingRelisted: false` with a `relistBlockedReason`. See the request-status transition map for which decisions are valid from the claim's current status.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiResponse({ status: 200, type: RequestResponseDto })
+  @ApiResponse({ status: 200, type: DecideRequestResponseDto })
   @ApiResponse({
     status: 400,
-    description: "Decision not valid from the claim's current status.",
+    description:
+      "Decision not valid from the claim's current status, or a cancellation without a reason.",
   })
   @ApiResponse({
     status: 403,
