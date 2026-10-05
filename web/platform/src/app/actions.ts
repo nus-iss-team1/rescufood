@@ -19,6 +19,7 @@ import {
   lookupOrganisation,
   recordPasswordResetCompleted,
   registerOrganisation,
+  requestContext,
   resetEligibility,
   ProfileApiError,
 } from "@/lib/profile";
@@ -64,6 +65,17 @@ export async function loginAction(
       return {
         error:
           "Your account is temporarily locked after repeated failed sign-in attempts. Try again later or contact an administrator.",
+      };
+    }
+    // Credentials may well have been correct; the attempt could not be
+    // recorded, so say so rather than implying they were wrong.
+    if (
+      err instanceof CredentialsSignin &&
+      err.code === "attempt_not_recorded"
+    ) {
+      return {
+        error:
+          "Sign-in is temporarily unavailable. Please try again shortly, and contact an administrator if it persists.",
       };
     }
     if (err instanceof AuthError) {
@@ -437,9 +449,13 @@ export async function confirmPasswordResetAction(
     }
   }
 
-  // Best-effort: also clears any failed-login lockout server-side. Never
-  // blocks the user-visible success on an audit-log hiccup.
-  recordPasswordResetCompleted(username).catch(() => {});
+  // Cognito has already changed the password, so this cannot be made to block
+  // the result the way a login can - but a lost event is reported, not ignored.
+  recordPasswordResetCompleted(username, await requestContext()).catch(
+    (err: unknown) => {
+      console.error("password reset completed but not audited", err);
+    },
+  );
 
   return { step: "confirm", username, done: true };
 }

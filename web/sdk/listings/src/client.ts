@@ -185,16 +185,16 @@ export class ListingsClient implements ListingsApi {
     return this.send("POST", `/requests/${id}/verify`, verify);
   }
 
-  // ----------------------------------------------------------- summary
+  // -------------------------------------------------------- statistics
 
   /** Operational summary for the caller's organisation. */
   getOrgSummary(): Promise<OrgSummary> {
-    return this.request("/summary");
+    return this.request("/stats/summary");
   }
 
   /** Rescued quantity and time-to-claim metrics for the caller's organisation. */
   getRescuedMetrics(): Promise<RescuedMetrics> {
-    return this.request("/reports/metrics");
+    return this.request("/stats/metrics");
   }
 
   // ------------------------------------------------------------- audit

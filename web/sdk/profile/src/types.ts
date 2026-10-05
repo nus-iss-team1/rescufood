@@ -35,9 +35,25 @@ export interface User {
   locked_until?: string | null;
 }
 
+/** A user id and how to display them. Ids with no user are simply absent. */
+export interface UserName {
+  id: string;
+  name: string;
+}
+
 export interface LoginStatus {
   restricted: boolean;
   retry_after?: string | null;
+}
+
+/**
+ * Where a login attempt came from, retained with its audit event. Omit a field
+ * that could not be determined - it is recorded as absent, never guessed.
+ */
+export interface LoginAttemptContext {
+  /** The X-Forwarded-For chain, verbatim. The service picks the trusted hop. */
+  forwardedFor?: string;
+  userAgent?: string;
 }
 
 export interface ResetEligibility {

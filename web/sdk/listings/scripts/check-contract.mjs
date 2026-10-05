@@ -146,6 +146,9 @@ for (const [file, svcName, sdkName] of [
   ["audit/dto/audit-event-response.dto.ts", "AuditEventResponseDto", "AuditEvent"],
   ["audit/dto/audit-filters.dto.ts", "AuditFiltersDto", "AuditFilters"],
   ["audit/dto/query-audit-events.dto.ts", "QueryAuditEventsDto", "AuditEventQuery"],
+  ["statistics/dto/org-summary-response.dto.ts", "OrgSummaryResponseDto", "OrgSummary"],
+  ["statistics/dto/rescued-metrics-response.dto.ts", "RescuedMetricsResponseDto", "RescuedMetrics"],
+  ["statistics/dto/rescued-metrics-response.dto.ts", "UnitQuantityResponseDto", "UnitQuantity"],
 ]) {
   compareShape(
     `${svcName} -> ${sdkName}`,

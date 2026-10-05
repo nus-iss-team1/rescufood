@@ -72,9 +72,9 @@ export function AuditEntitySheet({
   }, [event]);
 
   const actor = (item: AuditEvent) =>
-    item.userId === null
-      ? "System"
-      : (names.get(item.userId) ?? shortId(item.userId));
+    item.userId !== null
+      ? (names.get(item.userId) ?? shortId(item.userId))
+      : (item.subject ?? "System");
 
   return (
     <Sheet open={event !== null} onOpenChange={(o) => !o && onClose()}>
@@ -112,15 +112,13 @@ export function AuditEntitySheet({
                 </div>
               </dl>
 
-              <Separator />
+              {/* An event with no entity - a login on an unknown username -
+                  has no per-entity history, so the section is left out. */}
+              {event.entityId && <Separator />}
 
-              <div className="grid gap-1">
+              {event.entityId && (
                 <h3 className="text-sm font-medium">Full history</h3>
-                <p className="text-xs text-muted-foreground">
-                  Oldest first. These events are append-only, so they do not
-                  change when the {event.entityType} does.
-                </p>
-              </div>
+              )}
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 

@@ -114,6 +114,29 @@ aws cognito-idp admin-add-user-to-group --region ap-southeast-1 --user-pool-id "
 If styling ever looks mysteriously stale in dev, clear the Turbopack cache:
 `rm -rf .next` and restart.
 
+## Testing
+
+```sh
+npm test              # Vitest + React Testing Library, run once
+npm run test:watch
+npm run test:coverage # Coverage report (HTML in coverage/index.html)
+```
+
+Unit tests sit next to the code as `*.spec.ts(x)` and focus on logic:
+server actions (`src/app/**/actions.ts`) and `src/lib`. End-to-end user
+journeys are covered separately by the Playwright suite in [`e2e/`](../../e2e).
+
+`@rescufood/ui` (`web/ui/`) is a `file:` dependency, not an npm workspace, so
+install its dependencies in `web/ui` as well before running tests.
+
+> **Known limitation:** `web/ui` lists React as a devDependency, so a full
+> install there adds a second React copy. The `resolve` and
+> `test.server.deps.inline` settings in
+> [`vitest.config.mts`](./vitest.config.mts) work around this for most
+> components, but ones built on `@base-ui/react`'s shared store (Tooltip,
+> Select, Popover, Dialog, ...) still crash with an invalid hook call and
+> can't be rendered in unit tests yet.
+
 ## Docker
 
 The Dockerfile builds a slim three-stage image (Next.js standalone, non-root

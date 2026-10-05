@@ -33,10 +33,17 @@ export class PickupVerificationPage {
   }
 
   async submitCode(code: string) {
+    const dialog = this.page.getByRole('dialog');
     // Filling the first digit box distributes the whole code across all
     // six boxes - see OtpInput's paste-handling. This also works to
     // overwrite a previous (wrong) attempt still sitting in the boxes.
     await this.page.getByLabel('Digit 1 of 6').fill(code);
-    await this.page.getByRole('button', { name: 'Confirm pickup' }).click();
+    await dialog.getByRole('button', { name: 'Review handover' }).click();
+    await dialog.getByRole('button', { name: 'Confirm handover' }).click();
+  }
+
+  /** Donor side: returns from the confirmation step, where a rejected code leaves the dialog. */
+  async backToCodeEntry() {
+    await this.page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
   }
 }
