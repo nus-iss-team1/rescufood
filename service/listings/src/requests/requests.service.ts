@@ -332,9 +332,10 @@ export class RequestsService {
     });
   }
 
-  // Either party to an active claim may cancel it or report a no-show. A
-  // no-show reopens the listing; a cancellation reopens it only when the
-  // relist policy allows, otherwise the listing expires.
+  // Either party to an active claim may cancel it or, once the pickup window
+  // has started, report a no-show. A no-show reopens the listing; a
+  // cancellation reopens it only when the relist policy allows, otherwise the
+  // listing expires.
   async decide(
     id: string,
     dto: UpdateRequestDto,
@@ -345,9 +346,20 @@ export class RequestsService {
     assertValidRequestStatusTransition(existing.status, dto.status);
     assertIsParty(existing, listing, user);
 
+    const now = new Date();
+    if (
+      dto.status === 'no_show' &&
+      listing.pickupWindowStart &&
+      listing.pickupWindowStart > now
+    ) {
+      throw new BadRequestException(
+        'a no-show can only be reported once the pickup window has started',
+      );
+    }
+
     const blockedReason =
       dto.status === 'cancelled'
-        ? relistBlockedReason(listing, new Date(), this.relistPolicy)
+        ? relistBlockedReason(listing, now, this.relistPolicy)
         : null;
 
     try {
@@ -370,15 +382,18 @@ export class RequestsService {
           {
             status: dto.status,
             ...(dto.status === 'cancelled' && {
-              cancelledAt: new Date(),
+              cancelledAt: now,
               cancellationReason: dto.cancellationReason ?? '',
               cancelledBy: user.userId,
               cancelledByOrgId: user.orgId ?? null,
             }),
             ...(dto.status === 'no_show' && {
+              noShowAt: now,
               noShowReason: dto.noShowReason ?? '',
+              noShowBy: user.userId,
+              noShowByOrgId: user.orgId ?? null,
             }),
-            updatedAt: new Date(),
+            updatedAt: now,
           },
           tx,
         );
@@ -802,6 +817,9 @@ export class RequestsService {
               : actorIsDonor
                 ? 'donor'
                 : 'rescue_partner',
+          ...(dto.status === 'no_show' && {
+            reportedBy: actorIsDonor ? 'donor' : 'rescue_partner',
+          }),
           counterpartyName: counterparty?.name ?? null,
           counterpartyOrgName: counterpartyOrg?.name ?? null,
           reason:

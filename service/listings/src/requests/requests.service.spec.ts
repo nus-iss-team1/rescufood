@@ -935,16 +935,40 @@ describe('RequestsService', () => {
       status: 'no_show' as const,
       noShowReason: 'nobody came to collect it',
     };
+    const openListing = {
+      ...reservedListing,
+      pickupWindowStart: new Date(Date.now() - 60 * 60 * 1000),
+      pickupWindowEnd: new Date(Date.now() + 60 * 60 * 1000),
+    };
 
-    it('allows either party to report a no-show and reopens the listing', async () => {
+    function setUp(listing: typeof reservedListing = openListing) {
       const repository = makeRepository();
       repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(reservedListing);
+      repository.findListingById.mockResolvedValue(listing);
       repository.updateStatus.mockResolvedValue({
         ...baseRequest,
         status: 'no_show',
       });
-      const { service, audit } = makeService(repository);
+      repository.findUserContacts.mockResolvedValue([
+        {
+          id: 'user-donor',
+          cognitoSub: 'sub-donor',
+          name: 'Priya Nair',
+          email: 'donor@x.com',
+        },
+        {
+          id: 'user-rescue',
+          cognitoSub: 'sub-rescue',
+          name: 'Alex Tan',
+          email: 'r@x.com',
+        },
+      ]);
+      repository.findOrgContacts.mockResolvedValue([]);
+      return { repository, ...makeService(repository) };
+    }
+
+    it('records the reporter, reason and time, and reopens the listing', async () => {
+      const { service, repository, audit } = setUp();
 
       const result = await service.decide('request-1', dto, donorUser);
 
@@ -958,12 +982,16 @@ describe('RequestsService', () => {
         'active',
         expect.objectContaining({
           status: 'no_show',
+          noShowAt: expect.any(Date) as Date,
           noShowReason: 'nobody came to collect it',
+          noShowBy: 'user-donor',
+          noShowByOrgId: 'org-donor',
         }),
         TX_TOKEN,
       );
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
+          actor: { userId: 'user-donor', orgId: 'org-donor' },
           action: 'claim.no_show',
           entityId: 'request-1',
           reason: 'nobody came to collect it',
@@ -972,25 +1000,82 @@ describe('RequestsService', () => {
       );
     });
 
+    it('lets the rescue partner report a no-show too', async () => {
+      const { service, repository } = setUp();
+
+      await service.decide('request-1', dto, rescueUser);
+
+      expect(repository.updateStatus).toHaveBeenCalledWith(
+        'request-1',
+        'active',
+        expect.objectContaining({
+          noShowBy: 'user-rescue',
+          noShowByOrgId: 'org-rescue',
+        }),
+        TX_TOKEN,
+      );
+    });
+
+    it.each([
+      [donorUser, 'r@x.com', 'donor'],
+      [rescueUser, 'donor@x.com', 'rescue_partner'],
+    ])(
+      'tells the other party who reported it',
+      async (actor, recipient, reportedBy) => {
+        const { service, notifications } = setUp();
+
+        await service.decide('request-1', dto, actor);
+
+        expect(notifications.claimEnded).toHaveBeenCalledWith(
+          recipient,
+          expect.objectContaining({
+            endedBy: 'no_show',
+            reportedBy,
+            reason: 'nobody came to collect it',
+          }),
+          expect.objectContaining({ eventId: 'claim:request-1:no-show' }),
+        );
+      },
+    );
+
+    it('rejects a no-show before the pickup window starts, changing nothing', async () => {
+      const { service, repository, audit } = setUp(reservedListing);
+
+      await expect(
+        service.decide('request-1', dto, donorUser),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
+      expect(repository.reopenListingAfterClaimEnded).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('allows a no-show after the pickup window has closed', async () => {
+      const { service } = setUp({
+        ...reservedListing,
+        pickupWindowStart: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        pickupWindowEnd: new Date(Date.now() - 60 * 60 * 1000),
+      });
+
+      await expect(
+        service.decide('request-1', dto, donorUser),
+      ).resolves.toMatchObject({ status: 'no_show' });
+    });
+
     it('rejects an outsider', async () => {
-      const repository = makeRepository();
-      repository.findById.mockResolvedValue(baseRequest);
-      repository.findListingById.mockResolvedValue(reservedListing);
-      const { service } = makeService(repository);
+      const { service, repository } = setUp();
 
       await expect(
         service.decide('request-1', dto, outsider),
       ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.updateStatus).not.toHaveBeenCalled();
     });
 
-    it('rejects reporting a no-show on a claim that is not accepted', async () => {
-      const repository = makeRepository();
+    it('rejects reporting a no-show on a claim that is not active', async () => {
+      const { service, repository } = setUp();
       repository.findById.mockResolvedValue({
         ...baseRequest,
         status: 'cancelled',
       });
-      repository.findListingById.mockResolvedValue(reservedListing);
-      const { service } = makeService(repository);
 
       await expect(
         service.decide('request-1', dto, rescueUser),
