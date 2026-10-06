@@ -56,7 +56,7 @@ export class StatsFiltersDto {
   @ApiPropertyOptional({
     format: 'uuid',
     description:
-      'Organisation to report on. Required for administrators, who belong to no organisation.',
+      'Organisation to report on. Required for administrators, who belong to no organisation; anyone else may only name their own.',
   })
   @IsOptional()
   @IsUUID()

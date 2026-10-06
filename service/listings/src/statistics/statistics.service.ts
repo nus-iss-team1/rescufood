@@ -100,13 +100,19 @@ export class StatisticsService {
     };
   }
 
-  // Admins belong to no org, so they name the one to report on; everyone else gets their own.
+  // Admins belong to no org, so they name the one to report on; everyone else only gets their own.
   private async targetOrgId(
     user: AuthenticatedUser,
     filters: StatsFiltersDto,
   ): Promise<string> {
     if (user.role !== 'admin') {
-      return requireOrgId(user);
+      const ownOrgId = requireOrgId(user);
+      if (filters.orgId && filters.orgId !== ownOrgId) {
+        throw new ForbiddenException(
+          "you can only view your own organisation's statistics",
+        );
+      }
+      return ownOrgId;
     }
     if (!filters.orgId) {
       throw new BadRequestException('orgId is required for administrators');

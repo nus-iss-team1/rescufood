@@ -25,7 +25,7 @@ import { StatisticsService } from './statistics.service';
 @ApiResponse({
   status: 403,
   description:
-    "Caller has no organisation, is not active, or their organisation isn't approved. Administrators are exempt.",
+    "Caller has no organisation, is not active, or their organisation isn't approved (administrators are exempt), or a non-administrator named another organisation's `orgId`.",
 })
 @ApiResponse({
   status: 404,

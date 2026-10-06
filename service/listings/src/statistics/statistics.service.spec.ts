@@ -192,14 +192,28 @@ describe('StatisticsService', () => {
       expect(repository.metricsForOrg).not.toHaveBeenCalled();
     });
 
-    it("never lets a non-admin's orgId select another org", async () => {
+    it("denies a non-admin another org's figures without reading anything", async () => {
+      const repository = emptyRepository();
+      const service = makeService(repository);
+
+      await expect(
+        service.getOrgSummary(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.getRescuedMetrics(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.orgExists).not.toHaveBeenCalled();
+      expect(repository.countsForOrg).not.toHaveBeenCalled();
+      expect(repository.metricsForOrg).not.toHaveBeenCalled();
+    });
+
+    it('accepts a non-admin naming their own org', async () => {
       const repository = emptyRepository();
 
       const summary = await makeService(repository).getOrgSummary(user, {
-        orgId: otherOrgId,
+        orgId: 'org-1',
       });
 
-      expect(repository.orgExists).not.toHaveBeenCalled();
       expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(summary.orgId).toBe('org-1');
     });

@@ -904,3 +904,77 @@ describe('GET /api/stats/* organisation filter (integration)', () => {
     },
   );
 });
+
+describe('GET /api/stats/* organisation filter for non-admins (integration)', () => {
+  function getWithOrg(
+    path: 'summary' | 'metrics',
+    user: { cognitoSub: string },
+    orgId: string,
+  ) {
+    return request(harness.server)
+      .get(`/api/stats/${path}`)
+      .query({ orgId })
+      .set(authHeaders(user));
+  }
+
+  it.each(['summary', 'metrics'] as const)(
+    "denies a member another organisation's %s, returning no figures",
+    async (path) => {
+      const donor = await seedDonor();
+      const otherDonor = await seedDonor();
+      const rescue = await seedRescuePartner();
+      const listing = await seedListing({
+        donorOrgId: otherDonor.org.id,
+        createdBy: otherDonor.user.id,
+        status: 'collected',
+      });
+      await seedRequest({
+        listingId: listing.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
+        status: 'completed',
+      });
+
+      const res = await getWithOrg(path, donor.user, otherDonor.org.id).expect(
+        403,
+      );
+
+      expect(res.body).toMatchObject({
+        message: "you can only view your own organisation's statistics",
+      });
+      expect(res.body).not.toHaveProperty('orgId');
+      expect(res.body).not.toHaveProperty('listings');
+      expect(res.body).not.toHaveProperty('rescuedByUnit');
+    },
+  );
+
+  it('denies an organisation that does not exist the same way, so ids cannot be probed', async () => {
+    const donor = await seedDonor();
+
+    const res = await getWithOrg('summary', donor.user, randomUUID()).expect(
+      403,
+    );
+
+    expect(res.body).toMatchObject({
+      message: "you can only view your own organisation's statistics",
+    });
+  });
+
+  it('accepts a member naming their own organisation', async () => {
+    const donor = await seedDonor();
+    await seedListing({
+      donorOrgId: donor.org.id,
+      createdBy: donor.user.id,
+      status: 'available',
+    });
+
+    const res = await getWithOrg('summary', donor.user, donor.org.id).expect(
+      200,
+    );
+
+    expect(body<OrgSummaryBody>(res)).toMatchObject({
+      orgId: donor.org.id,
+      listings: { available: 1, total: 1 },
+    });
+  });
+});
