@@ -234,7 +234,11 @@ export const requests = pgTable(
       scale: 2,
     }),
     collectedAt: timestamp('collected_at', { withTimezone: true }),
+    noShowAt: timestamp('no_show_at', { withTimezone: true }),
     noShowReason: text('no_show_reason').notNull().default(''),
+    noShowBy: uuid('no_show_by'), // FK -> users.id (service/profile)
+    // Null when an org-less admin reported it.
+    noShowByOrgId: uuid('no_show_by_org_id'), // FK -> organisations.id (service/profile)
 
     // Set when each one-shot pickup reminder has been queued.
     pickupOpenReminderSentAt: timestamp('pickup_open_reminder_sent_at', {

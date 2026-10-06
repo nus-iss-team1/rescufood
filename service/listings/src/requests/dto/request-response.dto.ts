@@ -69,8 +69,27 @@ export class RequestResponseDto {
   @ApiProperty({ type: String, nullable: true })
   collectedAt!: Date | null;
 
+  @ApiProperty({ type: String, nullable: true })
+  noShowAt!: Date | null;
+
   @ApiProperty()
   noShowReason!: string;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    format: 'uuid',
+    description: 'User who reported the no-show.',
+  })
+  noShowBy!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    format: 'uuid',
+    description: "That user's organisation; null for an org-less admin.",
+  })
+  noShowByOrgId!: string | null;
 
   @ApiProperty()
   createdAt!: Date;

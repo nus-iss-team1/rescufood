@@ -30,7 +30,30 @@ describe('UpdateRequestDto', () => {
     ]);
   });
 
-  it('does not require a cancellation reason for a no-show', async () => {
-    expect(await errorsFor({ status: 'no_show' })).toEqual([]);
+  it('accepts a no-show with a reason, trimmed', async () => {
+    const dto = plainToInstance(UpdateRequestDto, {
+      status: 'no_show',
+      noShowReason: '  nobody came  ',
+    });
+
+    expect(await validate(dto)).toHaveLength(0);
+    expect(dto.noShowReason).toBe('nobody came');
+  });
+
+  it.each([
+    ['missing', {}],
+    ['empty', { noShowReason: '' }],
+    ['blank', { noShowReason: '   ' }],
+    ['not a string', { noShowReason: 42 }],
+  ])('rejects a no-show whose reason is %s', async (_label, extra) => {
+    expect(await errorsFor({ status: 'no_show', ...extra })).toEqual([
+      'noShowReason',
+    ]);
+  });
+
+  it('does not require a no-show reason for a cancellation', async () => {
+    expect(
+      await errorsFor({ status: 'cancelled', cancellationReason: 'x' }),
+    ).toEqual([]);
   });
 });

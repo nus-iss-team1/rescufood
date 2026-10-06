@@ -1,12 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsIn,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  ValidateIf,
-} from 'class-validator';
+import { IsIn, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 
 // The only two decisions a client can make; `completed`/`expired` are
 // system-driven. See request-status.util.ts for the transition map.
@@ -32,8 +26,12 @@ export class UpdateRequestDto {
   @IsNotEmpty({ message: 'a cancellation reason is required' })
   cancellationReason?: string;
 
-  @ApiPropertyOptional({ description: 'Only used when status is "no_show".' })
-  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Required, and non-blank, when status is "no_show".',
+  })
+  @ValidateIf((dto: UpdateRequestDto) => dto.status === 'no_show')
+  @Transform(trim)
   @IsString()
+  @IsNotEmpty({ message: 'a no-show reason is required' })
   noShowReason?: string;
 }

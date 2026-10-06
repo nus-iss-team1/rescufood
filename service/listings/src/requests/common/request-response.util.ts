@@ -52,7 +52,10 @@ export function toPublicRequest(
     verifiedBy: request.verifiedBy,
     collectedQuantity: request.collectedQuantity,
     collectedAt: request.collectedAt,
+    noShowAt: request.noShowAt,
     noShowReason: request.noShowReason,
+    noShowBy: request.noShowBy,
+    noShowByOrgId: request.noShowByOrgId,
     createdAt: request.createdAt,
     updatedAt: request.updatedAt,
   };
