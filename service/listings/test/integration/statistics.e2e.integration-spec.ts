@@ -719,6 +719,50 @@ describe('GET /api/stats/* period filter (integration)', () => {
     });
   });
 
+  it('returns zeros, not an error, when the org has records but none in the period', async () => {
+    const { donor } = await seedCollectedAtEdges();
+    const year2020 = { from: '2020-01-01', to: '2020-12-31' };
+
+    const summary = await getStats('summary', donor.user, year2020).expect(200);
+    expect(body<OrgSummaryBody>(summary)).toMatchObject({
+      orgId: donor.org.id,
+      listings: {
+        draft: 0,
+        available: 0,
+        reserved: 0,
+        collected: 0,
+        expired: 0,
+        cancelled: 0,
+        total: 0,
+      },
+      claims: {
+        active: 0,
+        cancelled: 0,
+        completed: 0,
+        no_show: 0,
+        expired: 0,
+        total: 0,
+      },
+    });
+
+    const metrics = await getStats('metrics', donor.user, year2020).expect(200);
+    expect(body<RescuedMetricsBody>(metrics)).toMatchObject({
+      orgId: donor.org.id,
+      rescuedByUnit: [],
+      lotsCollected: 0,
+      claimsCompleted: 0,
+      avgTimeToClaimMs: null,
+      medianTimeToClaimMs: null,
+      formattedAvgTimeToClaim: '--',
+      formattedMedianTimeToClaim: '--',
+      timeToClaimCount: 0,
+    });
+
+    // The same org's records are all there once the period covers them.
+    const allTime = await getStats('metrics', donor.user, {}).expect(200);
+    expect(body<RescuedMetricsBody>(allTime).claimsCompleted).toBe(4);
+  });
+
   it.each([
     ['summary', 'from', '2026-02-30'],
     ['summary', 'to', '2026-03-01T00:00:00Z'],
