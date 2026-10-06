@@ -173,6 +173,7 @@ export async function seedListing(args: {
   unit?: string;
   // Defaults to now for every status but draft.
   publishedAt?: Date | null;
+  createdAt?: Date;
 }): Promise<SeededListing> {
   const status = args.status ?? 'available';
   const start = args.pickupWindowStart ?? new Date(Date.now() + 60 * 60 * 1000);
@@ -193,8 +194,8 @@ export async function seedListing(args: {
        id, donor_org_id, created_by, status,
        category, description, quantity, unit, allergens,
        use_by, pickup_location, pickup_window_start, pickup_window_end,
-       published_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+       published_at, created_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,coalesce($15, now()))`,
     [
       id,
       args.donorOrgId,
@@ -210,6 +211,7 @@ export async function seedListing(args: {
       complete ? start : null,
       complete ? end : null,
       publishedAt,
+      args.createdAt ?? null,
     ],
   );
 
@@ -247,6 +249,8 @@ export async function seedRequest(args: {
   requestedAt?: Date;
   // Defaults to the requested quantity on a completed claim, as pickup verification does.
   collectedQuantity?: string;
+  // Defaults to now on a completed claim.
+  collectedAt?: Date;
 }): Promise<SeededRequest> {
   const id = randomUUID();
   const status = args.status ?? 'active';
@@ -254,11 +258,13 @@ export async function seedRequest(args: {
   const collectedQuantity =
     args.collectedQuantity ??
     (status === 'completed' ? requestedQuantity : null);
+  const collectedAt =
+    args.collectedAt ?? (status === 'completed' ? new Date() : null);
   await testPool().query(
     `INSERT INTO requests (
        id, listing_id, rescue_org_id, claimed_by, status, requested_quantity,
-       requested_at, collected_quantity
-     ) VALUES ($1, $2, $3, $4, $5, $6, coalesce($7, now()), $8)`,
+       requested_at, collected_quantity, collected_at
+     ) VALUES ($1, $2, $3, $4, $5, $6, coalesce($7, now()), $8, $9)`,
     [
       id,
       args.listingId,
@@ -268,6 +274,7 @@ export async function seedRequest(args: {
       requestedQuantity,
       args.requestedAt ?? null,
       collectedQuantity,
+      collectedAt,
     ],
   );
   return {
