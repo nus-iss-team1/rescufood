@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { StatisticsRepository } from './statistics.repository';
 import { StatisticsService } from './statistics.service';
@@ -17,8 +18,18 @@ function makeRepository() {
   };
 }
 
-function makeService(repository: ReturnType<typeof makeRepository>) {
-  return new StatisticsService(repository as unknown as StatisticsRepository);
+function makeAudit() {
+  return { record: jest.fn().mockResolvedValue(undefined) };
+}
+
+function makeService(
+  repository: ReturnType<typeof makeRepository>,
+  audit: ReturnType<typeof makeAudit> = makeAudit(),
+) {
+  return new StatisticsService(
+    repository as unknown as StatisticsRepository,
+    audit as unknown as AuditRepository,
+  );
 }
 
 const user: AuthenticatedUser = {
@@ -216,6 +227,94 @@ describe('StatisticsService', () => {
 
       expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(summary.orgId).toBe('org-1');
+    });
+  });
+
+  describe('audit', () => {
+    const otherOrgId = '6f1c2a4e-0b7d-4c1e-9a3f-2d8e5b7c9a10';
+    const admin: AuthenticatedUser = { userId: 'admin-1', role: 'admin' };
+
+    function emptyRepository() {
+      const repository = makeRepository();
+      repository.countsForOrg.mockResolvedValue({
+        listings: [],
+        claims: [],
+        asOf,
+      });
+      repository.metricsForOrg.mockResolvedValue({
+        units: [],
+        timing: noTiming,
+        asOf,
+      });
+      return repository;
+    }
+
+    it('does not record the default, unfiltered view', async () => {
+      const audit = makeAudit();
+      const service = makeService(emptyRepository(), audit);
+
+      await service.getOrgSummary(user);
+      await service.getRescuedMetrics(user, {});
+
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it("records a member's filtered view against their org with the period", async () => {
+      const audit = makeAudit();
+
+      await makeService(emptyRepository(), audit).getOrgSummary(user, {
+        from: '2026-03-01',
+        to: '2026-03-31',
+      });
+
+      expect(audit.record).toHaveBeenCalledWith({
+        actor: { userId: 'user-1', orgId: 'org-1' },
+        action: 'stats.summary_viewed',
+        entityType: 'organisation',
+        entityId: 'org-1',
+        metadata: { from: '2026-03-01', to: '2026-03-31' },
+      });
+    });
+
+    it("records an admin's view against the org they named", async () => {
+      const audit = makeAudit();
+
+      await makeService(emptyRepository(), audit).getRescuedMetrics(admin, {
+        orgId: otherOrgId,
+      });
+
+      expect(audit.record).toHaveBeenCalledWith({
+        actor: { userId: 'admin-1', orgId: null },
+        action: 'stats.metrics_viewed',
+        entityType: 'organisation',
+        entityId: otherOrgId,
+        metadata: { from: null, to: null },
+      });
+    });
+
+    it('returns no figures when the view cannot be audited', async () => {
+      const audit = makeAudit();
+      audit.record.mockRejectedValue(new Error('audit write failed'));
+
+      await expect(
+        makeService(emptyRepository(), audit).getRescuedMetrics(user, {
+          from: '2026-03-01',
+        }),
+      ).rejects.toThrow('audit write failed');
+    });
+
+    it('records nothing for a denied request', async () => {
+      const audit = makeAudit();
+      const service = makeService(emptyRepository(), audit);
+
+      await expect(
+        service.getOrgSummary(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.getOrgSummary(admin, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+
+      expect(audit.record).not.toHaveBeenCalled();
     });
   });
 

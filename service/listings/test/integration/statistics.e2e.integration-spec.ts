@@ -9,6 +9,7 @@ import {
   seedRequest,
   seedRescuePartner,
   seedUser,
+  testPool,
   type SeededOrg,
 } from './support/db';
 import { authHeaders, body, createTestApp, type TestApp } from './support/app';
@@ -976,5 +977,116 @@ describe('GET /api/stats/* organisation filter for non-admins (integration)', ()
       orgId: donor.org.id,
       listings: { available: 1, total: 1 },
     });
+  });
+});
+
+describe('GET /api/stats/* audit (integration)', () => {
+  interface AuditRow {
+    action: string;
+    entity_type: string;
+    entity_id: string;
+    user_id: string | null;
+    org_id: string | null;
+    metadata: Record<string, unknown>;
+  }
+
+  async function auditRows(): Promise<AuditRow[]> {
+    const { rows } = await testPool().query<AuditRow>(
+      `SELECT action, entity_type, entity_id, user_id, org_id, metadata
+         FROM audit_log ORDER BY created_at, id`,
+    );
+    return rows;
+  }
+
+  function get(
+    path: 'summary' | 'metrics',
+    user: { cognitoSub: string },
+    query: Record<string, string>,
+    role: 'user' | 'admin' = 'user',
+  ) {
+    return request(harness.server)
+      .get(`/api/stats/${path}`)
+      .query(query)
+      .set(authHeaders(user, role));
+  }
+
+  it('records nothing for the default, unfiltered dashboard view', async () => {
+    const donor = await seedDonor();
+
+    await get('summary', donor.user, {}).expect(200);
+    await get('metrics', donor.user, {}).expect(200);
+
+    expect(await auditRows()).toEqual([]);
+  });
+
+  it("records a member's filtered view against their organisation", async () => {
+    const donor = await seedDonor();
+
+    await get('summary', donor.user, {
+      from: '2026-03-01',
+      to: '2026-03-31',
+    }).expect(200);
+    await get('metrics', donor.user, { from: '2026-03-01' }).expect(200);
+
+    expect(await auditRows()).toEqual([
+      {
+        action: 'stats.summary_viewed',
+        entity_type: 'organisation',
+        entity_id: donor.org.id,
+        user_id: donor.user.id,
+        org_id: donor.org.id,
+        metadata: { from: '2026-03-01', to: '2026-03-31' },
+      },
+      {
+        action: 'stats.metrics_viewed',
+        entity_type: 'organisation',
+        entity_id: donor.org.id,
+        user_id: donor.user.id,
+        org_id: donor.org.id,
+        metadata: { from: '2026-03-01', to: null },
+      },
+    ]);
+  });
+
+  it("records an admin's report against the organisation they named, visible in its audit history", async () => {
+    const donor = await seedDonor();
+    const admin = await seedUser({ orgId: null, isAdmin: true });
+
+    await get('metrics', admin, { orgId: donor.org.id }, 'admin').expect(200);
+
+    expect(await auditRows()).toEqual([
+      {
+        action: 'stats.metrics_viewed',
+        entity_type: 'organisation',
+        entity_id: donor.org.id,
+        user_id: admin.id,
+        org_id: null,
+        metadata: { from: null, to: null },
+      },
+    ]);
+
+    const history = await request(harness.server)
+      .get(`/api/audit/organisation/${donor.org.id}`)
+      .set(authHeaders(admin, 'admin'))
+      .expect(200);
+    expect(body<{ items: { action: string }[] }>(history).items).toEqual([
+      expect.objectContaining({ action: 'stats.metrics_viewed' }),
+    ]);
+  });
+
+  it('records nothing for a request that is denied or rejected', async () => {
+    const donor = await seedDonor();
+    const otherDonor = await seedDonor();
+    const admin = await seedUser({ orgId: null, isAdmin: true });
+
+    await get('summary', donor.user, { orgId: otherDonor.org.id }).expect(403);
+    await get('summary', donor.user, {
+      from: '2026-03-31',
+      to: '2026-03-01',
+    }).expect(400);
+    await get('metrics', admin, { from: '2026-03-01' }, 'admin').expect(400);
+    await get('metrics', admin, { orgId: randomUUID() }, 'admin').expect(404);
+
+    expect(await auditRows()).toEqual([]);
   });
 });

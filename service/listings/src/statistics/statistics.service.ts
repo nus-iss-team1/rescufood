@@ -4,6 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AuditAction } from '../audit/audit.actions';
+import { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { listingStatus, requestStatus } from '../db/schema';
 import { toDateRange } from './common/date-range.util';
@@ -41,7 +43,10 @@ export type RescuedMetrics = {
 
 @Injectable()
 export class StatisticsService {
-  constructor(private readonly statisticsRepository: StatisticsRepository) {}
+  constructor(
+    private readonly statisticsRepository: StatisticsRepository,
+    private readonly auditRepository: AuditRepository,
+  ) {}
 
   async getOrgSummary(
     user: AuthenticatedUser,
@@ -51,6 +56,12 @@ export class StatisticsService {
     const counts = await this.statisticsRepository.countsForOrg(
       orgId,
       toDateRange(filters.from, filters.to),
+    );
+    await this.recordFilteredView(
+      user,
+      orgId,
+      AuditAction.StatsSummaryViewed,
+      filters,
     );
     return {
       orgId,
@@ -70,6 +81,12 @@ export class StatisticsService {
         orgId,
         toDateRange(filters.from, filters.to),
       );
+    await this.recordFilteredView(
+      user,
+      orgId,
+      AuditAction.StatsMetricsViewed,
+      filters,
+    );
 
     const rescuedByUnit = units
       .map((u) => {
@@ -98,6 +115,23 @@ export class StatisticsService {
       timeToClaimCount: timing.count,
       asOf,
     };
+  }
+
+  // Filtered reads are audited against the org reported on; the default dashboard view is not.
+  private async recordFilteredView(
+    user: AuthenticatedUser,
+    orgId: string,
+    action: string,
+    filters: StatsFiltersDto,
+  ): Promise<void> {
+    if (!filters.from && !filters.to && !filters.orgId) return;
+    await this.auditRepository.record({
+      actor: { userId: user.userId, orgId: user.orgId ?? null },
+      action,
+      entityType: 'organisation',
+      entityId: orgId,
+      metadata: { from: filters.from ?? null, to: filters.to ?? null },
+    });
   }
 
   // Admins belong to no org, so they name the one to report on; everyone else only gets their own.
