@@ -296,6 +296,21 @@ export async function getListingRow(
   return rows[0];
 }
 
+export interface ListingSnapshot {
+  [column: string]: unknown;
+  version: number;
+  updated_at: Date;
+}
+
+// Every column of a listing row, for asserting nothing changed.
+export async function getListingSnapshot(id: string): Promise<ListingSnapshot> {
+  const { rows } = await testPool().query<ListingSnapshot>(
+    `SELECT * FROM listings WHERE id = $1`,
+    [id],
+  );
+  return rows[0];
+}
+
 export interface RequestRow {
   status: string;
   pickup_code_attempts: number;
