@@ -599,3 +599,141 @@ describe('GET /api/stats/* access (integration)', () => {
     expect(partner.claimsCompleted).toBe(1);
   });
 });
+
+describe('GET /api/stats/* period filter (integration)', () => {
+  const sgt = (local: string) => new Date(`${local}+08:00`);
+
+  // The first and last instants of March 2026 in Singapore, and one either side.
+  const edges = [
+    { label: 'beforeFirst', at: sgt('2026-02-28T23:59:59.999'), qty: '1.00' },
+    { label: 'firstInstant', at: sgt('2026-03-01T00:00:00.000'), qty: '2.00' },
+    { label: 'lastInstant', at: sgt('2026-03-31T23:59:59.999'), qty: '4.00' },
+    { label: 'afterLast', at: sgt('2026-04-01T00:00:00.000'), qty: '8.00' },
+  ];
+
+  function getStats(
+    path: 'summary' | 'metrics',
+    user: { cognitoSub: string },
+    period: { from?: string; to?: string },
+  ) {
+    return request(harness.server)
+      .get(`/api/stats/${path}`)
+      .query(period)
+      .set(authHeaders(user));
+  }
+
+  // One collected lot per edge, collected at that edge an hour after it was claimed.
+  async function seedCollectedAtEdges() {
+    const donor = await seedDonor();
+    const rescue = await seedRescuePartner();
+    for (const edge of edges) {
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'collected',
+        unit: 'kg',
+        quantity: edge.qty,
+        publishedAt: new Date(edge.at.getTime() - 2 * HR),
+      });
+      await seedRequest({
+        listingId: listing.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
+        status: 'completed',
+        requestedAt: new Date(edge.at.getTime() - HR),
+        collectedQuantity: edge.qty,
+        collectedAt: edge.at,
+      });
+    }
+    return { donor, rescue };
+  }
+
+  it('counts claims collected from the first through the last Singapore instant of the period', async () => {
+    const { donor, rescue } = await seedCollectedAtEdges();
+    const march = { from: '2026-03-01', to: '2026-03-31' };
+
+    for (const caller of [donor, rescue]) {
+      const res = await getStats('metrics', caller.user, march).expect(200);
+
+      // firstInstant (2) + lastInstant (4); each claimed an hour after publication.
+      expect(body<RescuedMetricsBody>(res)).toMatchObject({
+        orgId: caller.org.id,
+        rescuedByUnit: [{ unit: 'kg', amount: 6, lots: 2 }],
+        lotsCollected: 2,
+        claimsCompleted: 2,
+        avgTimeToClaimMs: HR,
+        timeToClaimCount: 2,
+      });
+    }
+  });
+
+  it.each([
+    ['only from', { from: '2026-03-01' }, 14, 3],
+    ['only to', { to: '2026-03-31' }, 7, 3],
+    ['the same single day', { from: '2026-03-01', to: '2026-03-01' }, 2, 1],
+    ['no period', {}, 15, 4],
+  ])(
+    'filters metrics given %s',
+    async (_label, period, amount, claimsCompleted) => {
+      const { donor } = await seedCollectedAtEdges();
+
+      const res = await getStats('metrics', donor.user, period).expect(200);
+
+      expect(body<RescuedMetricsBody>(res)).toMatchObject({
+        rescuedByUnit: [{ unit: 'kg', amount }],
+        claimsCompleted,
+      });
+    },
+  );
+
+  it('counts listings created and claims filed within the period', async () => {
+    const donor = await seedDonor();
+    const rescue = await seedRescuePartner();
+    for (const edge of edges) {
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'available',
+        createdAt: edge.at,
+      });
+      await seedRequest({
+        listingId: listing.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
+        status: 'cancelled',
+        requestedAt: edge.at,
+      });
+    }
+    const march = { from: '2026-03-01', to: '2026-03-31' };
+
+    const donorRes = await getStats('summary', donor.user, march).expect(200);
+    expect(body<OrgSummaryBody>(donorRes)).toMatchObject({
+      listings: { available: 2, total: 2 },
+      claims: { cancelled: 2, total: 2 },
+    });
+
+    const rescueRes = await getStats('summary', rescue.user, march).expect(200);
+    expect(body<OrgSummaryBody>(rescueRes)).toMatchObject({
+      listings: { total: 0 },
+      claims: { cancelled: 2, total: 2 },
+    });
+  });
+
+  it.each([
+    ['summary', 'from', '2026-02-30'],
+    ['summary', 'to', '2026-03-01T00:00:00Z'],
+    ['metrics', 'from', '2026-3-1'],
+    ['metrics', 'to', 'last week'],
+  ] as const)(
+    'rejects a %s request whose %s is %s, returning no figures',
+    async (path, field, value) => {
+      const donor = await seedDonor();
+
+      const res = await getStats(path, donor.user, { [field]: value }).expect(
+        400,
+      );
+
+      expect(res.body).not.toHaveProperty('orgId');
+    },
+  );
+});

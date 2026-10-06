@@ -1,8 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/types/express';
 import { listingStatus, requestStatus } from '../db/schema';
+import { toDateRange } from './common/date-range.util';
 import { formatAmount, formatDuration } from './common/format.util';
 import { tallyByStatus, type StatusTally } from './common/status-tally.util';
+import type { StatsFiltersDto } from './dto/stats-filters.dto';
 import { StatisticsRepository } from './statistics.repository';
 
 export type OrgSummary = {
@@ -36,9 +38,15 @@ export type RescuedMetrics = {
 export class StatisticsService {
   constructor(private readonly statisticsRepository: StatisticsRepository) {}
 
-  async getOrgSummary(user: AuthenticatedUser): Promise<OrgSummary> {
+  async getOrgSummary(
+    user: AuthenticatedUser,
+    filters: StatsFiltersDto = {},
+  ): Promise<OrgSummary> {
     const orgId = requireOrgId(user);
-    const counts = await this.statisticsRepository.countsForOrg(orgId);
+    const counts = await this.statisticsRepository.countsForOrg(
+      orgId,
+      toDateRange(filters.from, filters.to),
+    );
     return {
       orgId,
       listings: tallyByStatus(listingStatus.enumValues, counts.listings),
@@ -47,10 +55,16 @@ export class StatisticsService {
     };
   }
 
-  async getRescuedMetrics(user: AuthenticatedUser): Promise<RescuedMetrics> {
+  async getRescuedMetrics(
+    user: AuthenticatedUser,
+    filters: StatsFiltersDto = {},
+  ): Promise<RescuedMetrics> {
     const orgId = requireOrgId(user);
     const { units, timing, asOf } =
-      await this.statisticsRepository.metricsForOrg(orgId);
+      await this.statisticsRepository.metricsForOrg(
+        orgId,
+        toDateRange(filters.from, filters.to),
+      );
 
     const rescuedByUnit = units
       .map((u) => {

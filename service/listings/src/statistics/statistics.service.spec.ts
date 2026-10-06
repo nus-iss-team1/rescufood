@@ -36,7 +36,7 @@ describe('StatisticsService', () => {
 
       const summary = await makeService(repository).getOrgSummary(user);
 
-      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(summary).toEqual({
         orgId: 'org-1',
         listings: {
@@ -57,6 +57,25 @@ describe('StatisticsService', () => {
           total: 1,
         },
         asOf,
+      });
+    });
+
+    it('counts over the Singapore days from `from` through `to`', async () => {
+      const repository = makeRepository();
+      repository.countsForOrg.mockResolvedValue({
+        listings: [],
+        claims: [],
+        asOf,
+      });
+
+      await makeService(repository).getOrgSummary(user, {
+        from: '2026-03-01',
+        to: '2026-03-31',
+      });
+
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {
+        start: new Date('2026-02-28T16:00:00.000Z'),
+        end: new Date('2026-03-31T16:00:00.000Z'),
       });
     });
 
@@ -83,7 +102,7 @@ describe('StatisticsService', () => {
 
       await makeService(repository).getOrgSummary({ ...user, role: 'admin' });
 
-      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
     });
 
     it('denies a caller with no organisation without counting anything', async () => {
@@ -110,7 +129,7 @@ describe('StatisticsService', () => {
 
       const metrics = await makeService(repository).getRescuedMetrics(user);
 
-      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(metrics).toEqual({
         orgId: 'org-1',
         rescuedByUnit: [
@@ -125,6 +144,24 @@ describe('StatisticsService', () => {
         formattedMedianTimeToClaim: '1 hr 45 mins',
         timeToClaimCount: 4,
         asOf,
+      });
+    });
+
+    it('reads metrics over the Singapore days from `from` through `to`', async () => {
+      const repository = makeRepository();
+      repository.metricsForOrg.mockResolvedValue({
+        units: [],
+        timing: noTiming,
+        asOf,
+      });
+
+      await makeService(repository).getRescuedMetrics(user, {
+        from: '2026-03-01',
+      });
+
+      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1', {
+        start: new Date('2026-02-28T16:00:00.000Z'),
+        end: undefined,
       });
     });
 
@@ -198,7 +235,7 @@ describe('StatisticsService', () => {
         role: 'admin',
       });
 
-      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1', {});
     });
 
     it('denies a caller with no organisation without reading anything', async () => {
