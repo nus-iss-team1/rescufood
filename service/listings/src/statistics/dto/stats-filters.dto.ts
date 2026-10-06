@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsISO8601,
   IsOptional,
+  IsUUID,
   Matches,
   Validate,
   ValidatorConstraint,
@@ -27,7 +28,7 @@ class PeriodOrder implements ValidatorConstraintInterface {
   }
 }
 
-// Reporting period as Singapore calendar days, both ends inclusive.
+// Reporting period as Singapore calendar days, both ends inclusive, and the org to report on.
 export class StatsFiltersDto {
   @ApiPropertyOptional({
     format: 'date',
@@ -51,4 +52,13 @@ export class StatsFiltersDto {
   @IsISO8601({ strict: true }, { message: 'to must be a real calendar date' })
   @Validate(PeriodOrder)
   to?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Organisation to report on. Required for administrators, who belong to no organisation.',
+  })
+  @IsOptional()
+  @IsUUID()
+  orgId?: string;
 }

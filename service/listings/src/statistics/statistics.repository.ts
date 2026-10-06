@@ -12,6 +12,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { DATABASE, type Database } from '../db/db.module';
+import { organisations } from '../db/external.schema';
 import { listings, requests } from '../db/schema';
 import type { DateRange } from './common/date-range.util';
 import type { StatusCount } from './common/status-tally.util';
@@ -49,6 +50,14 @@ const READ_SNAPSHOT = {
 @Injectable()
 export class StatisticsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async orgExists(orgId: string): Promise<boolean> {
+    const [org] = await this.db
+      .select({ id: organisations.id })
+      .from(organisations)
+      .where(eq(organisations.id, orgId));
+    return org !== undefined;
+  }
 
   // Both aggregates and the timestamp are read inside one read-only
   // repeatable-read transaction, so the two counts can never straddle a

@@ -187,31 +187,6 @@ describe('GET /api/stats/summary (integration)', () => {
     });
   });
 
-  // an admin gets their own org's figures, not the platform's.
-  it('scopes an admin caller to their own organisation', async () => {
-    const donor = await seedDonor();
-    const otherDonor = await seedDonor();
-    const admin = await seedUser({ orgId: donor.org.id, isAdmin: true });
-
-    await seedListing({
-      donorOrgId: donor.org.id,
-      createdBy: donor.user.id,
-      status: 'available',
-    });
-    await seedListing({
-      donorOrgId: otherDonor.org.id,
-      createdBy: otherDonor.user.id,
-      status: 'available',
-    });
-
-    const res = await getSummary(admin, 'admin').expect(200);
-
-    expect(body<OrgSummaryBody>(res)).toMatchObject({
-      orgId: donor.org.id,
-      listings: { available: 1, total: 1 },
-    });
-  });
-
   it('returns every defined status at zero for an org with no records', async () => {
     const donor = await seedDonor();
 
@@ -494,19 +469,6 @@ describe('GET /api/stats/metrics (integration)', () => {
       formattedAvgTimeToClaim: '--',
       formattedMedianTimeToClaim: '--',
       timeToClaimCount: 0,
-    });
-  });
-
-  it('scopes an admin caller to their own organisation', async () => {
-    const { otherDonor } = await seedControlledData();
-    const admin = await seedUser({ orgId: otherDonor.org.id, isAdmin: true });
-
-    const res = await getMetrics(admin, 'admin').expect(200);
-
-    expect(body<RescuedMetricsBody>(res)).toMatchObject({
-      orgId: otherDonor.org.id,
-      rescuedByUnit: [{ unit: 'loaves', amount: 12, lots: 1 }],
-      claimsCompleted: 1,
     });
   });
 
@@ -793,6 +755,150 @@ describe('GET /api/stats/* period filter (integration)', () => {
 
       expect(res.body).toMatchObject({
         message: ['to (2026-03-01) must not be before from (2026-03-31)'],
+      });
+      expect(res.body).not.toHaveProperty('orgId');
+    },
+  );
+});
+
+describe('GET /api/stats/* organisation filter (integration)', () => {
+  function getAsAdmin(
+    path: 'summary' | 'metrics',
+    admin: { cognitoSub: string },
+    query: Record<string, string>,
+  ) {
+    return request(harness.server)
+      .get(`/api/stats/${path}`)
+      .query(query)
+      .set(authHeaders(admin, 'admin'));
+  }
+
+  // A donor with two available lots and one collected, and an outside donor with its own collected lot.
+  async function seedTwoDonors(collectedAt?: { donor: Date; other: Date }) {
+    const donor = await seedDonor();
+    const otherDonor = await seedDonor();
+    const rescue = await seedRescuePartner();
+
+    const collected = async (
+      owner: typeof donor,
+      quantity: string,
+      at?: Date,
+    ) => {
+      const listing = await seedListing({
+        donorOrgId: owner.org.id,
+        createdBy: owner.user.id,
+        status: 'collected',
+        unit: 'kg',
+        quantity,
+      });
+      await seedRequest({
+        listingId: listing.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
+        status: 'completed',
+        collectedQuantity: quantity,
+        collectedAt: at,
+      });
+    };
+
+    for (let i = 0; i < 2; i++) {
+      await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'available',
+      });
+    }
+    await collected(donor, '5.00', collectedAt?.donor);
+    await collected(otherDonor, '7.00', collectedAt?.other);
+
+    return { donor, otherDonor, rescue };
+  }
+
+  it('reports an admin on the organisation they name, and no other', async () => {
+    const { donor } = await seedTwoDonors();
+    const admin = await seedUser({ orgId: null, isAdmin: true });
+
+    const summary = await getAsAdmin('summary', admin, {
+      orgId: donor.org.id,
+    }).expect(200);
+    expect(body<OrgSummaryBody>(summary)).toMatchObject({
+      orgId: donor.org.id,
+      listings: { available: 2, collected: 1, total: 3 },
+      claims: { completed: 1, total: 1 },
+    });
+
+    const metrics = await getAsAdmin('metrics', admin, {
+      orgId: donor.org.id,
+    }).expect(200);
+    expect(body<RescuedMetricsBody>(metrics)).toMatchObject({
+      orgId: donor.org.id,
+      rescuedByUnit: [{ unit: 'kg', amount: 5, lots: 1 }],
+      claimsCompleted: 1,
+    });
+  });
+
+  it('applies the period to the named organisation', async () => {
+    const march = new Date('2026-03-15T12:00:00+08:00');
+    const may = new Date('2026-05-15T12:00:00+08:00');
+    const { donor } = await seedTwoDonors({ donor: march, other: march });
+    const rescue = await seedRescuePartner();
+    const late = await seedListing({
+      donorOrgId: donor.org.id,
+      createdBy: donor.user.id,
+      status: 'collected',
+      unit: 'kg',
+    });
+    await seedRequest({
+      listingId: late.id,
+      rescueOrgId: rescue.org.id,
+      claimedBy: rescue.user.id,
+      status: 'completed',
+      collectedQuantity: '3.00',
+      collectedAt: may,
+    });
+    const admin = await seedUser({ orgId: null, isAdmin: true });
+
+    const res = await getAsAdmin('metrics', admin, {
+      orgId: donor.org.id,
+      from: '2026-03-01',
+      to: '2026-03-31',
+    }).expect(200);
+
+    expect(body<RescuedMetricsBody>(res)).toMatchObject({
+      orgId: donor.org.id,
+      rescuedByUnit: [{ unit: 'kg', amount: 5, lots: 1 }],
+      claimsCompleted: 1,
+    });
+  });
+
+  it.each(['summary', 'metrics'] as const)(
+    'returns 404 on %s for an organisation that does not exist',
+    async (path) => {
+      const admin = await seedUser({ orgId: null, isAdmin: true });
+
+      const res = await getAsAdmin(path, admin, {
+        orgId: randomUUID(),
+      }).expect(404);
+
+      expect(res.body).not.toHaveProperty('orgId');
+    },
+  );
+
+  it('rejects an organisation id that is not a UUID', async () => {
+    const admin = await seedUser({ orgId: null, isAdmin: true });
+
+    await getAsAdmin('summary', admin, { orgId: 'not-a-uuid' }).expect(400);
+  });
+
+  it.each(['summary', 'metrics'] as const)(
+    'requires an admin to name an organisation on %s',
+    async (path) => {
+      const admin = await seedUser({ orgId: null, isAdmin: true });
+
+      const res = await getAsAdmin(path, admin, {}).expect(400);
+
+      expect(res.body).toMatchObject({
+        message: 'orgId is required for administrators',
       });
       expect(res.body).not.toHaveProperty('orgId');
     },

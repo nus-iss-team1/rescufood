@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/types/express';
 import { listingStatus, requestStatus } from '../db/schema';
 import { toDateRange } from './common/date-range.util';
@@ -42,7 +47,7 @@ export class StatisticsService {
     user: AuthenticatedUser,
     filters: StatsFiltersDto = {},
   ): Promise<OrgSummary> {
-    const orgId = requireOrgId(user);
+    const orgId = await this.targetOrgId(user, filters);
     const counts = await this.statisticsRepository.countsForOrg(
       orgId,
       toDateRange(filters.from, filters.to),
@@ -59,7 +64,7 @@ export class StatisticsService {
     user: AuthenticatedUser,
     filters: StatsFiltersDto = {},
   ): Promise<RescuedMetrics> {
-    const orgId = requireOrgId(user);
+    const orgId = await this.targetOrgId(user, filters);
     const { units, timing, asOf } =
       await this.statisticsRepository.metricsForOrg(
         orgId,
@@ -94,12 +99,25 @@ export class StatisticsService {
       asOf,
     };
   }
+
+  // Admins belong to no org, so they name the one to report on; everyone else gets their own.
+  private async targetOrgId(
+    user: AuthenticatedUser,
+    filters: StatsFiltersDto,
+  ): Promise<string> {
+    if (user.role !== 'admin') {
+      return requireOrgId(user);
+    }
+    if (!filters.orgId) {
+      throw new BadRequestException('orgId is required for administrators');
+    }
+    if (!(await this.statisticsRepository.orgExists(filters.orgId))) {
+      throw new NotFoundException(`organisation ${filters.orgId} not found`);
+    }
+    return filters.orgId;
+  }
 }
 
-// Always scoped to the caller's own org, admins included: organisation
-// statistics are per-org figures, so there is no cross-org view of them to
-// grant. ActiveOrgMemberGuard already rejects org-less callers - the check
-// here is what makes that hold if a route is ever wired without it.
 function requireOrgId(user: AuthenticatedUser): string {
   if (!user.orgId) {
     throw new ForbiddenException(

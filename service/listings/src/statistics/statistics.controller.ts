@@ -6,7 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { ActiveOrgMemberGuard } from '../auth/active-org-member.guard';
+import { ActiveOrgMemberOrAdminGuard } from '../auth/active-org-member-or-admin.guard';
 import { OrgSummaryResponseDto } from './dto/org-summary-response.dto';
 import { RescuedMetricsResponseDto } from './dto/rescued-metrics-response.dto';
 import { StatsFiltersDto } from './dto/stats-filters.dto';
@@ -17,17 +17,22 @@ import { StatisticsService } from './statistics.service';
 @ApiResponse({
   status: 400,
   description:
-    '`from` or `to` is not a YYYY-MM-DD calendar date, or `to` is before ' +
-    '`from`; nothing is calculated.',
+    '`from` or `to` is not a YYYY-MM-DD calendar date, `to` is before ' +
+    '`from`, `orgId` is not a UUID, or an administrator gave no `orgId`; ' +
+    'nothing is calculated.',
 })
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @ApiResponse({
   status: 403,
   description:
-    "Caller has no organisation, is not active, or their organisation isn't approved.",
+    "Caller has no organisation, is not active, or their organisation isn't approved. Administrators are exempt.",
+})
+@ApiResponse({
+  status: 404,
+  description: "An administrator's `orgId` names no organisation.",
 })
 @Controller('stats')
-@UseGuards(ActiveOrgMemberGuard)
+@UseGuards(ActiveOrgMemberOrAdminGuard)
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 
@@ -37,7 +42,8 @@ export class StatisticsController {
       "Listing and claim counts for the caller's own organisation, by " +
       'lifecycle status. Every defined status is returned, including those ' +
       'with no records; records belonging to other organisations are never ' +
-      'counted, for admins either. Optional `from` and `to` narrow it to ' +
+      'counted. Administrators belong to no organisation and name the one ' +
+      'to report on with `orgId`. Optional `from` and `to` narrow it to ' +
       'listings created and claims filed on those Singapore calendar days, ' +
       'both inclusive; either may be left open. Both sets of counts and ' +
       '`asOf` come from one database snapshot.',
@@ -57,9 +63,9 @@ export class StatisticsController {
       'calendar days, both inclusive; with neither it covers all time. Rescued ' +
       'quantity sums the collected quantity recorded at pickup, grouped by ' +
       'unit and never combined across units. Time-to-claim runs from the ' +
-      "listing's current publication to the claim. Admins get their own " +
-      'organisation, not the platform. Every figure and `asOf` come from one ' +
-      'database snapshot.',
+      "listing's current publication to the claim. Administrators belong " +
+      'to no organisation and name the one to report on with `orgId`. ' +
+      'Every figure and `asOf` come from one database snapshot.',
   })
   @ApiResponse({ status: 200, type: RescuedMetricsResponseDto })
   @Get('metrics')

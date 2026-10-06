@@ -32,6 +32,22 @@ describe('StatsFiltersDto', () => {
     expect(await errorsFor({ to: value })).toEqual(['to']);
   });
 
+  it('accepts an organisation id alongside a period', async () => {
+    expect(
+      await errorsFor({
+        orgId: '6f1c2a4e-0b7d-4c1e-9a3f-2d8e5b7c9a10',
+        from: '2026-03-01',
+      }),
+    ).toEqual([]);
+  });
+
+  it.each([['not-a-uuid'], ['42'], ['']])(
+    'rejects an organisation id of %j',
+    async (orgId) => {
+      expect(await errorsFor({ orgId })).toEqual(['orgId']);
+    },
+  );
+
   it('accepts a period that starts and ends on the same day', async () => {
     expect(await errorsFor({ from: '2026-03-01', to: '2026-03-01' })).toEqual(
       [],
