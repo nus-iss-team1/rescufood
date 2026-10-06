@@ -16,7 +16,9 @@ import { StatisticsService } from './statistics.service';
 @ApiBearerAuth()
 @ApiResponse({
   status: 400,
-  description: '`from` or `to` is not a YYYY-MM-DD calendar date.',
+  description:
+    '`from` or `to` is not a YYYY-MM-DD calendar date, or `to` is before ' +
+    '`from`; nothing is calculated.',
 })
 @ApiResponse({ status: 401, description: 'Missing or invalid bearer token.' })
 @ApiResponse({

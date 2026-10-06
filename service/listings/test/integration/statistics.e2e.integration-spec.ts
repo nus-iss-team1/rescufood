@@ -736,4 +736,21 @@ describe('GET /api/stats/* period filter (integration)', () => {
       expect(res.body).not.toHaveProperty('orgId');
     },
   );
+
+  it.each(['summary', 'metrics'] as const)(
+    'rejects a %s request whose period ends before it starts, returning no figures',
+    async (path) => {
+      const { donor } = await seedCollectedAtEdges();
+
+      const res = await getStats(path, donor.user, {
+        from: '2026-03-31',
+        to: '2026-03-01',
+      }).expect(400);
+
+      expect(res.body).toMatchObject({
+        message: ['to (2026-03-01) must not be before from (2026-03-31)'],
+      });
+      expect(res.body).not.toHaveProperty('orgId');
+    },
+  );
 });

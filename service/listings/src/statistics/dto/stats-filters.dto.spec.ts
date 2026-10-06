@@ -31,4 +31,39 @@ describe('StatsFiltersDto', () => {
     expect(await errorsFor({ from: value })).toEqual(['from']);
     expect(await errorsFor({ to: value })).toEqual(['to']);
   });
+
+  it('accepts a period that starts and ends on the same day', async () => {
+    expect(await errorsFor({ from: '2026-03-01', to: '2026-03-01' })).toEqual(
+      [],
+    );
+  });
+
+  it('rejects a period that ends before it starts, naming both dates', async () => {
+    const dto = plainToInstance(StatsFiltersDto, {
+      from: '2026-03-31',
+      to: '2026-03-01',
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors.map((e) => e.property)).toEqual(['to']);
+    expect(Object.values(errors[0].constraints ?? {})).toEqual([
+      'to (2026-03-01) must not be before from (2026-03-31)',
+    ]);
+  });
+
+  it('compares across a year boundary', async () => {
+    expect(await errorsFor({ from: '2026-12-31', to: '2027-01-01' })).toEqual(
+      [],
+    );
+    expect(await errorsFor({ from: '2027-01-01', to: '2026-12-31' })).toEqual([
+      'to',
+    ]);
+  });
+
+  it('reports only the malformed date, not the order, when one end is invalid', async () => {
+    expect(await errorsFor({ from: 'last week', to: '2026-03-01' })).toEqual([
+      'from',
+    ]);
+  });
 });
