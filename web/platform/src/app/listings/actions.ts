@@ -224,9 +224,6 @@ const LOCKED_STATUSES = new Set([
   "cancelled",
 ]);
 
-// TODO(frontend): temporary fallback - remove once cancelling a listing asks for a reason; the service rejects a blank one.
-const fallbackCancelledReason = "No reason given";
-
 /**
  * Updates an existing listing via PATCH /listings/:id.
  * Enforces dual validation modes (strict when published/available, looser for draft)
@@ -262,6 +259,15 @@ export async function updateListingAction(
   if (LOCKED_STATUSES.has(currentStatus)) {
     return {
       error: `Listings in "${currentStatus}" status are locked and cannot be edited.`,
+      values,
+    };
+  }
+
+  // Cancelling requires a non-blank reason.
+  const cancelledReason = text(formData, "cancelledReason");
+  if (targetStatus === "cancelled" && !cancelledReason) {
+    return {
+      error: "Please give a reason for cancelling this listing.",
       values,
     };
   }
@@ -313,12 +319,7 @@ export async function updateListingAction(
     ...(targetStatus && listingStatuses.includes(targetStatus as ListingStatus)
       ? { status: targetStatus as ListingStatus }
       : {}),
-    ...(targetStatus === "cancelled"
-      ? {
-          cancelledReason:
-            text(formData, "cancelledReason") || fallbackCancelledReason,
-        }
-      : {}),
+    ...(targetStatus === "cancelled" ? { cancelledReason } : {}),
     ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
   };
 
