@@ -45,6 +45,12 @@ preflight:
 			echo "missing $$d/node_modules - run npm install in $$d"; \
 			exit 1; \
 		fi; \
+		for pkg in $$(grep -oE '"[^"]+": "file:' "$$d/package.json" | sed 's/": "file:$$//; s/^"//'); do \
+			if [ ! -e "$$d/node_modules/$$pkg" ]; then \
+				echo "$$d/node_modules is stale - $$pkg is not linked - run npm install in $$d"; \
+				exit 1; \
+			fi; \
+		done; \
 	done
 
 db: ## start postgres and wait until healthy
