@@ -28,21 +28,26 @@ function makeController() {
 }
 
 describe('StatisticsController', () => {
-  it('delegates the summary to the service with the caller', async () => {
+  it('delegates the summary to the service with the caller and period', async () => {
     const { controller, service } = makeController();
+    const filters = { from: '2026-03-01', to: '2026-03-31' };
 
-    const result = await controller.getOrgSummary({ user } as Request);
+    const result = await controller.getOrgSummary({ user } as Request, filters);
 
-    expect(service.getOrgSummary).toHaveBeenCalledWith(user);
+    expect(service.getOrgSummary).toHaveBeenCalledWith(user, filters);
     expect(result).toEqual({ orgId: 'org-1' });
   });
 
-  it('delegates the metrics to the service with the caller', async () => {
+  it('delegates the metrics to the service with the caller and period', async () => {
     const { controller, service } = makeController();
+    const filters = { from: '2026-03-01' };
 
-    const result = await controller.getRescuedMetrics({ user } as Request);
+    const result = await controller.getRescuedMetrics(
+      { user } as Request,
+      filters,
+    );
 
-    expect(service.getRescuedMetrics).toHaveBeenCalledWith(user);
+    expect(service.getRescuedMetrics).toHaveBeenCalledWith(user, filters);
     expect(result).toEqual({ orgId: 'org-1' });
   });
 });

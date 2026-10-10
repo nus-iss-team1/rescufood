@@ -2,12 +2,17 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import {
   closeTestPool,
+  countAuditActions,
   getListingRow,
+  getListingSnapshot,
+  getRequestRow,
   resetDb,
   seedDonor,
   seedListing,
+  seedRequest,
   seedRescuePartner,
   seedUser,
+  testPool,
 } from './support/db';
 import { authHeaders, body, createTestApp, type TestApp } from './support/app';
 
@@ -163,11 +168,12 @@ describe('Listings HTTP (integration)', () => {
       id: string,
       version: number,
       status: string,
+      extra: object = {},
     ) {
       return request(harness.server)
         .patch(`/api/listings/${id}`)
         .set(authHeaders(user))
-        .send({ version, status })
+        .send({ version, status, ...extra })
         .expect(200);
     }
 
@@ -204,6 +210,8 @@ describe('Listings HTTP (integration)', () => {
         donorOrgId: donor.org.id,
         createdBy: donor.user.id,
         status: 'available',
+        pickupWindowStart: new Date(Date.now() + 5 * 60 * 60 * 1000),
+        pickupWindowEnd: new Date(Date.now() + 9 * 60 * 60 * 1000),
       });
       const before = (await getListingRow(listing.id))?.published_at;
 
@@ -217,7 +225,7 @@ describe('Listings HTTP (integration)', () => {
       await request(harness.server)
         .patch(`/api/requests/${claim.id}`)
         .set(authHeaders(rescue.user))
-        .send({ status: 'cancelled' })
+        .send({ status: 'cancelled', cancellationReason: 'Van broke down' })
         .expect(200);
 
       const after = await getListingRow(listing.id);
@@ -234,9 +242,283 @@ describe('Listings HTTP (integration)', () => {
       });
       const before = (await getListingRow(listing.id))?.published_at;
 
-      await setStatus(donor.user, listing.id, 1, 'cancelled');
+      await setStatus(donor.user, listing.id, 1, 'cancelled', {
+        cancelledReason: 'Fridge failed',
+      });
 
       expect((await getListingRow(listing.id))?.published_at).toEqual(before);
     });
+  });
+
+  describe('cancelling a listing', () => {
+    async function seedOwned(status: 'draft' | 'available') {
+      const donor = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status,
+      });
+      return { donor, listing };
+    }
+
+    it.each(['draft', 'available'] as const)(
+      'cancels a %s listing with a reason',
+      async (status) => {
+        const { donor, listing } = await seedOwned(status);
+
+        const res = await request(harness.server)
+          .patch(`/api/listings/${listing.id}`)
+          .set(authHeaders(donor.user))
+          .send({
+            version: 1,
+            status: 'cancelled',
+            cancelledReason: ' Fridge failed ',
+          })
+          .expect(200);
+
+        expect(
+          body<ListingBody & { cancelledReason: string }>(res),
+        ).toMatchObject({
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        });
+      },
+    );
+
+    it.each([
+      ['missing', {}],
+      ['blank', { cancelledReason: '   ' }],
+    ])('rejects a cancellation whose reason is %s', async (_label, extra) => {
+      const { donor, listing } = await seedOwned('available');
+
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({ version: 1, status: 'cancelled', ...extra })
+        .expect(400);
+
+      expect((await getListingRow(listing.id))?.status).toBe('available');
+    });
+
+    it('records the actor, reason and time in the listing history', async () => {
+      const { donor, listing } = await seedOwned('available');
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({
+          version: 1,
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        })
+        .expect(200);
+
+      const admin = await seedUser({ orgId: null });
+      const res = await request(harness.server)
+        .get(`/api/audit/listing/${listing.id}`)
+        .set(authHeaders(admin, 'admin'))
+        .expect(200);
+
+      const events = body<{
+        items: {
+          action: string;
+          userId: string | null;
+          orgId: string | null;
+          reason: string;
+          createdAt: string;
+        }[];
+      }>(res).items;
+      const cancelled = events.find((e) => e.action === 'listing.cancelled');
+      expect(cancelled).toMatchObject({
+        userId: donor.user.id,
+        orgId: donor.org.id,
+        reason: 'Fridge failed',
+      });
+      expect(Date.parse(cancelled!.createdAt)).not.toBeNaN();
+    });
+
+    it('hides a cancelled listing from browse and refuses a claim on it', async () => {
+      const { donor, listing } = await seedOwned('available');
+      const rescue = await seedRescuePartner();
+      await request(harness.server)
+        .patch(`/api/listings/${listing.id}`)
+        .set(authHeaders(donor.user))
+        .send({
+          version: 1,
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        })
+        .expect(200);
+
+      const page = body<ListingPage>(
+        await request(harness.server)
+          .get('/api/listings')
+          .set(authHeaders(rescue.user))
+          .expect(200),
+      );
+      expect(page.items.map((l) => l.id)).not.toContain(listing.id);
+
+      await request(harness.server)
+        .post('/api/requests')
+        .set(authHeaders(rescue.user))
+        .send({ listingId: listing.id, idempotencyKey: randomUUID() })
+        .expect(400);
+    });
+  });
+
+  describe('editing a listing', () => {
+    const hoursFromNow = (hours: number) =>
+      new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+
+    // An available listing whose last modification is an hour old.
+    async function seedOwnedAvailable() {
+      const donor = await seedDonor();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'available',
+      });
+      await testPool().query(
+        `UPDATE listings SET updated_at = now() - interval '1 hour' WHERE id = $1`,
+        [listing.id],
+      );
+      return { donor, listing };
+    }
+
+    function patchListing(
+      user: { cognitoSub: string },
+      id: string,
+      payload: object,
+    ) {
+      return request(harness.server)
+        .patch(`/api/listings/${id}`)
+        .set(authHeaders(user))
+        .send(payload);
+    }
+
+    it('persists valid edits to an available listing and stamps the modification time', async () => {
+      const { donor, listing } = await seedOwnedAvailable();
+      const before = await getListingSnapshot(listing.id);
+      const pickupWindowEnd = hoursFromNow(6);
+
+      await patchListing(donor.user, listing.id, {
+        version: 1,
+        description: 'Two trays of sourdough',
+        quantity: 20,
+        pickupWindowEnd,
+      }).expect(200);
+
+      const after = await getListingSnapshot(listing.id);
+      expect(after).toMatchObject({
+        status: 'available',
+        description: 'Two trays of sourdough',
+        quantity: '20.00',
+        pickup_window_end: new Date(pickupWindowEnd),
+        version: 2,
+      });
+      expect(after.updated_at.getTime()).toBeGreaterThan(
+        before.updated_at.getTime(),
+      );
+
+      const fetched = body<
+        ListingBody & { version: number; updatedAt: string }
+      >(
+        await request(harness.server)
+          .get(`/api/listings/${listing.id}`)
+          .set(authHeaders(donor.user))
+          .expect(200),
+      );
+      expect(fetched).toMatchObject({
+        description: 'Two trays of sourdough',
+        version: 2,
+      });
+      expect(Date.parse(fetched.updatedAt)).toBe(after.updated_at.getTime());
+      expect(await countAuditActions('listing.updated', listing.id)).toBe(1);
+    });
+
+    it.each([
+      [
+        'useBy before the pickup window ends',
+        { useBy: hoursFromNow(2) },
+        'USE_BY_INCONSISTENT',
+      ],
+      [
+        'a pickup window already in the past',
+        {
+          pickupWindowStart: hoursFromNow(-3),
+          pickupWindowEnd: hoursFromNow(-1),
+        },
+        'PICKUP_WINDOW_PAST',
+      ],
+      ['no allergen information', { allergens: [] }, 'REQUIRED'],
+      ['a blank allergen entry', { allergens: ['  '] }, 'ALLERGENS_INVALID'],
+    ])(
+      'rejects an edit leaving %s and keeps the stored listing',
+      async (_label, patch, code) => {
+        const { donor, listing } = await seedOwnedAvailable();
+        const before = await getListingSnapshot(listing.id);
+
+        const res = await patchListing(donor.user, listing.id, {
+          version: 1,
+          ...patch,
+        }).expect(400);
+
+        expect(body<{ errors: { code: string }[] }>(res).errors).toContainEqual(
+          expect.objectContaining({ code }),
+        );
+        expect(await getListingSnapshot(listing.id)).toEqual(before);
+        expect(await countAuditActions('listing.updated', listing.id)).toBe(0);
+      },
+    );
+
+    it.each([
+      ['description', { description: 'Swapped for croissants' }],
+      ['allergens', { allergens: ['nuts'] }],
+      ['quantity', { quantity: 5 }],
+      ['unit', { unit: 'boxes' }],
+      ['pickupLocation', { pickupLocation: 'Front counter' }],
+      ['pickupWindowEnd', { pickupWindowEnd: hoursFromNow(6) }],
+    ])('refuses changing %s on a reserved listing', async (_field, patch) => {
+      const donor = await seedDonor();
+      const rescue = await seedRescuePartner();
+      const listing = await seedListing({
+        donorOrgId: donor.org.id,
+        createdBy: donor.user.id,
+        status: 'reserved',
+      });
+      const claim = await seedRequest({
+        listingId: listing.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
+      });
+      const before = await getListingSnapshot(listing.id);
+
+      await patchListing(donor.user, listing.id, {
+        version: 1,
+        ...patch,
+      }).expect(400);
+
+      expect(await getListingSnapshot(listing.id)).toEqual(before);
+      expect((await getRequestRow(claim.id))?.status).toBe('active');
+    });
+
+    it.each([
+      ['another donor organisation', seedDonor],
+      ['a rescue partner', seedRescuePartner],
+    ])(
+      'denies an edit from %s and changes nothing',
+      async (_label, seedOutsider) => {
+        const { listing } = await seedOwnedAvailable();
+        const outsider = await seedOutsider();
+        const before = await getListingSnapshot(listing.id);
+
+        await patchListing(outsider.user, listing.id, {
+          version: 1,
+          description: 'Not yours to change',
+        }).expect(403);
+
+        expect(await getListingSnapshot(listing.id)).toEqual(before);
+        expect(await countAuditActions('listing.updated', listing.id)).toBe(0);
+      },
+    );
   });
 });

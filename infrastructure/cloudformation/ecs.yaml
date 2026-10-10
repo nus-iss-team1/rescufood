@@ -147,6 +147,20 @@ Parameters:
       How far ahead of a pickup window opening/closing the listings service
       fires a pickup reminder.
 
+  ListingsClaimCancelCutoffHours:
+    Type: Number
+    Default: 3
+    Description: >-
+      A claim cancelled later than this before its pickup window opens does
+      not relist the listing; the listing expires instead.
+
+  ListingsRelistMinPickupHours:
+    Type: Number
+    Default: 3
+    Description: >-
+      A cancelled claim relists its listing only if at least this much of the
+      pickup window remains.
+
   NotificationImage:
     Type: String
     Default: ""
@@ -963,6 +977,10 @@ Resources:
               Value: !Ref ListingsIdempotencyRetentionDays
             - Name: PICKUP_REMINDER_LEAD_HOURS
               Value: !Ref ListingsPickupReminderLeadHours
+            - Name: CLAIM_CANCEL_CUTOFF_HOURS
+              Value: !Ref ListingsClaimCancelCutoffHours
+            - Name: RELIST_MIN_PICKUP_HOURS
+              Value: !Ref ListingsRelistMinPickupHours
           Secrets:
             - Name: DB_PASSWORD
               ValueFrom: !Sub "${ProfileDbSecret}:password::"

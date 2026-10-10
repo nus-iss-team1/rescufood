@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { cn } from "@/lib/utils";
+import { segmentedItem, segmentedTrack } from "@/lib/segmented";
 
 export const metadata: Metadata = {
   title: "Requests — RescuFood",
@@ -155,7 +156,7 @@ export default async function RequestsPage({
             data-animate="field"
             className="flex items-start justify-between gap-3"
           >
-            <div className="flex flex-wrap gap-2">
+            <div className={segmentedTrack}>
               {tabs.map((tab) => {
                 const count =
                   tab === "all"
@@ -167,10 +168,8 @@ export default async function RequestsPage({
                     href={href({ status: tab })}
                     aria-current={tab === active ? "page" : undefined}
                     className={cn(
-                      buttonVariants({
-                        variant: tab === active ? "default" : "outline",
-                        size: "sm",
-                      }),
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      segmentedItem(tab === active),
                     )}
                   >
                     {tab === "all" ? "All" : requestStatusLabels[tab]}
@@ -182,7 +181,7 @@ export default async function RequestsPage({
               })}
             </div>
 
-            <div className="flex shrink-0 gap-1" role="group" aria-label="View">
+            <div className={cn(segmentedTrack, "shrink-0")} role="group" aria-label="View">
               {views.map(({ key, label, Icon }) => (
                 <Link
                   key={key}
@@ -190,10 +189,8 @@ export default async function RequestsPage({
                   aria-current={key === layout ? "true" : undefined}
                   title={label}
                   className={cn(
-                    buttonVariants({
-                      variant: key === layout ? "default" : "outline",
-                      size: "icon-sm",
-                    }),
+                    buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                    segmentedItem(key === layout),
                   )}
                 >
                   <Icon className="size-4" aria-hidden />

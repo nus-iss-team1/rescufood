@@ -49,6 +49,7 @@ export function CancelClaimButton({
     formData: FormData,
   ) => {
     const result = await cancelRequestAction(prev, formData);
+    // TODO(frontend): when the response has listingRelisted: false the lot expires; update this toast and the dialog copy.
     if (result.requestedId) {
       toast.success("Claim cancelled", {
         description: "The lot is back on the browse list.",
@@ -86,6 +87,7 @@ export function CancelClaimButton({
             </Button>
             <form action={action}>
               <input type="hidden" name="requestId" value={requestId} />
+              {/* TODO(frontend): add a required reason input named "reason". */}
               <ConfirmButton />
             </form>
           </div>

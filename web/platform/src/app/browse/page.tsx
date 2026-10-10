@@ -184,7 +184,7 @@ export default async function BrowsePage({
                   href="/browse"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
-                    "mt-4 rounded-full",
+                    "mt-4",
                   )}
                 >
                   Reset all filters

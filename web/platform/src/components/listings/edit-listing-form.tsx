@@ -107,6 +107,10 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       : dayjs().format("YYYY-MM-DDTHH:mm:ss"),
   );
   const [status, setStatus] = useState<ListingStatus>(listing.status);
+  const [cancelledReason, setCancelledReason] = useState<string>("");
+
+  // True once Cancelled is picked on a listing that is still editable.
+  const isCancelling = !isLocked && status === "cancelled";
 
   // Image management
   const initialImage = listing.images?.[0];
@@ -411,6 +415,27 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           />
         </Field>
       </div>
+
+      {/* Cancellation reason */}
+      {isCancelling && (
+        <Field
+          label="Reason for cancelling"
+          htmlFor="cancelledReason"
+          hint="Kept in the listing's history."
+          className="md:col-span-2"
+        >
+          <Textarea
+            id="cancelledReason"
+            name="cancelledReason"
+            rows={2}
+            placeholder="Fridge failed overnight"
+            value={cancelledReason}
+            onChange={(e) => setCancelledReason(e.target.value)}
+            disabled={pending}
+            required
+          />
+        </Field>
+      )}
 
       {/* Description */}
       <Field

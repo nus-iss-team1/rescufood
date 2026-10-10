@@ -99,6 +99,20 @@ describe("cancelRequestAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/browse/L1");
   });
 
+  it.each([
+    ["missing", {}],
+    ["blank", { reason: "   " }],
+  ])("sends a fallback reason when it is %s", async (_label, extra) => {
+    listings.decideRequest.mockResolvedValue({ listingId: "L1" });
+
+    await cancelRequestAction({}, form({ requestId: "R1", ...extra }));
+
+    expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
+      status: "cancelled",
+      cancellationReason: "No reason given",
+    });
+  });
+
   it("surfaces the service's error and skips revalidation", async () => {
     listings.decideRequest.mockRejectedValue(
       new ListingsApiError(422, "Request is already completed"),

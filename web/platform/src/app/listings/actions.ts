@@ -263,6 +263,15 @@ export async function updateListingAction(
     };
   }
 
+  // Cancelling requires a non-blank reason.
+  const cancelledReason = text(formData, "cancelledReason");
+  if (targetStatus === "cancelled" && !cancelledReason) {
+    return {
+      error: "Please give a reason for cancelling this listing.",
+      values,
+    };
+  }
+
   const isPublishingOrAvailable =
     targetStatus === "available" ||
     (!targetStatus && currentStatus === "available");
@@ -310,6 +319,7 @@ export async function updateListingAction(
     ...(targetStatus && listingStatuses.includes(targetStatus as ListingStatus)
       ? { status: targetStatus as ListingStatus }
       : {}),
+    ...(targetStatus === "cancelled" ? { cancelledReason } : {}),
     ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
   };
 

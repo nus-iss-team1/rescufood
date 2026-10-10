@@ -102,6 +102,24 @@ describe('Requests HTTP (integration)', () => {
     expect(body<ClaimBody>(retry).id).toBe(body<ClaimBody>(first).id);
   });
 
+  it('rejects claiming an expired listing with 400', async () => {
+    const donor = await seedDonor();
+    const rescue = await seedRescuePartner();
+    const listing = await seedListing({
+      donorOrgId: donor.org.id,
+      createdBy: donor.user.id,
+      status: 'expired',
+    });
+
+    await request(harness.server)
+      .post('/api/requests')
+      .set(authHeaders(rescue.user))
+      .send({ listingId: listing.id, idempotencyKey: randomUUID() })
+      .expect(400);
+
+    expect((await getListingRow(listing.id))?.status).toBe('expired');
+  });
+
   it('rejects claiming a draft listing with 400', async () => {
     const donor = await seedDonor();
     const rescue = await seedRescuePartner();

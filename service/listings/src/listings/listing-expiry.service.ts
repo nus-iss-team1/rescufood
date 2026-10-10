@@ -7,9 +7,9 @@ import { DATABASE, type Database } from '../db/db.module';
 import { NotificationsPublisher } from '../notifications/notifications.publisher';
 import { ListingsRepository } from './listings.repository';
 
-// Once a minute, expires any listing past its pickup window - unclaimed, or
-// claimed but never collected - along with its `active` claim, if any. See
-// ListingsRepository.expireOverdue.
+type ExpiredListing = { listingId: string; claimId: string | undefined };
+
+// Once a minute, expires each overdue listing and its active claim, one transaction per listing.
 @Injectable()
 export class ListingExpiryService {
   constructor(
@@ -22,53 +22,89 @@ export class ListingExpiryService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async sweepExpiredListings(): Promise<void> {
-    const { listingIds, claimIds } = await this.db.transaction(async (tx) => {
-      const result = await this.listingsRepository.expireOverdue(
-        new Date(),
+    const now = new Date();
+    let overdueIds: string[];
+    try {
+      overdueIds = await this.listingsRepository.findOverdueListingIds(now);
+    } catch (err) {
+      this.logger.error({ err }, 'listing expiry sweep failed');
+      return;
+    }
+
+    const expired: ExpiredListing[] = [];
+    const failedListingIds: string[] = [];
+    for (const listingId of overdueIds) {
+      try {
+        const result = await this.expireOne(listingId, now);
+        if (result) expired.push(result);
+      } catch (err) {
+        failedListingIds.push(listingId);
+        this.logger.error({ err, listingId }, 'failed to expire listing');
+      }
+    }
+
+    if (expired.length === 0 && failedListingIds.length === 0) return;
+
+    this.logger.log(
+      {
+        expiredListings: expired.length,
+        expiredClaims: expired.filter((e) => e.claimId).length,
+        failedListings: failedListingIds.length,
+      },
+      'expired overdue listings',
+    );
+    await this.notifyExpired(expired);
+  }
+
+  // Expires and audits one listing atomically; undefined if no longer overdue.
+  private expireOne(
+    listingId: string,
+    now: Date,
+  ): Promise<ExpiredListing | undefined> {
+    return this.db.transaction(async (tx) => {
+      const result = await this.listingsRepository.expireListing(
+        listingId,
+        now,
         tx,
       );
-      for (const id of result.listingIds) {
-        await this.auditRepository.record(
-          {
-            actor: SYSTEM_ACTOR,
-            action: AuditAction.ListingExpired,
-            entityType: 'listing',
-            entityId: id,
-          },
-          tx,
-        );
-      }
-      for (const id of result.claimIds) {
+      if (!result) return undefined;
+
+      await this.auditRepository.record(
+        {
+          actor: SYSTEM_ACTOR,
+          action: AuditAction.ListingExpired,
+          entityType: 'listing',
+          entityId: listingId,
+        },
+        tx,
+      );
+      if (result.claimId) {
         await this.auditRepository.record(
           {
             actor: SYSTEM_ACTOR,
             action: AuditAction.ClaimExpired,
             entityType: 'claim',
-            entityId: id,
+            entityId: result.claimId,
           },
           tx,
         );
       }
-      return result;
+      return { listingId, claimId: result.claimId };
     });
-
-    if (listingIds.length === 0) return;
-
-    this.logger.log(
-      { expiredListings: listingIds.length, expiredClaims: claimIds.length },
-      'expired overdue listings',
-    );
-    await this.notifyExpired(listingIds, claimIds);
   }
 
   // Best-effort: emails each expired listing's donor and each stranded claimant.
-  private async notifyExpired(
-    listingIds: string[],
-    claimIds: string[],
-  ): Promise<void> {
+  private async notifyExpired(expired: ExpiredListing[]): Promise<void> {
+    if (expired.length === 0) return;
+    const claimIds = expired.flatMap((e) => (e.claimId ? [e.claimId] : []));
+    const claimedListingIds = new Set(
+      expired.filter((e) => e.claimId).map((e) => e.listingId),
+    );
     try {
       const [listingTargets, claimTargets] = await Promise.all([
-        this.listingsRepository.findExpiredListingTargets(listingIds),
+        this.listingsRepository.findExpiredListingTargets(
+          expired.map((e) => e.listingId),
+        ),
         this.listingsRepository.findExpiredClaimTargets(claimIds),
       ]);
       await Promise.all([
@@ -78,7 +114,7 @@ export class ListingExpiryService {
             {
               recipientName: t.donorName,
               listingDescription: t.description,
-              wasClaimed: claimIds.length > 0,
+              wasClaimed: claimedListingIds.has(t.id),
             },
             {
               eventId: `listing:${t.id}:expired`,

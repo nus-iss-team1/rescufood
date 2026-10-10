@@ -27,6 +27,8 @@ async function idToken() {
 
 const expired = "Your session has expired. Please sign in again.";
 const unreachable = "Could not reach the listings service. Please try again.";
+// TODO(frontend): temporary fallback - remove once the cancel dialog requires a reason; the service rejects a blank one.
+const fallbackCancellationReason = "No reason given";
 
 /** Claims the whole listing, first-come-first-served. Idempotent on the key the form mints. */
 export async function createRequestAction(
@@ -75,7 +77,9 @@ export async function cancelRequestAction(
   try {
     const updated = await decideRequest(token, id, {
       status: "cancelled",
-      cancellationReason: String(formData.get("reason") ?? "").trim(),
+      cancellationReason:
+        String(formData.get("reason") ?? "").trim() ||
+        fallbackCancellationReason,
     });
     if (updated.listingId) {
       revalidatePath(`/browse/${updated.listingId}`);

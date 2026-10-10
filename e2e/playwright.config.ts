@@ -24,9 +24,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
+    // Signs each role in once and saves the session for the specs to reuse
+    // (see tests/auth.setup.ts).
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
     },
   ],
 });

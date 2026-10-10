@@ -23,14 +23,13 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Logger } from 'nestjs-pino';
-import {
-  OrgContextGuard,
-  OrgMembershipGuard,
-} from '../auth/org-membership.guard';
+import { ActiveOrgMemberOrAdminGuard } from '../auth/active-org-member-or-admin.guard';
+import { OrgMembershipGuard } from '../auth/org-membership.guard';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { PaginatedRequestsResponseDto } from './dto/paginated-requests-response.dto';
 import { PickupCodeResponseDto } from './dto/pickup-code-response.dto';
 import { QueryRequestsDto } from './dto/query-requests.dto';
+import { DecideRequestResponseDto } from './dto/decide-request-response.dto';
 import { RequestResponseDto } from './dto/request-response.dto';
 import { UpdateRequestDto } from './dto/update-request.dto';
 import { LookupPickupCodeDto } from './dto/lookup-pickup-code.dto';
@@ -51,6 +50,9 @@ const generateThrottle = Throttle({ default: { limit: 6, ttl: 60_000 } });
 // Tighter than verifyThrottle: a code-only lookup has no request id to
 // narrow a guess.
 const lookupThrottle = Throttle({ default: { limit: 5, ttl: 60_000 } });
+
+const readForbiddenDescription =
+  "Caller (not an admin) has no organisation, is not active, or their organisation isn't approved.";
 
 @ApiTags('requests')
 @ApiBearerAuth()
@@ -100,8 +102,9 @@ export class RequestsController {
       'Paginated, filterable. Scoped to requests the caller filed (as the rescue org) or that target a listing they donated (as the donor org); admins see everything.',
   })
   @ApiResponse({ status: 200, type: PaginatedRequestsResponseDto })
+  @ApiResponse({ status: 403, description: readForbiddenDescription })
   @Get()
-  @UseGuards(OrgContextGuard)
+  @UseGuards(ActiveOrgMemberOrAdminGuard)
   findAll(@Query() query: QueryRequestsDto, @Req() req: Request) {
     return this.requestsService.findAll(query, req.user!);
   }
@@ -109,12 +112,13 @@ export class RequestsController {
   @ApiOperation({ summary: 'Get a request by id' })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, type: RequestResponseDto })
+  @ApiResponse({ status: 403, description: readForbiddenDescription })
   @ApiResponse({
     status: 404,
     description: 'Request not found, or not visible to the caller.',
   })
   @Get(':id')
-  @UseGuards(OrgContextGuard)
+  @UseGuards(ActiveOrgMemberOrAdminGuard)
   findOne(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     return this.requestsService.findOne(id, req.user!);
   }
@@ -122,13 +126,14 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Cancel a claim or report a no-show',
     description:
-      "Either party to an accepted claim may cancel it or report a no-show; both reopen the listing for another org. See the request-status transition map for which decisions are valid from the claim's current status.",
+      "Either party to an accepted claim may cancel it (with a reason) or report a no-show. A no-show reopens the listing for another org. A cancellation reopens it only if made before the cancellation cutoff (CLAIM_CANCEL_CUTOFF_HOURS before the pickup window opens) with at least RELIST_MIN_PICKUP_HOURS of the window left; otherwise the claim is still cancelled but the listing is expired, and the response reports `listingRelisted: false` with a `relistBlockedReason`. See the request-status transition map for which decisions are valid from the claim's current status.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiResponse({ status: 200, type: RequestResponseDto })
+  @ApiResponse({ status: 200, type: DecideRequestResponseDto })
   @ApiResponse({
     status: 400,
-    description: "Decision not valid from the claim's current status.",
+    description:
+      "Decision not valid from the claim's current status, or a cancellation without a reason.",
   })
   @ApiResponse({
     status: 403,

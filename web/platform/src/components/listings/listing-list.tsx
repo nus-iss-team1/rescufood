@@ -1,4 +1,4 @@
-import { CalendarClock, MapPin, TriangleAlert } from "lucide-react";
+import { CalendarClock, MapPin, Scale, TriangleAlert } from "lucide-react";
 import type { Listing } from "@rescufood/listings-sdk";
 
 import {
@@ -39,21 +39,23 @@ export function ListingList({
           className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[1fr_auto] sm:items-start"
         >
           <div className="grid gap-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">
-                {listing.description || "Untitled draft"}
-              </span>
-              <Badge variant="secondary">
-                {listing.category
-                  ? categoryLabels[listing.category]
-                  : "No category yet"}
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {listing.quantity != null && listing.unit
-                  ? quantity(listing.quantity, listing.unit)
-                  : "Quantity not set"}
-              </span>
-            </div>
+            <span className="font-medium">
+              {listing.description || "Untitled draft"}
+            </span>
+
+            {/* w-fit: a grid child would otherwise stretch the pill. */}
+            <Badge variant="secondary" className="w-fit">
+              {listing.category
+                ? categoryLabels[listing.category]
+                : "No category yet"}
+            </Badge>
+
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Scale className="size-4 shrink-0" aria-hidden />
+              {listing.quantity != null && listing.unit
+                ? quantity(listing.quantity, listing.unit)
+                : "Quantity not set"}
+            </p>
 
             <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <CalendarClock className="size-4 shrink-0" aria-hidden />
@@ -89,7 +91,9 @@ export function ListingList({
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+          {/* The status is a label, the actions are controls: keep a clear
+              gap so the badge is not read as a third button. */}
+          <div className="flex items-center justify-between gap-6 sm:flex-col sm:items-end sm:gap-4">
             {showStatus && (
               <Badge
                 variant={listingStatusVariant[listing.status]}
