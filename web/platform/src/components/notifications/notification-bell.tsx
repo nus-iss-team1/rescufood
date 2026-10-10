@@ -213,10 +213,8 @@ function ReminderCard({
   return (
     <div
       className={cn(
-        "group relative rounded-lg border p-3 transition-colors text-left",
-        unread
-          ? "border-border bg-muted/40 hover:bg-muted/60"
-          : "border-border/70 bg-card hover:bg-muted/30",
+        "group relative p-3.5 transition-colors text-left",
+        unread ? "bg-muted/40 hover:bg-muted/60" : "bg-card hover:bg-muted/30",
       )}
     >
       <button
@@ -360,10 +358,8 @@ function GenericNotificationCard({
   return (
     <div
       className={cn(
-        "group relative flex items-start p-3 transition-colors rounded-lg border text-left",
-        unread
-          ? "border-border bg-muted/40 hover:bg-muted/60"
-          : "border-border/70 bg-card hover:bg-muted/30",
+        "group relative flex items-start p-3.5 transition-colors text-left",
+        unread ? "bg-muted/40 hover:bg-muted/60" : "bg-card hover:bg-muted/30",
       )}
     >
       <button
@@ -810,7 +806,7 @@ export function NotificationBell({
           ) : items.length === 0 ? (
             <EmptyNotificationsCard />
           ) : (
-            <div className="space-y-2 p-3">
+            <div className="divide-y divide-border/70">
               {items.map((n) => {
                 const unread = isNotificationUnread(n);
                 const isReminder =

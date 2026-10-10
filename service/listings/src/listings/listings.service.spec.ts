@@ -1296,23 +1296,63 @@ describe('ListingsService', () => {
 
       const result = await service.update(
         'listing-1',
-        { version: 1, status: 'cancelled' },
+        { version: 1, status: 'cancelled', cancelledReason: 'Fridge failed' },
         [],
         owner,
       );
 
       expect(result.status).toBe('cancelled');
       expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(repository.updateWithVersion).toHaveBeenCalledWith(
+        'listing-1',
+        1,
+        expect.objectContaining({
+          status: 'cancelled',
+          cancelledReason: 'Fridge failed',
+        }),
+        expect.anything(),
+      );
       // No claim to end on an available listing.
       expect(repository.cancelActiveClaim).not.toHaveBeenCalled();
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'listing.cancelled',
           entityId: 'listing-1',
+          reason: 'Fridge failed',
           metadata: { previousStatus: 'available', withdrawal: false },
         }),
         expect.anything(),
       );
+    });
+
+    it('ignores a cancellation reason sent without cancelling', async () => {
+      const repository = makeRepository();
+      repository.findById.mockResolvedValue({
+        ...baseListing,
+        status: 'draft',
+      });
+      repository.updateWithVersion.mockResolvedValue({
+        ...baseListing,
+        status: 'draft',
+        version: 2,
+      });
+      const { service } = makeService(repository);
+
+      await service.update(
+        'listing-1',
+        {
+          version: 1,
+          handlingInstructions: 'Keep chilled',
+          cancelledReason: 'x',
+        },
+        [],
+        owner,
+      );
+
+      const [[, , fields]] = repository.updateWithVersion.mock.calls as [
+        [string, number, Record<string, unknown>, unknown],
+      ];
+      expect(fields).not.toHaveProperty('cancelledReason');
     });
 
     it('lets a donor withdraw a reserved listing, ending the active claim', async () => {
@@ -1361,6 +1401,7 @@ describe('ListingsService', () => {
       expect(repository.cancelActiveClaim).toHaveBeenCalledWith(
         'listing-1',
         'Van broke down',
+        { userId: 'user-1', orgId: 'org-1' },
         expect.anything(),
       );
       expect(audit.record).toHaveBeenCalledWith(

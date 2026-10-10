@@ -334,7 +334,7 @@ export class ListingsService {
               }),
               ...(dto.status !== undefined && { status: dto.status }),
               ...publicationChange(existing.status, dto.status),
-              ...(dto.cancelledReason !== undefined && {
+              ...(dto.status === 'cancelled' && {
                 cancelledReason: dto.cancelledReason,
               }),
               version: existing.version + 1,
@@ -355,6 +355,7 @@ export class ListingsService {
             cancelledClaim = await this.listingsRepository.cancelActiveClaim(
               id,
               dto.cancelledReason ?? '',
+              actor,
               tx,
             );
             if (cancelledClaim) {

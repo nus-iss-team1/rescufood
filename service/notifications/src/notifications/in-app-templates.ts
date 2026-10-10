@@ -36,6 +36,9 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
       case 'donor':
         return `${other || 'The donor'} withdrew "${listing}", so your reservation was cancelled.`;
       case 'no_show':
+        if (payload.reportedBy === 'rescue_partner') {
+          return `${other || 'The rescue partner'} reported that the pickup of "${listing}" could not be completed (no-show).`;
+        }
         return `Your reservation for "${listing}" was cancelled — the pickup was not completed in time.`;
       default:
         return `${other || 'The rescue partner'} cancelled their reservation for "${listing}". It is available again.`;

@@ -1,13 +1,22 @@
 import {
   closeTestPool,
   getListingRow,
+  getRequestRow,
   resetDb,
   seedDonor,
   seedListing,
+  seedRequest,
   seedRescuePartner,
   testPool,
+  type SeededListing,
 } from './support/db';
 import { createRepoContext, type RepoContext } from './support/repos';
+
+const HOUR = 60 * 60 * 1000;
+const pastWindow = () => ({
+  pickupWindowStart: new Date(Date.now() - 3 * HOUR),
+  pickupWindowEnd: new Date(Date.now() - HOUR),
+});
 
 let ctx: RepoContext;
 
@@ -217,36 +226,82 @@ describe('ListingsRepository (integration)', () => {
     });
   });
 
-  describe('expireOverdue', () => {
-    it('expires listings past their pickup window and their active claims', async () => {
+  describe('findOverdueListingIds', () => {
+    it('returns only available and reserved listings past their pickup window', async () => {
+      const { org, user } = await seedDonor();
+      const seed = (
+        status: SeededListing['status'],
+        window: Partial<ReturnType<typeof pastWindow>> = pastWindow(),
+      ) =>
+        seedListing({
+          donorOrgId: org.id,
+          createdBy: user.id,
+          status,
+          ...window,
+        });
+
+      const available = await seed('available');
+      const reserved = await seed('reserved');
+      await seed('available', {});
+      await seed('cancelled');
+      await seed('collected');
+      await seed('expired');
+      const deleted = await seed('available');
+      await testPool().query(
+        `UPDATE listings SET deleted_at = now() WHERE id = $1`,
+        [deleted.id],
+      );
+
+      const ids = await ctx.listings.findOverdueListingIds(new Date());
+
+      expect(ids.sort()).toEqual([available.id, reserved.id].sort());
+    });
+  });
+
+  describe('expireListing', () => {
+    it('expires an overdue listing and its active claim, and is a no-op the second time', async () => {
       const donor = await seedDonor();
       const rescue = await seedRescuePartner();
-
       const overdue = await seedListing({
         donorOrgId: donor.org.id,
         createdBy: donor.user.id,
         status: 'reserved',
-        pickupWindowStart: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        pickupWindowEnd: new Date(Date.now() - 60 * 60 * 1000),
+        ...pastWindow(),
       });
-      const future = await seedListing({
-        donorOrgId: donor.org.id,
-        createdBy: donor.user.id,
-        status: 'available',
+      const claim = await seedRequest({
+        listingId: overdue.id,
+        rescueOrgId: rescue.org.id,
+        claimedBy: rescue.user.id,
       });
-      await testPool().query(
-        `INSERT INTO requests (listing_id, rescue_org_id, claimed_by, status, requested_quantity)
-         VALUES ($1, $2, $3, 'active', '10.00')`,
-        [overdue.id, rescue.org.id, rescue.user.id],
+
+      const first = await ctx.db.transaction((tx) =>
+        ctx.listings.expireListing(overdue.id, new Date(), tx),
       );
+      const second = await ctx.db.transaction((tx) =>
+        ctx.listings.expireListing(overdue.id, new Date(), tx),
+      );
+
+      expect(first).toEqual({ claimId: claim.id });
+      expect(second).toBeUndefined();
+      expect(await getListingRow(overdue.id)).toMatchObject({
+        status: 'expired',
+        version: 2,
+      });
+      expect((await getRequestRow(claim.id))?.status).toBe('expired');
+    });
+
+    it('leaves a listing that is not yet due untouched', async () => {
+      const { org, user } = await seedDonor();
+      const future = await seedListing({
+        donorOrgId: org.id,
+        createdBy: user.id,
+      });
 
       const result = await ctx.db.transaction((tx) =>
-        ctx.listings.expireOverdue(new Date(), tx),
+        ctx.listings.expireListing(future.id, new Date(), tx),
       );
 
-      expect(result.listingIds).toEqual([overdue.id]);
-      expect(result.claimIds).toHaveLength(1);
-      expect((await getListingRow(overdue.id))?.status).toBe('expired');
+      expect(result).toBeUndefined();
       expect((await getListingRow(future.id))?.status).toBe('available');
     });
   });

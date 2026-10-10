@@ -37,6 +37,12 @@ npm run test:ui                   # run in Playwright's interactive UI mode
 npx playwright test tests/login.spec.ts   # run a single spec file
 ```
 
+## Signed-in sessions
+
+Each run starts with a `setup` project ([`tests/auth.setup.ts`](tests/auth.setup.ts)) that signs the donor and rescue partner in once through the real login page and saves their sessions to `.auth/` (gitignored). Specs then take the `donorPage` / `partnerPage` fixtures from [`tests/fixtures/sessions.ts`](tests/fixtures/sessions.ts) — separate browser contexts that start already signed in — instead of logging in and out between steps. A test can take both to drive the two roles side by side.
+
+If sign-in itself breaks, `setup` fails and Playwright skips everything that depends on it, so the report points at one cause. Signing out is covered once, in `login.spec.ts`.
+
 ## Test reports
 
 After a run, view the HTML report with:

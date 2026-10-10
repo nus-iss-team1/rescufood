@@ -23,7 +23,13 @@ import {
 import { OtpInput } from "./otp-input";
 
 /** Resolves a pickup code to its claim and completes the pickup. */
-export function VerifyClaimButton({ className }: { className?: string }) {
+export function VerifyClaimButton({
+  className,
+  variant,
+}: {
+  className?: string;
+  variant?: React.ComponentProps<typeof Button>["variant"];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -119,7 +125,12 @@ export function VerifyClaimButton({ className }: { className?: string }) {
 
   return (
     <>
-      <Button type="button" className={className} onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant={variant}
+        className={className}
+        onClick={() => setOpen(true)}
+      >
         Verify claim
       </Button>
 

@@ -9,7 +9,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother, useGSAP);
 
-export function SmoothScroll({ children }: { children: React.ReactNode }) {
+export function SmoothScroll({
+  children,
+  contentClassName = "pt-16",
+}: {
+  children: React.ReactNode;
+  /** Top padding that clears the fixed header, where one is shown. */
+  contentClassName?: string;
+}) {
   const pathname = usePathname();
 
   useGSAP(() => {
@@ -42,8 +49,7 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
 
   return (
     <div id="smooth-wrapper">
-      {/* pt-16 clears the fixed SiteHeader (h-16) */}
-      <div id="smooth-content" className="pt-16">
+      <div id="smooth-content" className={contentClassName}>
         {children}
       </div>
     </div>
