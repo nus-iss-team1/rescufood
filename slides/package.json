@@ -8,12 +8,17 @@
     "prebuild": "node scripts/fix-svg.mjs",
     "build": "slidev build",
     "dev": "slidev --open",
-    "export": "slidev export"
+    "export": "slidev export",
+    "preexport:pptx": "node scripts/fix-svg.mjs",
+    "export:pptx": "slidev export --format pptx --with-clicks --output deliverables/rescufood.pptx"
   },
   "dependencies": {
     "@slidev/cli": "^52.19.1",
     "@slidev/theme-default": "latest",
     "@slidev/theme-seriph": "latest",
     "vue": "^3.5.33"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.64.0"
   }
 }
