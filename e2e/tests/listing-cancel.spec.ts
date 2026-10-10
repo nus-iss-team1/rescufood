@@ -29,7 +29,7 @@ test.describe.serial('Donor cancels an unclaimed listing', () => {
 
     const editPage = new ListingEditPage(donorPage);
     await editPage.setStatus('Cancelled');
-    // TODO: fill the required reason once cancelling a listing asks for one.
+    await editPage.fillCancellationReason('QA run: no longer available');
     await editPage.save();
   });
 

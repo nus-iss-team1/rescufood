@@ -16,6 +16,11 @@ export class ListingEditPage {
     await option.click();
   }
 
+  /** The reason field the form reveals once Cancelled is selected. */
+  async fillCancellationReason(text: string) {
+    await this.page.getByLabel('Reason for cancelling').fill(text);
+  }
+
   async fillHandlingInfo(text: string) {
     await this.page.getByLabel('Handling info').fill(text);
   }
