@@ -21,7 +21,8 @@ export class YourListingsPage {
     // Same hydration race as the browse page link - retrying the click is
     // safe, it's just a link.
     await expect(async () => {
-      await row.getByRole('link', { name: 'View / Edit' }).click();
+      // The verb follows the status: editable lots edit, locked ones view.
+      await row.getByRole('link', { name: /View listing|Edit listing/ }).click();
       await this.page.waitForURL(/\/listings\/[^/]+$/, { timeout: 3_000 });
     }).toPass({ timeout: 20_000 });
     await this.page.waitForLoadState('networkidle');
