@@ -1,4 +1,4 @@
-import { CalendarClock, MapPin, TriangleAlert } from "lucide-react";
+import { CalendarClock, MapPin, Scale, TriangleAlert } from "lucide-react";
 import type { Listing } from "@rescufood/listings-sdk";
 
 import {
@@ -74,11 +74,12 @@ export function ListingCards({
             )}
           </div>
 
-          <span className="text-sm text-muted-foreground">
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Scale className="size-4 shrink-0" aria-hidden />
             {listing.quantity != null && listing.unit
               ? quantity(listing.quantity, listing.unit)
               : "Quantity not set"}
-          </span>
+          </p>
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <CalendarClock className="size-4 shrink-0" aria-hidden />

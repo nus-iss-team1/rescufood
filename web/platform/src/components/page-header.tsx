@@ -38,7 +38,7 @@ export function PageHeader({
   crumbs,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   action?: React.ReactNode;
   crumbs?: Crumb[];
 }) {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, PackagePlus, Search, ShieldCheck } from "lucide-react";
+import { PackagePlus, Search, ShieldCheck } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
 import { requireSession } from "@/lib/session";
@@ -18,7 +18,7 @@ import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
-import { OrgCard } from "@/components/dashboard/org-card";
+import { ApprovedMark } from "@/components/dashboard/approved-mark";
 import { DonorKpis } from "@/components/dashboard/donor-kpis";
 import { NeedsAttention } from "@/components/dashboard/needs-attention";
 import {
@@ -55,6 +55,26 @@ const primaryActionByType = {
   },
 } as const;
 
+/** Who you are acting as, its standing and size, under the page title. */
+function OrgMeta({ me, members }: { me: Me; members: User[] }) {
+  const approved = me.org?.status === "approved";
+
+  return (
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {describeOrg(me)}
+      {approved && <ApprovedMark />}
+      {approved && members.length > 0 && (
+        <>
+          <span aria-hidden>·</span>
+          <span>
+            {members.length} member{members.length > 1 ? "s" : ""}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
 /** The actions a role reaches for most, beside the page title. */
 function HeaderActions({ org }: { org: Org }) {
   const primary = primaryActionByType[org.type];
@@ -74,7 +94,7 @@ function HeaderActions({ org }: { org: Org }) {
           >
             Your listings
           </Link>
-          <VerifyClaimButton />
+          <VerifyClaimButton variant="outline" />
         </>
       ) : (
         <Link
@@ -110,7 +130,6 @@ function Notice({
 
 function Workspace({
   org,
-  members,
   recent,
   summary,
   metrics,
@@ -118,7 +137,6 @@ function Workspace({
   awaitingPickup,
 }: {
   org: Org;
-  members: User[];
   recent: ListingRequest[];
   summary: OrgSummary | null;
   metrics: RescuedMetrics | null;
@@ -131,33 +149,24 @@ function Workspace({
     <>
       {isDonor && (
         <AnimateIn>
-          <DonorKpis summary={summary} metrics={metrics} />
+          <DonorKpis
+            summary={summary}
+            metrics={metrics}
+            awaitingVerification={awaitingPickup.length}
+          />
         </AnimateIn>
       )}
 
       <AnimateIn className={isDonor ? "mt-6" : undefined}>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="grid gap-6 lg:col-span-2">
-            {isDonor && (
-              <NeedsAttention
-                expiring={expiring}
-                awaitingPickup={awaitingPickup}
-              />
-            )}
-            <RecentRequests requests={recent} />
-          </div>
-          <OrgCard org={org} members={members} />
+        <div className="grid gap-6">
+          {isDonor && (
+            <NeedsAttention
+              expiring={expiring}
+              awaitingPickup={awaitingPickup}
+            />
+          )}
+          <RecentRequests requests={recent} />
         </div>
-      </AnimateIn>
-
-      <AnimateIn className="mt-6">
-        <Link
-          href="/reports"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-        >
-          Full lifecycle breakdown and rescue impact
-          <ArrowRight className="size-4" aria-hidden />
-        </Link>
       </AnimateIn>
     </>
   );
@@ -276,7 +285,7 @@ export default async function DashboardPage() {
       <AnimateIn className="mb-8">
         <PageHeader
           title={`Welcome${firstName ? `, ${firstName}` : ""}`}
-          subtitle={describeOrg(me)}
+          subtitle={<OrgMeta me={me} members={members} />}
           crumbs={[{ label: "Dashboard" }]}
           action={
             me.org?.status === "approved" ? (
@@ -334,7 +343,6 @@ export default async function DashboardPage() {
       ) : me.org.status === "approved" ? (
         <Workspace
           org={me.org}
-          members={members}
           recent={recent}
           summary={summary}
           metrics={metrics}

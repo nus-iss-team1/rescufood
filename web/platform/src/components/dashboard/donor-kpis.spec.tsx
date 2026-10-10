@@ -29,81 +29,105 @@ function metrics(
   };
 }
 
-/** The tile whose label matches, as its link. */
-function tile(label: string) {
-  return screen.getByRole("link", { name: new RegExp(label) });
+/** The whole card carrying a label, found from the label itself. */
+function card(label: string): HTMLElement {
+  const el = screen.getByText(label).closest('[data-slot="card"]');
+  if (!el) throw new Error(`no card for ${label}`);
+  return el as HTMLElement;
+}
+
+function renderKpis(
+  overrides: Partial<React.ComponentProps<typeof DonorKpis>> = {},
+) {
+  return render(
+    <DonorKpis
+      summary={summary({})}
+      metrics={null}
+      awaitingVerification={0}
+      {...overrides}
+    />,
+  );
 }
 
 describe("DonorKpis", () => {
-  it("shows the four lifecycle counts a donor acts on", () => {
-    render(
-      <DonorKpis
-        summary={summary({ available: 12, reserved: 3, collected: 8 })}
-        metrics={null}
-      />,
-    );
+  it("shows the lifecycle counts a donor acts on", () => {
+    renderKpis({
+      summary: summary({ available: 12, reserved: 3, collected: 8 }),
+    });
 
-    expect(tile("Available now")).toHaveTextContent("12");
-    expect(tile("Awaiting pickup")).toHaveTextContent("3");
-    expect(tile("Collected")).toHaveTextContent("8");
+    expect(card("Available")).toHaveTextContent("12");
+    expect(card("Awaiting pickup")).toHaveTextContent("3");
+    expect(card("Collected")).toHaveTextContent("8");
   });
 
   it("links each count to its filtered listing view", () => {
-    render(<DonorKpis summary={summary({ available: 1 })} metrics={null} />);
+    renderKpis({ summary: summary({ available: 1 }) });
 
-    expect(tile("Available now")).toHaveAttribute(
-      "href",
-      "/listings?status=available",
-    );
-    expect(tile("Awaiting pickup")).toHaveAttribute(
+    expect(
+      screen.getByRole("link", { name: "View listings" }),
+    ).toHaveAttribute("href", "/listings?status=available");
+    expect(screen.getByRole("link", { name: "Claimed lots" })).toHaveAttribute(
       "href",
       "/listings?status=reserved",
     );
-    expect(tile("Rescued")).toHaveAttribute("href", "/reports");
+    expect(
+      screen.getByRole("link", { name: "Completed pickups" }),
+    ).toHaveAttribute("href", "/listings?status=collected");
+    expect(screen.getByRole("link", { name: "Rescue impact" })).toHaveAttribute(
+      "href",
+      "/reports",
+    );
   });
 
   it("falls back to zero when a count is absent", () => {
-    render(<DonorKpis summary={summary({})} metrics={null} />);
+    renderKpis();
 
-    expect(tile("Available now")).toHaveTextContent("0");
+    expect(card("Available")).toHaveTextContent("0");
   });
 
   it("renders zero rescued when no metrics loaded", () => {
-    render(<DonorKpis summary={null} metrics={null} />);
+    renderKpis({ summary: null });
 
-    expect(tile("Rescued")).toHaveTextContent("0");
+    expect(card("Rescued")).toHaveTextContent("0");
   });
 
   it("shows the primary rescued unit with its amount", () => {
-    render(
-      <DonorKpis
-        summary={summary({})}
-        metrics={metrics([
-          { unit: "kg", amount: 420, formattedAmount: "420", lots: 9 },
-        ])}
-      />,
-    );
+    renderKpis({
+      metrics: metrics([
+        { unit: "kg", amount: 420, formattedAmount: "420", lots: 9 },
+      ]),
+    });
 
-    const rescued = tile("Rescued");
+    const rescued = card("Rescued");
     expect(rescued).toHaveTextContent("420");
     expect(rescued).toHaveTextContent("kg");
   });
 
   it("counts the remaining units rather than summing across them", () => {
-    render(
-      <DonorKpis
-        summary={summary({})}
-        metrics={metrics([
-          { unit: "kg", amount: 420, formattedAmount: "420", lots: 9 },
-          { unit: "trays", amount: 12, formattedAmount: "12", lots: 2 },
-          { unit: "boxes", amount: 5, formattedAmount: "5", lots: 1 },
-        ])}
-      />,
-    );
+    renderKpis({
+      metrics: metrics([
+        { unit: "kg", amount: 420, formattedAmount: "420", lots: 9 },
+        { unit: "trays", amount: 12, formattedAmount: "12", lots: 2 },
+        { unit: "boxes", amount: 5, formattedAmount: "5", lots: 1 },
+      ]),
+    });
 
-    const rescued = tile("Rescued");
+    const rescued = card("Rescued");
     expect(rescued).toHaveTextContent("420");
-    expect(rescued).toHaveTextContent("+ 2 more units");
+    expect(rescued).toHaveTextContent("+2 more units");
+    // 420 + 12 + 5 would be meaningless across incompatible units.
     expect(rescued).not.toHaveTextContent("437");
+  });
+
+  it("badges the claims waiting on a pickup code", () => {
+    renderKpis({ awaitingVerification: 2 });
+
+    expect(card("Awaiting pickup")).toHaveTextContent("2 to verify");
+  });
+
+  it("drops the badge when nothing is waiting", () => {
+    renderKpis({ awaitingVerification: 0 });
+
+    expect(card("Awaiting pickup")).not.toHaveTextContent("to verify");
   });
 });

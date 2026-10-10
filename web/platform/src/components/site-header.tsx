@@ -7,14 +7,21 @@ import type { Session } from "next-auth";
 
 import { SignOutButton } from "@/components/auth/sign-out-dialog";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 const navItemClass =
   "inline-flex size-9 items-center justify-center rounded-full text-foreground/70 outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function SiteHeader({
   initialSession,
+  className,
+  withSidebarTrigger = false,
 }: {
   initialSession?: Session | null;
+  className?: string;
+  /** Only valid inside a SidebarProvider. */
+  withSidebarTrigger?: boolean;
 } = {}) {
   const { data: clientSession, status } = useSession();
   const session =
@@ -23,14 +30,23 @@ export function SiteHeader({
       : (clientSession ?? initialSession ?? null);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur">
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur",
+        className,
+      )}
+    >
       <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between px-6">
-        <Link
-          href={session?.user ? "/dashboard" : "/"}
-          className="text-base font-bold tracking-tight text-foreground"
-        >
-          RescuFood
-        </Link>
+        {/* One group, so justify-between cannot strand the brand mid-bar. */}
+        <div className="flex items-center gap-2">
+          {withSidebarTrigger && <SidebarTrigger />}
+          <Link
+            href={session?.user ? "/dashboard" : "/"}
+            className="text-base font-bold tracking-tight text-foreground"
+          >
+            RescuFood
+          </Link>
+        </div>
 
         {session?.user ? (
           <nav className="flex items-center gap-1">
