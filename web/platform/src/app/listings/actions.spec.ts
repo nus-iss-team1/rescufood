@@ -271,16 +271,14 @@ describe("updateListingAction", () => {
   it.each([
     ["missing", {}],
     ["blank", { cancelledReason: "   " }],
-  ])("sends a fallback reason when it is %s", async (_label, extra) => {
-    await updateListingAction(
+  ])("rejects a cancellation whose reason is %s", async (_label, extra) => {
+    const state = await updateListingAction(
       {},
       form({ ...editing, status: "cancelled", ...extra }),
     );
 
-    expect(listings.updateListing.mock.calls[0][2]).toMatchObject({
-      status: "cancelled",
-      cancelledReason: "No reason given",
-    });
+    expect(state.error).toBe("Please give a reason for cancelling this listing.");
+    expect(listings.updateListing).not.toHaveBeenCalled();
   });
 
   it("sends no reason when not cancelling", async () => {
