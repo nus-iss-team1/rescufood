@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { House, LogOut, Settings } from "lucide-react";
+import { ChartColumn, House, LogOut, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 
@@ -41,6 +41,14 @@ export function SiteHeader({
               title="Home"
             >
               <House className="size-[18px]" />
+            </Link>
+            <Link
+              href="/reports"
+              className={navItemClass}
+              aria-label="Reports"
+              title="Reports"
+            >
+              <ChartColumn className="size-[18px]" />
             </Link>
             <NotificationBell />
             <Link

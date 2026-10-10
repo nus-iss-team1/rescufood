@@ -1,12 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  Bell,
-  PackagePlus,
-  QrCode,
-  Search,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRight, PackagePlus, Search, ShieldCheck } from "lucide-react";
 
 import { signOutAction } from "@/app/actions";
 import { requireSession } from "@/lib/session";
@@ -25,12 +19,14 @@ import { PageShell } from "@/components/page-shell";
 import { RecentRequests } from "@/components/dashboard/recent-requests";
 import { VerifyClaimButton } from "@/components/requests/verify-claim-button";
 import { OrgCard } from "@/components/dashboard/org-card";
-import { OrgSummaryCard } from "@/components/dashboard/org-summary-card";
-import { RescuedMetricsCard } from "@/components/dashboard/rescued-metrics-card";
+import { DonorKpis } from "@/components/dashboard/donor-kpis";
+import { NeedsAttention } from "@/components/dashboard/needs-attention";
 import {
   getOrgSummary,
   getRescuedMetrics,
+  listListings,
   listRequests,
+  type Listing,
   type ListingRequest,
   type OrgSummary,
   type RescuedMetrics,
@@ -50,25 +46,47 @@ export const metadata: Metadata = {
   title: "Dashboard — RescuFood",
 };
 
-const heroByType = {
-  donor: {
-    icon: PackagePlus,
-    title: "Post surplus food",
-    description:
-      "Publish a surplus lot with quantity, allergens, handling notes and a pickup window. Rescue partners nearby claim it before it expires.",
-  },
+const primaryActionByType = {
+  donor: { icon: PackagePlus, label: "New listing", href: "/listings/new" },
   rescue_partner: {
     icon: Search,
-    title: "Find & claim surplus food",
-    description:
-      "Browse available lots by area, category and pickup window, then reserve one for collection. Each claim is yours alone.",
+    label: "Find surplus food",
+    href: "/browse",
   },
 } as const;
 
-const upcoming = [
-  { icon: QrCode, label: "Pickup verification with a single-use code" },
-  { icon: Bell, label: "Claim, reminder and expiry notifications" },
-];
+/** The actions a role reaches for most, beside the page title. */
+function HeaderActions({ org }: { org: Org }) {
+  const primary = primaryActionByType[org.type];
+  const Icon = primary.icon;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Link href={primary.href} className={cn(buttonVariants())}>
+        <Icon className="size-4" aria-hidden />
+        {primary.label}
+      </Link>
+      {org.type === "donor" ? (
+        <>
+          <Link
+            href="/listings"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            Your listings
+          </Link>
+          <VerifyClaimButton />
+        </>
+      ) : (
+        <Link
+          href="/requests"
+          className={cn(buttonVariants({ variant: "outline" }))}
+        >
+          Your requests
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function Notice({
   title,
@@ -90,111 +108,57 @@ function Notice({
   );
 }
 
-function Hero({ org }: { org: Org }) {
-  const hero = heroByType[org.type];
-  const Icon = hero.icon;
-
-  return (
-    <Card data-animate="field" className="lg:col-span-2">
-      <CardHeader>
-        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="size-5" aria-hidden />
-        </div>
-        <CardTitle className="mt-3 text-xl">{hero.title}</CardTitle>
-        <CardDescription>{hero.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-center gap-3">
-        {org.type === "donor" ? (
-          <>
-            <Link href="/listings/new" className={cn(buttonVariants())}>
-              Create listing
-            </Link>
-            <Link
-              href="/listings"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              Your listings
-            </Link>
-            <VerifyClaimButton />
-          </>
-        ) : (
-          <>
-            <Link href="/browse" className={cn(buttonVariants())}>
-              Find surplus food
-            </Link>
-            <Link
-              href="/requests"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              Your requests
-            </Link>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function Workspace({
   org,
   members,
   recent,
   summary,
-  summaryError,
   metrics,
-  metricsError,
+  expiring,
+  awaitingPickup,
 }: {
   org: Org;
   members: User[];
   recent: ListingRequest[];
   summary: OrgSummary | null;
-  summaryError?: string | null;
   metrics: RescuedMetrics | null;
-  metricsError?: string | null;
+  expiring: Listing[];
+  awaitingPickup: ListingRequest[];
 }) {
+  const isDonor = org.type === "donor";
+
   return (
     <>
-      <AnimateIn className="grid gap-6 lg:grid-cols-3">
-        <Hero org={org} />
-        <OrgCard org={org} members={members} />
+      {isDonor && (
+        <AnimateIn>
+          <DonorKpis summary={summary} metrics={metrics} />
+        </AnimateIn>
+      )}
+
+      <AnimateIn className={isDonor ? "mt-6" : undefined}>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:col-span-2">
+            {isDonor && (
+              <NeedsAttention
+                expiring={expiring}
+                awaitingPickup={awaitingPickup}
+              />
+            )}
+            <RecentRequests requests={recent} />
+          </div>
+          <OrgCard org={org} members={members} />
+        </div>
       </AnimateIn>
 
       <AnimateIn className="mt-6">
-        <OrgSummaryCard
-          initialSummary={summary}
-          initialError={summaryError}
-          orgType={org.type}
-        />
+        <Link
+          href="/reports"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Full lifecycle breakdown and rescue impact
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
       </AnimateIn>
-
-      <AnimateIn className="mt-6">
-        <RescuedMetricsCard
-          initialMetrics={metrics}
-          initialError={metricsError}
-          orgType={org.type}
-        />
-      </AnimateIn>
-
-      <AnimateIn className="mt-6">
-        <RecentRequests requests={recent} />
-      </AnimateIn>
-
-      <div className="mt-10">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          Also coming to your workspace
-        </h2>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-          {upcoming.map(({ icon: Icon, label }) => (
-            <li
-              key={label}
-              className="flex items-start gap-2 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground"
-            >
-              <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-              {label}
-            </li>
-          ))}
-        </ul>
-      </div>
     </>
   );
 }
@@ -206,39 +170,61 @@ export default async function DashboardPage() {
   let members: User[] = [];
   let recent: ListingRequest[] = [];
   let summary: OrgSummary | null = null;
-  let summaryError: string | null = null;
   let metrics: RescuedMetrics | null = null;
-  let metricsError: string | null = null;
+  let expiring: Listing[] = [];
+  let awaitingPickup: ListingRequest[] = [];
   let staleSession = !session.idToken;
   let apiDown = false;
 
   if (session.idToken) {
+    const idToken = session.idToken;
     try {
-      me = await getMe(session.idToken);
+      me = await getMe(idToken);
       if (me.org?.status === "approved") {
-        members = await getMyOrgMembers(session.idToken);
-        try {
-          summary = await getOrgSummary(session.idToken);
-        } catch (err) {
-          summaryError =
-            (err as Error).message ?? "Unable to load organisation summary";
-        }
-        try {
-          metrics = await getRescuedMetrics(session.idToken);
-        } catch (err) {
-          metricsError =
-            (err as Error).message ?? "Unable to load rescue metrics";
-        }
-        try {
-          const page = await listRequests(session.idToken, {
+        const isDonor = me.org.type === "donor";
+        // How far ahead the attention list looks for closing pickup windows.
+        const closingBy = new Date(Date.now() + 24 * 3_600_000).toISOString();
+
+        const [
+          membersResult,
+          summaryResult,
+          metricsResult,
+          recentResult,
+          expiringResult,
+          awaitingResult,
+        ] = await Promise.allSettled([
+          getMyOrgMembers(idToken),
+          getOrgSummary(idToken),
+          getRescuedMetrics(idToken),
+          listRequests(idToken, {
             sortBy: "updatedAt",
             sortOrder: "desc",
             limit: 5,
-          });
-          recent = page.items;
-        } catch {
-          // The card renders empty rather than taking the page down.
-        }
+          }),
+          isDonor
+            ? listListings(idToken, {
+                status: "available",
+                pickupWindowEndTo: closingBy,
+                sortBy: "pickupWindowEnd",
+                sortOrder: "asc",
+                limit: 5,
+              })
+            : Promise.resolve(null),
+          isDonor
+            ? listRequests(idToken, { status: "active", limit: 5 })
+            : Promise.resolve(null),
+        ]);
+
+        // Each card degrades to empty on its own; none takes the page down.
+        if (membersResult.status === "fulfilled") members = membersResult.value;
+        if (summaryResult.status === "fulfilled") summary = summaryResult.value;
+        if (metricsResult.status === "fulfilled") metrics = metricsResult.value;
+        if (recentResult.status === "fulfilled")
+          recent = recentResult.value.items;
+        if (expiringResult.status === "fulfilled" && expiringResult.value)
+          expiring = expiringResult.value.items;
+        if (awaitingResult.status === "fulfilled" && awaitingResult.value)
+          awaitingPickup = awaitingResult.value.items;
       }
     } catch (err) {
       if (err instanceof ProfileApiError && err.status === 401) {
@@ -292,6 +278,11 @@ export default async function DashboardPage() {
           title={`Welcome${firstName ? `, ${firstName}` : ""}`}
           subtitle={describeOrg(me)}
           crumbs={[{ label: "Dashboard" }]}
+          action={
+            me.org?.status === "approved" ? (
+              <HeaderActions org={me.org} />
+            ) : undefined
+          }
         />
       </AnimateIn>
 
@@ -346,9 +337,9 @@ export default async function DashboardPage() {
           members={members}
           recent={recent}
           summary={summary}
-          summaryError={summaryError}
           metrics={metrics}
-          metricsError={metricsError}
+          expiring={expiring}
+          awaitingPickup={awaitingPickup}
         />
       ) : (
         <AnimateIn>

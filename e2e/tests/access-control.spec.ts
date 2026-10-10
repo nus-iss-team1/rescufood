@@ -10,6 +10,7 @@ test.describe('Signed out', () => {
     '/listings/new',
     '/browse',
     '/requests',
+    '/reports',
     '/settings',
   ]) {
     test(`${path} redirects to sign-in`, async ({ page }) => {
