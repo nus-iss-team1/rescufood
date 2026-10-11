@@ -65,11 +65,15 @@ test.describe('Donor reports', () => {
     ).toBeVisible();
   });
 
-  test('omits the claims breakdown for a donor', async ({ donorPage }) => {
+  test('pairs the listing breakdown with a claims breakdown', async ({
+    donorPage,
+  }) => {
     await donorPage.goto('/reports');
 
-    // Both the card title and its sr-only summary would carry this.
-    await expect(donorPage.getByText(/Claims by status/)).toHaveCount(0);
+    // exact: true - the card's sr-only summary opens with the same words.
+    await expect(
+      donorPage.getByText('Claims by status', { exact: true }),
+    ).toBeVisible();
   });
 
   test('narrows the claim rate to a shorter window', async ({ donorPage }) => {
