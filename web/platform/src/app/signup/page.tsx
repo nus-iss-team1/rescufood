@@ -22,8 +22,11 @@ export default async function SignupPage() {
   if (session?.user) redirect("/dashboard");
 
   return (
-    <PageShell width="narrow">
-      <AnimateIn>
+    <PageShell
+      width="narrow"
+      className="flex min-h-[calc(100svh-4rem)] items-center"
+    >
+      <AnimateIn className="w-full">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Create your account</CardTitle>
