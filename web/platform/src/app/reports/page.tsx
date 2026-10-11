@@ -158,7 +158,7 @@ export default async function ReportsPage() {
 
       <AnimateIn className="mt-6">
         <div className="grid gap-6">
-          {/* One breakdown per role: a donor's lots, a partner's claims. */}
+          {/* A partner's listing counts are always zero. */}
           {isRescuePartner ? (
             <StatusDonut
               title="Your claims"
@@ -166,11 +166,18 @@ export default async function ReportsPage() {
               slices={claimSlices}
             />
           ) : (
-            <StatusDonut
-              title="Listings by status"
-              description="Where your lots are."
-              slices={listingSlices}
-            />
+            <div className="grid grid-cols-2 gap-4 sm:gap-6">
+              <StatusDonut
+                title="Listings by status"
+                description="Where your lots are."
+                slices={listingSlices}
+              />
+              <StatusDonut
+                title="Claims by status"
+                description="Where claims on your lots stand."
+                slices={claimSlices}
+              />
+            </div>
           )}
 
           <ClaimsTrend

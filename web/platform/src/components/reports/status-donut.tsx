@@ -98,7 +98,7 @@ export function StatusDonut({
             </p>
             <ChartContainer
               config={config}
-              className="aspect-square h-[130px] shrink-0 sm:h-[170px] lg:h-[150px]"
+              className="aspect-square w-full max-w-[200px] shrink-0 lg:w-[180px] lg:max-w-none"
             >
               <PieChart>
                 <ChartTooltip
@@ -109,8 +109,9 @@ export function StatusDonut({
                   data={data}
                   dataKey="count"
                   nameKey="key"
-                  innerRadius={46}
-                  outerRadius={72}
+                  // Percentages resolve against half the box diagonal.
+                  innerRadius="40%"
+                  outerRadius="63%"
                   // A 2px surface gap between fills, per the mark specs.
                   paddingAngle={2}
                   strokeWidth={0}
