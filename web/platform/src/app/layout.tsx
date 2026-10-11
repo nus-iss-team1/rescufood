@@ -7,7 +7,7 @@ import { auth, authConfigured } from "@/auth";
 import { getMe, getMyOrgMembers, type Org } from "@/lib/profile";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { SmoothScroll } from "@/components/smooth-scroll";
+import { SignedOutShell } from "@/components/signed-out-shell";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import "./globals.css";
 
@@ -45,8 +45,6 @@ export default async function RootLayout({
   const session = authConfigured ? await auth() : null;
   const sessionKey =
     session?.user?.username ?? session?.user?.email ?? "anonymous";
-  // Signed-out pages keep the header on every width; there is nothing to
-  // navigate to in a sidebar.
   const signedIn = Boolean(session?.user);
 
   // Feeds the sidebar's organisation block. A failure here leaves the block
@@ -87,10 +85,7 @@ export default async function RootLayout({
               </div>
             </SidebarProvider>
           ) : (
-            <>
-              <SiteHeader initialSession={session} />
-              <SmoothScroll>{children}</SmoothScroll>
-            </>
+            <SignedOutShell session={session}>{children}</SignedOutShell>
           )}
           <Toaster />
         </SessionProvider>
