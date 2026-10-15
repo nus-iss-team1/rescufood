@@ -46,8 +46,9 @@ export type ListingFormState = {
 const text = (form: FormData, key: string) =>
   String(form.get(key) ?? "").trim();
 
-/** datetime-local values carry no zone; the browser's is the right one. */
+/** Parses an ISO datetime carrying a zone; null when blank, zoneless, or invalid. */
 function isoOrNull(value: string): string | null {
+  if (!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) return null;
   const at = new Date(value);
   return Number.isNaN(at.getTime()) ? null : at.toISOString();
 }

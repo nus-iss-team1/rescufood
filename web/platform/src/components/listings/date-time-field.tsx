@@ -37,13 +37,12 @@ const MINUTES = [
   "55",
 ];
 
-function parseDateTime(val?: string) {
-  const today = new Date();
-  if (!val) return { date: today, time: "" };
+function parseDateTime(val?: string): { date: Date | undefined; time: string } {
+  if (!val) return { date: undefined, time: "" };
   const parsed = new Date(val);
   if (Number.isNaN(parsed.getTime())) {
     const parts = val.split("T");
-    return { date: today, time: parts[1] ? parts[1].slice(0, 5) : "" };
+    return { date: undefined, time: parts[1] ? parts[1].slice(0, 5) : "" };
   }
   const timeStr = val.includes("T")
     ? val.split("T")[1].slice(0, 5)
@@ -207,8 +206,8 @@ function DropdownTimeInput({
 
 /**
  * Date and time pickers over one hidden input.
- * Defaults date to today and provides clean dropdowns for 12-hour time (1-12, 0-55 in 5-min intervals, AM/PM).
- * Outputs standard local "YYYY-MM-DDTHH:mm:ss" ISO format for backend compatibility.
+ * Takes a local "YYYY-MM-DDTHH:mm:ss" value; dropdowns give 12-hour time.
+ * The hidden input holds the selected local time as a UTC instant ("...Z").
  */
 export function DateTimeField({
   id,
@@ -237,7 +236,7 @@ export function DateTimeField({
   );
   const [internalTime, setInternalTime] = React.useState(parsed.time || "12:00:00");
 
-  const date = (isControlled ? parsed.date : internalDate) ?? new Date();
+  const date = isControlled ? parsed.date : internalDate;
   const time = isControlled ? parsed.time : internalTime;
 
   const handleDateSelect = (nextDate: Date | undefined) => {
@@ -252,19 +251,19 @@ export function DateTimeField({
   };
 
   const handleTimeChange = (nextTime24: string) => {
+    const baseDate = date ?? new Date();
     if (!isControlled) {
+      setInternalDate(baseDate);
       setInternalTime(nextTime24);
     }
-    const nextVal = date
-      ? `${dayjs(date).format("YYYY-MM-DD")}T${nextTime24}`
-      : "";
-    onChange?.(nextVal);
+    onChange?.(`${dayjs(baseDate).format("YYYY-MM-DD")}T${nextTime24}`);
   };
 
   const formattedTime = time || "12:00:00";
-  const hiddenValue = date
+  const localValue = date
     ? `${dayjs(date).format("YYYY-MM-DD")}T${formattedTime.length === 5 ? `${formattedTime}:00` : formattedTime}`
     : "";
+  const hiddenValue = localValue ? dayjs(localValue).toISOString() : "";
 
   return (
     <FieldGroup className={cn("flex flex-col sm:flex-row gap-3 sm:gap-2", className)}>
@@ -279,7 +278,7 @@ export function DateTimeField({
                 id={`${id}-date`}
                 className="h-auto min-h-9 w-full justify-between px-2.5 py-1 font-normal"
               >
-                {dayjs(date).format("D MMM YYYY")}
+                {date ? dayjs(date).format("D MMM YYYY") : "Pick a date"}
                 <ChevronDownIcon data-icon="inline-end" />
               </Button>
             }

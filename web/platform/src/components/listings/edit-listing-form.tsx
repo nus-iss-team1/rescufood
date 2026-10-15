@@ -85,27 +85,25 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   const [allergens, setAllergens] = useState<string>(
     (listing.allergens ?? []).join(", "),
   );
-  const [useBy, setUseBy] = useState<string>(
-    listing.useBy
-      ? dayjs(listing.useBy).format("YYYY-MM-DDTHH:mm:ss")
-      : dayjs().format("YYYY-MM-DDTHH:mm:ss"),
-  );
+  const [useBy, setUseBy] = useState<string>("");
   const [handlingInstructions, setHandlingInstructions] = useState<string>(
     listing.handlingInstructions ?? "",
   );
   const [pickupLocation, setPickupLocation] = useState<string>(
     listing.pickupLocation ?? "",
   );
-  const [pickupWindowStart, setPickupWindowStart] = useState<string>(
-    listing.pickupWindowStart
-      ? dayjs(listing.pickupWindowStart).format("YYYY-MM-DDTHH:mm:ss")
-      : dayjs().format("YYYY-MM-DDTHH:mm:ss"),
-  );
-  const [pickupWindowEnd, setPickupWindowEnd] = useState<string>(
-    listing.pickupWindowEnd
-      ? dayjs(listing.pickupWindowEnd).format("YYYY-MM-DDTHH:mm:ss")
-      : dayjs().format("YYYY-MM-DDTHH:mm:ss"),
-  );
+  const [pickupWindowStart, setPickupWindowStart] = useState<string>("");
+  const [pickupWindowEnd, setPickupWindowEnd] = useState<string>("");
+
+  // Times are filled in after mount, formatted in the browser's timezone.
+  useEffect(() => {
+    const local = (iso?: string | null) =>
+      (iso ? dayjs(iso) : dayjs()).format("YYYY-MM-DDTHH:mm:ss");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUseBy(local(listing.useBy));
+    setPickupWindowStart(local(listing.pickupWindowStart));
+    setPickupWindowEnd(local(listing.pickupWindowEnd));
+  }, [listing.useBy, listing.pickupWindowStart, listing.pickupWindowEnd]);
   const [status, setStatus] = useState<ListingStatus>(listing.status);
   const [cancelledReason, setCancelledReason] = useState<string>("");
 
@@ -550,7 +548,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         <Button
           type="submit"
           size="lg"
-          disabled={isLocked || pending}
+          disabled={isLocked || pending || !useBy}
           className="w-full sm:w-auto"
         >
           {pending ? "Saving changes..." : "Save changes"}
