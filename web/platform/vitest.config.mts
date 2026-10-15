@@ -14,6 +14,17 @@ export default defineConfig({
       // resolution, so force the import specifier itself to this package's copy.
       "react": path.resolve(import.meta.dirname, "node_modules/react"),
       "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
+      // @base-ui's use-sync-external-store shim and @rescufood/ui's
+      // lucide-react copy require react the same way, so point both at
+      // this package's copies, which sit next to the react copy above.
+      "use-sync-external-store": path.resolve(
+        import.meta.dirname,
+        "node_modules/use-sync-external-store",
+      ),
+      "lucide-react": path.resolve(
+        import.meta.dirname,
+        "node_modules/lucide-react",
+      ),
     },
     // @rescufood/ui and the sdks are file: deps symlinked in from outside
     // this package; without this Vite resolves their realpath and can't
