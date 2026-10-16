@@ -9,6 +9,7 @@ import type {
   AuditEvent,
   AuditEventQuery,
   AuditFilters,
+  DecidedRequest,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -26,6 +27,7 @@ import type {
   RequestDecisionInput,
   RequestQuery,
   RequestStatus,
+  StatsFilters,
   VerifyPickup,
 } from "./types";
 
@@ -260,12 +262,17 @@ export class MockListingsClient implements ListingsApi {
       requestedAt: stamp,
       cancelledAt: null,
       cancellationReason: "",
+      cancelledBy: null,
+      cancelledByOrgId: null,
       codeExpiresAt: null,
       codeGeneratedBy: null,
       verifiedBy: null,
       collectedQuantity: null,
       collectedAt: null,
+      noShowAt: null,
       noShowReason: "",
+      noShowBy: null,
+      noShowByOrgId: null,
       createdAt: stamp,
       updatedAt: stamp,
       listingDescription: listing.description,
@@ -281,7 +288,7 @@ export class MockListingsClient implements ListingsApi {
   async decideRequest(
     id: string,
     decision: RequestDecisionInput,
-  ): Promise<ListingRequest> {
+  ): Promise<DecidedRequest> {
     const request = this.requestOr404(id);
     if (!REQUEST_TRANSITIONS[request.status].includes(decision.status)) {
       throw new ApiError(
@@ -296,9 +303,14 @@ export class MockListingsClient implements ListingsApi {
     if (decision.status === "cancelled") {
       request.cancelledAt = now();
       request.cancellationReason = decision.cancellationReason ?? "";
+      request.cancelledBy = request.claimedBy;
+      request.cancelledByOrgId = request.rescueOrgId;
     }
     if (decision.status === "no_show") {
+      request.noShowAt = now();
       request.noShowReason = decision.noShowReason ?? "";
+      request.noShowBy = request.claimedBy;
+      request.noShowByOrgId = request.rescueOrgId;
     }
     // Both outcomes reopen the listing for another org to claim.
     if (wasActive) {
@@ -309,7 +321,11 @@ export class MockListingsClient implements ListingsApi {
         listing.updatedAt = now();
       }
     }
-    return request;
+    return {
+      ...request,
+      listingRelisted: true,
+      relistBlockedReason: null,
+    };
   }
 
   async generatePickupCode(
@@ -395,10 +411,10 @@ export class MockListingsClient implements ListingsApi {
     return request;
   }
 
-  async getOrgSummary(): Promise<OrgSummary> {
+  async getOrgSummary(_filters: StatsFilters = {}): Promise<OrgSummary> {
     const activeListings = this.listings.filter((l) => !l.deletedAt);
     return {
-      orgId: "mock-org",
+      orgId: _filters.orgId ?? "mock-org",
       listings: {
         draft: activeListings.filter((l) => l.status === "draft").length,
         available: activeListings.filter((l) => l.status === "available")
@@ -423,7 +439,7 @@ export class MockListingsClient implements ListingsApi {
     };
   }
 
-  async getRescuedMetrics(): Promise<RescuedMetrics> {
+  async getRescuedMetrics(_filters: StatsFilters = {}): Promise<RescuedMetrics> {
     const listings = new Map(this.listings.map((l) => [l.id, l]));
     const groups = new Map<
       string,
