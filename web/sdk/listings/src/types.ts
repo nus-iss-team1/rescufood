@@ -157,12 +157,17 @@ export interface ListingRequest {
   requestedQuantity: string;
   requestedAt: string;
   cancelledAt: string | null;
+  cancelledBy: string | null;
+  cancelledByOrgId: string | null;
   cancellationReason: string;
   codeExpiresAt: string | null;
   codeGeneratedBy: string | null;
   verifiedBy: string | null;
   collectedQuantity: string | null;
   collectedAt: string | null;
+  noShowAt: string | null;
+  noShowBy: string | null;
+  noShowByOrgId: string | null;
   noShowReason: string;
   createdAt: string;
   updatedAt: string;
@@ -171,6 +176,14 @@ export interface ListingRequest {
   listingUnit: string | null;
   listingCategory: ListingCategory | null;
   listingImageUrl: string | null;
+}
+
+export type RelistBlockedReason = "past_cutoff" | "insufficient_pickup_time";
+
+/** Response from PATCH /requests/:id when cancelling or recording a no-show. */
+export interface DecidedRequest extends ListingRequest {
+  listingRelisted: boolean;
+  relistBlockedReason: RelistBlockedReason | null;
 }
 
 export interface NewRequest {
@@ -216,6 +229,18 @@ export interface VerifyPickup {
   code: string;
   /** Defaults to the full requested quantity when omitted. */
   collectedQuantity?: number;
+}
+
+export interface StatsFilters {
+  from?: string;
+  to?: string;
+  orgId?: string;
+}
+
+export interface FieldValidationError {
+  field: string;
+  code: string;
+  message: string;
 }
 
 /** Operational workload summary for the caller's organisation. */
@@ -307,12 +332,12 @@ export interface ListingsApi {
   decideRequest(
     id: string,
     decision: RequestDecisionInput,
-  ): Promise<ListingRequest>;
+  ): Promise<DecidedRequest>;
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
-  getOrgSummary(): Promise<OrgSummary>;
-  getRescuedMetrics(): Promise<RescuedMetrics>;
+  getOrgSummary(filters?: StatsFilters): Promise<OrgSummary>;
+  getRescuedMetrics(filters?: StatsFilters): Promise<RescuedMetrics>;
   listAuditEvents(query?: AuditEventQuery): Promise<Paginated<AuditEvent>>;
   getEntityAuditHistory(
     entityType: AuditEntityType,

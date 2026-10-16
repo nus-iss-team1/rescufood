@@ -84,14 +84,22 @@ describe("createRequestAction", () => {
 
 describe("cancelRequestAction", () => {
   it("cancels with the trimmed reason and refreshes the freed listing", async () => {
-    listings.decideRequest.mockResolvedValue({ listingId: "L1" });
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
 
     const state = await cancelRequestAction(
       {},
       form({ requestId: "R1", reason: "  van broke down  " }),
     );
 
-    expect(state).toEqual({ requestedId: "R1" });
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
     expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
       status: "cancelled",
       cancellationReason: "van broke down",
@@ -99,18 +107,36 @@ describe("cancelRequestAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/browse/L1");
   });
 
+  it("returns relistBlockedReason when the lot could not be relisted", async () => {
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: false,
+      relistBlockedReason: "past_cutoff",
+    });
+
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", reason: "Schedule conflict" }),
+    );
+
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: false,
+      relistBlockedReason: "past_cutoff",
+    });
+  });
+
   it.each([
     ["missing", {}],
     ["blank", { reason: "   " }],
-  ])("sends a fallback reason when it is %s", async (_label, extra) => {
-    listings.decideRequest.mockResolvedValue({ listingId: "L1" });
+  ])("rejects when the reason is %s", async (_label, extra) => {
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", ...extra }),
+    );
 
-    await cancelRequestAction({}, form({ requestId: "R1", ...extra }));
-
-    expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
-      status: "cancelled",
-      cancellationReason: "No reason given",
-    });
+    expect(state).toEqual({ error: "A cancellation reason is required." });
+    expect(listings.decideRequest).not.toHaveBeenCalled();
   });
 
   it("surfaces the service's error and skips revalidation", async () => {
@@ -118,7 +144,10 @@ describe("cancelRequestAction", () => {
       new ListingsApiError(422, "Request is already completed"),
     );
 
-    const state = await cancelRequestAction({}, form({ requestId: "R1" }));
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", reason: "Van broke down" }),
+    );
 
     expect(state.error).toBe("Request is already completed");
     expect(revalidatePathMock).not.toHaveBeenCalled();
