@@ -71,9 +71,22 @@ export function RequestDetailView({
           <CardContent className="space-y-6">
             <RequestProgress request={request} />
 
-            {request.status === "cancelled" && request.cancellationReason && (
-              <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-                Reason: {request.cancellationReason}
+            {request.status === "cancelled" && (
+              <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">
+                    Claim cancelled
+                  </span>
+                  {listing.status === "available" && (
+                    <Badge variant="success">Lot returned to Available</Badge>
+                  )}
+                  {listing.status === "expired" && (
+                    <Badge variant="outline">Lot expired (not relisted)</Badge>
+                  )}
+                </div>
+                {request.cancellationReason && (
+                  <p>Reason: {request.cancellationReason}</p>
+                )}
               </div>
             )}
 
@@ -110,7 +123,7 @@ export function RequestDetailView({
                 !isActiveRequest(request.status) && "hidden"
               )}
             >
-              {isActiveRequest(request.status) && (
+              {!isDonor && isActiveRequest(request.status) && (
                 <CancelClaimButton requestId={request.id} size="sm">
                   Cancel claim
                 </CancelClaimButton>

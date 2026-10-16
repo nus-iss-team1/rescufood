@@ -3,8 +3,10 @@ import "server-only";
 import {
   ApiError,
   createListingsClient,
+  type DecidedRequest,
   type ListingsApi,
   type OrgSummary,
+  type RelistBlockedReason,
   type RescuedMetrics,
   type UnitQuantity,
   type Listing,
@@ -42,6 +44,7 @@ function client(idToken: string) {
 
 export { ApiError as ListingsApiError };
 export type {
+  DecidedRequest,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -49,6 +52,7 @@ export type {
   NewListing,
   NewRequest,
   OrgSummary,
+  RelistBlockedReason,
   RescuedMetrics,
   UnitQuantity,
   Paginated,
@@ -116,7 +120,7 @@ export function decideRequest(
   idToken: string,
   id: string,
   decision: RequestDecisionInput,
-): Promise<ListingRequest> {
+): Promise<DecidedRequest> {
   return client(idToken).decideRequest(id, decision);
 }
 

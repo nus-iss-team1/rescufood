@@ -78,11 +78,13 @@ export function CreateListingForm() {
   const [pickupWindowEnd, setPickupWindowEnd] = useState("");
 
   // Default times are filled in after mount, in the donor's timezone.
+  // Start 4 hours ahead so newly created listings remain outside the 3-hour
+  // claim cancellation cutoff window.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPickupWindowStart(dayjs().add(1, "hour").format("YYYY-MM-DDTHH:mm:ss"));
-    setPickupWindowEnd(dayjs().add(4, "hour").format("YYYY-MM-DDTHH:mm:ss"));
-    setUseBy(dayjs().add(6, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+    setPickupWindowStart(dayjs().add(4, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+    setPickupWindowEnd(dayjs().add(7, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+    setUseBy(dayjs().add(9, "hour").format("YYYY-MM-DDTHH:mm:ss"));
   }, []);
 
   // Standardized image state
