@@ -12,12 +12,15 @@ import {
   ListingsApiError,
   type PickupCode,
   type PickupCodeMatch,
+  type RelistBlockedReason,
 } from "@/lib/listings";
 
 export type RequestFormState = {
   error?: string;
-  /** Set once the claim is filed. */
+  /** Set once the claim is filed or cancelled. */
   requestedId?: string;
+  listingRelisted?: boolean;
+  relistBlockedReason?: RelistBlockedReason | null;
 };
 
 async function idToken() {
@@ -27,8 +30,6 @@ async function idToken() {
 
 const expired = "Your session has expired. Please sign in again.";
 const unreachable = "Could not reach the listings service. Please try again.";
-// TODO(frontend): temporary fallback - remove once the cancel dialog requires a reason; the service rejects a blank one.
-const fallbackCancellationReason = "No reason given";
 
 /** Claims the whole listing, first-come-first-served. Idempotent on the key the form mints. */
 export async function createRequestAction(
@@ -71,15 +72,19 @@ export async function cancelRequestAction(
   const token = await idToken();
   if (!token) return { error: expired };
 
-  const id = String(formData.get("requestId") ?? "");
+  const id = String(formData.get("requestId") ?? "").trim();
   if (!id) return { error: "Missing request ID." };
 
+  const cancellationReason = String(formData.get("reason") ?? "").trim();
+  if (!cancellationReason) {
+    return { error: "A cancellation reason is required." };
+  }
+
+  let updated;
   try {
-    const updated = await decideRequest(token, id, {
+    updated = await decideRequest(token, id, {
       status: "cancelled",
-      cancellationReason:
-        String(formData.get("reason") ?? "").trim() ||
-        fallbackCancellationReason,
+      cancellationReason,
     });
     if (updated.listingId) {
       revalidatePath(`/browse/${updated.listingId}`);
@@ -93,7 +98,11 @@ export async function cancelRequestAction(
   revalidatePath("/browse");
   revalidatePath("/listings");
   revalidatePath("/dashboard");
-  return { requestedId: id };
+  return {
+    requestedId: id,
+    listingRelisted: updated.listingRelisted,
+    relistBlockedReason: updated.relistBlockedReason ?? null,
+  };
 }
 
 export async function getPickupCredentialAction(

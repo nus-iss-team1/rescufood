@@ -9,6 +9,7 @@ import type {
   AuditEvent,
   AuditEventQuery,
   AuditFilters,
+  DecidedRequest,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -19,6 +20,7 @@ import type {
   NewRequest,
   OrgSummary,
   RescuedMetrics,
+  StatsFilters,
   UnitQuantity,
   Paginated,
   PickupCode,
@@ -259,12 +261,17 @@ export class MockListingsClient implements ListingsApi {
       requestedQuantity: listing.quantity ?? "0.00",
       requestedAt: stamp,
       cancelledAt: null,
+      cancelledBy: null,
+      cancelledByOrgId: null,
       cancellationReason: "",
       codeExpiresAt: null,
       codeGeneratedBy: null,
       verifiedBy: null,
       collectedQuantity: null,
       collectedAt: null,
+      noShowAt: null,
+      noShowBy: null,
+      noShowByOrgId: null,
       noShowReason: "",
       createdAt: stamp,
       updatedAt: stamp,
@@ -281,7 +288,7 @@ export class MockListingsClient implements ListingsApi {
   async decideRequest(
     id: string,
     decision: RequestDecisionInput,
-  ): Promise<ListingRequest> {
+  ): Promise<DecidedRequest> {
     const request = this.requestOr404(id);
     if (!REQUEST_TRANSITIONS[request.status].includes(decision.status)) {
       throw new ApiError(
@@ -298,18 +305,25 @@ export class MockListingsClient implements ListingsApi {
       request.cancellationReason = decision.cancellationReason ?? "";
     }
     if (decision.status === "no_show") {
+      request.noShowAt = now();
       request.noShowReason = decision.noShowReason ?? "";
     }
     // Both outcomes reopen the listing for another org to claim.
+    let listingRelisted = false;
     if (wasActive) {
       const listing = this.listings.find((l) => l.id === request.listingId);
       if (listing && listing.status === "reserved") {
         listing.status = "available";
         listing.version += 1;
         listing.updatedAt = now();
+        listingRelisted = true;
       }
     }
-    return request;
+    return {
+      ...request,
+      listingRelisted,
+      relistBlockedReason: null,
+    };
   }
 
   async generatePickupCode(
@@ -395,10 +409,10 @@ export class MockListingsClient implements ListingsApi {
     return request;
   }
 
-  async getOrgSummary(): Promise<OrgSummary> {
+  async getOrgSummary(_filters: StatsFilters = {}): Promise<OrgSummary> {
     const activeListings = this.listings.filter((l) => !l.deletedAt);
     return {
-      orgId: "mock-org",
+      orgId: _filters.orgId ?? "mock-org",
       listings: {
         draft: activeListings.filter((l) => l.status === "draft").length,
         available: activeListings.filter((l) => l.status === "available")
@@ -423,7 +437,7 @@ export class MockListingsClient implements ListingsApi {
     };
   }
 
-  async getRescuedMetrics(): Promise<RescuedMetrics> {
+  async getRescuedMetrics(_filters: StatsFilters = {}): Promise<RescuedMetrics> {
     const listings = new Map(this.listings.map((l) => [l.id, l]));
     const groups = new Map<
       string,
