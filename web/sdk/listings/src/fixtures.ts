@@ -204,8 +204,6 @@ function request(
     cancelledBy: null,
     cancelledByOrgId: null,
     cancellationReason: "",
-    cancelledBy: null,
-    cancelledByOrgId: null,
     codeExpiresAt: null,
     codeGeneratedBy: null,
     verifiedBy: null,

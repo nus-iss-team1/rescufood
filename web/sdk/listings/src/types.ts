@@ -174,8 +174,6 @@ export interface ListingRequest {
   cancelledBy: string | null;
   cancelledByOrgId: string | null;
   cancellationReason: string;
-  cancelledBy: string | null;
-  cancelledByOrgId: string | null;
   codeExpiresAt: string | null;
   codeGeneratedBy: string | null;
   verifiedBy: string | null;

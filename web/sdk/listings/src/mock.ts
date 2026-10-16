@@ -28,7 +28,6 @@ import type {
   RequestDecisionInput,
   RequestQuery,
   RequestStatus,
-  StatsFilters,
   VerifyPickup,
 } from "./types";
 
@@ -265,8 +264,6 @@ export class MockListingsClient implements ListingsApi {
       cancelledBy: null,
       cancelledByOrgId: null,
       cancellationReason: "",
-      cancelledBy: null,
-      cancelledByOrgId: null,
       codeExpiresAt: null,
       codeGeneratedBy: null,
       verifiedBy: null,
