@@ -27,21 +27,16 @@ export function relistBlockedReason(
     return 'past_cutoff';
   }
 
-  // Not enough pickup time remains before the window closes.
-  if (end - now.getTime() < policy.minPickupMs) {
-    return 'insufficient_pickup_time';
-  }
-
   // Multi-day windows: if at least a full day (24 hours) remains before the
   // window closes, partners can still collect on following days.
   const hasSubsequentDaysRemaining = end - now.getTime() >= 24 * 60 * 60 * 1000;
-  if (hasSubsequentDaysRemaining) {
-    return null;
+  if (!hasSubsequentDaysRemaining && now.getTime() > start - policy.cutoffMs) {
+    return 'past_cutoff';
   }
 
-  // Same-day or closing-soon windows: cancellation must occur before the cutoff.
-  if (now.getTime() > start - policy.cutoffMs) {
-    return 'past_cutoff';
+  // Not enough pickup time remains before the window closes.
+  if (end - now.getTime() < policy.minPickupMs) {
+    return 'insufficient_pickup_time';
   }
 
   return null;
