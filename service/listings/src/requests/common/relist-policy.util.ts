@@ -34,8 +34,7 @@ export function relistBlockedReason(
 
   // Multi-day windows: if at least a full day (24 hours) remains before the
   // window closes, partners can still collect on following days.
-  const hasSubsequentDaysRemaining =
-    end - now.getTime() >= 24 * 60 * 60 * 1000;
+  const hasSubsequentDaysRemaining = end - now.getTime() >= 24 * 60 * 60 * 1000;
   if (hasSubsequentDaysRemaining) {
     return null;
   }
