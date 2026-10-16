@@ -146,6 +146,20 @@ export interface ListingQuery {
   offset?: number;
 }
 
+export const relistBlockedReasons = [
+  "past_cutoff",
+  "insufficient_pickup_time",
+] as const;
+
+export type RelistBlockedReason = (typeof relistBlockedReasons)[number];
+
+/** Field-level validation error returned by the service on 400 responses. */
+export interface FieldValidationError {
+  field: string;
+  code: string;
+  message: string;
+}
+
 /** A rescue org's claim against a listing. The pickup code is never included. */
 export interface ListingRequest {
   id: string;
@@ -158,12 +172,17 @@ export interface ListingRequest {
   requestedAt: string;
   cancelledAt: string | null;
   cancellationReason: string;
+  cancelledBy: string | null;
+  cancelledByOrgId: string | null;
   codeExpiresAt: string | null;
   codeGeneratedBy: string | null;
   verifiedBy: string | null;
   collectedQuantity: string | null;
   collectedAt: string | null;
+  noShowAt: string | null;
   noShowReason: string;
+  noShowBy: string | null;
+  noShowByOrgId: string | null;
   createdAt: string;
   updatedAt: string;
   /** Lot display fields: set by the read endpoints, null on write responses. */
@@ -172,6 +191,14 @@ export interface ListingRequest {
   listingCategory: ListingCategory | null;
   listingImageUrl: string | null;
 }
+
+/** A decided claim plus what happened to its listing. */
+export interface DecidedRequest extends ListingRequest {
+  listingRelisted: boolean;
+  relistBlockedReason: RelistBlockedReason | null;
+}
+
+export type DecideRequestResponse = DecidedRequest;
 
 export interface NewRequest {
   listingId: string;
@@ -216,6 +243,13 @@ export interface VerifyPickup {
   code: string;
   /** Defaults to the full requested quantity when omitted. */
   collectedQuantity?: number;
+}
+
+/** Reporting period as Singapore calendar days (YYYY-MM-DD), both ends inclusive, and optional org to report on. */
+export interface StatsFilters {
+  from?: string;
+  to?: string;
+  orgId?: string;
 }
 
 /** Operational workload summary for the caller's organisation. */
@@ -307,12 +341,12 @@ export interface ListingsApi {
   decideRequest(
     id: string,
     decision: RequestDecisionInput,
-  ): Promise<ListingRequest>;
+  ): Promise<DecidedRequest>;
   generatePickupCode(id: string, regenerate?: boolean): Promise<PickupCode>;
   lookupPickupCode(code: string): Promise<PickupCodeMatch>;
   verifyPickupCode(id: string, verify: VerifyPickup): Promise<ListingRequest>;
-  getOrgSummary(): Promise<OrgSummary>;
-  getRescuedMetrics(): Promise<RescuedMetrics>;
+  getOrgSummary(filters?: StatsFilters): Promise<OrgSummary>;
+  getRescuedMetrics(filters?: StatsFilters): Promise<RescuedMetrics>;
   listAuditEvents(query?: AuditEventQuery): Promise<Paginated<AuditEvent>>;
   getEntityAuditHistory(
     entityType: AuditEntityType,
