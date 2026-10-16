@@ -38,17 +38,19 @@ function rowActions(listing: Listing) {
       >
         <Icon className="size-4" aria-hidden />
       </Link>
-      <DeleteListingButton
-        listingId={listing.id}
-        listingDescription={listing.description}
-        size="icon-sm"
-        variant="outline"
-      >
-        <Trash2 className="size-4" aria-hidden />
-        {/* "Delete", not "Delete listing": that is the confirm button in
-            the dialog this opens, and two would be ambiguous. */}
-        <span className="sr-only">Delete</span>
-      </DeleteListingButton>
+      {!locked && (
+        <DeleteListingButton
+          listingId={listing.id}
+          listingDescription={listing.description}
+          size="icon-sm"
+          variant="outline"
+        >
+          <Trash2 className="size-4" aria-hidden />
+          {/* "Delete", not "Delete listing": that is the confirm button in
+              the dialog this opens, and two would be ambiguous. */}
+          <span className="sr-only">Delete</span>
+        </DeleteListingButton>
+      )}
     </div>
   );
 }
