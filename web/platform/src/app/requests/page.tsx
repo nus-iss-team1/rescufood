@@ -15,6 +15,7 @@ import {
 import { PageShell } from "@/components/page-shell";
 import { RequestCards } from "@/components/requests/request-cards";
 import { RequestList } from "@/components/requests/request-list";
+import { RefreshControl } from "@/components/reports/refresh-control";
 import { requestStatusLabels } from "@/lib/listing-labels";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -95,6 +96,14 @@ export default async function RequestsPage({
       />
     );
   }
+  if (me.org.status !== "approved") {
+    return (
+      <Notice
+        title="Registration under review"
+        body={`${me.org.name} can view requests once an administrator approves it.`}
+      />
+    );
+  }
 
   const { status, view } = await searchParams;
   const active: (typeof tabs)[number] = tabs.includes(
@@ -139,11 +148,14 @@ export default async function RequestsPage({
           title={requestsLabel(me)}
           subtitle={describeOrg(me)}
           action={
-            me.org.type === "rescue_partner" ? (
-              <Link href="/browse" className={cn(buttonVariants())}>
-                Find surplus food
-              </Link>
-            ) : undefined
+            <div className="flex items-center gap-2">
+              <RefreshControl />
+              {me.org.type === "rescue_partner" && (
+                <Link href="/browse" className={cn(buttonVariants())}>
+                  Find surplus food
+                </Link>
+              )}
+            </div>
           }
           crumbs={[
             { label: "Dashboard", href: "/dashboard" },
