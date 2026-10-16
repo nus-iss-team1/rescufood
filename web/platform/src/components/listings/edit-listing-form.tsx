@@ -36,6 +36,7 @@ import { toast } from "@rescufood/ui/components/sonner";
 import { Textarea } from "@rescufood/ui/components/textarea";
 import {
   categoryLabels,
+  shortDate,
 } from "@/lib/listing-labels";
 import { cn } from "@/lib/utils";
 
@@ -45,12 +46,14 @@ function Field({
   label,
   htmlFor,
   hint,
+  error,
   className,
   children,
 }: {
   label: string;
   htmlFor: string;
   hint?: string;
+  error?: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -58,6 +61,11 @@ function Field({
     <div data-animate="field" className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -220,6 +228,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
   );
 
   if (state.updatedId) {
+    const displayTimestamp = state.updatedAt ?? listing.updatedAt;
     return (
       <div data-animate="field" className="flex flex-col gap-4 py-4">
         <div className="flex items-center gap-2 text-foreground font-medium">
@@ -229,6 +238,11 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         <p className="text-sm text-muted-foreground">
           Your changes have been saved and are now active.
         </p>
+        {displayTimestamp && (
+          <p className="text-xs text-muted-foreground">
+            Last modified: {shortDate(displayTimestamp)} (SGT)
+          </p>
+        )}
         <div className="flex flex-wrap gap-3 pt-2">
           <Link href="/listings" className={cn(buttonVariants())}>
             Back to your listings
@@ -247,6 +261,12 @@ export function EditListingForm({ listing }: { listing: Listing }) {
 
   return (
     <form action={handleSubmit} noValidate className="grid gap-5 md:grid-cols-2">
+      <div className="flex items-center justify-between text-xs text-muted-foreground md:col-span-2">
+        <span>
+          Last modified: {shortDate(state.updatedAt ?? listing.updatedAt)} (SGT)
+        </span>
+      </div>
+
       {isLocked && (
         <div
           data-animate="field"
@@ -335,7 +355,11 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         data-animate="field"
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:col-span-2"
       >
-        <Field label="Category" htmlFor="category">
+        <Field
+          label="Category"
+          htmlFor="category"
+          error={state.fieldErrors?.category}
+        >
           <Select
             name="category"
             value={category}
@@ -363,6 +387,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           label="Status"
           htmlFor="status"
           hint={isLocked ? "Terminal state" : undefined}
+          error={state.fieldErrors?.status}
         >
           <Select
             name="status"
@@ -386,7 +411,11 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           </Select>
         </Field>
 
-        <Field label="Quantity" htmlFor="quantity">
+        <Field
+          label="Quantity"
+          htmlFor="quantity"
+          error={state.fieldErrors?.quantity}
+        >
           <Input
             id="quantity"
             name="quantity"
@@ -401,7 +430,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           />
         </Field>
 
-        <Field label="Unit" htmlFor="unit">
+        <Field label="Unit" htmlFor="unit" error={state.fieldErrors?.unit}>
           <Input
             id="unit"
             name="unit"
@@ -421,6 +450,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           htmlFor="cancelledReason"
           hint="Kept in the listing's history."
           className="md:col-span-2"
+          error={state.fieldErrors?.cancelledReason}
         >
           <Textarea
             id="cancelledReason"
@@ -441,6 +471,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         htmlFor="description"
         hint=""
         className="md:col-span-2"
+        error={state.fieldErrors?.description}
       >
         <Textarea
           id="description"
@@ -455,7 +486,12 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       </Field>
 
       {/* Allergens single textbox */}
-      <Field label="Allergens" htmlFor="allergens" hint="">
+      <Field
+        label="Allergens"
+        htmlFor="allergens"
+        hint=""
+        error={state.fieldErrors?.allergens}
+      >
         <Input
           id="allergens"
           name="allergens"
@@ -474,7 +510,13 @@ export function EditListingForm({ listing }: { listing: Listing }) {
           label="Use by"
           value={useBy}
           onChange={setUseBy}
+          disabled={isLocked || pending}
         />
+        {state.fieldErrors?.useBy && (
+          <p role="alert" className="text-xs text-destructive mt-1">
+            {state.fieldErrors.useBy}
+          </p>
+        )}
       </div>
 
       {/* Handling Instructions */}
@@ -483,6 +525,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         htmlFor="handlingInstructions"
         hint=""
         className="md:col-span-2"
+        error={state.fieldErrors?.handlingInstructions}
       >
         <Textarea
           id="handlingInstructions"
@@ -500,6 +543,7 @@ export function EditListingForm({ listing }: { listing: Listing }) {
         label="Pickup location"
         htmlFor="pickupLocation"
         className="md:col-span-2"
+        error={state.fieldErrors?.pickupLocation}
       >
         <Input
           id="pickupLocation"
@@ -519,21 +563,42 @@ export function EditListingForm({ listing }: { listing: Listing }) {
       >
         <legend className="text-sm font-medium">Pickup window</legend>
         <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          <DateTimeField
-            id="pickupWindowStart"
-            name="pickupWindowStart"
-            label="From"
-            value={pickupWindowStart}
-            onChange={setPickupWindowStart}
-          />
-          <DateTimeField
-            id="pickupWindowEnd"
-            name="pickupWindowEnd"
-            label="Until"
-            value={pickupWindowEnd}
-            onChange={setPickupWindowEnd}
-          />
+          <div>
+            <DateTimeField
+              id="pickupWindowStart"
+              name="pickupWindowStart"
+              label="From"
+              value={pickupWindowStart}
+              onChange={setPickupWindowStart}
+              disabled={isLocked || pending}
+            />
+            {state.fieldErrors?.pickupWindowStart && (
+              <p role="alert" className="text-xs text-destructive mt-1">
+                {state.fieldErrors.pickupWindowStart}
+              </p>
+            )}
+          </div>
+          <div>
+            <DateTimeField
+              id="pickupWindowEnd"
+              name="pickupWindowEnd"
+              label="Until"
+              value={pickupWindowEnd}
+              onChange={setPickupWindowEnd}
+              disabled={isLocked || pending}
+            />
+            {state.fieldErrors?.pickupWindowEnd && (
+              <p role="alert" className="text-xs text-destructive mt-1">
+                {state.fieldErrors.pickupWindowEnd}
+              </p>
+            )}
+          </div>
         </div>
+        {state.fieldErrors?.pickupWindow && (
+          <p role="alert" className="text-xs text-destructive mt-1">
+            {state.fieldErrors.pickupWindow}
+          </p>
+        )}
       </fieldset>
 
       {/* Error message if any */}
