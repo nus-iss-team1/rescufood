@@ -22,11 +22,22 @@ export function relistBlockedReason(
 ): RelistBlockedReason | null {
   const start = window.pickupWindowStart?.getTime();
   const end = window.pickupWindowEnd?.getTime();
-  if (start === undefined || now.getTime() > start - policy.cutoffMs) {
+
+  if (start === undefined || end === undefined) {
     return 'past_cutoff';
   }
-  if (end === undefined || end - now.getTime() < policy.minPickupMs) {
+
+  // Multi-day windows: if at least a full day (24 hours) remains before the
+  // window closes, partners can still collect on following days.
+  const hasSubsequentDaysRemaining = end - now.getTime() >= 24 * 60 * 60 * 1000;
+  if (!hasSubsequentDaysRemaining && now.getTime() > start - policy.cutoffMs) {
+    return 'past_cutoff';
+  }
+
+  // Not enough pickup time remains before the window closes.
+  if (end - now.getTime() < policy.minPickupMs) {
     return 'insufficient_pickup_time';
   }
+
   return null;
 }

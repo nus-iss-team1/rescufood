@@ -171,9 +171,9 @@ export interface ListingRequest {
   requestedQuantity: string;
   requestedAt: string;
   cancelledAt: string | null;
-  cancellationReason: string;
   cancelledBy: string | null;
   cancelledByOrgId: string | null;
+  cancellationReason: string;
   codeExpiresAt: string | null;
   codeGeneratedBy: string | null;
   verifiedBy: string | null;

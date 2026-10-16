@@ -20,6 +20,7 @@ import type {
   NewRequest,
   OrgSummary,
   RescuedMetrics,
+  StatsFilters,
   UnitQuantity,
   Paginated,
   PickupCode,
@@ -27,7 +28,6 @@ import type {
   RequestDecisionInput,
   RequestQuery,
   RequestStatus,
-  StatsFilters,
   VerifyPickup,
 } from "./types";
 
@@ -261,9 +261,9 @@ export class MockListingsClient implements ListingsApi {
       requestedQuantity: listing.quantity ?? "0.00",
       requestedAt: stamp,
       cancelledAt: null,
-      cancellationReason: "",
       cancelledBy: null,
       cancelledByOrgId: null,
+      cancellationReason: "",
       codeExpiresAt: null,
       codeGeneratedBy: null,
       verifiedBy: null,
@@ -313,12 +313,14 @@ export class MockListingsClient implements ListingsApi {
       request.noShowByOrgId = request.rescueOrgId;
     }
     // Both outcomes reopen the listing for another org to claim.
+    let listingRelisted = false;
     if (wasActive) {
       const listing = this.listings.find((l) => l.id === request.listingId);
       if (listing && listing.status === "reserved") {
         listing.status = "available";
         listing.version += 1;
         listing.updatedAt = now();
+        listingRelisted = true;
       }
     }
     return {
