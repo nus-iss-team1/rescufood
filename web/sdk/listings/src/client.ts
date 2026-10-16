@@ -230,30 +230,24 @@ export class ListingsClient implements ListingsApi {
   }
 }
 
-/** Extracts Nest's { statusCode, message, error, errors } body while preserving field-level errors. */
+/** Extracts Nest's { statusCode, message, error, errors } body into a detail string and field-level errors. */
 async function errorDetail(
   res: Response,
 ): Promise<{ detail: string; errors: FieldValidationError[] }> {
   const body = (await res.json().catch(() => ({}))) as {
     message?: string | string[];
     error?: string;
-    errors?: Array<{ field?: unknown; code?: unknown; message?: unknown }>;
+    errors?: unknown;
   };
   const errors: FieldValidationError[] = Array.isArray(body.errors)
-    ? body.errors
-        .filter(
-          (
-            e,
-          ): e is {
-            field: string;
-            code: string;
-            message: string;
-          } =>
-            typeof e?.field === "string" &&
-            typeof e?.code === "string" &&
-            typeof e?.message === "string",
-        )
-        .map(({ field, code, message }) => ({ field, code, message }))
+    ? body.errors.filter(
+        (e): e is FieldValidationError =>
+          typeof e === "object" &&
+          e !== null &&
+          typeof (e as FieldValidationError).field === "string" &&
+          typeof (e as FieldValidationError).code === "string" &&
+          typeof (e as FieldValidationError).message === "string",
+      )
     : [];
   const message = Array.isArray(body.message)
     ? body.message.join(", ")

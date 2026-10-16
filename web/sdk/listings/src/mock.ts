@@ -28,6 +28,7 @@ import type {
   RequestDecisionInput,
   RequestQuery,
   RequestStatus,
+  StatsFilters,
   VerifyPickup,
 } from "./types";
 
@@ -264,15 +265,17 @@ export class MockListingsClient implements ListingsApi {
       cancelledBy: null,
       cancelledByOrgId: null,
       cancellationReason: "",
+      cancelledBy: null,
+      cancelledByOrgId: null,
       codeExpiresAt: null,
       codeGeneratedBy: null,
       verifiedBy: null,
       collectedQuantity: null,
       collectedAt: null,
       noShowAt: null,
+      noShowReason: "",
       noShowBy: null,
       noShowByOrgId: null,
-      noShowReason: "",
       createdAt: stamp,
       updatedAt: stamp,
       listingDescription: listing.description,
@@ -303,10 +306,14 @@ export class MockListingsClient implements ListingsApi {
     if (decision.status === "cancelled") {
       request.cancelledAt = now();
       request.cancellationReason = decision.cancellationReason ?? "";
+      request.cancelledBy = request.claimedBy;
+      request.cancelledByOrgId = request.rescueOrgId;
     }
     if (decision.status === "no_show") {
       request.noShowAt = now();
       request.noShowReason = decision.noShowReason ?? "";
+      request.noShowBy = request.claimedBy;
+      request.noShowByOrgId = request.rescueOrgId;
     }
     // Both outcomes reopen the listing for another org to claim.
     let listingRelisted = false;
@@ -321,7 +328,7 @@ export class MockListingsClient implements ListingsApi {
     }
     return {
       ...request,
-      listingRelisted,
+      listingRelisted: true,
       relistBlockedReason: null,
     };
   }
