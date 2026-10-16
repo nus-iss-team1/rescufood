@@ -105,6 +105,86 @@ export async function cancelRequestAction(
   };
 }
 
+export async function reportNoShowAction(
+  _prev: RequestFormState,
+  formData: FormData,
+): Promise<RequestFormState> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  const id = String(formData.get("requestId") ?? "").trim();
+  if (!id) return { error: "Missing request ID." };
+
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) {
+    return { error: "A reason is required to report a no-show." };
+  }
+
+  let updated;
+  try {
+    updated = await decideRequest(token, id, {
+      status: "no_show",
+      noShowReason: reason,
+    });
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+    }
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+  revalidatePath("/requests");
+  revalidatePath(`/requests/${id}`);
+  revalidatePath("/browse");
+  revalidatePath("/listings");
+  revalidatePath("/dashboard");
+  return {
+    requestedId: id,
+    listingRelisted: updated.listingRelisted,
+    relistBlockedReason: updated.relistBlockedReason ?? null,
+  };
+}
+
+export async function recordFailedCollectionAction(
+  _prev: RequestFormState,
+  formData: FormData,
+): Promise<RequestFormState> {
+  const token = await idToken();
+  if (!token) return { error: expired };
+
+  const id = String(formData.get("requestId") ?? "").trim();
+  if (!id) return { error: "Missing request ID." };
+
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) {
+    return { error: "A reason is required to record a failed collection." };
+  }
+
+  let updated;
+  try {
+    updated = await decideRequest(token, id, {
+      status: "cancelled",
+      cancellationReason: reason,
+    });
+    if (updated.listingId) {
+      revalidatePath(`/browse/${updated.listingId}`);
+    }
+  } catch (err) {
+    if (err instanceof ListingsApiError) return { error: err.message };
+    return { error: unreachable };
+  }
+  revalidatePath("/requests");
+  revalidatePath(`/requests/${id}`);
+  revalidatePath("/browse");
+  revalidatePath("/listings");
+  revalidatePath("/dashboard");
+  return {
+    requestedId: id,
+    listingRelisted: updated.listingRelisted,
+    relistBlockedReason: updated.relistBlockedReason ?? null,
+  };
+}
+
 export async function getPickupCredentialAction(
   requestId: string,
   regenerate = false
