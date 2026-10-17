@@ -65,25 +65,25 @@ export function CreateListingForm() {
     {},
   );
 
-  // Dynamic datetime to prevent stale
-  const defaultWindowStart = dayjs()
-    .add(1, "hour")
-    .format("YYYY-MM-DDTHH:mm:ss");
-  const defaultWindowEnd = dayjs().add(4, "hour").format("YYYY-MM-DDTHH:mm:ss");
-  const defaultUseBy = dayjs().add(6, "hour").format("YYYY-MM-DDTHH:mm:ss");
-
   // Controlled form state with sensible defaults
   const [category, setCategory] = useState("produce");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [description, setDescription] = useState("");
   const [allergens, setAllergens] = useState("");
-  const [useBy, setUseBy] = useState(defaultUseBy);
+  const [useBy, setUseBy] = useState("");
   const [handlingInstructions, setHandlingInstructions] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
-  const [pickupWindowStart, setPickupWindowStart] =
-    useState(defaultWindowStart);
-  const [pickupWindowEnd, setPickupWindowEnd] = useState(defaultWindowEnd);
+  const [pickupWindowStart, setPickupWindowStart] = useState("");
+  const [pickupWindowEnd, setPickupWindowEnd] = useState("");
+
+  // Default times are filled in after mount, in the donor's timezone.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPickupWindowStart(dayjs().add(1, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+    setPickupWindowEnd(dayjs().add(4, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+    setUseBy(dayjs().add(6, "hour").format("YYYY-MM-DDTHH:mm:ss"));
+  }, []);
 
   // Standardized image state
   const [listingImage, setListingImage] = useState<File | null>(null);
@@ -150,7 +150,7 @@ export function CreateListingForm() {
     action(formData);
   };
 
-  const canSubmit = !pending;
+  const canSubmit = Boolean(useBy && pickupWindowStart && pickupWindowEnd);
 
   if (state.publishedId) {
     const isDraft = state.status === "draft";
