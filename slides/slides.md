@@ -755,52 +755,170 @@ is what "solving a design problem with a pattern" looks like in our system.
 -->
 
 ---
+class: flex flex-col
+---
 
-# The same patterns, reused everywhere
+# Repository
 
-<div class="mt-8 px-6">
+<div class="text-base mt-2" style="color:#00000099">Every service reaches its data through one seam</div>
 
-<div class="grid grid-cols-2 gap-5">
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Repository</div>
-    <div class="text-xs mt-1" style="color:#00000099">Every service talks to its schema through a repository. Swap the query, not the caller.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Guard</div>
-    <div class="text-xs mt-1" style="color:#00000099">Auth and org-membership as composable guards on the routes that need them.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Publish / subscribe</div>
-    <div class="text-xs mt-1" style="color:#00000099">Listings publishes events; notifications subscribes. Neither knows the other.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Scheduled sweeper</div>
-    <div class="text-xs mt-1" style="color:#00000099">An hourly job prunes expired idempotency keys &mdash; retention without manual work.</div>
-  </div>
-</div>
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-r-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="mt-8 text-center text-sm" style="color:#00000099">
-Patterns earn their place by being <span class="accent font-semibold">reused</span> &mdash; not applied once for show.
-</div>
+  <rect x="40" y="130" width="250" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="165" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">RequestsService</text>
+  <text x="165" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">business rules only</text>
 
+  <line x1="290" y1="178" x2="366" y2="178" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-r-arr)"/>
+
+  <rect x="370" y="130" width="260" height="96" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="500" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">RequestsRepository</text>
+  <text x="500" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">all the sql lives here</text>
+
+  <line x1="630" y1="178" x2="706" y2="178" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-r-arr)"/>
+
+  <rect x="710" y="130" width="250" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="835" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <text x="835" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">schema per service</text>
+
+  <text x="500" y="290" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Swap the query, not the caller.</text>
+
+  <rect x="170" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="270" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">listings &middot; 6 repositories</text>
+  <rect x="400" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="500" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">notifications &middot; 1</text>
+  <rect x="630" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="730" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">profile (Go) &middot; 4</text>
+</svg>
 </div>
 
 <!--
-PATTERNS REUSED
+REPOSITORY
 
-Design patterns count when they're reused, not name-dropped once. Four that
-recur across the codebase. Repository: every service reaches its schema
-through one, so we change a query without touching callers - that's our
-extensibility story. Guard: authentication and org-membership are
-composable guards dropped onto the routes that need them. Publish/subscribe:
-listings publishes an event and notifications subscribes, and crucially
-neither service knows the other exists - that's what let us add
-notifications without touching the claim path. And a scheduled sweeper: an
-hourly cron prunes expired idempotency keys, so retention is automatic.
+Every service talks to its schema through a repository class: eleven of
+them across the three backends. The service layer holds business rules
+and never writes sql; the repository holds all the sql and never makes
+decisions. That seam is what let us change queries, add indexes and move
+a table without touching a single caller, and it is why the integration
+tests can run the real repositories against a throwaway Postgres.
 
-The line at the bottom is the message for the graders: we applied patterns
-where they solved a real problem and reused them, rather than sprinkling one
-in to tick a box.
+Same shape in all three stacks: ListingsRepository and friends in the
+two NestJS services, and the Users and Organisations stores in Go.
+-->
+
+---
+class: flex flex-col
+---
+
+# Strategy
+
+<div class="text-base mt-2" style="color:#00000099">One call site, interchangeable behaviours picked at runtime</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-s-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
+
+  <rect x="40" y="152" width="300" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="190" y="196" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">SqsConsumerService</text>
+  <text x="190" y="220" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderEmail(message)</text>
+
+  <text x="480" y="182" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderers[type]</text>
+  <path d="M 340 200 L 480 200 L 480 96 L 612 96" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
+  <path d="M 340 200 L 612 200" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
+  <path d="M 340 200 L 480 200 L 480 304 L 612 304" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
+
+  <rect x="616" y="60" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="786" y="92" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Claim created</text>
+  <text x="786" y="112" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+
+  <rect x="616" y="164" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="786" y="196" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Pickup reminder</text>
+  <text x="786" y="216" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+
+  <rect x="616" y="268" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="786" y="300" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listing expired</text>
+  <text x="786" y="320" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+
+  <text x="500" y="384" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">same seam elsewhere: relist policy &middot; sdk mock client &middot; org transitions (go)</text>
+</svg>
+</div>
+
+<!--
+STRATEGY
+
+The notifications service renders each message type with a renderer
+picked from a lookup table: adding a notification type is adding one
+entry, the consumer loop never changes. A type with no entry fails loudly
+rather than sending something half-formed.
+
+The same seam recurs across the codebase: the relist policy in listings
+is an injected policy object, so the cutoff rules are swappable per
+environment; the web sdk hands back a mock or a real client behind one
+ListingsApi interface, which is how the frontend was built before the
+service existed; and the Go profile service injects Approve, Reject and
+Suspend as function strategies into one shared transition handler.
+-->
+
+---
+class: flex flex-col
+---
+
+# Publish / subscribe
+
+<div class="text-base mt-2" style="color:#00000099">Listings publishes domain events; notifications consumes them</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-p-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="pat-p-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <rect x="40" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="175" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">listings</text>
+  <text x="175" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NotificationsPublisher</text>
+
+  <text x="370" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish &middot; eventId</text>
+  <line x1="310" y1="170" x2="426" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
+
+  <rect x="430" y="120" width="180" height="100" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="520" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">SQS</text>
+  <text x="520" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">notifications queue</text>
+
+  <text x="670" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">long poll</text>
+  <line x1="610" y1="170" x2="726" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
+
+  <rect x="730" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="865" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">notification</text>
+  <text x="865" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">SqsConsumerService</text>
+
+  <line x1="520" y1="220" x2="520" y2="266" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#pat-p-arr-m)"/>
+  <rect x="430" y="270" width="180" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="520" y="295" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">DLQ</text>
+  <text x="520" y="313" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">after 5 failures</text>
+
+  <text x="500" y="378" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Neither service knows the other exists.</text>
+</svg>
+</div>
+
+<!--
+PUBLISH / SUBSCRIBE
+
+When a claim is created, cancelled or completed, listings puts a typed
+domain event on SQS and moves on; the notification service long-polls
+the queue, renders the templates and delivers email and in-app. Neither
+imports the other: we added the whole notification service without
+touching the claim path once, which is the extensibility argument.
+
+Reliability detail worth saying out loud: every event carries a
+deterministic eventId, and the consumer dedupes on it, so a redelivered
+message cannot double-send. A message that keeps failing lands in a
+dead-letter queue after five attempts, with an alarm on it.
 -->
 
 ---
