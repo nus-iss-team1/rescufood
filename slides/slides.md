@@ -188,7 +188,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 02</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-Project <span class="accent">conduct</span>
+Project <span class="accent">Conduct</span>
 </div>
 
 <!--
