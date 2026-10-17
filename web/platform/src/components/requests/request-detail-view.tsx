@@ -71,9 +71,61 @@ export function RequestDetailView({
           <CardContent className="space-y-6">
             <RequestProgress request={request} />
 
-            {request.status === "cancelled" && request.cancellationReason && (
-              <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-                Reason: {request.cancellationReason}
+            {request.status === "no_show" && (
+              <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="size-5 text-destructive shrink-0" />
+                    <span className="font-semibold text-destructive">
+                      Pickup Outcome: No-Show
+                    </span>
+                  </div>
+                  {listing.status === "available" && (
+                    <Badge variant="success">Lot reopened to Available</Badge>
+                  )}
+                  {listing.status === "expired" && (
+                    <Badge variant="outline">Lot expired</Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground">
+                  The rescue partner did not arrive for the scheduled collection.
+                </p>
+                {request.noShowReason && (
+                  <p className="text-foreground">
+                    <span className="font-medium">Reason:</span> {request.noShowReason}
+                  </p>
+                )}
+                {request.noShowAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Recorded on {shortDate(request.noShowAt)} (SGT)
+                  </p>
+                )}
+              </div>
+            )}
+
+            {request.status === "cancelled" && (
+              <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">
+                    {request.cancelledByOrgId === listing.donorOrgId
+                      ? "Pickup Outcome: Failed Collection"
+                      : "Claim cancelled"}
+                  </span>
+                  {listing.status === "available" && (
+                    <Badge variant="success">Lot returned to Available</Badge>
+                  )}
+                  {listing.status === "expired" && (
+                    <Badge variant="outline">Lot expired (not relisted)</Badge>
+                  )}
+                </div>
+                {request.cancellationReason && (
+                  <p>Reason: {request.cancellationReason}</p>
+                )}
+                {request.cancelledAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Cancelled on {shortDate(request.cancelledAt)} (SGT)
+                  </p>
+                )}
               </div>
             )}
 
@@ -110,7 +162,7 @@ export function RequestDetailView({
                 !isActiveRequest(request.status) && "hidden"
               )}
             >
-              {isActiveRequest(request.status) && (
+              {!isDonor && isActiveRequest(request.status) && (
                 <CancelClaimButton requestId={request.id} size="sm">
                   Cancel claim
                 </CancelClaimButton>

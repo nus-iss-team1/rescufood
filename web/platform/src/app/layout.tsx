@@ -25,7 +25,6 @@ const geistMono = Geist_Mono({
 const outfit = Outfit({
   variable: "--font-logo",
   subsets: ["latin"],
-  weight: ["600", "700"],
 });
 
 // Every route reads the session from cookies, so none of them may prerender.

@@ -94,11 +94,13 @@ function DropdownTimeInput({
   value = "",
   onChange,
   className,
+  disabled = false,
 }: {
   id: string;
   value?: string;
   onChange?: (time24: string) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   const initial = to12Hour(value);
   const [hour, setHour] = React.useState(initial.hour);
@@ -138,7 +140,11 @@ function DropdownTimeInput({
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
-      <Select value={hour} onValueChange={(val) => val && handleHourChange(val)}>
+      <Select
+        value={hour}
+        onValueChange={(val) => val && handleHourChange(val)}
+        disabled={disabled}
+      >
         <SelectTrigger
           id={`${id}-hour`}
           aria-label="Hour"
@@ -165,6 +171,7 @@ function DropdownTimeInput({
       <Select
         value={minute}
         onValueChange={(val) => val && handleMinuteChange(val)}
+        disabled={disabled}
       >
         <SelectTrigger
           id={`${id}-minute`}
@@ -187,6 +194,7 @@ function DropdownTimeInput({
         onValueChange={(val) =>
           val && handlePeriodChange(val as "AM" | "PM")
         }
+        disabled={disabled}
       >
         <SelectTrigger
           id={`${id}-period`}
@@ -217,6 +225,7 @@ export function DateTimeField({
   defaultValue = "",
   onChange,
   className,
+  disabled = false,
 }: {
   id: string;
   name: string;
@@ -225,6 +234,7 @@ export function DateTimeField({
   defaultValue?: string;
   onChange?: (val: string) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   const isControlled = value !== undefined;
   const currentVal = isControlled ? value : defaultValue;
@@ -269,13 +279,17 @@ export function DateTimeField({
     <FieldGroup className={cn("flex flex-col sm:flex-row gap-3 sm:gap-2", className)}>
       <Field className="flex-1">
         <FieldLabel htmlFor={`${id}-date`}>{label}</FieldLabel>
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open && !disabled}
+          onOpenChange={(next) => !disabled && setOpen(next)}
+        >
           <PopoverTrigger
             render={
               <Button
                 type="button"
                 variant="outline"
                 id={`${id}-date`}
+                disabled={disabled}
                 className="h-auto min-h-9 w-full justify-between px-2.5 py-1 font-normal"
               >
                 {date ? dayjs(date).format("D MMM YYYY") : "Pick a date"}
@@ -304,6 +318,7 @@ export function DateTimeField({
           id={id}
           value={time}
           onChange={handleTimeChange}
+          disabled={disabled}
         />
       </Field>
       <input type="hidden" name={name} value={hiddenValue} readOnly />
