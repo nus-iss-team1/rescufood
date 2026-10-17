@@ -3,6 +3,8 @@ import type {
   AuditEntityType,
   AuditEventQuery,
   AuditFilters,
+  DecidedRequest,
+  FieldValidationError,
   Listing,
   ListingsApi,
   ListingQuery,
@@ -17,15 +19,22 @@ import type {
   PickupCodeMatch,
   RequestDecisionInput,
   RequestQuery,
+  StatsFilters,
   VerifyPickup,
 } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly errors: FieldValidationError[];
 
-  constructor(status: number, detail: string) {
+  constructor(
+    status: number,
+    detail: string,
+    errors: FieldValidationError[] = [],
+  ) {
     super(detail);
     this.status = status;
+    this.errors = errors;
   }
 }
 
@@ -93,7 +102,8 @@ export class ListingsClient implements ListingsApi {
       this.opts.onUnauthorized?.();
     }
     if (!res.ok) {
-      throw new ApiError(res.status, await errorDetail(res));
+      const { detail, errors } = await errorDetail(res);
+      throw new ApiError(res.status, detail, errors);
     }
     if (res.status === 204) {
       return undefined as T;
@@ -162,7 +172,7 @@ export class ListingsClient implements ListingsApi {
   decideRequest(
     id: string,
     decision: RequestDecisionInput,
-  ): Promise<ListingRequest> {
+  ): Promise<DecidedRequest> {
     return this.send("PATCH", `/requests/${id}`, decision);
   }
 
@@ -188,13 +198,13 @@ export class ListingsClient implements ListingsApi {
   // -------------------------------------------------------- statistics
 
   /** Operational summary for the caller's organisation. */
-  getOrgSummary(): Promise<OrgSummary> {
-    return this.request("/stats/summary");
+  getOrgSummary(filters: StatsFilters = {}): Promise<OrgSummary> {
+    return this.request(`/stats/summary${searchParams(filters)}`);
   }
 
   /** Rescued quantity and time-to-claim metrics for the caller's organisation. */
-  getRescuedMetrics(): Promise<RescuedMetrics> {
-    return this.request("/stats/metrics");
+  getRescuedMetrics(filters: StatsFilters = {}): Promise<RescuedMetrics> {
+    return this.request(`/stats/metrics${searchParams(filters)}`);
   }
 
   // ------------------------------------------------------------- audit
@@ -220,14 +230,32 @@ export class ListingsClient implements ListingsApi {
   }
 }
 
-/** Flattens Nest's { statusCode, message, error } body into one string. */
-async function errorDetail(res: Response): Promise<string> {
+/** Extracts Nest's { statusCode, message, error, errors } body into a detail string and field-level errors. */
+async function errorDetail(
+  res: Response,
+): Promise<{ detail: string; errors: FieldValidationError[] }> {
   const body = (await res.json().catch(() => ({}))) as {
     message?: string | string[];
     error?: string;
+    errors?: unknown;
   };
+  const errors: FieldValidationError[] = Array.isArray(body.errors)
+    ? body.errors.filter(
+        (e): e is FieldValidationError =>
+          typeof e === "object" &&
+          e !== null &&
+          typeof (e as FieldValidationError).field === "string" &&
+          typeof (e as FieldValidationError).code === "string" &&
+          typeof (e as FieldValidationError).message === "string",
+      )
+    : [];
   const message = Array.isArray(body.message)
     ? body.message.join(", ")
     : body.message;
-  return message || body.error || res.statusText;
+  const detail =
+    message ||
+    (errors.length > 0 ? errors.map((e) => e.message).join(", ") : undefined) ||
+    body.error ||
+    res.statusText;
+  return { detail, errors };
 }

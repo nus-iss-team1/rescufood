@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { requireSession } from "@/lib/session";
-import { getMe, ProfileApiError, type Me } from "@/lib/profile";
+import { getMe, listOrgs, ProfileApiError, type Me, type Org } from "@/lib/profile";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
@@ -12,12 +12,15 @@ import { toTrend } from "@/lib/claims-trend";
 import { ListingPerformance } from "@/components/reports/listing-performance";
 import { toPerformance } from "@/lib/listing-performance";
 import { RefreshControl } from "@/components/reports/refresh-control";
+import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import {
   getOrgSummary,
   getRescuedMetrics,
   listRequests,
+  ListingsApiError,
   type OrgSummary,
   type RescuedMetrics,
+  type StatsFilters,
 } from "@/lib/listings";
 import {
   Card,
@@ -78,7 +81,11 @@ function Notice({ title, children }: { title: string; children: string }) {
   );
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string; orgId?: string }>;
+}) {
   const session = await requireSession();
 
   let me: Me | null = null;
@@ -90,7 +97,21 @@ export default async function ReportsPage() {
     }
   }
 
-  if (!me?.org || me.org.status !== "approved") {
+  if (!me) {
+    return (
+      <PageShell>
+        <AnimateIn>
+          <Notice title="Reports unavailable">
+            Could not verify your profile. Please sign in again.
+          </Notice>
+        </AnimateIn>
+      </PageShell>
+    );
+  }
+
+  // Non-admins must belong to an approved organization to view reports.
+  // Platform admins are permitted without belonging to a donor/rescue org.
+  if (!me.is_admin && (!me.org || me.org.status !== "approved")) {
     return (
       <PageShell>
         <AnimateIn>
@@ -102,10 +123,49 @@ export default async function ReportsPage() {
     );
   }
 
-  // Each card degrades to empty on its own; neither takes the page down.
+  const { from: fromRaw, to: toRaw, orgId: orgIdRaw } = await searchParams;
+  const isAdmin = Boolean(me.is_admin);
+
+  let approvedOrgs: Org[] = [];
+  if (isAdmin && session.idToken) {
+    try {
+      approvedOrgs = await listOrgs(session.idToken, "approved");
+    } catch {
+      approvedOrgs = [];
+    }
+  }
+
+  // Resolve search parameters and sanitize permissions
+  let sanitizedOrgId: string | undefined = undefined;
+  if (isAdmin) {
+    if (orgIdRaw && orgIdRaw !== "all") {
+      sanitizedOrgId = orgIdRaw;
+    }
+  } else {
+    // Non-admin always scopes to their own organisation
+    sanitizedOrgId = me.org?.id;
+  }
+
+  const sanitizedFilters: StatsFilters = {
+    ...(fromRaw?.trim() ? { from: fromRaw.trim() } : {}),
+    ...(toRaw?.trim() ? { to: toRaw.trim() } : {}),
+    ...(sanitizedOrgId ? { orgId: sanitizedOrgId } : {}),
+  };
+
+  // Determine selected organization info for header subtitle and role logic
+  const selectedOrg = approvedOrgs.find((o) => o.id === sanitizedOrgId);
+  const isRescuePartner = selectedOrg
+    ? selectedOrg.type === "rescue_partner"
+    : me.org?.type === "rescue_partner";
+
+  const subtitle = selectedOrg
+    ? `${selectedOrg.name} · ${selectedOrg.type === "donor" ? "Food donor" : "Rescue partner"}`
+    : describeOrg(me);
+
+  // Each call is settled; stats error renders an error/access-denied banner without crashing or showing partial numbers.
   const [summaryResult, metricsResult, claimsResult] = await Promise.allSettled([
-    getOrgSummary(session.idToken!),
-    getRescuedMetrics(session.idToken!),
+    getOrgSummary(session.idToken!, sanitizedFilters),
+    getRescuedMetrics(session.idToken!, sanitizedFilters),
     // 100 is the endpoint's ceiling; the card states the sample it drew.
     listRequests(session.idToken!, {
       sortBy: "requestedAt",
@@ -114,10 +174,37 @@ export default async function ReportsPage() {
     }),
   ]);
 
-  const summary: OrgSummary | null =
-    summaryResult.status === "fulfilled" ? summaryResult.value : null;
-  const metrics: RescuedMetrics | null =
-    metricsResult.status === "fulfilled" ? metricsResult.value : null;
+  let summary: OrgSummary | null = null;
+  let metrics: RescuedMetrics | null = null;
+  let statsError: { status?: number; message: string } | null = null;
+
+  if (summaryResult.status === "rejected") {
+    const reason = summaryResult.reason;
+    if (reason instanceof ListingsApiError) {
+      statsError = { status: reason.status, message: reason.message };
+    } else {
+      statsError = {
+        message:
+          reason instanceof Error ? reason.message : "Failed to load report summary",
+      };
+    }
+  } else {
+    summary = summaryResult.value;
+  }
+
+  if (!statsError && metricsResult.status === "rejected") {
+    const reason = metricsResult.reason;
+    if (reason instanceof ListingsApiError) {
+      statsError = { status: reason.status, message: reason.message };
+    } else {
+      statsError = {
+        message:
+          reason instanceof Error ? reason.message : "Failed to load rescued metrics",
+      };
+    }
+  } else if (metricsResult.status === "fulfilled") {
+    metrics = metricsResult.value;
+  }
 
   const claimsPage =
     claimsResult.status === "fulfilled" ? claimsResult.value : null;
@@ -125,7 +212,6 @@ export default async function ReportsPage() {
   const trend = toTrend(claims);
   const performance = toPerformance(claims);
 
-  const isRescuePartner = me.org.type === "rescue_partner";
   const listingSlices = toSliceData(
     LISTING_STATUSES,
     (key) => summary?.listings?.[key] ?? 0,
@@ -136,10 +222,10 @@ export default async function ReportsPage() {
 
   return (
     <PageShell>
-      <AnimateIn className="mb-8">
+      <AnimateIn className="mb-6">
         <PageHeader
           title="Reports"
-          subtitle={describeOrg(me)}
+          subtitle={subtitle}
           crumbs={[
             { label: "Dashboard", href: "/dashboard" },
             { label: "Reports" },
@@ -148,47 +234,86 @@ export default async function ReportsPage() {
         />
       </AnimateIn>
 
-      <AnimateIn>
-        <ReportKpis
-          summary={summary}
-          metrics={metrics}
-          isRescuePartner={isRescuePartner}
+      <AnimateIn className="mb-6">
+        <ReportFilterBar
+          isAdmin={isAdmin}
+          organisations={approvedOrgs}
+          initialFilters={{
+            from: fromRaw,
+            to: toRaw,
+            orgId: orgIdRaw,
+          }}
         />
       </AnimateIn>
 
-      <AnimateIn className="mt-6">
-        <div className="grid gap-6">
-          {/* A partner's listing counts are always zero. */}
-          {isRescuePartner ? (
-            <StatusDonut
-              title="Your claims"
-              description="Where your claims stand."
-              slices={claimSlices}
+      {statsError ? (
+        <AnimateIn>
+          <div
+            data-animate="field"
+            className="rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center"
+          >
+            <h3 className="text-base font-semibold text-destructive">
+              {statsError.status === 403
+                ? "Access Denied"
+                : statsError.status === 404
+                  ? "Organisation Not Found"
+                  : isAdmin && !sanitizedOrgId
+                    ? "Organisation Required"
+                    : "Statistics Unavailable"}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isAdmin && !sanitizedOrgId
+                ? "Please select an organisation from the filter bar above to view its reports."
+                : statsError.message ||
+                  "Could not retrieve statistics for the selected filters."}
+            </p>
+          </div>
+        </AnimateIn>
+      ) : (
+        <>
+          <AnimateIn>
+            <ReportKpis
+              summary={summary}
+              metrics={metrics}
+              isRescuePartner={isRescuePartner}
             />
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:gap-6">
-              <StatusDonut
-                title="Listings by status"
-                description="Where your lots are."
-                slices={listingSlices}
+          </AnimateIn>
+
+          <AnimateIn className="mt-6">
+            <div className="grid gap-6">
+              {/* A partner's listing counts are always zero. */}
+              {isRescuePartner ? (
+                <StatusDonut
+                  title="Your claims"
+                  description="Where your claims stand."
+                  slices={claimSlices}
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                  <StatusDonut
+                    title="Listings by status"
+                    description="Where your lots are."
+                    slices={listingSlices}
+                  />
+                  <StatusDonut
+                    title="Claims by status"
+                    description="Where claims on your lots stand."
+                    slices={claimSlices}
+                  />
+                </div>
+              )}
+
+              <ClaimsTrend
+                points={trend}
+                sampled={claimsPage?.items.length ?? 0}
+                total={claimsPage?.total ?? 0}
               />
-              <StatusDonut
-                title="Claims by status"
-                description="Where claims on your lots stand."
-                slices={claimSlices}
-              />
+
+              <ListingPerformance rows={performance} sampled={claims.length} />
             </div>
-          )}
-
-          <ClaimsTrend
-            points={trend}
-            sampled={claimsPage?.items.length ?? 0}
-            total={claimsPage?.total ?? 0}
-          />
-
-          <ListingPerformance rows={performance} sampled={claims.length} />
-        </div>
-      </AnimateIn>
+          </AnimateIn>
+        </>
+      )}
     </PageShell>
   );
 }
