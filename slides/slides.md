@@ -815,53 +815,62 @@ class: flex flex-col
 
 # Strategy
 
-<div class="text-base mt-2" style="color:#00000099">One call site, interchangeable behaviours picked at runtime</div>
+<div class="text-base mt-2" style="color:#00000099">One interface; the caller never knows which implementation it got</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="pat-s-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="pat-s-tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="#ffffff" stroke="#1f6b45"/></marker>
   </defs>
 
-  <rect x="40" y="152" width="300" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="190" y="196" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">SqsConsumerService</text>
-  <text x="190" y="220" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderEmail(message)</text>
+  <rect x="40" y="152" width="280" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="180" y="196" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">web-platform</text>
+  <text x="180" y="220" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">createListingsClient({ mock })</text>
 
-  <text x="480" y="182" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderers[type]</text>
-  <path d="M 340 200 L 480 200 L 480 96 L 612 96" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
-  <path d="M 340 200 L 612 200" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
-  <path d="M 340 200 L 480 200 L 480 304 L 612 304" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
+  <line x1="320" y1="200" x2="426" y2="200" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
+  <text x="373" y="186" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">factory</text>
 
-  <rect x="616" y="60" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="786" y="92" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Claim created</text>
-  <text x="786" y="112" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+  <rect x="430" y="152" width="240" height="96" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="550" y="190" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">ListingsApi</text>
+  <text x="550" y="212" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">interface &middot; 16 methods</text>
 
-  <rect x="616" y="164" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="786" y="196" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Pickup reminder</text>
-  <text x="786" y="216" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+  <path d="M 736 102 L 706 102 L 706 180 L 678 180" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-tri)"/>
+  <path d="M 736 298 L 706 298 L 706 220 L 678 220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-tri)"/>
+  <text x="716" y="156" style="font-size:10px" fill="#5a5a5a" class="font-mono">implements</text>
 
-  <rect x="616" y="268" width="340" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="786" y="300" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listing expired</text>
-  <text x="786" y="320" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">renderer</text>
+  <rect x="736" y="60" width="230" height="84" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="851" y="98" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">ListingsClient</text>
+  <text x="851" y="120" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">real HTTP &middot; bearer token</text>
 
-  <text x="500" y="384" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">same seam elsewhere: relist policy &middot; sdk mock client &middot; org transitions (go)</text>
+  <rect x="736" y="256" width="230" height="84" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="851" y="294" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">MockListingsClient</text>
+  <text x="851" y="316" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">in-memory &middot; same rules</text>
+
+  <text x="500" y="366" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">The frontend was built against the mock before the service existed.</text>
+  <text x="500" y="392" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">same seam elsewhere: notification renderers &middot; relist policy &middot; org transitions (go)</text>
 </svg>
 </div>
 
 <!--
 STRATEGY
 
-The notifications service renders each message type with a renderer
-picked from a lookup table: adding a notification type is adding one
-entry, the consumer loop never changes. A type with no entry fails loudly
-rather than sending something half-formed.
+The listings sdk exposes one interface, ListingsApi, and two
+implementations behind a factory: ListingsClient makes the real HTTP
+calls with the caller's bearer token, and MockListingsClient keeps
+listings in memory while re-implementing the server's rules - the same
+status transition tables and even idempotency-key replay - so the two
+are behaviourally equivalent, not just type-compatible.
 
-The same seam recurs across the codebase: the relist policy in listings
-is an injected policy object, so the cutoff rules are swappable per
-environment; the web sdk hands back a mock or a real client behind one
-ListingsApi interface, which is how the frontend was built before the
-service existed; and the Go profile service injects Approve, Reject and
-Suspend as function strategies into one shared transition handler.
+createListingsClient({ mock }) returns the interface, never the
+concrete class, so no call site in the app knows which one it holds.
+That is what let the frontend be built and demoed before the listings
+service shipped, and flipping to the real service was one boolean.
+
+The same seam recurs elsewhere: the notification templates are a
+type-to-renderer lookup table, the relist policy in listings is an
+injected policy object, and the Go profile service injects Approve,
+Reject and Suspend as function strategies into one transition handler.
 -->
 
 ---
