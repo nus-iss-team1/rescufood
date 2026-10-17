@@ -577,74 +577,6 @@ the honest cost trade-off to call out.
 -->
 
 ---
-
-# From analysis to design
-
-<div class="mt-8 px-6">
-
-<div class="flex items-center justify-center" style="gap:1rem">
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#0000001a;background:#ffffff;width:12rem">
-    <div class="dgm text-xs" style="color:#00000066">Analysis</div>
-    <div class="text-sm mt-2 font-semibold">User story</div>
-    <div class="text-xs mt-1" style="color:#00000099">"As a rescue partner I claim a listing so no one else can take it."</div>
-  </div>
-  <div style="color:#1f6b45">&rarr;</div>
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#0000001a;background:#ffffff;width:12rem">
-    <div class="dgm text-xs" style="color:#00000066">Domain</div>
-    <div class="text-sm mt-2 font-semibold">Listing, Claim, Org</div>
-    <div class="text-xs mt-1" style="color:#00000099">Invariant: at most one active claim per listing.</div>
-  </div>
-  <div style="color:#1f6b45">&rarr;</div>
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:12rem">
-    <div class="dgm text-xs" style="color:#1f6b45">Design</div>
-    <div class="text-sm mt-2 font-semibold">Modules &amp; tables</div>
-    <div class="text-xs mt-1" style="color:#00000099">Guarded transaction + unique index enforce the invariant.</div>
-  </div>
-</div>
-
-<div class="mt-10 grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Security, designed in</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="text-sm">JWT auth guard on every protected route</div>
-  <div class="text-sm">Org-membership guard &mdash; you act only for your org</div>
-  <div class="text-sm">Admin claim gates the admin API</div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Quality attributes</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="text-sm">Maintainability &mdash; one module per capability</div>
-  <div class="text-sm">Extensibility &mdash; repositories hide the schema</div>
-  <div class="text-sm">Robustness &mdash; invariants in the database, not just code</div>
-</div>
-</div>
-</div>
-
-</div>
-
-<!--
-ANALYSIS TO DESIGN
-
-This is the transition DMSS cares about most - how a user story becomes a
-design. Take the claim story on the left. In analysis it's one sentence.
-We turn it into a domain model - Listing, Claim, Org - and the moment we
-write that model we surface the invariant that defines the whole system:
-at most one active claim per listing. Design is then the answer to "how do
-we guarantee that invariant even under retries and races" - a guarded
-transaction plus a unique index. Section 4 is that answer in full.
-
-Security was designed in, not bolted on. Every protected route runs behind
-a JWT auth guard; an org-membership guard ensures you can only act for your
-own organisation; and the admin API is gated by an admin claim. On the
-right, the quality attributes made concrete: a module per capability for
-maintainability, repositories hiding the schema for extensibility, and -
-the one I'd underline - invariants enforced in the database, not only in
-application code. Code can have bugs; a unique index cannot be talked out
-of its job.
--->
-
----
 layout: section
 class: flex flex-col justify-center text-center
 ---
@@ -652,7 +584,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-Design <span class="accent">patterns</span>
+Design <span class="accent">Patterns</span>
 </div>
 
 <!--
