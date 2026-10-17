@@ -11,6 +11,7 @@ import {
   type Me,
   type NewOrganisation,
   type Org,
+  type OrgStatus,
   type User,
 } from "@rescufood/profile-sdk";
 
@@ -21,7 +22,7 @@ function client(idToken?: string) {
 }
 
 export { ApiError as ProfileApiError };
-export type { Me, NewOrganisation, Org, User };
+export type { Me, NewOrganisation, Org, OrgStatus, User };
 
 export function getMe(idToken: string): Promise<Me> {
   return client(idToken).getMe();
@@ -77,4 +78,11 @@ export function resetEligibility(identifier: string): Promise<boolean> {
     .resetEligibility(identifier)
     .then((r) => r.eligible)
     .catch(() => true);
+}
+
+export function listOrgs(
+  idToken: string,
+  status: OrgStatus | "all" = "approved",
+): Promise<Org[]> {
+  return client(idToken).listOrgs(status);
 }

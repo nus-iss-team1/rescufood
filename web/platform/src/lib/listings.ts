@@ -3,9 +3,12 @@ import "server-only";
 import {
   ApiError,
   createListingsClient,
+  type DecidedRequest,
   type ListingsApi,
   type OrgSummary,
+  type RelistBlockedReason,
   type RescuedMetrics,
+  type StatsFilters,
   type UnitQuantity,
   type Listing,
   type ListingQuery,
@@ -42,6 +45,7 @@ function client(idToken: string) {
 
 export { ApiError as ListingsApiError };
 export type {
+  DecidedRequest,
   Listing,
   ListingQuery,
   ListingRequest,
@@ -49,7 +53,9 @@ export type {
   NewListing,
   NewRequest,
   OrgSummary,
+  RelistBlockedReason,
   RescuedMetrics,
+  StatsFilters,
   UnitQuantity,
   Paginated,
   PickupCode,
@@ -116,7 +122,7 @@ export function decideRequest(
   idToken: string,
   id: string,
   decision: RequestDecisionInput,
-): Promise<ListingRequest> {
+): Promise<DecidedRequest> {
   return client(idToken).decideRequest(id, decision);
 }
 
@@ -143,10 +149,16 @@ export function verifyPickupCode(
   return client(idToken).verifyPickupCode(id, verify);
 }
 
-export function getOrgSummary(idToken: string): Promise<OrgSummary> {
-  return client(idToken).getOrgSummary();
+export function getOrgSummary(
+  idToken: string,
+  filters?: StatsFilters,
+): Promise<OrgSummary> {
+  return client(idToken).getOrgSummary(filters);
 }
 
-export function getRescuedMetrics(idToken: string): Promise<RescuedMetrics> {
-  return client(idToken).getRescuedMetrics();
+export function getRescuedMetrics(
+  idToken: string,
+  filters?: StatsFilters,
+): Promise<RescuedMetrics> {
+  return client(idToken).getRescuedMetrics(filters);
 }

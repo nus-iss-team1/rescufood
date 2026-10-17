@@ -32,9 +32,10 @@ export class LoginPage {
       requireEnv('TEST_DONOR_PASSWORD'),
     );
     // The dashboard's primary action is role-specific, so it proves which
-    // workspace opened, not merely that one did.
+    // workspace opened, not merely that one did. Scoped to main: the
+    // sidebar carries a link of the same name.
     await expect(
-      this.page.getByRole('link', { name: 'New listing' }),
+      this.page.getByRole('main').getByRole('link', { name: 'New listing' }),
     ).toBeVisible();
   }
 
@@ -45,7 +46,9 @@ export class LoginPage {
       requireEnv('TEST_RESCUE_PARTNER_PASSWORD'),
     );
     await expect(
-      this.page.getByRole('link', { name: 'Find surplus food' }),
+      this.page
+        .getByRole('main')
+        .getByRole('link', { name: 'Find surplus food' }),
     ).toBeVisible();
   }
 

@@ -82,7 +82,9 @@ describe("createListingAction", () => {
     ["a non-numeric quantity", { quantity: "lots" }, "Quantity must be a number greater than zero."],
     ["no allergens", { allergens: " , " }, /enter "none"/],
     ["no use-by date", { useBy: "" }, "Please give a use-by date and time."],
+    ["a zoneless use-by time", { useBy: "2025-06-18T00:00:00" }, "Please give a use-by date and time."],
     ["an incomplete pickup window", { pickupWindowEnd: "" }, "Please give both ends of the pickup window."],
+    ["a zoneless pickup window", { pickupWindowStart: "2025-06-16T10:00:00" }, "Please give both ends of the pickup window."],
     [
       "a window that ends before it starts",
       { pickupWindowEnd: "2025-06-16T09:00:00.000Z" },
@@ -130,6 +132,39 @@ describe("createListingAction", () => {
       status: "available",
     });
     expect(revalidatePathMock).toHaveBeenCalledWith("/listings");
+  });
+
+  it("keeps times as the same instant, normalised to UTC", async () => {
+    await createListingAction(
+      {},
+      form({
+        ...publishable,
+        pickupWindowStart: "2025-06-16T18:00:00+08:00",
+        pickupWindowEnd: "2025-06-16T20:00:00+08:00",
+        useBy: "2025-06-18T08:00:00+08:00",
+      }),
+    );
+
+    expect(listings.createListing.mock.calls[0][1]).toMatchObject({
+      pickupWindowStart: "2025-06-16T10:00:00.000Z",
+      pickupWindowEnd: "2025-06-16T12:00:00.000Z",
+      useBy: "2025-06-18T00:00:00.000Z",
+    });
+  });
+
+  it("drops a zoneless time from a draft instead of guessing its zone", async () => {
+    await createListingAction(
+      {},
+      form({
+        intent: "draft",
+        description: "Bread, details TBC",
+        useBy: "2025-06-18T00:00:00",
+      }),
+    );
+
+    expect(listings.createListing.mock.calls[0][1]).toMatchObject({
+      useBy: undefined,
+    });
   });
 
   it("attaches an uploaded photo but ignores an empty file input", async () => {

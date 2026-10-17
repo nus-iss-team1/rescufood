@@ -51,4 +51,11 @@ describe('relistBlockedReason', () => {
       ),
     ).toBe('past_cutoff');
   });
+
+  it('allows relisting multi-day windows where subsequent days remain for pickup', () => {
+    // Window starts in 1 hour (inside cutoff), but ends in 7 days
+    expect(relistBlockedReason(window(1, 24 * 7), NOW, policy)).toBeNull();
+    // Window already opened 2 hours ago, but ends in 7 days
+    expect(relistBlockedReason(window(-2, 24 * 7), NOW, policy)).toBeNull();
+  });
 });

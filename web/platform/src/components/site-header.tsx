@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 
 import { SignOutButton } from "@/components/auth/sign-out-dialog";
+import { Logo } from "@/components/logo";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,9 @@ export function SiteHeader({
           {withSidebarTrigger && <SidebarTrigger />}
           <Link
             href={session?.user ? "/dashboard" : "/"}
-            className="text-base font-bold tracking-tight text-foreground"
+            className="text-foreground"
           >
-            RescuFood
+            <Logo />
           </Link>
         </div>
 

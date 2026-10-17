@@ -23,7 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@rescufood/ui/components/card";
-import { listingStatusVariant } from "@/lib/listing-labels";
+import { listingStatusVariant, shortDate } from "@/lib/listing-labels";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -178,11 +178,18 @@ export default async function ListingDetailPage({
 
         <Card data-animate="field">
           <CardHeader>
-            <CardTitle>Listing details</CardTitle>
-            <CardDescription>
-              View and update details, pickup window, or photos for this surplus
-              food lot.
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div>
+                <CardTitle>Listing details</CardTitle>
+                <CardDescription>
+                  View and update details, pickup window, or photos for this surplus
+                  food lot.
+                </CardDescription>
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                Last modified: {shortDate(listing.updatedAt)} (SGT)
+              </span>
+            </div>
           </CardHeader>
           <CardContent>
             <EditListingForm listing={listing} />
