@@ -18,22 +18,18 @@ transition: fade
 mdc: true
 ---
 
-<div class="text-8xl font-extrabold leading-none">
-Rescu<span class="accent">Food</span>
+<div class="text-8xl font-bold leading-none" style="letter-spacing:-0.04em">
+<span class="relative inline-block" style="padding-right:0.78em">
+Rescu<span class="accent">Food</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="accent" style="position:absolute;top:-0.22em;right:0;width:0.78em;height:0.78em;transform:rotate(18deg)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+</span>
 </div>
-
-<div class="rule-green mt-10" style="margin-left:auto;margin-right:auto"></div>
 
 <div class="text-base mt-10" style="color:#00000099">
 Discover, claim and hand over surplus food before it is thrown away.
 </div>
 
-<div class="text-sm mt-12 dgm-wide" style="color:#00000066">
-SWE5006 &middot; Designing Modern Software Systems &middot; NUS-ISS Team 1
-</div>
-
-<div class="text-xs mt-4 font-mono" style="color:#00000066">
-github.com/nus-iss-team1/rescufood
+<div class="text-sm mt-16 dgm-wide" style="color:#00000066">
+SWE5006 &middot; NUS-ISS Team 1
 </div>
 
 <!--
@@ -49,15 +45,15 @@ inside each section.
 
 ---
 
-# What we'll cover
+# Contents
 
 <div class="mt-10 mx-auto" style="max-width:40rem">
 
-<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Overview &mdash; the problem and our scope</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Project conduct &amp; agile practices</span></div>
+<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Overview</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Project conduct</span></div>
 <div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Analysis &amp; design</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Design patterns &mdash; the hard problems</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">DevSecOps engineering &amp; automation</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Design patterns</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">DevSecOps</span></div>
 <div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">06</span><span class="text-lg">Demo</span></div>
 
 </div>
@@ -78,7 +74,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 01</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-The <span class="accent">problem</span>
+<span class="accent">Overview</span>
 </div>
 
 <!--
@@ -108,7 +104,7 @@ Say the title and move on. Marker, not a slide to talk over.
 <div class="mt-4 flex flex-col" style="gap:0.75rem">
   <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Donors post a listing the moment food is free</div>
   <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it &mdash; first come, first served</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP / QR, tracked to handover</div>
+  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP, tracked to handover</div>
 </div>
 <div class="mt-4 text-sm" style="color:#1f6b45">One claim per listing. One source of truth.</div>
 </div>
@@ -150,7 +146,7 @@ truth. Hold that phrase - the whole design defends it.
   <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
     <div class="dgm text-xs" style="color:#1f6b45">Pickup &amp; notify</div>
     <div class="text-sm mt-2 font-semibold">Verify, hand over, notify</div>
-    <div class="text-xs mt-1" style="color:#00000099">OTP / QR-verified handover; email + in-app notifications.</div>
+    <div class="text-xs mt-1" style="color:#00000099">OTP-verified handover; email + in-app notifications.</div>
   </div>
 </div>
 
@@ -175,7 +171,7 @@ an admin approves organisations before they can transact - that approval
 gate matters because a claim reserves real food. Listings and claims are
 the core loop and the source of our most interesting design work, so I'll
 defer the detail to section 4. Pickup and notify closes the loop: an
-OTP/QR-verified handover, plus email and in-app notifications.
+OTP-verified handover, plus email and in-app notifications.
 
 Design goals, bottom left, are the DMSS quality attributes - robustness,
 maintainability, extensibility, security by default. Bottom right, the
@@ -192,7 +188,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 02</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-How we <span class="accent">ran</span> it
+Project <span class="accent">conduct</span>
 </div>
 
 <!--
@@ -450,6 +446,137 @@ If the SVG isn't in place yet: export infra-plan.drawio to slides/infra.svg
 -->
 
 ---
+class: flex flex-col
+---
+
+# Physical architecture
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="aws-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="aws-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <text x="50" y="32" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#111111">Users</text>
+  <line x1="78" y1="28" x2="146" y2="28" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+  <text x="113" y="18" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">HTTPS</text>
+  <rect x="150" y="8" width="140" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="220" y="25" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
+  <text x="220" y="40" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">public HTTP API &middot; TLS</text>
+  <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+
+  <rect x="20" y="65" width="345" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
+  <text x="35" y="85" style="font-size:10px;font-weight:700" fill="#3a3a3a">AWS managed services</text>
+
+  <rect x="35" y="95" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="116" style="font-size:11px;font-weight:600" fill="#111111">CloudFront + S3 (private)</text>
+  <text x="50" y="133" style="font-size:9px" fill="#5a5a5a" class="font-mono">listing images &middot; OAC &middot; SSE</text>
+
+  <rect x="35" y="163" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="184" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
+  <text x="50" y="201" style="font-size:9px" fill="#5a5a5a" class="font-mono">OIDC &middot; donor, rescue partner, admin</text>
+
+  <rect x="35" y="231" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="252" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
+  <text x="50" y="269" style="font-size:9px" fill="#5a5a5a" class="font-mono">notification events &middot; SSE</text>
+
+  <rect x="35" y="299" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="320" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
+  <text x="50" y="337" style="font-size:9px" fill="#5a5a5a" class="font-mono">app, DB and registry secrets</text>
+
+  <rect x="35" y="367" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="388" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
+  <text x="50" y="405" style="font-size:9px" fill="#5a5a5a" class="font-mono">container logs &middot; 30-day retention</text>
+
+  <rect x="35" y="435" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="50" y="456" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
+  <text x="50" y="473" style="font-size:9px" fill="#5a5a5a" class="font-mono">container images, pulled via NAT</text>
+
+  <text x="35" y="508" style="font-size:9px" fill="#5a5a5a" class="font-mono">Gmail SMTP :587 &middot; outbound email (external)</text>
+
+  <path d="M 345 121 L 358 121 L 358 320 L 410 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 345 189 L 368 189 L 368 335 L 410 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 345 257 L 378 257 L 378 350 L 410 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+
+  <rect x="390" y="65" width="795" height="455" rx="8" stroke="#00000033"/>
+  <text x="405" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
+
+  <rect x="727" y="75" width="120" height="32" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="787" y="95" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">VPC Link</text>
+
+  <rect x="405" y="122" width="765" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="417" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
+  <text x="1158" y="138" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
+  <rect x="430" y="146" width="140" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="500" y="173" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internet Gateway</text>
+  <rect x="950" y="146" width="170" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="1035" y="164" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
+  <text x="1035" y="180" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">single &middot; AZ A &middot; egress</text>
+
+  <rect x="405" y="208" width="765" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="417" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
+  <text x="1158" y="224" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
+
+  <path d="M 787 107 L 787 228" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+  <rect x="687" y="230" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="787" y="246" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
+  <text x="787" y="261" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">path routing</text>
+
+  <rect x="412" y="282" width="750" height="108" rx="6" fill="rgba(31,107,69,0.05)" stroke="rgba(31,107,69,0.3)"/>
+  <text x="422" y="384" style="font-size:9px" fill="#5a5a5a" class="font-mono">ECS cluster &middot; Fargate</text>
+
+  <path d="M 787 270 L 787 276 L 505 276 L 505 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 693 276 L 693 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 881 276 L 881 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 1069 276 L 1069 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+
+  <rect x="420" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="505" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">web-platform</text>
+  <text x="505" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/</text>
+
+  <rect x="608" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="693" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">profile</text>
+  <text x="693" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/profile</text>
+
+  <rect x="796" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="881" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">listings</text>
+  <text x="881" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/listings &middot; /api/requests</text>
+
+  <rect x="984" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <text x="1069" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">notification</text>
+  <text x="1069" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/notifications</text>
+
+  <rect x="405" y="412" width="765" height="100" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="417" y="428" style="font-size:10px;font-weight:600" fill="#3a3a3a">Data subnets</text>
+  <text x="1158" y="428" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B &middot; isolated, no internet route</text>
+
+  <path d="M 693 368 L 693 401 L 1069 401 L 1069 368" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 881 368 L 881 401" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 787 401 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
+
+  <rect x="700" y="438" width="174" height="60" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="787" y="463" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
+  <text x="787" y="481" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Multi-AZ &middot; encrypted</text>
+</svg>
+</div>
+
+<!--
+PHYSICAL ARCHITECTURE (NATIVE)
+
+Same deployment view as the previous slide, redrawn in the deck's own
+style so it stays crisp at any zoom. Walk the green path left to right:
+users hit API Gateway over TLS, a VPC Link crosses into the VPC, the
+internal ALB path-routes to the four Fargate services, and the backend
+services talk to RDS on 5432 in the isolated data subnets.
+
+The left column is everything managed: CloudFront fronting the private
+images bucket, Cognito for identity, SQS with a DLQ for notifications,
+Secrets Manager, CloudWatch and GHCR. The single NAT gateway in AZ A is
+the honest cost trade-off to call out.
+-->
+
+---
 
 # From analysis to design
 
@@ -525,7 +652,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-The hard problem: <span class="accent">claiming</span>
+Design <span class="accent">patterns</span>
 </div>
 
 <!--
@@ -684,7 +811,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-DevSecOps &amp; <span class="accent">automation</span>
+<span class="accent">DevSecOps</span>
 </div>
 
 <!--
@@ -692,298 +819,207 @@ SECTION MARKER
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 1
+class: flex flex-col
 ---
 
-<div class="text-5xl font-extrabold leading-tight px-16 text-center">
-One branch per <span class="accent">environment</span>.
+# Branching strategy
+
+<div class="text-base mt-2" style="color:#00000099">Environment branching (GitLab Flow), with Git Flow-style hotfixes</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center">
+
+<div class="flex justify-center">
+<svg viewBox="0 0 880 258" style="width:100%;max-width:52rem" fill="none">
+  <g>
+    <text x="115" y="44" text-anchor="end" style="font-size:14px;font-weight:700" fill="#1f6b45">main</text>
+    <path d="M 660 105 C 676 105 692 40 710 40" stroke="#1f6b45" stroke-width="2"/>
+    <line x1="710" y1="40" x2="845" y2="40" stroke="#1f6b45" stroke-width="3"/>
+    <circle cx="710" cy="40" r="5.5" fill="#1f6b45"/>
+    <rect x="682" y="4" width="56" height="20" rx="10" fill="rgba(31,107,69,0.08)" stroke="#1f6b45"/>
+    <text x="710" y="18" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#1f6b45" class="font-mono">v1.4.2</text>
+    <text x="845" y="26" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">rescufood.com</text>
+  </g>
+  <g>
+    <text x="115" y="109" text-anchor="end" style="font-size:14px;font-weight:600" fill="#1f6b45">qa</text>
+    <path d="M 520 170 C 538 170 542 105 560 105" stroke="#1f6b45" stroke-width="2"/>
+    <path d="M 620 170 C 638 170 642 105 660 105" stroke="#1f6b45" stroke-width="2"/>
+    <line x1="560" y1="105" x2="845" y2="105" stroke="#1f6b45" stroke-width="2"/>
+    <circle cx="560" cy="105" r="5" fill="#ffffff" stroke="#1f6b45" stroke-width="2"/>
+    <circle cx="660" cy="105" r="5" fill="#ffffff" stroke="#1f6b45" stroke-width="2"/>
+    <text x="845" y="91" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">qa.rescufood.com</text>
+  </g>
+  <g>
+    <text x="115" y="174" text-anchor="end" style="font-size:14px;font-weight:600" fill="#111111">develop</text>
+    <line x1="125" y1="170" x2="845" y2="170" stroke="#111111" stroke-width="2"/>
+    <circle cx="150" cy="170" r="5" fill="#111111"/>
+    <circle cx="270" cy="170" r="5" fill="#111111"/>
+    <circle cx="330" cy="170" r="5" fill="#111111"/>
+    <circle cx="450" cy="170" r="5" fill="#111111"/>
+    <circle cx="520" cy="170" r="5" fill="#111111"/>
+    <circle cx="620" cy="170" r="5" fill="#111111"/>
+    <text x="845" y="156" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">dev.rescufood.com</text>
+  </g>
+  <g>
+    <path d="M 150 170 C 162 170 162 225 178 225 L 245 225 C 258 225 258 170 270 170" stroke="#8a8a8a" stroke-width="1.5"/>
+    <circle cx="200" cy="225" r="4" fill="#8a8a8a"/>
+    <circle cx="232" cy="225" r="4" fill="#8a8a8a"/>
+    <text x="210" y="248" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/*</text>
+    <path d="M 330 170 C 342 170 342 225 358 225 L 425 225 C 438 225 438 170 450 170" stroke="#8a8a8a" stroke-width="1.5"/>
+    <circle cx="380" cy="225" r="4" fill="#8a8a8a"/>
+    <circle cx="412" cy="225" r="4" fill="#8a8a8a"/>
+    <text x="392" y="248" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">fix/*</text>
+  </g>
+</svg>
 </div>
 
-<div class="rule-green mt-8" style="margin-left:auto;margin-right:auto"></div>
-
-<div class="text-xl mt-8 text-center transition-all duration-700" style="color:#00000099" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">
-The branch you are on is the environment you are changing.
 </div>
 
 <!--
-THE RULE
+We are adopting Gitflow with Environment branching as our branching strategy. Basically, each environment corresponds to a specific deployment stage (develop for dev, qa for testing, and main for production), where every merge or promotion moves features upward through pull requests, and releases are tagged automatically for easy rollbacks."
 
-Our whole delivery model follows from one sentence. We keep three
-long-lived branches, and each owns exactly one deployed environment.
-
-Click. That's the mental model. If you know which branch you're on, you
-know what you're about to affect. There is no separate deploy procedure to
-remember, because there isn't one.
+Additionally, we adhere to strict semantic versioning across all components to ensure seamless dependency management and predictable upgrades.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 5
+class: flex flex-col
 ---
 
-# dev &rarr; qa &rarr; prod
+# Handling Production Hotfixes
 
-<div class="mt-10">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center">
 
-<div class="flex items-center justify-center" style="gap:0.75rem">
-  <div class="rounded-lg border text-sm py-2 px-4 font-medium text-center" style="border-color:#0000001a;background:#f2f0ed;color:#00000099">feat/* &nbsp;fix/*</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center" style="width:8.5rem;border-color:#0000001a;background:#ffffff;color:#000000">develop</div>
-  <div class="transition-all duration-700" style="color:#00000066" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center transition-all duration-700" style="width:8.5rem" :style="$clicks >= 1 ? 'border-color:#0000001a;background:#ffffff;color:#000000' : 'border-color:#0000001a;background:#f2f0ed;color:#00000044'">qa</div>
-  <div class="transition-all duration-700" style="color:#00000066" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center transition-all duration-700" style="width:8.5rem" :style="$clicks >= 2 ? 'border-color:#1f6b45;background:#1f6b45;color:#ffffff' : 'border-color:#0000001a;background:#f2f0ed;color:#00000044'">main</div>
-</div>
-
-<div class="flex items-center justify-center mt-2" style="gap:0.75rem">
-  <div class="text-sm py-2 px-4" style="width:8rem"></div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono" style="width:8.5rem;color:#00000066">dev.rescufood.com</div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono transition-all duration-700" style="width:8.5rem;color:#00000066" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">qa.rescufood.com</div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono transition-all duration-700" style="width:8.5rem;color:#00000066" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">rescufood.com</div>
-</div>
-
-<div class="mt-10 mx-auto" style="max-width:36rem">
-  <div class="flex items-baseline transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base">Every arrow is a <span class="accent font-semibold">pull request</span> with approval</span>
-  </div>
-  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 4 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base">A promotion carries <span class="font-semibold">everything</span> since the last one</span>
-  </div>
-  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 5 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base font-mono text-sm">git diff qa..develop</span><span class="text-base">&nbsp;is the release note</span>
-  </div>
+<div class="flex justify-center">
+<svg viewBox="0 0 880 235" style="width:100%;max-width:52rem" fill="none">
+  <g>
+    <text x="115" y="44" text-anchor="end" style="font-size:14px;font-weight:700" fill="#1f6b45">main</text>
+    <line x1="125" y1="40" x2="845" y2="40" stroke="#1f6b45" stroke-width="3"/>
+    <circle cx="210" cy="40" r="5.5" fill="#1f6b45"/>
+    <rect x="182" y="4" width="56" height="20" rx="10" fill="rgba(31,107,69,0.08)" stroke="#1f6b45"/>
+    <text x="210" y="18" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#1f6b45" class="font-mono">v1.4.2</text>
+    <text x="125" y="72" text-anchor="start" style="font-size:11px" fill="#5a5a5a">bug reported on prod</text>
+    <text x="115" y="154" text-anchor="end" style="font-size:14px;font-weight:600" fill="#1f6b45">qa</text>
+    <line x1="125" y1="150" x2="845" y2="150" stroke="#1f6b45" stroke-width="2"/>
+    <text x="115" y="209" text-anchor="end" style="font-size:14px;font-weight:600" fill="#111111">develop</text>
+    <line x1="125" y1="205" x2="845" y2="205" stroke="#111111" stroke-width="2"/>
+  </g>
+  <g>
+    <path d="M 210 40 C 222 40 222 95 238 95 L 310 95 C 323 95 323 40 335 40" stroke="#1f6b45" stroke-width="2.5"/>
+    <circle cx="262" cy="95" r="5.5" fill="#1f6b45"/>
+    <circle cx="292" cy="95" r="5.5" fill="#1f6b45"/>
+    <text x="277" y="124" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#1f6b45" class="font-mono">hotfix/*</text>
+    <circle cx="335" cy="40" r="6.5" fill="#1f6b45"/>
+    <rect x="305" y="2" width="60" height="22" rx="11" fill="#1f6b45"/>
+    <text x="335" y="17" text-anchor="middle" style="font-size:11px;font-weight:700" fill="#ffffff" class="font-mono">v1.4.3</text>
+  </g>
+  <g>
+    <path d="M 335 40 C 420 40 440 205 525 205" stroke="#1f6b45" stroke-width="2" stroke-dasharray="6 4"/>
+    <circle cx="525" cy="205" r="5.5" fill="#1f6b45"/>
+    <text x="545" y="178" text-anchor="start" style="font-size:12px;font-weight:600" fill="#1f6b45">rebased into develop</text>
+  </g>
+</svg>
 </div>
 
 </div>
 
 <!--
-THE PIPELINE
-
-This is the branching strategy the brief asked us to make explicit. Work
-starts on a feature or fix branch and merges into develop - the one place
-day-to-day work lands. develop deploys to dev.rescufood.com.
-
-Click. Promoting to qa is a merge from develop; it deploys qa.rescufood.com.
-Nothing is rebuilt by hand, nothing cherry-picked.
-
-Click. Promoting to prod is a merge from qa into main - same shape - and
-main deploys rescufood.com. Three branches, three environments, one route
-into each.
-
-Click. Every arrow is a pull request that requires approval, so every
-promotion between environments is reviewed.
-
-Click. A promotion carries whatever accumulated since the last one - no
-release branch assembled under pressure.
-
-Click. Which makes that git diff the entire release note. If you want to
-know what's about to ship to qa, you read that diff. Nothing else is
-authoritative.
+Production bugs are handled by cutting a hotfix branch directly from main and merging back via PR. To prevent drift between environments, we immediately backport the fix by rebasing develop onto main once resolved. This ensure that developers dont encounter merge conflicts when merging develop back to main in future.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 3
+class: flex flex-col
 ---
 
-# Semantic versioning on prod
+# CI/CD pipeline
 
-<div class="mt-10 px-8">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 500" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <g id="wf-check">
+      <circle r="10" fill="#1f6b45"/>
+      <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <marker id="wf-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
 
-<div class="flex items-center justify-center" style="gap:1rem">
-  <div class="rounded-lg border px-6 py-4 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="font-mono text-2xl font-bold" style="color:#1f6b45">v<span>1</span>.<span>4</span>.<span>2</span></div>
-  </div>
-  <div class="flex flex-col text-sm" style="gap:0.5rem">
-    <div class="transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">MAJOR</span> &mdash; a breaking API change</div>
-    <div class="transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">MINOR</span> &mdash; a backward-compatible feature</div>
-    <div class="transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">PATCH</span> &mdash; a fix, no contract change</div>
-  </div>
-</div>
+  <rect x="30" y="40" width="360" height="440" rx="10" fill="#00000005" stroke="#0000001a"/>
+  <text x="48" y="70" style="font-size:11px;font-weight:700" fill="#3a3a3a">on: pull request</text>
 
-<div class="mt-10 mx-auto text-center text-sm" style="max-width:34rem;color:#00000099">
-Each merge to <span class="font-mono">main</span> is tagged <span class="font-mono">vMAJOR.MINOR.PATCH</span>. The tag names the release, the image, and what to roll back to.
-</div>
+  <rect x="50" y="100" width="320" height="118" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="86" y="142"/>
+  <text x="108" y="147" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <use href="#wf-check" x="86" y="187"/>
+  <text x="108" y="192" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
 
+  <rect x="50" y="250" width="320" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="86" y="290"/>
+  <text x="108" y="295" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <use href="#wf-check" x="86" y="340"/>
+  <text x="108" y="345" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <use href="#wf-check" x="86" y="390"/>
+  <text x="108" y="395" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+
+  <rect x="430" y="40" width="750" height="440" rx="10" fill="#00000005" stroke="#0000001a"/>
+  <text x="448" y="70" style="font-size:11px;font-weight:700" fill="#3a3a3a">on: push &middot; develop, qa or main</text>
+
+  <circle cx="374" cy="159" r="4.5" fill="#8a8a8a"/>
+  <circle cx="374" cy="334" r="4.5" fill="#8a8a8a"/>
+  <path d="M 378 159 C 400 159 400 256 410 256" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 378 334 C 400 334 400 256 410 256" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="414" cy="256" r="4.5" fill="#8a8a8a"/>
+  <line x1="418" y1="256" x2="438" y2="256" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#wf-arr)"/>
+  <text x="394" y="240" style="font-size:10px" fill="#5a5a5a" class="font-mono">merge</text>
+
+  <rect x="450" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="478" y="256"/>
+  <text x="498" y="261" style="font-size:13px;font-weight:600" fill="#111111">SAST</text>
+  <text x="596" y="261" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 jobs</text>
+
+  <circle cx="616" cy="256" r="4.5" fill="#8a8a8a"/>
+  <circle cx="631" cy="256" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="637" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="665" y="256"/>
+  <text x="685" y="261" style="font-size:13px;font-weight:600" fill="#111111">build-and-push</text>
+
+  <circle cx="803" cy="256" r="4.5" fill="#8a8a8a"/>
+  <circle cx="818" cy="256" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="824" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="852" y="256"/>
+  <text x="872" y="261" style="font-size:13px;font-weight:600" fill="#111111">Deploy to ECS</text>
+
+  <circle cx="990" cy="256" r="4.5" fill="#8a8a8a"/>
+  <circle cx="1005" cy="256" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="1011" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#wf-check" x="1039" y="256"/>
+  <text x="1059" y="261" style="font-size:13px;font-weight:600" fill="#111111">DAST / ZAP</text>
+
+  <path d="M 904 294 L 904 372" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="904" cy="376" r="4.5" fill="#8a8a8a"/>
+  <rect x="824" y="380" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="844" y="423" style="font-size:13px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+</svg>
 </div>
 
 <!--
-SEMANTIC VERSIONING
+Our CI/CD starts with the following,
 
-Promotion tells you where code is; the version tells you what it is. Every
-merge to main is tagged with a semantic version.
+On every pull request we lint, type-check and unit test, then run three
+SAST scanners, each covering a different class of problem:
 
-Click. MAJOR goes up on a breaking API change - anything that would force a
-client to change.
+- CodeQL: Checks code semantics
+- Semgrep: fast pattern matching against the default and secrets
+  rulesets plus stack-specific ones. It catches insecure coding idioms
+  and hardcoded credentials or API keys.
+- Trivy: Scans for known CVEs in
+  dependencies, leaked secrets in files, and misconfigurations in
+  Dockerfiles and infrastructure code.
 
-Click. MINOR for a backward-compatible feature.
-
-Click. PATCH for a fix that changes no contract.
-
-The tag is the anchor for the release, the built image, and the rollback
-target. If prod misbehaves, "roll back to v1.4.1" is unambiguous - no
-guessing which commit was live. Versioning and the branch model answer two
-different questions: which environment, and which release.
--->
-
----
-class: flex flex-col justify-center
-clicks: 3
----
-
-# What a push does
-
-<div class="mt-10 px-8">
-
-<div class="flex items-start" style="gap:2rem">
-  <div class="rounded-lg border px-5 py-3 font-mono text-sm" style="border-color:#0000001a;background:#ffffff;color:#000000;white-space:nowrap">git push origin qa</div>
-  <div class="flex-1">
-    <div class="transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Builds only what changed</div>
-      <div class="text-sm mt-1" style="color:#00000099">Path filters per service. Touch <span class="font-mono">service/listings</span>, only listings rebuilds.</div>
-    </div>
-    <div class="mt-5 transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Tags the image for the environment</div>
-      <div class="text-sm mt-1" style="color:#00000099"><span class="font-mono">:qa</span>, not <span class="font-mono">:main</span>. Parameter files name environments, never branches.</div>
-    </div>
-    <div class="mt-5 transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Rolls that environment only</div>
-      <div class="text-sm mt-1" style="color:#00000099">The cluster is resolved from the branch. <span class="font-mono">qa</span> can never reach <span class="font-mono">rescufood-prod</span>.</div>
-    </div>
-  </div>
-</div>
-
-</div>
-
-<!--
-WHAT A PUSH DOES
-
-One push, three automatic consequences.
-
-Click. Each service has a path filter, so a change under service/listings
-rebuilds listings and nothing else - a one-line fix doesn't redeploy the
-whole platform.
-
-Click. The image is tagged for the environment, not the branch. Pushing to
-main produces a prod tag, because the CloudFormation parameter files read
-environment names - nobody has to remember that main means prod.
-
-Click. The target cluster is derived from the branch inside the workflow.
-There's no input to get wrong and no way for a qa push to touch prod; the
-GitHub Environment resolves the same way, so credentials follow too.
--->
-
----
-class: flex flex-col justify-center
-clicks: 3
----
-
-# Security runs on every change
-
-<div class="mt-10 px-10">
-
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Lint</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Unit test</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Build</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Integration<br/><span class="text-xs font-normal" style="color:#00000099">testcontainers</span></div>
-</div>
-
-<div class="mt-8 transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-20'">
-<div class="dgm text-xs" style="color:#1f6b45">Static analysis, in parallel</div>
-<div class="flex items-center mt-3" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">CodeQL</span> &middot; security-extended</div>
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">Semgrep</span> &middot; default, secrets, node</div>
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">Trivy</span> &middot; deps, secrets, IaC</div>
-</div>
-</div>
-
-<div class="mt-6 text-sm transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'" style="color:#00000099">
-Findings upload to GitHub code scanning as SARIF &mdash; visible on the PR.
-</div>
-<div class="mt-2 text-sm transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'" style="color:#00000099">
-qa promotions also run the <span class="accent font-semibold">Playwright</span> suite against the deployed site.
-</div>
-
-</div>
-
-<!--
-SECURITY IN THE PIPELINE
-
-This is the "Sec" in DevSecOps, and it's real, not a slide. Every PR runs
-lint, unit tests, a build, and an integration suite - that last one spins
-up a real Postgres with testcontainers, so we test against the actual
-database, not a mock.
-
-Click. In parallel, three static-analysis tools. CodeQL on the
-security-extended query set. Semgrep with the default, secrets and Node
-rule sets. Trivy scanning dependencies, secrets and infrastructure-as-code
-misconfiguration. Three tools because they catch different things.
-
-Click. Every finding uploads to GitHub code scanning as SARIF, so it shows
-up right on the pull request - the reviewer sees security findings next to
-the diff. We run report-only for now and will gate once the backlog is
-triaged; that's a deliberate call, not an oversight.
-
-Click. And promoting to qa additionally runs the Playwright end-to-end
-suite against the deployed environment - a green qa is evidence the real
-site works, not just that a local build passed.
--->
-
----
-class: flex flex-col justify-center
-clicks: 2
----
-
-# The gates get stricter
-
-<div class="mt-12 px-12">
-
-<div class="flex flex-col" style="gap:0.75rem">
-  <div class="flex items-center rounded-lg border px-6 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="font-mono text-base font-semibold" style="width:8rem">develop</div>
-    <div class="text-sm" style="color:#00000099">Pull request &middot; one approval &middot; team may bypass</div>
-  </div>
-  <div class="flex items-center rounded-lg border px-6 py-4 transition-all duration-700" style="border-color:#0000001a;background:#ffffff" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'">
-    <div class="font-mono text-base font-semibold" style="width:8rem">qa</div>
-    <div class="text-sm" style="color:#00000099">Same, plus the end-to-end suite runs against the deployed site</div>
-  </div>
-  <div class="flex items-center rounded-lg border px-6 py-4 transition-all duration-700" :style="$clicks >= 2 ? 'border-color:#1f6b45;background:rgba(31,107,69,0.06)' : 'border-color:#0000001a;background:#ffffff'" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'">
-    <div class="font-mono text-base font-semibold" style="width:8rem" :style="$clicks >= 2 ? 'color:#1f6b45' : ''">main</div>
-    <div class="text-sm" :style="$clicks >= 2 ? 'color:#1f6b45' : 'color:#00000099'">No force pushes &middot; no deletion &middot; approval required, no exceptions</div>
-  </div>
-</div>
-
-</div>
-
-<!--
-THE GATES
-
-Same rule set on all three branches, tightened as you move right. Deletion
-and force pushes are blocked everywhere.
-
-Click. qa adds the real signal - the Playwright suite runs against the
-deployed environment after every promotion, not against a local build. A
-green qa is evidence, not a hope.
-
-Click. main is the one branch with no bypass. Prod can't be force-pushed
-and can't be merged without a review, including of the author's own change.
-If that feels inconvenient, that's the point.
-
-Worth saying out loud: we learned this the hard way. A change that passed
-typecheck, lint and build still took dev down. The environment in front of
-prod is what caught the second attempt - which is exactly why the approval
-flow tightens as the blast radius grows.
+Nothing merges without review and green checks. On merge, the push
+workflow re-runs SAST, builds and pushes the image to GHCR, rolls the
+ECS service for that branch's environment, then ZAP scans the deployed
+site and the Playwright e2e suite smoke-tests dev and qa.
 -->
 
 ---
@@ -1006,19 +1042,73 @@ here, so there's no fumbling.
 -->
 
 ---
+class: flex flex-col
+---
 
 # What we'll show
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 320" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="demo-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="flex flex-col" style="gap:0.75rem">
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">1</span><span class="text-sm">Donor posts a listing &mdash; it appears in the browse feed in real time</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">2</span><span class="text-sm">Rescue partner claims it &mdash; and a second claim is refused</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">3</span><span class="text-sm">Pickup verified by OTP / QR &mdash; status tracked to handover</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">4</span><span class="text-sm">Notification arrives &mdash; email + in-app feed</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">5</span><span class="text-sm">The pipeline &mdash; a green PR, SARIF findings, a promotion</span></div>
-</div>
+  <text x="130" y="86" text-anchor="middle" style="font-size:11px;font-weight:600;letter-spacing:0.1em" fill="#1f6b45" class="font-mono">01</text>
+  <circle cx="130" cy="150" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(108.4,128.4) scale(1.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+  </g>
+  <text x="130" y="240" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Post a listing</text>
+  <text x="130" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">live in the browse feed</text>
 
+  <line x1="186" y1="150" x2="305" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#demo-arr)"/>
+
+  <text x="365" y="86" text-anchor="middle" style="font-size:11px;font-weight:600;letter-spacing:0.1em" fill="#1f6b45" class="font-mono">02</text>
+  <circle cx="365" cy="150" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(343.4,128.4) scale(1.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="m9 12 2 2 4-4"/>
+  </g>
+  <text x="365" y="240" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Claim it</text>
+  <text x="365" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">a second claim is refused</text>
+
+  <line x1="421" y1="150" x2="540" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#demo-arr)"/>
+
+  <text x="600" y="86" text-anchor="middle" style="font-size:11px;font-weight:600;letter-spacing:0.1em" fill="#1f6b45" class="font-mono">03</text>
+  <circle cx="600" cy="150" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(578.4,128.4) scale(1.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="6" width="20" height="12" rx="2"/>
+    <path d="M7 12h.01"/><path d="M12 12h.01"/><path d="M17 12h.01"/>
+  </g>
+  <text x="600" y="240" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Verify pickup</text>
+  <text x="600" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">OTP to handover</text>
+
+  <line x1="656" y1="150" x2="775" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#demo-arr)"/>
+
+  <text x="835" y="86" text-anchor="middle" style="font-size:11px;font-weight:600;letter-spacing:0.1em" fill="#1f6b45" class="font-mono">04</text>
+  <circle cx="835" cy="150" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(813.4,128.4) scale(1.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  </g>
+  <text x="835" y="240" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Get notified</text>
+  <text x="835" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">email + in-app feed</text>
+
+  <line x1="891" y1="150" x2="1010" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#demo-arr)"/>
+
+  <text x="1070" y="86" text-anchor="middle" style="font-size:11px;font-weight:600;letter-spacing:0.1em" fill="#1f6b45" class="font-mono">05</text>
+  <circle cx="1070" cy="150" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(1048.4,128.4) scale(1.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/>
+    <circle cx="6" cy="6" r="3"/>
+    <path d="M13 6h3a2 2 0 0 1 2 2v7"/>
+    <path d="M6 9v12"/>
+  </g>
+  <text x="1070" y="240" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">The pipeline</text>
+  <text x="1070" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">green PR &middot; SARIF &middot; promotion</text>
+</svg>
 </div>
 
 <!--
@@ -1030,7 +1120,7 @@ claims it - then try to claim from the second browser and show the refusal.
 That refusal is the idempotency and unique-index work from section 4 doing
 its job in front of them; call that back explicitly.
 
-Then verify pickup with the OTP or QR code and show the status advance, and
+Then verify pickup with the OTP and show the status advance, and
 show the notification landing both as email and in the in-app feed - that's
 the pub/sub path.
 
@@ -1045,13 +1135,8 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-4xl font-extrabold leading-tight px-16">
-Correct where it counts.<br/>
-<span class="accent">Automated</span> everywhere else.
-</div>
-
-<div class="text-base mt-10" style="color:#00000099">
-Thank you &mdash; questions welcome.
+<div class="text-6xl font-bold leading-none" style="letter-spacing:-0.04em">
+Thank <span class="accent">you</span>
 </div>
 
 <div class="text-sm mt-12 dgm-wide" style="color:#00000066">
@@ -1061,10 +1146,6 @@ RescuFood &middot; NUS-ISS Team 1
 <!--
 CLOSE
 
-Land the two ideas the deck was built around. Where correctness mattered -
-the claim - we pushed the invariant down into the database and designed the
-retry behaviour deliberately. Everywhere else, we automated: one route into
-each environment, security on every change, versioned releases. Then open
-the floor. If Q&A time was folded into sections, invite any remaining
-questions here.
+Thank the audience and open the floor. If Q&A time was folded into
+sections, invite any remaining questions here.
 -->
