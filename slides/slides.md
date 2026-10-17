@@ -760,7 +760,7 @@ class: flex flex-col
 
 # Repository
 
-<div class="text-base mt-2" style="color:#00000099">Every service reaches its data through one seam</div>
+<div class="text-base mt-2" style="color:#00000099">All database access goes through a repository class</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
@@ -784,7 +784,7 @@ class: flex flex-col
   <text x="835" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">PostgreSQL</text>
   <text x="835" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">schema per service</text>
 
-  <text x="500" y="290" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Swap the query, not the caller.</text>
+  <text x="500" y="290" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">We can change the SQL without touching the services.</text>
 
   <rect x="170" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <text x="270" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">listings &middot; 6 repositories</text>
@@ -798,15 +798,13 @@ class: flex flex-col
 <!--
 REPOSITORY
 
-Every service talks to its schema through a repository class: eleven of
-them across the three backends. The service layer holds business rules
-and never writes sql; the repository holds all the sql and never makes
-decisions. That seam is what let us change queries, add indexes and move
-a table without touching a single caller, and it is why the integration
-tests can run the real repositories against a throwaway Postgres.
-
-Same shape in all three stacks: ListingsRepository and friends in the
-two NestJS services, and the Users and Organisations stores in Go.
+All our SQL lives in repository classes. The services only hold business
+logic and call the repositories, so when we change a query or add an
+index, nothing outside the repository changes. We use the same structure
+in all three backends: listings has 6 repositories, notifications has 1,
+and the Go profile service has 4. It also makes integration testing
+easy, since we just run the real repositories against a throwaway
+Postgres in Docker.
 -->
 
 ---
@@ -815,7 +813,7 @@ class: flex flex-col
 
 # Strategy
 
-<div class="text-base mt-2" style="color:#00000099">One interface; the caller never knows which implementation it got</div>
+<div class="text-base mt-2" style="color:#00000099">The app codes against one interface and does not care which client it gets</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
@@ -847,30 +845,28 @@ class: flex flex-col
   <text x="851" y="294" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">MockListingsClient</text>
   <text x="851" y="316" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">in-memory &middot; same rules</text>
 
-  <text x="500" y="366" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">The frontend was built against the mock before the service existed.</text>
-  <text x="500" y="392" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">same seam elsewhere: notification renderers &middot; relist policy &middot; org transitions (go)</text>
+  <text x="500" y="366" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">We built the whole frontend on the mock before the backend was ready.</text>
+  <text x="500" y="392" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">also used for: notification renderers &middot; relist policy &middot; org transitions (go)</text>
 </svg>
 </div>
 
 <!--
 STRATEGY
 
-The listings sdk exposes one interface, ListingsApi, and two
-implementations behind a factory: ListingsClient makes the real HTTP
-calls with the caller's bearer token, and MockListingsClient keeps
-listings in memory while re-implementing the server's rules - the same
-status transition tables and even idempotency-key replay - so the two
-are behaviourally equivalent, not just type-compatible.
+The listings SDK has one interface, ListingsApi, with two
+implementations. ListingsClient does the real HTTP calls with the
+user's token. MockListingsClient keeps everything in memory but follows
+the same rules as the server, same status transitions and even the
+idempotency replay. The factory returns the interface, so the app never
+knows which one it is holding.
 
-createListingsClient({ mock }) returns the interface, never the
-concrete class, so no call site in the app knows which one it holds.
-That is what let the frontend be built and demoed before the listings
-service shipped, and flipping to the real service was one boolean.
+This let us build and demo the frontend before the listings service was
+ready, and switching to the real service was literally one boolean.
 
-The same seam recurs elsewhere: the notification templates are a
-type-to-renderer lookup table, the relist policy in listings is an
-injected policy object, and the Go profile service injects Approve,
-Reject and Suspend as function strategies into one transition handler.
+We use the same idea in a few other places: the notification templates
+are a type-to-renderer map, the relist policy is an injected config
+object, and the Go service passes Approve, Reject and Suspend in as
+functions to one shared transition handler.
 -->
 
 ---
@@ -879,7 +875,7 @@ class: flex flex-col
 
 # Publish / subscribe
 
-<div class="text-base mt-2" style="color:#00000099">Listings publishes domain events; notifications consumes them</div>
+<div class="text-base mt-2" style="color:#00000099">Listings drops events on SQS, notifications picks them up</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
@@ -918,16 +914,15 @@ class: flex flex-col
 <!--
 PUBLISH / SUBSCRIBE
 
-When a claim is created, cancelled or completed, listings puts a typed
-domain event on SQS and moves on; the notification service long-polls
-the queue, renders the templates and delivers email and in-app. Neither
-imports the other: we added the whole notification service without
-touching the claim path once, which is the extensibility argument.
+When a claim is created, cancelled or completed, listings just drops an
+event on SQS and moves on. The notification service polls the queue,
+renders the templates and sends the email and in-app notification. The
+two services don't import each other at all, which is how we added the
+whole notification service without touching the claim flow.
 
-Reliability detail worth saying out loud: every event carries a
-deterministic eventId, and the consumer dedupes on it, so a redelivered
-message cannot double-send. A message that keeps failing lands in a
-dead-letter queue after five attempts, with an alarm on it.
+Every event has a deterministic eventId and the consumer dedupes on it,
+so a redelivered message can't send twice. If a message keeps failing
+it goes to a dead letter queue after 5 tries and an alarm fires.
 -->
 
 ---
