@@ -320,7 +320,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-Analysis &amp; <span class="accent">design</span>
+Analysis &amp; <span class="accent">Design</span>
 </div>
 
 <!--
@@ -334,36 +334,36 @@ SECTION MARKER
 <div class="mt-6 px-4">
 
 <div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#0000001a;background:#ffffff;width:11rem">
+  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;width:11rem;height:4.4rem">
     <div class="text-sm font-semibold">Platform web</div>
-    <div class="text-xs" style="color:#00000099">Next.js &middot; donors &amp; partners</div>
+    <div class="text-xs mt-0.5" style="color:#00000099">Next.js &middot; donors &amp; partners</div>
   </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#0000001a;background:#ffffff;width:11rem">
+  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;width:11rem;height:4.4rem">
     <div class="text-sm font-semibold">Admin console</div>
-    <div class="text-xs" style="color:#00000099">React SPA &middot; local only</div>
+    <div class="text-xs mt-0.5" style="color:#00000099">React SPA &middot; local only</div>
   </div>
 </div>
 
 <div class="text-center mt-2" style="color:#00000066">&darr;&nbsp;&nbsp;HTTPS / JSON&nbsp;&nbsp;&darr;</div>
 
 <div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-1.5 text-center text-xs font-medium" style="border-color:#0000001a;background:#f2f0ed;width:23rem;color:#3a3a3a">CDN &middot; API Gateway &nbsp;<span style="color:#5a5a5a">(hardened ingress, Sprint 3)</span></div>
+  <div class="rounded-lg border px-4 text-center text-xs font-medium flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:23rem;height:2.4rem;color:#3a3a3a">CDN &middot; API Gateway &nbsp;<span style="color:#5a5a5a">(hardened ingress, Sprint 3)</span></div>
 </div>
 
 <div class="text-center my-1" style="color:#00000066">&darr;</div>
 
 <div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
+  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
     <div class="text-sm font-semibold">Profile</div>
-    <div class="text-xs" style="color:#00000099">Go &middot; users, orgs, approval</div>
+    <div class="text-xs mt-0.5" style="color:#00000099">Go &middot; identity &amp; orgs</div>
   </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
+  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
     <div class="text-sm font-semibold">Listings</div>
-    <div class="text-xs" style="color:#00000099">NestJS &middot; listings, claims, pickup</div>
+    <div class="text-xs mt-0.5" style="color:#00000099">NestJS &middot; listings &amp; claims</div>
   </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
+  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
     <div class="text-sm font-semibold">Notifications</div>
-    <div class="text-xs" style="color:#00000099">NestJS &middot; queue consumer</div>
+    <div class="text-xs mt-0.5" style="color:#00000099">NestJS &middot; queue consumer</div>
   </div>
 </div>
 
@@ -374,8 +374,8 @@ SECTION MARKER
 </div>
 
 <div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-center text-xs font-mono" style="border-color:#0000001a;background:#f2f0ed;width:23rem;color:#00000099">PostgreSQL (per service)</div>
-  <div class="rounded-lg border px-4 py-2 text-center text-xs font-mono" style="border-color:#0000001a;background:#f2f0ed;width:11rem;color:#00000099">AWS ECS Fargate</div>
+  <div class="rounded-lg border px-4 text-center text-xs font-mono flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:23rem;height:2.4rem;color:#00000099">PostgreSQL (per service)</div>
+  <div class="rounded-lg border px-4 text-center text-xs font-mono flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:11rem;height:2.4rem;color:#00000099">AWS ECS Fargate</div>
 </div>
 
 </div>
