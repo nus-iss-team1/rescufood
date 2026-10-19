@@ -221,7 +221,7 @@ class: flex flex-col
 
 # Agile, in practice
 
-<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
+<div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 <svg viewBox="0 85 1100 205" style="max-height:100%;max-width:100%" fill="none">
   <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
