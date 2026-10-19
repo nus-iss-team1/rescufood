@@ -1201,39 +1201,34 @@ class: flex flex-col
   <path d="M 170 229 L 190 229 L 190 334 L 202 334" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
   <rect x="210" y="40" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="246" y="82"/>
-  <g transform="translate(262,71)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(240,71)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
   </g>
-  <text x="290" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <use href="#ci-check" x="246" y="132"/>
-  <g transform="translate(262,121)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="268" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <g transform="translate(240,121)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="290" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
-  <use href="#ci-check" x="246" y="182"/>
-  <g transform="translate(262,171)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  <text x="268" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <g transform="translate(240,171)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
+    <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="290" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <text x="268" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
 
   <rect x="210" y="250" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="246" y="292"/>
-  <g transform="translate(262,281)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(240,281)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="290" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-  <use href="#ci-check" x="246" y="342"/>
-  <g transform="translate(262,331)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="268" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <g transform="translate(240,331)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="290" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-  <use href="#ci-check" x="246" y="392"/>
-  <g transform="translate(262,381)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="268" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <g transform="translate(240,381)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="290" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <text x="268" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
   <circle cx="514" cy="124" r="4.5" fill="#8a8a8a"/>
   <circle cx="514" cy="334" r="4.5" fill="#8a8a8a"/>
@@ -1313,25 +1308,22 @@ class: flex flex-col
   <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
 
   <rect x="220" y="98" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="250" y="125"/>
-  <g transform="translate(266,114)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(244,114)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="294" y="130" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <text x="272" y="130" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
 
   <rect x="220" y="159" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="250" y="186"/>
-  <g transform="translate(266,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(244,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="294" y="191" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <text x="272" y="191" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
 
   <rect x="220" y="220" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="250" y="247"/>
-  <g transform="translate(266,236)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(244,236)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="294" y="252" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <text x="272" y="252" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
   <circle cx="441" cy="125" r="4.5" fill="#8a8a8a"/>
   <circle cx="441" cy="186" r="4.5" fill="#8a8a8a"/>
@@ -1341,37 +1333,34 @@ class: flex flex-col
   <circle cx="459" cy="186" r="4.5" fill="#8a8a8a"/>
 
   <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="497" y="186"/>
-  <g transform="translate(513,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(491,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m7.5 4.27 9 5.15"/>
     <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
     <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
   </g>
-  <text x="543" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">build-and-push</text>
-  <text x="543" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">image &rarr; GHCR &middot; branch + sha</text>
+  <text x="521" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">build-and-push</text>
+  <text x="521" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">image &rarr; GHCR &middot; branch + sha</text>
 
   <circle cx="686" cy="186" r="4.5" fill="#8a8a8a"/>
   <circle cx="704" cy="186" r="4.5" fill="#8a8a8a"/>
 
   <rect x="710" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="742" y="186"/>
-  <g transform="translate(758,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(736,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
     <path d="m8 17 4-4 4 4"/>
   </g>
-  <text x="788" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">Deploy to ECS</text>
-  <text x="788" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">rolls the matching env</text>
+  <text x="766" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">Deploy to ECS</text>
+  <text x="766" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">rolls the matching env</text>
 
   <circle cx="931" cy="186" r="4.5" fill="#8a8a8a"/>
   <circle cx="949" cy="186" r="4.5" fill="#8a8a8a"/>
 
   <rect x="955" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="987" y="186"/>
-  <g transform="translate(1003,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(981,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
   </g>
-  <text x="1033" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">DAST / ZAP</text>
-  <text x="1033" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">scans the live site</text>
+  <text x="1011" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">DAST / ZAP</text>
+  <text x="1011" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">scans the live site</text>
 
   <path d="M 817 232 L 817 322" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr-r)"/>
   <text x="828" y="284" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">rollout fails</text>
