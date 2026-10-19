@@ -28,6 +28,12 @@ export class YourListingsPage {
     await this.page.waitForLoadState('networkidle');
   }
 
+  /** The row's Delete button. Locked listings (reserved, collected, expired,
+   * cancelled) don't render one. */
+  deleteButtonFor(tag: string): Locator {
+    return this.rowFor(tag).getByRole('button', { name: 'Delete', exact: true });
+  }
+
   /** Confirms the delete dialog without asserting the outcome, so callers
    * can check either a successful delete or a refusal. */
   async delete(tag: string) {
@@ -38,7 +44,7 @@ export class YourListingsPage {
     // retrying a click lost to hydration can't delete anything.
     const dialog = this.page.getByRole('dialog');
     await expect(async () => {
-      await row.getByRole('button', { name: 'Delete', exact: true }).click();
+      await this.deleteButtonFor(tag).click();
       await expect(dialog).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 20_000 });
 
