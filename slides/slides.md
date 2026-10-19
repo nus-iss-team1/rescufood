@@ -221,7 +221,7 @@ class: flex flex-col
 
 # Agile, in practice
 
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
 <svg viewBox="0 0 1100 300" style="max-height:100%;max-width:100%" fill="none">
   <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
@@ -262,9 +262,8 @@ class: flex flex-col
   <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
 
 </svg>
-</div>
 
-<div class="mx-auto mb-4" style="max-width:40rem">
+<div class="mt-2" style="max-width:40rem">
   <div class="flex items-baseline">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
     <span class="text-sm">We ran Scrum over six two-week sprints, and every change went in through a PR with CI</span>
@@ -277,6 +276,8 @@ class: flex flex-col
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
     <span class="text-sm">Each retro gave us one concrete change to carry into the next sprint</span>
   </div>
+</div>
+
 </div>
 
 <!--
