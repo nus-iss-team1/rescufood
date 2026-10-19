@@ -1194,24 +1194,28 @@ class: flex flex-col
   <text x="151" y="243" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
   <text x="151" y="268" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">into develop</text>
 
-  <path d="M 250 229 L 280 229 L 280 110 L 312 110" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
-  <path d="M 250 229 L 280 229 L 280 330 L 312 330" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 250 229 L 280 229 L 280 132 L 312 132" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 250 229 L 280 229 L 280 326 L 312 326" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <rect x="320" y="60" width="230" height="124" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(344,83)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="320" y="62" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,72)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
   </g>
-  <text x="372" y="97" style="font-size:11.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <g transform="translate(344,123)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="372" y="87" style="font-size:11.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+
+  <rect x="320" y="112" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,122)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
   <text x="372" y="137" style="font-size:11.5px;font-weight:600" fill="#111111">Unit tests</text>
-  <g transform="translate(344,153)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+  <rect x="320" y="162" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,172)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="372" y="167" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <text x="372" y="187" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
 
   <rect x="320" y="256" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1231,11 +1235,15 @@ class: flex flex-col
   </g>
   <text x="372" y="381" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
-  <circle cx="554" cy="122" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="82" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="132" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="182" r="4.5" fill="#8a8a8a"/>
   <circle cx="554" cy="276" r="4.5" fill="#8a8a8a"/>
   <circle cx="554" cy="326" r="4.5" fill="#8a8a8a"/>
   <circle cx="554" cy="376" r="4.5" fill="#8a8a8a"/>
-  <path d="M 558 122 C 600 122 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 82 C 600 82 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 132 C 600 132 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 182 C 600 182 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
   <path d="M 558 276 C 600 276 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
   <path d="M 558 326 C 600 326 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
   <path d="M 558 376 C 600 376 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
