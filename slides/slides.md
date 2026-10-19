@@ -1270,7 +1270,7 @@ class: flex flex-col
 <div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="10 128 1170 296" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="10 86 1170 338" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <g id="cd-check">
       <circle r="10" fill="#1f6b45"/>
@@ -1289,12 +1289,23 @@ class: flex flex-col
 
   <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
 
-  <rect x="220" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="252" y="186"/>
-  <text x="274" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">SAST</text>
-  <text x="274" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">CodeQL &middot; Semgrep &middot; Trivy</text>
+  <rect x="220" y="98" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="250" y="125"/>
+  <text x="272" y="130" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
 
+  <rect x="220" y="159" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="250" y="186"/>
+  <text x="272" y="191" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+
+  <rect x="220" y="220" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="250" y="247"/>
+  <text x="272" y="252" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+
+  <circle cx="441" cy="125" r="4.5" fill="#8a8a8a"/>
   <circle cx="441" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="441" cy="247" r="4.5" fill="#8a8a8a"/>
+  <path d="M 445 125 C 452 125 452 186 459 186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 445 247 C 452 247 452 186 459 186" stroke="#8a8a8a" stroke-width="1.5"/>
   <circle cx="459" cy="186" r="4.5" fill="#8a8a8a"/>
 
   <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
