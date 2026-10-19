@@ -159,7 +159,7 @@ class: flex flex-col
 </svg>
 
 <div class="mt-8 grid grid-cols-2 gap-16" style="max-width:46rem;width:100%">
-  <div>
+  <div v-click>
     <div class="dgm text-xs" style="color:#00000066">Today</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
       <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
@@ -167,7 +167,7 @@ class: flex flex-col
       <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
     </div>
   </div>
-  <div>
+  <div v-click>
     <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
       <div class="text-base">Donors post a listing the moment food is free</div>
@@ -210,39 +210,49 @@ class: flex flex-col
   <text x="110" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 1</text>
   <text x="110" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
 
+  <g v-click>
   <circle cx="290" cy="180" r="6" fill="#1f6b45"/>
   <text x="290" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 2</text>
   <text x="290" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">8 - 21 Aug</text>
   <text x="290" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Environments &middot; IAM</text>
   <text x="290" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">first automated QA</text>
+  </g>
 
+  <g v-click>
   <circle cx="470" cy="180" r="6" fill="#1f6b45"/>
   <text x="470" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Claims &middot; pickup OTP</text>
   <text x="470" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">notifications</text>
   <text x="470" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 3</text>
   <text x="470" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
+  </g>
 
+  <g v-click>
   <circle cx="650" cy="180" r="6" fill="#1f6b45"/>
   <text x="650" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 4</text>
   <text x="650" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">5 - 18 Sep</text>
   <text x="650" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Pickup completion</text>
   <text x="650" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">QA fixes</text>
+  </g>
 
+  <g v-click>
   <circle cx="830" cy="180" r="6" fill="#1f6b45"/>
   <text x="830" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Cancel &amp; relist</text>
   <text x="830" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">claim history</text>
   <text x="830" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 5</text>
   <text x="830" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
+  </g>
 
+  <g v-click>
   <circle cx="1010" cy="180" r="6" fill="#1f6b45"/>
   <text x="1010" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 6</text>
   <text x="1010" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 - 16 Oct</text>
   <text x="1010" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Stabilisation</text>
   <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
+  </g>
 
 </svg>
 
-<div class="mt-8" style="width:100%;padding-left:3.5rem">
+<div v-click class="mt-8" style="width:100%;padding-left:3.5rem">
   <div class="flex items-baseline">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
     <span class="text-sm">Scrum over six two-week sprints; every change went in through a PR with CI</span>
@@ -707,8 +717,6 @@ class: flex flex-col
   <line x1="1050" y1="66" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
 
   <rect x="746" y="145" width="8" height="115" rx="2" fill="rgba(31,107,69,0.2)"/>
-  <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
-  <rect x="746" y="460" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
 
   <text x="28" y="119" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">CLAIM</text>
   <line x1="150" y1="115" x2="444" y2="115" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
@@ -722,8 +730,9 @@ class: flex flex-col
   <line x1="746" y1="255" x2="156" y2="255" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
   <text x="450" y="243" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; Reserved</text>
 
+  <g v-click>
   <line x1="30" y1="290" x2="1170" y2="290" stroke="#0000000d" stroke-width="1"/>
-
+  <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
   <text x="28" y="319" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RETRY</text>
   <line x1="150" y1="315" x2="744" y2="315" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
   <text x="450" y="303" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">the same request, resent</text>
@@ -731,9 +740,11 @@ class: flex flex-col
   <text x="900" y="338" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">key found &middot; fingerprint matches</text>
   <line x1="746" y1="385" x2="156" y2="385" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
   <text x="450" y="373" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; the original claim, replayed</text>
+  </g>
 
+  <g v-click>
   <line x1="30" y1="410" x2="1170" y2="410" stroke="#0000000d" stroke-width="1"/>
-
+  <rect x="746" y="460" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
   <text x="28" y="439" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RACE</text>
   <line x1="150" y1="435" x2="744" y2="435" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
   <text x="450" y="423" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">another partner, same listing</text>
@@ -741,6 +752,7 @@ class: flex flex-col
   <text x="900" y="458" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">reserve fails &middot; unique index holds</text>
   <line x1="746" y1="505" x2="156" y2="505" stroke="#111111" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr-k)"/>
   <text x="450" y="493" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111" class="font-mono">409 Conflict</text>
+  </g>
 </svg>
 </div>
 
