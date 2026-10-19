@@ -267,15 +267,15 @@ class: flex flex-col
 <div class="mx-auto mb-4" style="max-width:40rem">
   <div class="flex items-baseline">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Scrum, six two-week sprints; every change lands by pull request with CI</span>
+    <span class="text-sm">We ran Scrum over six two-week sprints, and every change went in through a PR with CI</span>
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Sprint 2 closed <span class="font-semibold">36/36</span> points, Sprint 3 <span class="font-semibold">32/40</span></span>
+    <span class="text-sm">Sprint 2 cleared all <span class="font-semibold">36</span> points; Sprint 3 landed <span class="font-semibold">32 of 40</span> when the infra migration ran long</span>
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">One retro change carried forward each sprint</span>
+    <span class="text-sm">Each retro gave us one concrete change to carry into the next sprint</span>
   </div>
 </div>
 
