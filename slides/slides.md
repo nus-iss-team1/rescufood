@@ -1178,8 +1178,8 @@ class: flex flex-col
 
 <div class="text-base mt-2" style="color:#00000099">Every pull request into develop</div>
 
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1000 440" style="max-height:100%;max-width:100%" fill="none">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
+<svg viewBox="0 0 1000 470" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <g id="ci-check">
       <circle r="10" fill="#1f6b45"/>
@@ -1188,38 +1188,61 @@ class: flex flex-col
     <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
 
-  <rect x="90" y="60" width="330" height="118" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="126" y="102"/>
-  <text x="148" y="107" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <use href="#ci-check" x="126" y="147"/>
-  <text x="148" y="152" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <rect x="90" y="40" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="126" y="82"/>
+  <text x="148" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <use href="#ci-check" x="126" y="132"/>
+  <text x="148" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <use href="#ci-check" x="126" y="182"/>
+  <text x="148" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
 
-  <rect x="90" y="220" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="126" y="262"/>
-  <text x="148" y="267" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-  <use href="#ci-check" x="126" y="312"/>
-  <text x="148" y="317" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-  <use href="#ci-check" x="126" y="362"/>
-  <text x="148" y="367" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <rect x="90" y="250" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="126" y="292"/>
+  <text x="148" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <use href="#ci-check" x="126" y="342"/>
+  <text x="148" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <use href="#ci-check" x="126" y="392"/>
+  <text x="148" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
-  <circle cx="424" cy="119" r="4.5" fill="#8a8a8a"/>
-  <circle cx="424" cy="304" r="4.5" fill="#8a8a8a"/>
-  <path d="M 428 119 C 500 119 500 212 552 212" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 428 304 C 500 304 500 212 552 212" stroke="#8a8a8a" stroke-width="1.5"/>
-  <circle cx="556" cy="212" r="4.5" fill="#8a8a8a"/>
-  <line x1="560" y1="212" x2="612" y2="212" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <circle cx="424" cy="124" r="4.5" fill="#8a8a8a"/>
+  <circle cx="424" cy="334" r="4.5" fill="#8a8a8a"/>
+  <path d="M 428 124 C 500 124 500 229 552 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 428 334 C 500 334 500 229 552 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="556" cy="229" r="4.5" fill="#8a8a8a"/>
+  <line x1="560" y1="229" x2="612" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <rect x="620" y="170" width="290" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="765" y="208" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
-  <text x="765" y="230" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+  <rect x="620" y="187" width="290" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="765" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="765" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 </svg>
+
+<div class="mt-6" style="max-width:40rem">
+  <div class="flex items-baseline">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Path-filtered: only the pipeline of the component that changed runs</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Integration tests hit a real PostgreSQL spun up with Testcontainers</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Three SAST scanners cover our code, risky patterns and dependencies</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Nothing merges without a review and every check green</span>
+  </div>
+</div>
+
 </div>
 
 <!--
 CI
 
-Our CI runs on every pull request into develop. We lint, type-check and
-unit test, then run three SAST scanners, each covering a different
+Our CI runs on every pull request into develop. We lint, type-check,
+unit test and run integration tests against a real PostgreSQL via
+Testcontainers, then run three SAST scanners, each covering a different
 class of problem:
 
 - CodeQL: Checks code semantics
