@@ -419,6 +419,9 @@ SECTION MARKER
   <line x1="680" y1="94" x2="680" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
 
+  <rect x="40" y="122" width="1020" height="334" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="56" y="142" style="font-size:9px" fill="#5a5a5a" class="font-mono">AWS cloud &middot; ECS Fargate &middot; one stack per environment</text>
+
   <rect x="230" y="150" width="600" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
   <text x="530" y="175" text-anchor="middle" style="font-size:12.5px;font-weight:600" fill="#111111">CDN &middot; API Gateway</text>
 
@@ -472,7 +475,7 @@ SECTION MARKER
   </g>
   <text x="917" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
 
-  <text x="550" y="482" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; everything runs on AWS ECS Fargate</text>
+  <text x="550" y="486" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; no shared data</text>
 </svg>
 </div>
 
