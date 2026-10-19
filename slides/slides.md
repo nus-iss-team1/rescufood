@@ -374,6 +374,8 @@ SECTION MARKER
 
 ---
 
+<div class="dgm-wide text-xs" style="color:#1f6b45">Logical view</div>
+
 # The system, from the top
 
 <div class="mt-6 px-4">
@@ -457,6 +459,8 @@ independently deployable. It all runs on ECS Fargate via CloudFormation.
 ---
 class: flex flex-col
 ---
+
+<div class="dgm-wide text-xs" style="color:#1f6b45">Deployment view</div>
 
 # Physical architecture
 
@@ -602,6 +606,8 @@ the honest cost trade-off to call out.
 class: flex flex-col
 ---
 
+<div class="dgm-wide text-xs" style="color:#1f6b45">Behaviour &middot; state diagram</div>
+
 # Listing lifecycle
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
@@ -675,6 +681,8 @@ implementation leans on.
 ---
 class: flex flex-col
 ---
+
+<div class="dgm-wide text-xs" style="color:#1f6b45">Behaviour &middot; sequence diagram</div>
 
 # The claim edge, step by step
 
@@ -780,6 +788,8 @@ frontend tells them someone else got it first.
 class: flex flex-col
 ---
 
+<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
+
 # Repository
 
 <div class="text-base mt-2" style="color:#00000099">All database access goes through a repository class</div>
@@ -832,6 +842,8 @@ Postgres in Docker.
 ---
 class: flex flex-col
 ---
+
+<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
 
 # Strategy
 
@@ -894,6 +906,8 @@ functions to one shared transition handler.
 ---
 class: flex flex-col
 ---
+
+<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
 
 # Publish / subscribe
 
