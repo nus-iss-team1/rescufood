@@ -378,102 +378,101 @@ SECTION MARKER
 # Logical view
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 -100 1100 610" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 -75 1100 460" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
 
-  <g transform="translate(367,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(355,-64)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
-  <text x="380" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
-  <line x1="380" y1="-22" x2="380" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <text x="388" y="-46" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
+  <line x1="368" y1="-36" x2="368" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="540" y="-98" width="280" height="206" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="554" y="-82" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
+  <rect x="540" y="-70" width="280" height="140" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="554" y="-54" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
 
-  <g transform="translate(667,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(655,-64)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
-  <text x="702" y="-58" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
-  <line x1="680" y1="-22" x2="680" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <text x="688" y="-46" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
+  <line x1="668" y1="-36" x2="668" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="260" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(278,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="260" y="8" width="240" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(276,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
-  <text x="396" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
-  <text x="396" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js app, in the browser</text>
+  <text x="394" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
+  <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js app, in the browser</text>
 
-  <rect x="560" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(578,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="560" y="8" width="240" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(576,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
-  <text x="696" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
-  <text x="696" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
+  <text x="694" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
+  <text x="694" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
 
-  <line x1="380" y1="94" x2="380" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="680" y1="94" x2="680" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
+  <rect x="40" y="80" width="1020" height="290" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="56" y="98" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
 
-  <rect x="40" y="122" width="1020" height="334" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="56" y="142" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
+  <line x1="380" y1="64" x2="380" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="680" y1="64" x2="680" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="530" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
+  <line x1="195" y1="122" x2="905" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="122" x2="195" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="122" x2="550" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="122" x2="905" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <line x1="195" y1="198" x2="905" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="195" y1="198" x2="195" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="550" y1="198" x2="550" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="905" y1="198" x2="905" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-
-  <rect x="60" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(80,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="60" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(80,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="207" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile</text>
-  <text x="207" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Go &middot; identity &amp; orgs</text>
+  <text x="207" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile</text>
+  <text x="207" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Go &middot; identity &amp; orgs</text>
 
-  <rect x="415" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(435,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="415" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(435,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="562" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
-  <text x="562" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; listings &amp; claims</text>
+  <text x="562" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
+  <text x="562" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; listings &amp; claims</text>
 
-  <rect x="770" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(790,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="770" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(790,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="917" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications</text>
-  <text x="917" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; queue consumer</text>
+  <text x="917" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications</text>
+  <text x="917" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; queue consumer</text>
 
-  <line x1="685" y1="290" x2="764" y2="290" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
-  <text x="725" y="278" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
+  <line x1="685" y1="194" x2="764" y2="194" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
+  <text x="725" y="182" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
 
-  <line x1="195" y1="330" x2="195" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="550" y1="330" x2="550" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="905" y1="330" x2="905" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="195" y1="228" x2="195" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="228" x2="550" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="228" x2="905" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="95" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(112,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="95" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(112,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
   </g>
-  <text x="207" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <text x="207" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
 
-  <rect x="450" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(467,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="450" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(467,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
   </g>
-  <text x="562" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <text x="562" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
 
-  <rect x="805" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(822,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="805" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(822,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
   </g>
-  <text x="917" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <text x="917" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
 
-  <text x="550" y="486" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; no shared data</text>
+  <text x="550" y="348" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; no shared data</text>
 </svg>
 </div>
 
