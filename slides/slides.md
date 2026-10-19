@@ -1186,6 +1186,7 @@ class: flex flex-col
       <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
     <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="ci-m-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
   </defs>
 
   <rect x="20" y="187" width="150" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
@@ -1226,33 +1227,16 @@ class: flex flex-col
   <text x="816" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
   <text x="816" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 
-  <path d="M 610 229 L 610 352 L 658 352" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr)"/>
-  <text x="600" y="310" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">any failure</text>
-  <rect x="666" y="320" width="300" height="64" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
-  <g transform="translate(686,340)" stroke="#3a3a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 610 229 L 610 352 L 658 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
+  <text x="600" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
+  <rect x="666" y="320" width="300" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+  <g transform="translate(686,340)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
   </g>
-  <text x="834" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#3a3a3a">Merge blocked</text>
+  <text x="834" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Merge blocked</text>
 </svg>
 
-<div class="mt-6" style="max-width:40rem">
-  <div class="flex items-baseline">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Only the component you touched gets rebuilt and retested</span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Integration tests run on a real Postgres via Testcontainers, no mocks</span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Three security scanners check our code, dependencies and configs</span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">No approval or a red check means no merge</span>
-  </div>
-</div>
+
 
 </div>
 
@@ -1272,7 +1256,9 @@ class of problem:
   dependencies, leaked secrets in files, and misconfigurations in
   Dockerfiles and infrastructure code.
 
-Nothing merges without review and green checks.
+Nothing merges without review and green checks, and a single red check
+blocks the merge. The workflows are path-filtered, so only the
+component that changed runs its pipeline.
 -->
 
 ---
