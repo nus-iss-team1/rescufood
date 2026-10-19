@@ -686,19 +686,35 @@ class: flex flex-col
     <marker id="sq-arr-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#111111"/></marker>
   </defs>
 
-  <rect x="50" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="150" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Rescue partner</text>
-  <rect x="350" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="450" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">web-platform</text>
-  <rect x="650" y="20" width="200" height="44" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="750" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">listings</text>
-  <rect x="950" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="1050" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <rect x="50" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(66,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="168" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Rescue partner</text>
 
-  <line x1="150" y1="64" x2="150" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="450" y1="64" x2="450" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="750" y1="64" x2="750" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="1050" y1="64" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <rect x="350" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(366,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="468" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Web app</text>
+
+  <rect x="650" y="16" width="200" height="50" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(666,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="768" y="40" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
+  <text x="768" y="57" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">backend service</text>
+
+  <rect x="950" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(966,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="1068" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <line x1="150" y1="66" x2="150" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="450" y1="66" x2="450" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="750" y1="66" x2="750" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="1050" y1="66" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
 
   <rect x="746" y="145" width="8" height="115" rx="2" fill="rgba(31,107,69,0.2)"/>
   <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
