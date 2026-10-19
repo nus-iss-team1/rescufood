@@ -1058,7 +1058,7 @@ class: flex flex-col justify-center text-center
 <!--
 SECTION MARKER
 
-This segment is a live demo: the next three slides set the context, then
+This segment is a live demo: the next four slides set the context, then
 switch to GitHub Actions and walk a real run. Have the recorded video
 ready as backup in case the live demo breaks.
 -->
@@ -1174,84 +1174,53 @@ Production bugs are handled by cutting a hotfix branch directly from main and me
 class: flex flex-col
 ---
 
-# CI/CD pipeline
+# CI
+
+<div class="text-base mt-2" style="color:#00000099">Every pull request into develop</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1200 500" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 0 1000 440" style="max-height:100%;max-width:100%" fill="none">
   <defs>
-    <g id="wf-check">
+    <g id="ci-check">
       <circle r="10" fill="#1f6b45"/>
       <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
-    <marker id="wf-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
 
-  <rect x="30" y="40" width="360" height="440" rx="10" fill="#00000005" stroke="#0000001a"/>
-  <text x="48" y="70" style="font-size:11px;font-weight:700" fill="#3a3a3a">on: pull request</text>
+  <rect x="90" y="60" width="330" height="118" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="126" y="102"/>
+  <text x="148" y="107" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <use href="#ci-check" x="126" y="147"/>
+  <text x="148" y="152" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
 
-  <rect x="50" y="100" width="320" height="118" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="86" y="142"/>
-  <text x="108" y="147" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <use href="#wf-check" x="86" y="187"/>
-  <text x="108" y="192" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <rect x="90" y="220" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="126" y="262"/>
+  <text x="148" y="267" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <use href="#ci-check" x="126" y="312"/>
+  <text x="148" y="317" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <use href="#ci-check" x="126" y="362"/>
+  <text x="148" y="367" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
-  <rect x="50" y="250" width="320" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="86" y="290"/>
-  <text x="108" y="295" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-  <use href="#wf-check" x="86" y="340"/>
-  <text x="108" y="345" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-  <use href="#wf-check" x="86" y="390"/>
-  <text x="108" y="395" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <circle cx="424" cy="119" r="4.5" fill="#8a8a8a"/>
+  <circle cx="424" cy="304" r="4.5" fill="#8a8a8a"/>
+  <path d="M 428 119 C 500 119 500 212 552 212" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 428 304 C 500 304 500 212 552 212" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="556" cy="212" r="4.5" fill="#8a8a8a"/>
+  <line x1="560" y1="212" x2="612" y2="212" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <rect x="430" y="40" width="750" height="440" rx="10" fill="#00000005" stroke="#0000001a"/>
-  <text x="448" y="70" style="font-size:11px;font-weight:700" fill="#3a3a3a">on: push &middot; develop, qa or main</text>
-
-  <circle cx="374" cy="159" r="4.5" fill="#8a8a8a"/>
-  <circle cx="374" cy="334" r="4.5" fill="#8a8a8a"/>
-  <path d="M 378 159 C 400 159 400 256 410 256" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 378 334 C 400 334 400 256 410 256" stroke="#8a8a8a" stroke-width="1.5"/>
-  <circle cx="414" cy="256" r="4.5" fill="#8a8a8a"/>
-  <line x1="418" y1="256" x2="438" y2="256" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#wf-arr)"/>
-  <text x="394" y="240" style="font-size:10px" fill="#5a5a5a" class="font-mono">merge</text>
-
-  <rect x="450" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="478" y="256"/>
-  <text x="498" y="261" style="font-size:13px;font-weight:600" fill="#111111">SAST</text>
-  <text x="596" y="261" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 jobs</text>
-
-  <circle cx="616" cy="256" r="4.5" fill="#8a8a8a"/>
-  <circle cx="631" cy="256" r="4.5" fill="#8a8a8a"/>
-
-  <rect x="637" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="665" y="256"/>
-  <text x="685" y="261" style="font-size:13px;font-weight:600" fill="#111111">build-and-push</text>
-
-  <circle cx="803" cy="256" r="4.5" fill="#8a8a8a"/>
-  <circle cx="818" cy="256" r="4.5" fill="#8a8a8a"/>
-
-  <rect x="824" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="852" y="256"/>
-  <text x="872" y="261" style="font-size:13px;font-weight:600" fill="#111111">Deploy to ECS</text>
-
-  <circle cx="990" cy="256" r="4.5" fill="#8a8a8a"/>
-  <circle cx="1005" cy="256" r="4.5" fill="#8a8a8a"/>
-
-  <rect x="1011" y="218" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#wf-check" x="1039" y="256"/>
-  <text x="1059" y="261" style="font-size:13px;font-weight:600" fill="#111111">DAST / ZAP</text>
-
-  <path d="M 904 294 L 904 372" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3"/>
-  <circle cx="904" cy="376" r="4.5" fill="#8a8a8a"/>
-  <rect x="824" y="380" width="160" height="76" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
-  <text x="844" y="423" style="font-size:13px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+  <rect x="620" y="170" width="290" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="765" y="208" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="765" y="230" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 </svg>
 </div>
 
 <!--
-Our CI/CD starts with the following,
+CI
 
-On every pull request we lint, type-check and unit test, then run three
-SAST scanners, each covering a different class of problem:
+Our CI runs on every pull request into develop. We lint, type-check and
+unit test, then run three SAST scanners, each covering a different
+class of problem:
 
 - CodeQL: Checks code semantics
 - Semgrep: fast pattern matching against the default and secrets
@@ -1261,10 +1230,72 @@ SAST scanners, each covering a different class of problem:
   dependencies, leaked secrets in files, and misconfigurations in
   Dockerfiles and infrastructure code.
 
-Nothing merges without review and green checks. On merge, the push
-workflow re-runs SAST, builds and pushes the image to GHCR, rolls the
-ECS service for that branch's environment, then ZAP scans the deployed
-site and the Playwright e2e suite smoke-tests dev and qa.
+Nothing merges without review and green checks.
+-->
+
+---
+class: flex flex-col
+---
+
+# CD
+
+<div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 430" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <g id="cd-check">
+      <circle r="10" fill="#1f6b45"/>
+      <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <rect x="50" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="82" y="190"/>
+  <text x="104" y="195" style="font-size:14px;font-weight:600" fill="#111111">SAST</text>
+  <text x="254" y="195" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 jobs</text>
+
+  <circle cx="278" cy="190" r="4.5" fill="#8a8a8a"/>
+  <circle cx="332" cy="190" r="4.5" fill="#8a8a8a"/>
+  <line x1="282" y1="190" x2="328" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+
+  <rect x="340" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="372" y="190"/>
+  <text x="394" y="195" style="font-size:14px;font-weight:600" fill="#111111">build-and-push</text>
+
+  <circle cx="568" cy="190" r="4.5" fill="#8a8a8a"/>
+  <circle cx="622" cy="190" r="4.5" fill="#8a8a8a"/>
+  <line x1="572" y1="190" x2="618" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+
+  <rect x="630" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="662" y="190"/>
+  <text x="684" y="195" style="font-size:14px;font-weight:600" fill="#111111">Deploy to ECS</text>
+
+  <circle cx="858" cy="190" r="4.5" fill="#8a8a8a"/>
+  <circle cx="912" cy="190" r="4.5" fill="#8a8a8a"/>
+  <line x1="862" y1="190" x2="908" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+
+  <rect x="920" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="952" y="190"/>
+  <text x="974" y="195" style="font-size:14px;font-weight:600" fill="#111111">DAST / ZAP</text>
+
+  <path d="M 740 230 L 740 318" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="740" cy="322" r="4.5" fill="#8a8a8a"/>
+  <rect x="630" y="326" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="662" y="371" style="font-size:14px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+</svg>
+</div>
+
+<!--
+CD
+
+On merge, the push workflow re-runs SAST, builds the Docker image and
+pushes it to GHCR tagged with the branch and commit SHA, then rolls the
+ECS service for that branch's environment. The pipeline waits for the
+rollout and the circuit breaker rolls back automatically if the new
+tasks fail health checks. After the deploy, ZAP scans the deployed site
+and the Playwright e2e suite smoke-tests dev and qa. Nobody deploys
+anything by hand; pushing to a branch is the deployment.
 -->
 
 ---
