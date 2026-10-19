@@ -391,11 +391,14 @@ SECTION MARKER
   <text x="380" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
   <line x1="380" y1="-22" x2="380" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
+  <rect x="540" y="-98" width="280" height="206" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="554" y="-82" style="font-size:9px" fill="#5a5a5a" class="font-mono">local machine &middot; not on the web</text>
+
   <g transform="translate(667,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
-  <text x="680" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
+  <text x="702" y="-58" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
   <line x1="680" y1="-22" x2="680" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
   <rect x="260" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
@@ -405,7 +408,7 @@ SECTION MARKER
   <text x="396" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
   <text x="396" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js &middot; donors &amp; partners</text>
 
-  <rect x="560" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-dasharray="4 3"/>
+  <rect x="560" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(578,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
@@ -1102,7 +1105,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-CI/CD <span class="accent">pipeline</span>
+<span class="accent">CI/CD</span>
 </div>
 
 <!--
