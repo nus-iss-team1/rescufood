@@ -115,7 +115,7 @@ class: flex flex-col
 
 <div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 
-<svg viewBox="0 0 1000 300" style="max-width:46rem;width:100%" fill="none">
+<svg viewBox="0 75 1000 160" style="max-width:46rem;width:100%" fill="none">
   <defs>
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
