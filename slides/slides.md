@@ -114,26 +114,26 @@ class: flex flex-col
 
 <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="grid grid-cols-2 gap-6 mx-auto" style="max-width:48rem;width:100%">
-  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+<div class="grid grid-cols-2 gap-16 mx-auto" style="max-width:46rem;width:100%">
+  <div>
     <div class="dgm text-xs" style="color:#00000066">Today</div>
-    <div class="mt-3 flex flex-col" style="gap:0.6rem">
-      <div class="text-sm">Phone calls</div>
-      <div class="text-sm">Ad-hoc chat groups</div>
-      <div class="text-sm">Stale spreadsheets</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base" style="color:#00000099">Phone calls</div>
+      <div class="text-base" style="color:#00000099">Ad-hoc chat groups</div>
+      <div class="text-base" style="color:#00000099">Stale spreadsheets</div>
     </div>
   </div>
-  <div class="rounded-lg border px-6 py-5" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
+  <div>
     <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
-    <div class="mt-3 flex flex-col" style="gap:0.6rem">
-      <div class="text-sm">Post a listing the moment food is free</div>
-      <div class="text-sm">Claims are first come, first served</div>
-      <div class="text-sm">OTP-verified pickup, tracked to handover</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Post a listing the moment food is free</div>
+      <div class="text-base">Claims are first come, first served</div>
+      <div class="text-base">OTP-verified pickup, tracked to handover</div>
     </div>
   </div>
 </div>
 
-<div class="mt-8 text-center text-base font-semibold"><span class="accent">One claim per listing. One source of truth.</span></div>
+<div class="mt-12 text-center text-base font-semibold"><span class="accent">One claim per listing. One source of truth.</span></div>
 
 </div>
 
