@@ -114,21 +114,21 @@ class: flex flex-col
 
 <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="grid grid-cols-2 gap-16 mx-auto" style="max-width:46rem;width:100%">
+<div class="grid grid-cols-2 gap-16 mx-auto" style="max-width:54rem;width:100%">
   <div>
     <div class="dgm text-xs" style="color:#00000066">Today</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base" style="color:#00000099">Phone calls</div>
-      <div class="text-base" style="color:#00000099">Chat groups</div>
-      <div class="text-base" style="color:#00000099">Spreadsheets</div>
+      <div class="text-base" style="color:#00000099">Phone calls between donors and rescue partners</div>
+      <div class="text-base" style="color:#00000099">Ad-hoc chat groups</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets that go stale</div>
     </div>
   </div>
   <div>
     <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Post a listing</div>
-      <div class="text-base">Claim it</div>
-      <div class="text-base">Verified pickup</div>
+      <div class="text-base">Donors post a listing the moment food is free</div>
+      <div class="text-base">Rescue partners claim it, first come first served</div>
+      <div class="text-base">Pickup verified by OTP, tracked to handover</div>
     </div>
   </div>
 </div>
