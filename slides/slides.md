@@ -1301,7 +1301,7 @@ class: flex flex-col
 <div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="10 86 1170 338" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="10 112 1170 312" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <g id="cd-check">
       <circle r="10" fill="#1f6b45"/>
@@ -1320,30 +1320,32 @@ class: flex flex-col
 
   <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
 
-  <rect x="220" y="98" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(244,114)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="220" y="126" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,135)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="272" y="130" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <text x="266" y="149" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
 
-  <rect x="220" y="159" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(244,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="220" y="168" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,177)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="272" y="191" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <text x="266" y="191" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
 
-  <rect x="220" y="220" width="215" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(244,236)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="220" y="210" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,219)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="272" y="252" style="font-size:12.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <text x="266" y="233" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
-  <circle cx="441" cy="125" r="4.5" fill="#8a8a8a"/>
-  <circle cx="441" cy="186" r="4.5" fill="#8a8a8a"/>
-  <circle cx="441" cy="247" r="4.5" fill="#8a8a8a"/>
-  <path d="M 445 125 C 452 125 452 186 459 186" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 445 247 C 452 247 452 186 459 186" stroke="#8a8a8a" stroke-width="1.5"/>
-  <circle cx="459" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="416" cy="144" r="4.5" fill="#8a8a8a"/>
+  <circle cx="416" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="416" cy="228" r="4.5" fill="#8a8a8a"/>
+  <path d="M 420 144 C 432 144 432 186 444 186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 420 228 C 432 228 432 186 444 186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="420" y1="186" x2="444" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="448" cy="186" r="4.5" fill="#8a8a8a"/>
+  <line x1="452" y1="186" x2="461" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
 
   <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(491,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
