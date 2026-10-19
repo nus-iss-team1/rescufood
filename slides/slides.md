@@ -676,7 +676,9 @@ implementation leans on.
 class: flex flex-col
 ---
 
-# The claim, step by step
+# The claim edge, step by step
+
+<div class="text-base mt-2" style="color:#00000099">Zooming into the green arrow from the lifecycle</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
