@@ -152,74 +152,39 @@ class: flex flex-col
 
 # Scope: what we built
 
+<div class="text-base mt-2" style="color:#00000099">A platform where donors give away surplus food as listings, and rescue partners claim it</div>
+
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1100 430" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 0 1000 300" style="max-height:100%;max-width:100%" fill="none">
   <defs>
-    <marker id="scope-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
 
-  <rect x="40" y="40" width="1020" height="150" rx="10" fill="#00000005" stroke="#0000001a"/>
-  <g transform="translate(58,54)" stroke="#3a3a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="150" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(126,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
-  <text x="90" y="71" style="font-size:11px;font-weight:700" fill="#3a3a3a">Donor</text>
+  <text x="150" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
 
-  <rect x="40" y="230" width="1020" height="150" rx="10" fill="#00000005" stroke="#0000001a"/>
-  <g transform="translate(58,244)" stroke="#3a3a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="206" y1="140" x2="372" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
+  <text x="289" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">gives away surplus food</text>
+
+  <rect x="380" y="86" width="240" height="108" rx="14" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="500" y="134" text-anchor="middle" style="font-size:20px;font-weight:700;letter-spacing:-0.02em" fill="#111111">Rescu<tspan fill="#1f6b45">Food</tspan></text>
+  <g transform="translate(567,104) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+  </g>
+  <text x="500" y="164" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">listings</text>
+
+  <line x1="628" y1="140" x2="794" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
+  <text x="711" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">claims &amp; collects</text>
+
+  <circle cx="850" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(826,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
-  <text x="90" y="261" style="font-size:11px;font-weight:700" fill="#3a3a3a">Rescue partner</text>
-
-  <rect x="80" y="150" width="170" height="120" rx="10" fill="#ffffff" stroke="#1f6b45"/>
-  <g transform="translate(153,164)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </g>
-  <text x="165" y="214" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Sign up</text>
-  <text x="165" y="234" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">org approved by admin</text>
-
-  <path d="M 250 185 L 272 185 L 272 116 L 296 116" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#scope-arr)"/>
-  <path d="M 250 235 L 272 235 L 272 306 L 426 306" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#scope-arr)"/>
-
-  <rect x="300" y="80" width="200" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(316,104)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="8" y="2" width="8" height="4" rx="1"/>
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
-  </g>
-  <text x="418" y="110" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Post a listing</text>
-  <text x="418" y="130" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">photos &middot; window &middot; quantity</text>
-
-  <path d="M 400 152 L 400 210 L 530 210 L 530 266" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#scope-arr)"/>
-  <text x="468" y="202" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">listed live</text>
-
-  <rect x="430" y="270" width="200" height="72" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(446,294)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-  </g>
-  <text x="548" y="300" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Browse &amp; claim</text>
-  <text x="548" y="320" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">first come, first served</text>
-
-  <path d="M 500 116 L 664 116 L 664 180 L 696 180" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#scope-arr)"/>
-  <path d="M 630 306 L 664 306 L 664 240 L 696 240" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#scope-arr)"/>
-
-  <rect x="700" y="150" width="200" height="120" rx="10" fill="#ffffff" stroke="#1f6b45"/>
-  <g transform="translate(788,166)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2" y="6" width="20" height="12" rx="2"/>
-    <path d="M7 12h.01"/><path d="M12 12h.01"/><path d="M17 12h.01"/>
-  </g>
-  <text x="800" y="218" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">OTP handover</text>
-  <text x="800" y="238" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">verified by the donor</text>
-
-  <line x1="900" y1="210" x2="934" y2="210" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
-  <rect x="938" y="178" width="120" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(954,190)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
-  </g>
-  <text x="1012" y="215" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Collected</text>
-
-  <text x="550" y="416" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">email + in-app notifications at every step &middot; out of scope: horizontal scale (proof of concept)</text>
+  <text x="850" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
 </svg>
 </div>
 
