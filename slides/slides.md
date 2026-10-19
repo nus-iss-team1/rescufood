@@ -228,42 +228,42 @@ class: flex flex-col
   <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
   <circle cx="110" cy="180" r="6" fill="#1f6b45"/>
-  <text x="110" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">CI/CD foundation</text>
-  <text x="110" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">repo &middot; auth UI</text>
-  <text x="110" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 1</text>
-  <text x="110" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
+  <text x="110" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">CI/CD foundation</text>
+  <text x="110" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">repo &middot; auth UI</text>
+  <text x="110" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 1</text>
+  <text x="110" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
 
   <circle cx="290" cy="180" r="6" fill="#1f6b45"/>
-  <text x="290" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 2</text>
-  <text x="290" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">8 - 21 Aug</text>
-  <text x="290" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Environments &middot; IAM</text>
-  <text x="290" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">first automated QA</text>
+  <text x="290" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 2</text>
+  <text x="290" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">8 - 21 Aug</text>
+  <text x="290" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Environments &middot; IAM</text>
+  <text x="290" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">first automated QA</text>
 
   <circle cx="470" cy="180" r="6" fill="#1f6b45"/>
-  <text x="470" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">Claims &middot; pickup OTP</text>
-  <text x="470" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">notifications</text>
-  <text x="470" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 3</text>
-  <text x="470" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
+  <text x="470" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Claims &middot; pickup OTP</text>
+  <text x="470" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">notifications</text>
+  <text x="470" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 3</text>
+  <text x="470" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
 
   <circle cx="650" cy="180" r="6" fill="#1f6b45"/>
-  <text x="650" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 4</text>
-  <text x="650" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">5 - 18 Sep</text>
-  <text x="650" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Pickup completion</text>
-  <text x="650" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">QA fixes</text>
+  <text x="650" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 4</text>
+  <text x="650" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">5 - 18 Sep</text>
+  <text x="650" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Pickup completion</text>
+  <text x="650" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">QA fixes</text>
 
   <circle cx="830" cy="180" r="6" fill="#1f6b45"/>
-  <text x="830" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">Cancel &amp; relist</text>
-  <text x="830" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">claim history</text>
-  <text x="830" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 5</text>
-  <text x="830" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
+  <text x="830" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Cancel &amp; relist</text>
+  <text x="830" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">claim history</text>
+  <text x="830" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 5</text>
+  <text x="830" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
 
   <circle cx="1010" cy="180" r="6" fill="#1f6b45"/>
-  <text x="1010" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 6</text>
-  <text x="1010" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">3 - 16 Oct</text>
-  <text x="1010" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Stabilisation</text>
-  <text x="1010" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">report &amp; polish</text>
+  <text x="1010" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 6</text>
+  <text x="1010" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 - 16 Oct</text>
+  <text x="1010" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Stabilisation</text>
+  <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
 
-  <text x="550" y="330" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Sprint 2: 36/36 points &middot; Sprint 3: 32/40 &middot; one retro change carried forward each sprint</text>
+  <text x="550" y="330" text-anchor="middle" style="font-size:12.5px" fill="#5a5a5a" class="font-mono">Sprint 2: 36/36 points &middot; Sprint 3: 32/40 &middot; one retro change carried forward each sprint</text>
 </svg>
 </div>
 
