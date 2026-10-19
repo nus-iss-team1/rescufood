@@ -490,37 +490,45 @@ class: flex flex-col
   <text x="50" y="32" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#111111">Users</text>
   <line x1="78" y1="28" x2="146" y2="28" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
   <text x="113" y="18" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">HTTPS</text>
-  <rect x="150" y="8" width="140" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
-  <text x="220" y="25" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
-  <text x="220" y="40" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">public HTTP API &middot; TLS</text>
+  <rect x="150" y="8" width="156" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/api-gateway.png" x="157" y="13" width="30" height="30"/>
+  <text x="246" y="25" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
+  <text x="246" y="40" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">public HTTP API &middot; TLS</text>
   <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
 
   <rect x="20" y="65" width="345" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
   <text x="35" y="85" style="font-size:10px;font-weight:700" fill="#3a3a3a">AWS managed services</text>
 
   <rect x="35" y="95" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="116" style="font-size:11px;font-weight:600" fill="#111111">CloudFront + S3 (private)</text>
-  <text x="50" y="133" style="font-size:9px" fill="#5a5a5a" class="font-mono">listing images &middot; OAC &middot; SSE</text>
+  <image href="/aws/cloudfront.png" x="48" y="105" width="32" height="32"/>
+  <image href="/aws/s3.png" x="297" y="105" width="32" height="32"/>
+  <text x="94" y="116" style="font-size:11px;font-weight:600" fill="#111111">CloudFront + S3 (private)</text>
+  <text x="94" y="133" style="font-size:9px" fill="#5a5a5a" class="font-mono">listing images &middot; OAC &middot; SSE</text>
 
   <rect x="35" y="163" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="184" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
-  <text x="50" y="201" style="font-size:9px" fill="#5a5a5a" class="font-mono">OIDC &middot; donor, rescue partner, admin</text>
+  <image href="/aws/cognito.png" x="48" y="173" width="32" height="32"/>
+  <text x="94" y="184" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
+  <text x="94" y="201" style="font-size:9px" fill="#5a5a5a" class="font-mono">OIDC &middot; donor, rescue partner, admin</text>
 
   <rect x="35" y="231" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="252" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
-  <text x="50" y="269" style="font-size:9px" fill="#5a5a5a" class="font-mono">notification events &middot; SSE</text>
+  <image href="/aws/sqs.png" x="48" y="241" width="32" height="32"/>
+  <text x="94" y="252" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
+  <text x="94" y="269" style="font-size:9px" fill="#5a5a5a" class="font-mono">notification events &middot; SSE</text>
 
   <rect x="35" y="299" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="320" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
-  <text x="50" y="337" style="font-size:9px" fill="#5a5a5a" class="font-mono">app, DB and registry secrets</text>
+  <image href="/aws/secrets-manager.png" x="48" y="309" width="32" height="32"/>
+  <text x="94" y="320" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
+  <text x="94" y="337" style="font-size:9px" fill="#5a5a5a" class="font-mono">app, DB and registry secrets</text>
 
   <rect x="35" y="367" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="388" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
-  <text x="50" y="405" style="font-size:9px" fill="#5a5a5a" class="font-mono">container logs &middot; 30-day retention</text>
+  <image href="/aws/cloudwatch.png" x="48" y="377" width="32" height="32"/>
+  <text x="94" y="388" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
+  <text x="94" y="405" style="font-size:9px" fill="#5a5a5a" class="font-mono">container logs &middot; 30-day retention</text>
 
   <rect x="35" y="435" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="50" y="456" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
-  <text x="50" y="473" style="font-size:9px" fill="#5a5a5a" class="font-mono">container images, pulled via NAT</text>
+  <image href="/aws/github.svg" x="50" y="447" width="28" height="28"/>
+  <text x="94" y="456" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
+  <text x="94" y="473" style="font-size:9px" fill="#5a5a5a" class="font-mono">container images, pulled via NAT</text>
 
   <text x="35" y="508" style="font-size:9px" fill="#5a5a5a" class="font-mono">Gmail SMTP :587 &middot; outbound email (external)</text>
 
@@ -537,11 +545,13 @@ class: flex flex-col
   <rect x="405" y="122" width="765" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
   <text x="417" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
   <text x="1158" y="138" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
-  <rect x="430" y="146" width="140" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="500" y="173" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internet Gateway</text>
+  <rect x="430" y="146" width="164" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/internet-gateway.png" x="438" y="153" width="30" height="30"/>
+  <text x="533" y="173" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internet Gateway</text>
   <rect x="950" y="146" width="170" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="1035" y="164" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
-  <text x="1035" y="180" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">single &middot; AZ A &middot; egress</text>
+  <image href="/aws/nat-gateway.png" x="958" y="153" width="30" height="30"/>
+  <text x="1056" y="164" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
+  <text x="1056" y="180" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">single &middot; AZ A &middot; egress</text>
 
   <rect x="405" y="208" width="765" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
   <text x="417" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
@@ -549,11 +559,14 @@ class: flex flex-col
 
   <path d="M 787 107 L 787 228" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
   <rect x="687" y="230" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
-  <text x="787" y="246" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
-  <text x="787" y="261" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">path routing</text>
+  <image href="/aws/alb.png" x="694" y="235" width="30" height="30"/>
+  <text x="805" y="246" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
+  <text x="805" y="261" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">path routing</text>
 
   <rect x="412" y="282" width="750" height="108" rx="6" fill="rgba(31,107,69,0.05)" stroke="rgba(31,107,69,0.3)"/>
-  <text x="422" y="384" style="font-size:9px" fill="#5a5a5a" class="font-mono">ECS cluster &middot; Fargate</text>
+  <image href="/aws/ecs.png" x="422" y="360" width="24" height="24"/>
+  <image href="/aws/fargate.png" x="450" y="360" width="24" height="24"/>
+  <text x="480" y="376" style="font-size:9px" fill="#5a5a5a" class="font-mono">ECS cluster &middot; Fargate</text>
 
   <path d="M 787 270 L 787 276 L 505 276 L 505 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
   <path d="M 787 276 L 693 276 L 693 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
@@ -585,8 +598,9 @@ class: flex flex-col
   <path d="M 787 401 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
 
   <rect x="700" y="438" width="174" height="60" rx="6" fill="#ffffff" stroke="#1f6b45"/>
-  <text x="787" y="463" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
-  <text x="787" y="481" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Multi-AZ &middot; encrypted</text>
+  <image href="/aws/rds.png" x="708" y="451" width="34" height="34"/>
+  <text x="808" y="463" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
+  <text x="808" y="481" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Multi-AZ &middot; encrypted</text>
 </svg>
 </div>
 
