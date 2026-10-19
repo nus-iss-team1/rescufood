@@ -49,21 +49,21 @@ inside each section.
 
 <div class="mt-10 mx-auto" style="max-width:40rem">
 
-<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Overview</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Project conduct</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Analysis &amp; design</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Design patterns</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">DevSecOps</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">06</span><span class="text-lg">Demo</span></div>
+<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Introduction &amp; project management</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Analysis, design &amp; patterns</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Testing</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">CI/CD pipeline demo</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">System demo</span></div>
 
 </div>
 
 <!--
 AGENDA
 
-Read the six markers once, quickly. This maps to the six segments the
-graders expect. Tell them the timings are roughly: overview 3, conduct 6,
-design 9, patterns 8, devsecops 7, demo 10 - Q&A folded into each. Then move.
+Read the five markers once, quickly. Timings: intro and project
+management 3-4, analysis, design and patterns 5, testing 3, pipeline
+demo 10-12, system demo 12-15. Both demos have a recorded video as
+backup if anything breaks live. Then move.
 -->
 
 ---
@@ -74,7 +74,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 01</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-<span class="accent">Overview</span>
+<span class="accent">Introduction</span>
 </div>
 
 <!--
@@ -216,21 +216,6 @@ maintainable, not for ten million users.
 -->
 
 ---
-layout: section
-class: flex flex-col justify-center text-center
----
-
-<div class="text-xs dgm-wide" style="color:#00000066">Section 02</div>
-
-<div class="text-5xl font-extrabold leading-tight mt-6">
-Project <span class="accent">Conduct</span>
-</div>
-
-<!--
-SECTION MARKER
--->
-
----
 class: flex flex-col
 ---
 
@@ -346,7 +331,7 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 02</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
 Analysis &amp; <span class="accent">Design</span>
@@ -619,24 +604,6 @@ the honest cost trade-off to call out.
 -->
 
 ---
-layout: section
-class: flex flex-col justify-center text-center
----
-
-<div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
-
-<div class="text-5xl font-extrabold leading-tight mt-6">
-Design <span class="accent">Patterns</span>
-</div>
-
-<!--
-SECTION MARKER
-
-This is our centrepiece. The graders want "design problems solved by
-applying patterns" - this is ours, end to end.
--->
-
----
 class: flex flex-col
 ---
 
@@ -812,14 +779,97 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-<span class="accent">DevSecOps</span>
+<span class="accent">Testing</span>
 </div>
 
 <!--
 SECTION MARKER
+
+Say the title and move on.
+-->
+
+---
+class: flex flex-col
+---
+
+# Types of testing
+
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
+
+<div class="grid grid-cols-3 gap-12 mx-auto" style="max-width:56rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">Unit</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Jest for the NestJS services</div>
+      <div class="text-base">go test for profile</div>
+      <div class="text-base">Frontend logic with fixed clocks</div>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">Integration</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Real PostgreSQL via testcontainers</div>
+      <div class="text-base">Each service runs its own migrations</div>
+      <div class="text-base">Coverage reported on every PR</div>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">End-to-end</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Playwright against live dev &amp; QA</div>
+      <div class="text-base">Full journey, post &rarr; claim &rarr; pickup</div>
+      <div class="text-base">Post-deploy smoke check</div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-12 text-center text-sm" style="color:#00000099">
+Unit and integration tests gate every PR &middot; e2e never blocks and never touches prod
+</div>
+
+</div>
+
+<!--
+TYPES OF TESTING
+
+Three levels, each with its own tool. Unit tests run per service: Jest
+for the two NestJS services, go test with fakes for profile, and the
+frontend mappers and filters get unit tests with a fixed clock so the
+results are stable. Integration tests spin up a real PostgreSQL in CI
+with testcontainers, run each service's migrations and hit the actual
+schema; a combined coverage report lands on every PR. End-to-end is
+Playwright against the live dev or QA environment after each deploy,
+running the whole journey of posting, claiming, cancelling and
+completing pickups, including negative cases like a second claim being
+refused.
+
+The gates: unit and integration must be green before a merge. The e2e
+suite is a post-deploy smoke check on purpose - it runs after the
+environment has already updated, and browser tests can go red for
+reasons that are not real regressions, so it reports without blocking.
+It never runs on prod because it creates real data.
+-->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+CI/CD <span class="accent">pipeline</span>
+</div>
+
+<!--
+SECTION MARKER
+
+This segment is a live demo: the next three slides set the context, then
+switch to GitHub Actions and walk a real run. Have the recorded video
+ready as backup in case the live demo breaks.
 -->
 
 ---
@@ -1031,10 +1081,10 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 06</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-<span class="accent">Demo</span>
+System <span class="accent">demo</span>
 </div>
 
 <!--
