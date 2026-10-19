@@ -1198,7 +1198,7 @@ class: flex flex-col
   <text x="116" y="245" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
 
   <path d="M 170 229 L 190 229 L 190 124 L 202 124" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
-  <path d="M 170 229 L 190 229 L 190 334 L 202 334" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 170 229 L 190 229 L 190 338 L 202 338" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
   <rect x="210" y="40" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(240,71)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1216,24 +1216,32 @@ class: flex flex-col
   </g>
   <text x="268" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
 
-  <rect x="210" y="250" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(240,281)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="210" y="250" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(240,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-  <g transform="translate(240,331)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="268" y="282" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+
+  <rect x="210" y="311" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(240,327)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-  <g transform="translate(240,381)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="268" y="343" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+
+  <rect x="210" y="372" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(240,388)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <text x="268" y="404" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
   <circle cx="514" cy="124" r="4.5" fill="#8a8a8a"/>
-  <circle cx="514" cy="334" r="4.5" fill="#8a8a8a"/>
+  <circle cx="514" cy="277" r="4.5" fill="#8a8a8a"/>
+  <circle cx="514" cy="338" r="4.5" fill="#8a8a8a"/>
+  <circle cx="514" cy="399" r="4.5" fill="#8a8a8a"/>
   <path d="M 518 124 C 575 124 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 518 334 C 575 334 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 518 277 C 575 277 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 518 338 C 575 338 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 518 399 C 575 399 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
   <circle cx="610" cy="229" r="4.5" fill="#8a8a8a"/>
   <line x1="614" y1="229" x2="658" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
