@@ -378,17 +378,17 @@ SECTION MARKER
 # Logical view
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 -85 1100 470" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 -125 1100 510" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
 
-  <path d="M 40 -75 L 810 -75 L 810 80 L 1060 80 L 1060 370 L 40 370 Z" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="56" y="-57" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
+  <path d="M 40 -85 L 790 -85 L 790 95 L 1060 95 L 1060 370 L 40 370 Z" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="56" y="-67" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
 
-  <rect x="830" y="-70" width="230" height="140" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="844" y="-54" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
+  <rect x="855" y="-115" width="225" height="130" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="869" y="-99" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
 
   <g transform="translate(355,-58)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -397,12 +397,12 @@ SECTION MARKER
   <text x="388" y="-40" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
   <line x1="368" y1="-30" x2="368" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <g transform="translate(900,-58)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(905,-108)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
-  <text x="933" y="-40" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
-  <line x1="913" y1="-30" x2="913" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <text x="938" y="-90" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
+  <line x1="918" y1="-80" x2="918" y2="-54" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
   <rect x="260" y="8" width="240" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(276,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -411,17 +411,17 @@ SECTION MARKER
   <text x="394" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
   <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js app, in the browser</text>
 
-  <rect x="845" y="8" width="200" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(858,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="865" y="-50" width="200" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(878,-38)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
-  <text x="963" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
-  <text x="963" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
+  <text x="983" y="-27" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
+  <text x="983" y="-8" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
 
   <line x1="368" y1="64" x2="368" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="945" y1="64" x2="945" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="965" y1="6" x2="965" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
   <text x="530" y="104" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
-  <line x1="195" y1="122" x2="945" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="122" x2="965" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="195" y1="122" x2="195" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <line x1="550" y1="122" x2="550" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <line x1="905" y1="122" x2="905" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
