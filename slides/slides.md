@@ -1174,7 +1174,7 @@ Production bugs are handled by cutting a hotfix branch directly from main and me
 class: flex flex-col
 ---
 
-# CI
+# Continuous Integration
 
 <div class="text-base mt-2" style="color:#00000099">Every pull request into develop</div>
 
@@ -1188,50 +1188,61 @@ class: flex flex-col
     <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
 
-  <rect x="90" y="40" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="126" y="82"/>
-  <text x="148" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <use href="#ci-check" x="126" y="132"/>
-  <text x="148" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
-  <use href="#ci-check" x="126" y="182"/>
-  <text x="148" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <rect x="20" y="187" width="150" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(38,217)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+  </g>
+  <text x="116" y="224" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Pull request</text>
+  <text x="116" y="245" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
 
-  <rect x="90" y="250" width="330" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#ci-check" x="126" y="292"/>
-  <text x="148" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-  <use href="#ci-check" x="126" y="342"/>
-  <text x="148" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-  <use href="#ci-check" x="126" y="392"/>
-  <text x="148" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <path d="M 170 229 L 190 229 L 190 124 L 202 124" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 170 229 L 190 229 L 190 334 L 202 334" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <circle cx="424" cy="124" r="4.5" fill="#8a8a8a"/>
-  <circle cx="424" cy="334" r="4.5" fill="#8a8a8a"/>
-  <path d="M 428 124 C 500 124 500 229 552 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 428 334 C 500 334 500 229 552 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <circle cx="556" cy="229" r="4.5" fill="#8a8a8a"/>
-  <line x1="560" y1="229" x2="612" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <rect x="210" y="40" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="246" y="82"/>
+  <text x="268" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <use href="#ci-check" x="246" y="132"/>
+  <text x="268" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <use href="#ci-check" x="246" y="182"/>
+  <text x="268" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
 
-  <rect x="620" y="187" width="290" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="765" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
-  <text x="765" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+  <rect x="210" y="250" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#ci-check" x="246" y="292"/>
+  <text x="268" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <use href="#ci-check" x="246" y="342"/>
+  <text x="268" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <use href="#ci-check" x="246" y="392"/>
+  <text x="268" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+
+  <circle cx="514" cy="124" r="4.5" fill="#8a8a8a"/>
+  <circle cx="514" cy="334" r="4.5" fill="#8a8a8a"/>
+  <path d="M 518 124 C 575 124 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 518 334 C 575 334 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="610" cy="229" r="4.5" fill="#8a8a8a"/>
+  <line x1="614" y1="229" x2="658" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+
+  <rect x="666" y="187" width="300" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="816" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="816" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 </svg>
 
 <div class="mt-6" style="max-width:40rem">
   <div class="flex items-baseline">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Path-filtered: only the pipeline of the component that changed runs</span>
+    <span class="text-sm">Only the component you touched gets rebuilt and retested</span>
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Integration tests hit a real PostgreSQL spun up with Testcontainers</span>
+    <span class="text-sm">Integration tests run on a real Postgres via Testcontainers, no mocks</span>
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Three SAST scanners cover our code, risky patterns and dependencies</span>
+    <span class="text-sm">Three security scanners check our code, dependencies and configs</span>
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Nothing merges without a review and every check green</span>
+    <span class="text-sm">No approval or a red check means no merge</span>
   </div>
 </div>
 
