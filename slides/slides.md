@@ -255,6 +255,10 @@ class: flex flex-col
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
     <span class="text-sm">One concrete change from each retro, carried into the next sprint</span>
   </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Team of 7, about 80 hours each: <span class="font-semibold">560 person-hours</span> across web, identity, listings, notifications and infra</span>
+  </div>
 </div>
 
 </div>
@@ -283,62 +287,15 @@ On the numbers: Sprint 2 closed all 36 points, Sprint 3 closed 32 of
 long. We'd rather show that honestly than pretend every sprint was
 perfect.
 
+On effort: there are seven of us at roughly 80 hours each, so about
+560 person-hours, split across the web app, identity, listings and
+claims, notifications and the infrastructure. Name who owned what if
+asked.
+
 And the habit that mattered most: every retro produced exactly one
 concrete change we carried into the next sprint. PR automation came out
 of Sprint 1's retro, tests-in-CI out of Sprint 2's. That's how the
 pipeline you'll see in section 5 got as strict as it is.
--->
-
----
-
-# Status &amp; effort
-
-<div class="mt-8 px-6">
-
-<div class="grid grid-cols-2 gap-10">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Where we are</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">Three services + two web apps, deployed to prod</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">Core loop working end to end: post &rarr; claim &rarr; pickup</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">CI/CD across all three environments</span></div>
-</div>
-<div class="dgm text-xs mt-6" style="color:#00000066">Outstanding</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="flex items-baseline"><span class="mr-3" style="color:#00000066">&middot;</span><span class="text-sm" style="color:#00000099">Richer conflict/retry UX on claim</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#00000066">&middot;</span><span class="text-sm" style="color:#00000099">Broaden SAST gating once findings are triaged</span></div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Effort</div>
-<div class="mt-3 text-sm" style="color:#00000099">Team of 7 &middot; ~80 hours each &middot; <span class="font-semibold" style="color:#000000">560 person-hours</span>. Split across web, identity, listings/claims, notifications and infrastructure.</div>
-<div class="mt-5 rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-<div class="text-xs dgm" style="color:#00000066">Six sprints &mdash; four delivered</div>
-<div class="text-sm mt-2">S1 CI/CD + auth &middot; S2 IaC + IAM + QA &middot; S3 claim, OTP, notify, CDN+API GW &middot; S4 pickup completion</div>
-</div>
-</div>
-</div>
-
-</div>
-
-<!--
-STATUS & EFFORT
-
-Quick and honest. Where we are: three backend services and two web apps are
-deployed; the core loop works end to end; and CI/CD runs across all three
-environments. Outstanding work is genuine but small - a richer conflict and
-retry experience on the claim screen, and turning on fail-on-findings for
-the security scanners once we've triaged the backlog. We chose not to block
-the pipeline on untriaged findings rather than rubber-stamp them.
-
-Effort: seven of us, about 80 hours each, so roughly 560 person-hours,
-split across the areas listed. The plan is six two-week sprints; four are
-delivered and evidenced. The one-liner traces the arc: Sprint 1 stood up
-CI/CD and authentication, Sprint 2 the infrastructure-as-code, sandbox
-environments, IAM and the first automated QA cases, Sprint 3 the
-claim/reservation workflow, pickup OTP, notifications and the move from a
-public load balancer to CDN plus API Gateway, and Sprint 4 pickup
-completion. Name who owned what if asked.
 -->
 
 ---
