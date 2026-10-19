@@ -1281,12 +1281,11 @@ class: flex flex-col
   </defs>
 
   <rect x="20" y="140" width="160" height="92" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(38,174)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(40,174)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
     <path d="M6 21V9a9 9 0 0 0 9 9"/>
   </g>
-  <text x="121" y="180" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Push to branch</text>
-  <text x="121" y="202" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">develop &middot; qa &middot; main</text>
+  <text x="112" y="192" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Push to branch</text>
 
   <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
 
