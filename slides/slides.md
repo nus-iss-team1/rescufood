@@ -113,49 +113,9 @@ class: flex flex-col
 
 # With RescuFood
 
-<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center" class="px-6">
 
-<div class="grid grid-cols-2 gap-16 mx-auto" style="max-width:54rem;width:100%">
-  <div>
-    <div class="dgm text-xs" style="color:#00000066">Today</div>
-    <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
-      <div class="text-base" style="color:#00000099">WhatsApp groups nobody keeps up with</div>
-      <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
-    </div>
-  </div>
-  <div>
-    <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
-    <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Donors post a listing the moment food is free</div>
-      <div class="text-base">Rescue partners claim it, first come first served</div>
-      <div class="text-base">Pickup verified by OTP, tracked to handover</div>
-    </div>
-  </div>
-</div>
-
-</div>
-
-<!--
-THE COMPARISON
-
-RescuFood makes the workflow digital and real-time. A donor posts a
-listing the instant food becomes available; a rescue partner claims it on
-a first-come-first-served basis; and the handover is verified and tracked.
-The core promise is on the right: one claim per listing, one source of
-truth. Hold that phrase - the whole design defends it.
--->
-
----
-class: flex flex-col
----
-
-# Scope: what we built
-
-<div class="text-base mt-2" style="color:#00000099">A platform where donors give away surplus food as listings, and rescue partners claim it</div>
-
-<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
-<svg viewBox="0 0 1000 300" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 0 1000 300" style="max-width:46rem;width:100%" fill="none">
   <defs>
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
@@ -187,42 +147,40 @@ class: flex flex-col
   <text x="850" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
 </svg>
 
-<div class="mt-8" style="max-width:38rem">
-  <div class="flex items-baseline">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Donors post surplus food as listings before it expires</span>
+<div class="mt-10 grid grid-cols-2 gap-16 mx-auto" style="max-width:54rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#00000066">Today</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
+      <div class="text-base" style="color:#00000099">WhatsApp groups nobody keeps up with</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
+    </div>
   </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Rescue partners browse and claim, first come first served</span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Handover is verified and tracked, with notifications along the way</span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Proof of concept; horizontal scale is out of scope</span>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Donors post a listing the moment food is free</div>
+      <div class="text-base">Rescue partners claim it, first come first served</div>
+      <div class="text-base">Pickup verified by OTP, tracked to handover</div>
+    </div>
   </div>
 </div>
 
 </div>
 
 <!--
-SCOPE
+THE COMPARISON
 
-Three capability areas. Identity: donors and rescue partners register, and
-an admin approves organisations before they can transact - that approval
-gate matters because a claim reserves real food. Listings and claims are
-the core loop and the source of our most interesting design work, so I'll
-defer the detail to sections 2 and 3. Pickup and notify closes the loop: an
-OTP-verified handover, plus email and in-app notifications.
+RescuFood makes the workflow digital and real-time. A donor posts a
+listing the instant food becomes available; a rescue partner claims it on
+a first-come-first-served basis; and the handover is verified and tracked.
+The core promise is on the right: one claim per listing, one source of
+truth. Hold that phrase - the whole design defends it.
 
-Design goals, bottom left, are the DMSS quality attributes - robustness,
-maintainability, extensibility, security by default. Bottom right, the
-honest boundary: this is a proof of concept, so horizontal scaling and
-auto-scaling are deliberately out of scope. We optimised for correct and
-maintainable, not for ten million users.
+Scope details if asked: both roles sign up and an admin approves the
+organisation before it can transact; handover is verified with an OTP
+and tracked; email and in-app notifications fire along the way. This is
+a proof of concept, so horizontal scale is out of scope.
 -->
 
 ---
