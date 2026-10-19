@@ -492,8 +492,7 @@ class: flex flex-col
   <text x="113" y="18" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">HTTPS</text>
   <rect x="150" y="8" width="156" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/api-gateway.png" x="157" y="13" width="30" height="30"/>
-  <text x="246" y="25" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
-  <text x="246" y="40" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">public HTTP API &middot; TLS</text>
+  <text x="246" y="32" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
   <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
 
   <rect x="20" y="65" width="345" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
