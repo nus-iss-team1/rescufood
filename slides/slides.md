@@ -377,53 +377,86 @@ SECTION MARKER
 
 # Logical view
 
-<div class="mt-6 px-4">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 510" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;width:11rem;height:4.4rem">
-    <div class="text-sm font-semibold">Platform web</div>
-    <div class="text-xs mt-0.5" style="color:#00000099">Next.js &middot; donors &amp; partners</div>
-  </div>
-  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;width:11rem;height:4.4rem">
-    <div class="text-sm font-semibold">Admin console</div>
-    <div class="text-xs mt-0.5" style="color:#00000099">React SPA &middot; local only</div>
-  </div>
-</div>
+  <rect x="260" y="30" width="240" height="64" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(278,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="396" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
+  <text x="396" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js &middot; donors &amp; partners</text>
 
-<div class="text-center mt-2" style="color:#00000066">&darr;&nbsp;&nbsp;HTTPS / JSON&nbsp;&nbsp;&darr;</div>
+  <rect x="560" y="30" width="240" height="64" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <g transform="translate(578,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="696" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
+  <text x="696" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
 
-<div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 text-center text-xs font-medium flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:23rem;height:2.4rem;color:#3a3a3a">CDN &middot; API Gateway &nbsp;<span style="color:#5a5a5a">(hardened ingress, Sprint 3)</span></div>
-</div>
+  <line x1="380" y1="94" x2="380" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="680" y1="94" x2="680" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
 
-<div class="text-center my-1" style="color:#00000066">&darr;</div>
+  <rect x="230" y="150" width="600" height="40" rx="8" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="530" y="175" text-anchor="middle" style="font-size:12.5px;font-weight:600" fill="#111111">CDN &middot; API Gateway</text>
 
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
-    <div class="text-sm font-semibold">Profile</div>
-    <div class="text-xs mt-0.5" style="color:#00000099">Go &middot; identity &amp; orgs</div>
-  </div>
-  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
-    <div class="text-sm font-semibold">Listings</div>
-    <div class="text-xs mt-0.5" style="color:#00000099">NestJS &middot; listings &amp; claims</div>
-  </div>
-  <div class="rounded-lg border px-4 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem;height:4.4rem">
-    <div class="text-sm font-semibold">Notifications</div>
-    <div class="text-xs mt-0.5" style="color:#00000099">NestJS &middot; queue consumer</div>
-  </div>
-</div>
+  <path d="M 530 190 L 530 216 L 195 216 L 195 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <path d="M 530 190 L 530 216 L 550 216 L 550 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <path d="M 530 190 L 530 216 L 905 216 L 905 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-<div class="flex items-center justify-center mt-2" style="gap:0.6rem">
-  <div class="text-center" style="width:11rem"></div>
-  <div class="text-center" style="width:11rem"><span style="color:#00000066">&rarr; SQS &rarr;</span></div>
-  <div class="text-center" style="width:11rem"></div>
-</div>
+  <rect x="60" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(80,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="207" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile</text>
+  <text x="207" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Go &middot; identity &amp; orgs</text>
 
-<div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 text-center text-xs font-mono flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:23rem;height:2.4rem;color:#00000099">PostgreSQL (per service)</div>
-  <div class="rounded-lg border px-4 text-center text-xs font-mono flex items-center justify-center" style="border-color:#0000001a;background:#f2f0ed;width:11rem;height:2.4rem;color:#00000099">AWS ECS Fargate</div>
-</div>
+  <rect x="415" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(435,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="562" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
+  <text x="562" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; listings &amp; claims</text>
 
+  <rect x="770" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(790,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="917" y="285" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications</text>
+  <text x="917" y="305" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; queue consumer</text>
+
+  <line x1="685" y1="290" x2="764" y2="290" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
+  <text x="725" y="278" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
+
+  <line x1="195" y1="330" x2="195" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="330" x2="550" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="330" x2="905" y2="378" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+
+  <rect x="95" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(112,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="207" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <rect x="450" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(467,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="562" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <rect x="805" y="382" width="200" height="52" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(822,396)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="917" y="413" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <text x="550" y="482" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; everything runs on AWS ECS Fargate</text>
+</svg>
 </div>
 
 <!--
