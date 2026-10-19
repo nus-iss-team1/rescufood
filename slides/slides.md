@@ -146,40 +146,56 @@ truth. Hold that phrase - the whole design defends it.
 -->
 
 ---
+class: flex flex-col
+---
 
 # Scope: what we built
 
-<div class="mt-6 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 360" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="scope-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="grid grid-cols-3 gap-4">
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Identity</div>
-    <div class="text-sm mt-2 font-semibold">Users, orgs, approval</div>
-    <div class="text-xs mt-1" style="color:#00000099">Donors and rescue partners register; admins approve organisations.</div>
-  </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Listings &amp; claims</div>
-    <div class="text-sm mt-2 font-semibold">Post, browse, claim</div>
-    <div class="text-xs mt-1" style="color:#00000099">The core loop. Claiming is the hard part &mdash; section 04.</div>
-  </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Pickup &amp; notify</div>
-    <div class="text-sm mt-2 font-semibold">Verify, hand over, notify</div>
-    <div class="text-xs mt-1" style="color:#00000099">OTP-verified handover; email + in-app notifications.</div>
-  </div>
-</div>
+  <circle cx="200" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(177.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="200" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Identity</text>
+  <text x="200" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">register &middot; org approval</text>
 
-<div class="mt-8 grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Design goals</div>
-<div class="text-sm mt-3" style="color:#000000">Robust &middot; maintainable &middot; extensible &middot; secure by default</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#00000066">Out of scope</div>
-<div class="text-sm mt-3" style="color:#00000099">Horizontal scale &amp; auto-scaling &mdash; a proof of concept, not a load test</div>
-</div>
-</div>
+  <line x1="258" y1="130" x2="384" y2="130" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr)"/>
 
+  <circle cx="450" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(427.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+  </g>
+  <text x="450" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Listings &amp; claims</text>
+  <text x="450" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">post &middot; browse &middot; claim</text>
+
+  <line x1="508" y1="130" x2="634" y2="130" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr)"/>
+
+  <circle cx="700" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(677.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  </g>
+  <text x="700" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Pickup &amp; notify</text>
+  <text x="700" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">OTP handover &middot; email + in-app</text>
+
+  <path d="M 758 130 C 820 130 820 130 866 130" stroke="#0000001a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="912" cy="130" r="46" fill="none" stroke="#0000002a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="912" y="135" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">out of scope</text>
+  <text x="912" y="228" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">Scale-out</text>
+  <text x="912" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">proof of concept</text>
+
+  <text x="500" y="330" text-anchor="middle" style="font-size:12px" fill="#5a5a5a" class="font-mono">design goals: robust &middot; maintainable &middot; extensible &middot; secure by default</text>
+</svg>
 </div>
 
 <!--
