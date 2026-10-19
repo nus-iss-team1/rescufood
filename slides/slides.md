@@ -676,6 +676,92 @@ implementation leans on.
 class: flex flex-col
 ---
 
+# The claim, step by step
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="sq-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="sq-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="sq-arr-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#111111"/></marker>
+  </defs>
+
+  <rect x="50" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="150" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Rescue partner</text>
+  <rect x="350" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="450" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">web-platform</text>
+  <rect x="650" y="20" width="200" height="44" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="750" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">listings</text>
+  <rect x="950" y="20" width="200" height="44" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="1050" y="47" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <line x1="150" y1="64" x2="150" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="450" y1="64" x2="450" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="750" y1="64" x2="750" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="1050" y1="64" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+
+  <rect x="746" y="145" width="8" height="115" rx="2" fill="rgba(31,107,69,0.2)"/>
+  <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
+  <rect x="746" y="460" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
+
+  <text x="28" y="119" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">CLAIM</text>
+  <line x1="150" y1="115" x2="444" y2="115" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="300" y="103" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the listing</text>
+  <line x1="450" y1="150" x2="744" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="600" y="138" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">POST /api/requests &middot; idempotency key</text>
+  <line x1="754" y1="185" x2="1044" y2="185" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="173" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the key slot</text>
+  <line x1="754" y1="220" x2="1044" y2="220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="208" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">tx: reserve &middot; insert claim &middot; audit</text>
+  <line x1="746" y1="255" x2="156" y2="255" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
+  <text x="450" y="243" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; Reserved</text>
+
+  <line x1="30" y1="290" x2="1170" y2="290" stroke="#0000000d" stroke-width="1"/>
+
+  <text x="28" y="319" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RETRY</text>
+  <line x1="150" y1="315" x2="744" y2="315" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="450" y="303" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">the same request, resent</text>
+  <line x1="754" y1="350" x2="1044" y2="350" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="338" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">key found &middot; fingerprint matches</text>
+  <line x1="746" y1="385" x2="156" y2="385" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
+  <text x="450" y="373" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; the original claim, replayed</text>
+
+  <line x1="30" y1="410" x2="1170" y2="410" stroke="#0000000d" stroke-width="1"/>
+
+  <text x="28" y="439" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RACE</text>
+  <line x1="150" y1="435" x2="744" y2="435" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="450" y="423" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">another partner, same listing</text>
+  <line x1="754" y1="470" x2="1044" y2="470" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="458" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">reserve fails &middot; unique index holds</text>
+  <line x1="746" y1="505" x2="156" y2="505" stroke="#111111" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr-k)"/>
+  <text x="450" y="493" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111" class="font-mono">409 Conflict</text>
+</svg>
+</div>
+
+<!--
+CLAIM SEQUENCE
+
+Three runs of the same endpoint. Top: the happy path. The request
+carries an idempotency key; the service claims a slot for that key,
+then reserves the listing, inserts the claim and writes the audit row
+in one transaction, and the partner gets 201 Reserved.
+
+Middle: the phone resends the same request. The key is already
+completed and the fingerprint matches, so the service replays the
+original claim instead of doing anything. Same answer, no second
+reservation.
+
+Bottom: a different partner races for the same listing. The conditional
+reserve finds the listing no longer available, and even if the
+application got it wrong, the partial unique index in the database
+cannot admit a second active claim. That partner gets a 409 and the
+frontend tells them someone else got it first.
+-->
+
+---
+class: flex flex-col
+---
+
 # Repository
 
 <div class="text-base mt-2" style="color:#00000099">All database access goes through a repository class</div>
