@@ -1270,47 +1270,69 @@ class: flex flex-col
 <div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1200 430" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="10 128 1170 296" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <g id="cd-check">
       <circle r="10" fill="#1f6b45"/>
       <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
+    <marker id="cd-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="cd-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
   </defs>
 
-  <rect x="50" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="82" y="190"/>
-  <text x="104" y="195" style="font-size:14px;font-weight:600" fill="#111111">SAST</text>
-  <text x="254" y="195" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 jobs</text>
+  <rect x="20" y="140" width="160" height="92" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(38,174)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M6 21V9a9 9 0 0 0 9 9"/>
+  </g>
+  <text x="121" y="180" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Push to branch</text>
+  <text x="121" y="202" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">develop &middot; qa &middot; main</text>
 
-  <circle cx="278" cy="190" r="4.5" fill="#8a8a8a"/>
-  <circle cx="332" cy="190" r="4.5" fill="#8a8a8a"/>
-  <line x1="282" y1="190" x2="328" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
 
-  <rect x="340" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="372" y="190"/>
-  <text x="394" y="195" style="font-size:14px;font-weight:600" fill="#111111">build-and-push</text>
+  <rect x="220" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="252" y="186"/>
+  <text x="274" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">SAST</text>
+  <text x="274" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">CodeQL &middot; Semgrep &middot; Trivy</text>
 
-  <circle cx="568" cy="190" r="4.5" fill="#8a8a8a"/>
-  <circle cx="622" cy="190" r="4.5" fill="#8a8a8a"/>
-  <line x1="572" y1="190" x2="618" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="441" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="459" cy="186" r="4.5" fill="#8a8a8a"/>
 
-  <rect x="630" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="662" y="190"/>
-  <text x="684" y="195" style="font-size:14px;font-weight:600" fill="#111111">Deploy to ECS</text>
+  <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="497" y="186"/>
+  <text x="519" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">build-and-push</text>
+  <text x="519" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">image &rarr; GHCR &middot; branch + sha</text>
 
-  <circle cx="858" cy="190" r="4.5" fill="#8a8a8a"/>
-  <circle cx="912" cy="190" r="4.5" fill="#8a8a8a"/>
-  <line x1="862" y1="190" x2="908" y2="190" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="686" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="704" cy="186" r="4.5" fill="#8a8a8a"/>
 
-  <rect x="920" y="150" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <use href="#cd-check" x="952" y="190"/>
-  <text x="974" y="195" style="font-size:14px;font-weight:600" fill="#111111">DAST / ZAP</text>
+  <rect x="710" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="742" y="186"/>
+  <text x="764" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">Deploy to ECS</text>
+  <text x="764" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">rolls the matching env</text>
 
-  <path d="M 740 230 L 740 318" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3"/>
-  <circle cx="740" cy="322" r="4.5" fill="#8a8a8a"/>
-  <rect x="630" y="326" width="220" height="80" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
-  <text x="662" y="371" style="font-size:14px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+  <circle cx="931" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="949" cy="186" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="955" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <use href="#cd-check" x="987" y="186"/>
+  <text x="1009" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">DAST / ZAP</text>
+  <text x="1009" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">scans the live site</text>
+
+  <path d="M 817 232 L 817 322" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr-r)"/>
+  <text x="828" y="284" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">rollout fails</text>
+  <rect x="710" y="330" width="215" height="76" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+  <g transform="translate(728,356)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+    <path d="M3 3v5h5"/>
+  </g>
+  <text x="846" y="364" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Rollback</text>
+  <text x="846" y="386" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">circuit breaker, automatic</text>
+
+  <path d="M 1062 232 L 1062 322" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr)"/>
+  <rect x="955" y="330" width="215" height="76" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="1062" y="364" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+  <text x="1062" y="386" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Playwright &middot; dev + qa</text>
 </svg>
 </div>
 
