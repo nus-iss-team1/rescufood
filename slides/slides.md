@@ -84,8 +84,35 @@ Say the title and move on. Marker, not a slide to talk over.
 -->
 
 ---
+class: flex flex-col justify-center text-center
+---
 
-# Surplus food is a coordination problem
+<div class="text-4xl font-extrabold leading-tight px-16">
+Surplus food is a <span class="accent">coordination</span> problem.
+</div>
+
+<div class="text-base mt-10 mx-auto" style="max-width:38rem;color:#00000099">
+There is no formal channel to move excess food to rescue partners before it expires. Today it is coordinated over phone calls, chat groups and spreadsheets.
+</div>
+
+<div class="text-sm mt-10 dgm-wide" style="color:#00000066">
+Double allocations &middot; missed pickups &middot; food spoils
+</div>
+
+<!--
+THE PROBLEM
+
+Surplus food is time-sensitive. A tray of bread is useful for a few hours,
+then it's waste. The blocker is never goodwill - it's coordination. Donors
+and rescue partners today rely on calls, chat groups and spreadsheets,
+which means two partners show up for the same tray, or nobody shows up.
+Hold on the three failure modes at the bottom; the next slide shows what
+we replace them with.
+-->
+
+---
+
+# With RescuFood
 
 <div class="mt-8 grid grid-cols-2 gap-10 px-6">
 
@@ -103,7 +130,7 @@ Say the title and move on. Marker, not a slide to talk over.
 <div class="dgm text-xs" style="color:#1f6b45">With RescuFood</div>
 <div class="mt-4 flex flex-col" style="gap:0.75rem">
   <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Donors post a listing the moment food is free</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it &mdash; first come, first served</div>
+  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it, first come first served</div>
   <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP, tracked to handover</div>
 </div>
 <div class="mt-4 text-sm" style="color:#1f6b45">One claim per listing. One source of truth.</div>
@@ -112,12 +139,7 @@ Say the title and move on. Marker, not a slide to talk over.
 </div>
 
 <!--
-THE PROBLEM
-
-Surplus food is time-sensitive. A tray of bread is useful for a few hours,
-then it's waste. The blocker is never goodwill - it's coordination. Donors
-and rescue partners today rely on calls, chat groups and spreadsheets,
-which means two partners show up for the same tray, or nobody shows up.
+THE COMPARISON
 
 RescuFood makes the workflow digital and real-time. A donor posts a
 listing the instant food becomes available; a rescue partner claims it on
