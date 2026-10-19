@@ -198,7 +198,7 @@ a proof of concept, so horizontal scale is out of scope.
 class: flex flex-col
 ---
 
-# Agile, in practice
+# Timeline
 
 <div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 <svg viewBox="0 85 1100 205" style="max-height:100%;max-width:100%" fill="none">
