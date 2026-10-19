@@ -392,7 +392,7 @@ SECTION MARKER
   <line x1="380" y1="-22" x2="380" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
   <rect x="540" y="-98" width="280" height="206" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="554" y="-82" style="font-size:9px" fill="#5a5a5a" class="font-mono">local machine &middot; not on the web</text>
+  <text x="554" y="-82" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
 
   <g transform="translate(667,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -420,7 +420,7 @@ SECTION MARKER
   <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
 
   <rect x="40" y="122" width="1020" height="334" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
-  <text x="56" y="142" style="font-size:9px" fill="#5a5a5a" class="font-mono">AWS cloud &middot; ECS Fargate &middot; one stack per environment</text>
+  <text x="56" y="142" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
 
   <rect x="230" y="150" width="600" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
   <text x="530" y="175" text-anchor="middle" style="font-size:12.5px;font-weight:600" fill="#111111">CDN &middot; API Gateway</text>
