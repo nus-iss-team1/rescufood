@@ -206,7 +206,7 @@ Three capability areas. Identity: donors and rescue partners register, and
 an admin approves organisations before they can transact - that approval
 gate matters because a claim reserves real food. Listings and claims are
 the core loop and the source of our most interesting design work, so I'll
-defer the detail to section 4. Pickup and notify closes the loop: an
+defer the detail to sections 2 and 3. Pickup and notify closes the loop: an
 OTP-verified handover, plus email and in-app notifications.
 
 Design goals, bottom left, are the DMSS quality attributes - robustness,
@@ -671,8 +671,8 @@ it or a phone resends the same request. Two safeguards cover it: an
 idempotency key, so an identical retry replays the original outcome
 instead of acting again, and a partial unique index in the database, so
 at most one active claim can exist per listing no matter what the
-application layer does. The next three slides show the patterns this
-implementation leans on.
+application layer does. The sequence diagram next walks this edge step
+by step, and section 3 shows the patterns the implementation leans on.
 -->
 
 ---
@@ -1365,7 +1365,7 @@ DEMO SCRIPT
 Narrate the running system, don't read this list. Drive the core loop on
 qa: donor posts, the listing shows up live in the partner's feed. Partner
 claims it - then try to claim from the second browser and show the refusal.
-That refusal is the idempotency and unique-index work from section 4 doing
+That refusal is the idempotency and unique-index work from sections 2 and 3 doing
 its job in front of them; call that back explicitly.
 
 Then verify pickup with the OTP and show the status advance, and
