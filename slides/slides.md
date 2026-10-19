@@ -84,31 +84,15 @@ Say the title and move on. Marker, not a slide to talk over.
 -->
 
 ---
+class: flex flex-col justify-center text-center
+---
 
-# Surplus food is a coordination problem
-
-<div class="mt-8 grid grid-cols-2 gap-10 px-6">
-
-<div>
-<div class="dgm text-xs" style="color:#00000066">Today</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Phone calls between donors and rescue partners</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Ad-hoc chat groups</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Spreadsheets that go stale</div>
-</div>
-<div class="mt-4 text-sm" style="color:#00000099">Double allocations. Missed pickups. Food spoils.</div>
+<div class="text-6xl font-extrabold leading-tight px-12">
+Surplus food is a <span class="accent">coordination</span> problem.
 </div>
 
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">With RescuFood</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Donors post a listing the moment food is free</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it &mdash; first come, first served</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP, tracked to handover</div>
-</div>
-<div class="mt-4 text-sm" style="color:#1f6b45">One claim per listing. One source of truth.</div>
-</div>
-
+<div class="text-lg mt-12 mx-auto" style="max-width:42rem;color:#00000099">
+There is no formal channel to move excess food to rescue partners before it expires. Today it is coordinated over phone calls, chat groups and spreadsheets.
 </div>
 
 <!--
@@ -118,6 +102,41 @@ Surplus food is time-sensitive. A tray of bread is useful for a few hours,
 then it's waste. The blocker is never goodwill - it's coordination. Donors
 and rescue partners today rely on calls, chat groups and spreadsheets,
 which means two partners show up for the same tray, or nobody shows up.
+Hold on the three failure modes at the bottom; the next slide shows what
+we replace them with.
+-->
+
+---
+class: flex flex-col
+---
+
+# With RescuFood
+
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
+
+<div class="grid grid-cols-2 gap-16 mx-auto" style="max-width:54rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#00000066">Today</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
+      <div class="text-base" style="color:#00000099">WhatsApp groups nobody keeps up with</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Donors post a listing the moment food is free</div>
+      <div class="text-base">Rescue partners claim it, first come first served</div>
+      <div class="text-base">Pickup verified by OTP, tracked to handover</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!--
+THE COMPARISON
 
 RescuFood makes the workflow digital and real-time. A donor posts a
 listing the instant food becomes available; a rescue partner claims it on
@@ -127,40 +146,56 @@ truth. Hold that phrase - the whole design defends it.
 -->
 
 ---
+class: flex flex-col
+---
 
 # Scope: what we built
 
-<div class="mt-6 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 360" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="scope-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="grid grid-cols-3 gap-4">
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Identity</div>
-    <div class="text-sm mt-2 font-semibold">Users, orgs, approval</div>
-    <div class="text-xs mt-1" style="color:#00000099">Donors and rescue partners register; admins approve organisations.</div>
-  </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Listings &amp; claims</div>
-    <div class="text-sm mt-2 font-semibold">Post, browse, claim</div>
-    <div class="text-xs mt-1" style="color:#00000099">The core loop. Claiming is the hard part &mdash; section 04.</div>
-  </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Pickup &amp; notify</div>
-    <div class="text-sm mt-2 font-semibold">Verify, hand over, notify</div>
-    <div class="text-xs mt-1" style="color:#00000099">OTP-verified handover; email + in-app notifications.</div>
-  </div>
-</div>
+  <circle cx="200" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(177.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="200" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Identity</text>
+  <text x="200" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">register &middot; org approval</text>
 
-<div class="mt-8 grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Design goals</div>
-<div class="text-sm mt-3" style="color:#000000">Robust &middot; maintainable &middot; extensible &middot; secure by default</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#00000066">Out of scope</div>
-<div class="text-sm mt-3" style="color:#00000099">Horizontal scale &amp; auto-scaling &mdash; a proof of concept, not a load test</div>
-</div>
-</div>
+  <line x1="258" y1="130" x2="384" y2="130" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr)"/>
 
+  <circle cx="450" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(427.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="2" width="8" height="4" rx="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+  </g>
+  <text x="450" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Listings &amp; claims</text>
+  <text x="450" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">post &middot; browse &middot; claim</text>
+
+  <line x1="508" y1="130" x2="634" y2="130" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr)"/>
+
+  <circle cx="700" cy="130" r="46" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(677.5,107.5) scale(1.875)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  </g>
+  <text x="700" y="228" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Pickup &amp; notify</text>
+  <text x="700" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">OTP handover &middot; email + in-app</text>
+
+  <path d="M 758 130 C 820 130 820 130 866 130" stroke="#0000001a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <circle cx="912" cy="130" r="46" fill="none" stroke="#0000002a" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="912" y="135" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">out of scope</text>
+  <text x="912" y="228" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">Scale-out</text>
+  <text x="912" y="252" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">proof of concept</text>
+
+  <text x="500" y="330" text-anchor="middle" style="font-size:12px" fill="#5a5a5a" class="font-mono">design goals: robust &middot; maintainable &middot; extensible &middot; secure by default</text>
+</svg>
 </div>
 
 <!--
@@ -196,42 +231,34 @@ SECTION MARKER
 -->
 
 ---
+class: flex flex-col
+---
 
 # Agile, in practice
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="grid grid-cols-2 gap-10">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Scrum &middot; six two-week sprints</div>
-  <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
-  <div class="text-sm">Fortnightly progress reports to ISS</div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Tests written with the feature (TDD where it paid off)</div>
-  <div class="text-sm">Every change lands via pull request &amp; review</div>
-  <div class="text-sm">Continuous integration on every PR</div>
-</div>
-</div>
+<div class="grid grid-cols-2 gap-6">
+  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+    <div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Scrum &middot; six two-week sprints</div>
+      <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
+      <div class="text-sm">Fortnightly progress reports to ISS</div>
+    </div>
+  </div>
+  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+    <div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Tests written alongside the feature</div>
+      <div class="text-sm">Every change lands via pull request &amp; review</div>
+      <div class="text-sm">Continuous integration on every PR</div>
+    </div>
+  </div>
 </div>
 
-<div class="mt-8 flex items-center" style="gap:1rem">
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-2xl font-bold" style="color:#1f6b45">36<span class="text-base" style="color:#00000099">/36</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 2 points</div>
-  </div>
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-2xl font-bold" style="color:#1f6b45">32<span class="text-base" style="color:#00000099">/40</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 3 points</div>
-  </div>
-  <div class="flex-1 rounded-lg border px-5 py-3" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="text-sm" style="color:#000000">Retro format: <span class="font-semibold">went well</span> &middot; <span class="font-semibold">could be better</span> &middot; <span class="font-semibold">try next</span> &mdash; one concrete change carried forward each sprint.</div>
-  </div>
+<div class="mt-8 text-center text-sm" style="color:#00000099">
+Sprint 2: <span class="font-semibold" style="color:#1f6b45">36/36</span> points &middot; Sprint 3: <span class="font-semibold" style="color:#1f6b45">32/40</span> &middot; one retro change carried forward each sprint
 </div>
 
 </div>
@@ -244,17 +271,19 @@ a sprint plan, and closes with a review and a retrospective. The fortnightly
 progress reports ISS asked for fell straight out of that rhythm; we didn't
 write them separately.
 
-Top right is the engineering side of "essential practices for agile teams":
-tests written alongside features, every change through a pull request and
-review, and CI on every one of those PRs. Nothing reaches a branch without
-going green first.
+The right card is the engineering side of "essential practices for agile
+teams": tests written alongside features, every change through a pull
+request and review, and CI on every one of those PRs. Nothing reaches a
+branch without going green first. If asked about TDD: we didn't practise
+formal red-green-refactor; tests were written with or after the code, and
+we say so in the report too.
 
 The numbers are real velocity from our burndowns - Sprint 2 closed 36 of 36
 points, Sprint 3 closed 32 of 40, about 80%. We're being honest that not
 every sprint hit 100%; the shortfall in Sprint 3 was the CDN and API Gateway
 migration running long, and it carried into the next sprint.
 
-The green box is our retrospective format. The point isn't the three
+The green tile is our retrospective format. The point isn't the three
 headings, it's that every sprint we carried exactly one concrete change
 forward - PR automation after Sprint 1, tests-in-CI after Sprint 2. That's
 how the pipeline in section 5 got as strict as it is.
