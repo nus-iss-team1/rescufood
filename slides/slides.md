@@ -221,10 +221,8 @@ class: flex flex-col
 
 # Agile, in practice
 
-<div class="text-base mt-2" style="color:#00000099">Scrum &middot; six two-week sprints &middot; every change lands by pull request with CI</div>
-
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1100 360" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 0 1100 300" style="max-height:100%;max-width:100%" fill="none">
   <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
   <circle cx="110" cy="180" r="6" fill="#1f6b45"/>
@@ -263,8 +261,22 @@ class: flex flex-col
   <text x="1010" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Stabilisation</text>
   <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
 
-  <text x="550" y="330" text-anchor="middle" style="font-size:12.5px" fill="#5a5a5a" class="font-mono">Sprint 2: 36/36 points &middot; Sprint 3: 32/40 &middot; one retro change carried forward each sprint</text>
 </svg>
+</div>
+
+<div class="mx-auto mb-4" style="max-width:40rem">
+  <div class="flex items-baseline">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Scrum, six two-week sprints; every change lands by pull request with CI</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Sprint 2 closed <span class="font-semibold">36/36</span> points, Sprint 3 <span class="font-semibold">32/40</span></span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">One retro change carried forward each sprint</span>
+  </div>
 </div>
 
 <!--
