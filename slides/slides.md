@@ -221,31 +221,50 @@ class: flex flex-col
 
 # Agile, in practice
 
-<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
+<div class="text-base mt-2" style="color:#00000099">Scrum &middot; six two-week sprints &middot; every change lands by pull request with CI</div>
 
-<div class="grid grid-cols-2 gap-6">
-  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
-    <div class="mt-3 flex flex-col" style="gap:0.6rem">
-      <div class="text-sm">Scrum &middot; six two-week sprints</div>
-      <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
-      <div class="text-sm">Fortnightly progress reports to ISS</div>
-    </div>
-  </div>
-  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
-    <div class="mt-3 flex flex-col" style="gap:0.6rem">
-      <div class="text-sm">Tests written alongside the feature</div>
-      <div class="text-sm">Every change lands via pull request &amp; review</div>
-      <div class="text-sm">Continuous integration on every PR</div>
-    </div>
-  </div>
-</div>
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 360" style="max-height:100%;max-width:100%" fill="none">
+  <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
-<div class="mt-8 text-center text-sm" style="color:#00000099">
-Sprint 2: <span class="font-semibold" style="color:#1f6b45">36/36</span> points &middot; Sprint 3: <span class="font-semibold" style="color:#1f6b45">32/40</span> &middot; one retro change carried forward each sprint
-</div>
+  <circle cx="110" cy="180" r="6" fill="#1f6b45"/>
+  <text x="110" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">CI/CD foundation</text>
+  <text x="110" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">repo &middot; auth UI</text>
+  <text x="110" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 1</text>
+  <text x="110" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
 
+  <circle cx="290" cy="180" r="6" fill="#1f6b45"/>
+  <text x="290" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 2</text>
+  <text x="290" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">8 - 21 Aug</text>
+  <text x="290" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Environments &middot; IAM</text>
+  <text x="290" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">first automated QA</text>
+
+  <circle cx="470" cy="180" r="6" fill="#1f6b45"/>
+  <text x="470" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">Claims &middot; pickup OTP</text>
+  <text x="470" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">notifications</text>
+  <text x="470" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 3</text>
+  <text x="470" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
+
+  <circle cx="650" cy="180" r="6" fill="#1f6b45"/>
+  <text x="650" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 4</text>
+  <text x="650" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">5 - 18 Sep</text>
+  <text x="650" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Pickup completion</text>
+  <text x="650" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">QA fixes</text>
+
+  <circle cx="830" cy="180" r="6" fill="#1f6b45"/>
+  <text x="830" y="106" text-anchor="middle" style="font-size:10.5px" fill="#111111">Cancel &amp; relist</text>
+  <text x="830" y="122" text-anchor="middle" style="font-size:10.5px" fill="#111111">claim history</text>
+  <text x="830" y="148" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 5</text>
+  <text x="830" y="164" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
+
+  <circle cx="1010" cy="180" r="6" fill="#1f6b45"/>
+  <text x="1010" y="206" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#1f6b45">Sprint 6</text>
+  <text x="1010" y="222" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">3 - 16 Oct</text>
+  <text x="1010" y="246" text-anchor="middle" style="font-size:10.5px" fill="#111111">Stabilisation</text>
+  <text x="1010" y="262" text-anchor="middle" style="font-size:10.5px" fill="#111111">report &amp; polish</text>
+
+  <text x="550" y="330" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Sprint 2: 36/36 points &middot; Sprint 3: 32/40 &middot; one retro change carried forward each sprint</text>
+</svg>
 </div>
 
 <!--
@@ -256,8 +275,7 @@ a sprint plan, and closes with a review and a retrospective. The fortnightly
 progress reports ISS asked for fell straight out of that rhythm; we didn't
 write them separately.
 
-The right card is the engineering side of "essential practices for agile
-teams": tests written alongside features, every change through a pull
+The engineering side of "essential practices for agile teams": tests written alongside features, every change through a pull
 request and review, and CI on every one of those PRs. Nothing reaches a
 branch without going green first. If asked about TDD: we didn't practise
 formal red-green-refactor; tests were written with or after the code, and
