@@ -118,9 +118,9 @@ class: flex flex-col
   <div>
     <div class="dgm text-xs" style="color:#00000066">Today</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base" style="color:#00000099">Phone calls between donors and rescue partners</div>
-      <div class="text-base" style="color:#00000099">Ad-hoc chat groups</div>
-      <div class="text-base" style="color:#00000099">Spreadsheets that go stale</div>
+      <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
+      <div class="text-base" style="color:#00000099">WhatsApp groups nobody keeps up with</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
     </div>
   </div>
   <div>
