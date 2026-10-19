@@ -415,19 +415,17 @@ SECTION MARKER
   <text x="696" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
   <text x="696" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
 
-  <line x1="380" y1="94" x2="380" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="680" y1="94" x2="680" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="380" y1="94" x2="380" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="680" y1="94" x2="680" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
   <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
 
   <rect x="40" y="122" width="1020" height="334" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
   <text x="56" y="142" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
 
-  <rect x="230" y="150" width="600" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
-  <text x="530" y="175" text-anchor="middle" style="font-size:12.5px;font-weight:600" fill="#111111">CDN &middot; API Gateway</text>
-
-  <path d="M 530 190 L 530 216 L 195 216 L 195 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <path d="M 530 190 L 530 216 L 550 216 L 550 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <path d="M 530 190 L 530 216 L 905 216 L 905 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="195" y1="198" x2="905" y2="198" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="198" x2="195" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="198" x2="550" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="198" x2="905" y2="246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
   <rect x="60" y="250" width="270" height="80" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(80,278)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
