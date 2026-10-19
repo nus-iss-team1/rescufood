@@ -222,19 +222,8 @@ class: flex flex-col
   </div>
 </div>
 
-<div class="mt-6 grid grid-cols-3 gap-6">
-  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;height:5.6rem">
-    <div class="text-2xl font-bold" style="color:#1f6b45">36<span class="text-base" style="color:#00000099">/36</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 2 points</div>
-  </div>
-  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;height:5.6rem">
-    <div class="text-2xl font-bold" style="color:#1f6b45">32<span class="text-base" style="color:#00000099">/40</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 3 points</div>
-  </div>
-  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);height:5.6rem">
-    <div class="text-sm font-semibold" style="color:#1f6b45">went well &middot; could be better &middot; try next</div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">one change carried forward each sprint</div>
-  </div>
+<div class="mt-8 text-center text-sm" style="color:#00000099">
+Sprint 2: <span class="font-semibold" style="color:#1f6b45">36/36</span> points &middot; Sprint 3: <span class="font-semibold" style="color:#1f6b45">32/40</span> &middot; one retro change carried forward each sprint
 </div>
 
 </div>
