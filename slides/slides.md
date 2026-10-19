@@ -87,16 +87,12 @@ Say the title and move on. Marker, not a slide to talk over.
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-4xl font-extrabold leading-tight px-16">
+<div class="text-6xl font-extrabold leading-tight px-12">
 Surplus food is a <span class="accent">coordination</span> problem.
 </div>
 
-<div class="text-base mt-10 mx-auto" style="max-width:38rem;color:#00000099">
+<div class="text-lg mt-12 mx-auto" style="max-width:42rem;color:#00000099">
 There is no formal channel to move excess food to rescue partners before it expires. Today it is coordinated over phone calls, chat groups and spreadsheets.
-</div>
-
-<div class="text-sm mt-10 dgm-wide" style="color:#00000066">
-Double allocations &middot; missed pickups &middot; food spoils
 </div>
 
 <!--
