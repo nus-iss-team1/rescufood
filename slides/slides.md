@@ -398,14 +398,14 @@ SECTION MARKER
   <text x="680" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
   <line x1="680" y1="-22" x2="680" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="260" y="30" width="240" height="64" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <rect x="260" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(278,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
   <text x="396" y="57" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
   <text x="396" y="76" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js &middot; donors &amp; partners</text>
 
-  <rect x="560" y="30" width="240" height="64" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <rect x="560" y="30" width="240" height="64" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-dasharray="4 3"/>
   <g transform="translate(578,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
@@ -416,7 +416,7 @@ SECTION MARKER
   <line x1="680" y1="94" x2="680" y2="146" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <text x="530" y="126" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
 
-  <rect x="230" y="150" width="600" height="40" rx="8" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <rect x="230" y="150" width="600" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
   <text x="530" y="175" text-anchor="middle" style="font-size:12.5px;font-weight:600" fill="#111111">CDN &middot; API Gateway</text>
 
   <path d="M 530 190 L 530 216 L 195 216 L 195 246" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
