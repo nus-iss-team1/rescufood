@@ -50,19 +50,20 @@ inside each section.
 <div class="mt-10 mx-auto" style="max-width:40rem">
 
 <div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Introduction &amp; project management</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Analysis, design &amp; patterns</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Testing</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">CI/CD pipeline demo</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">System demo</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Analysis &amp; design</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Design patterns</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Testing</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">CI/CD pipeline demo</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">06</span><span class="text-lg">System demo</span></div>
 
 </div>
 
 <!--
 AGENDA
 
-Read the five markers once, quickly. Timings: intro and project
-management 3-4, analysis, design and patterns 5, testing 3, pipeline
-demo 10-12, system demo 12-15. Both demos have a recorded video as
+Read the six markers once, quickly. Timings: intro and project
+management 3-4, analysis and design plus patterns 5 together, testing
+3, pipeline demo 10-12, system demo 12-15. Both demos have a recorded video as
 backup if anything breaks live. Then move.
 -->
 
@@ -458,7 +459,7 @@ independently deployable. It all runs on ECS Fargate via CloudFormation.
 class: flex flex-col
 ---
 
-# Deployment view
+# Deployment
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
@@ -779,6 +780,24 @@ frontend tells them someone else got it first.
 -->
 
 ---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Design <span class="accent">patterns</span>
+</div>
+
+<!--
+SECTION MARKER
+
+Say the title and move on. Three patterns, one slide each, all backed
+by real code.
+-->
+
+---
 class: flex flex-col
 ---
 
@@ -954,7 +973,7 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
 <span class="accent">Testing</span>
@@ -1033,7 +1052,7 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
 CI/CD <span class="accent">pipeline</span>
@@ -1256,7 +1275,7 @@ layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
+<div class="text-xs dgm-wide" style="color:#00000066">Section 06</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
 System <span class="accent">demo</span>
