@@ -1202,19 +1202,38 @@ class: flex flex-col
 
   <rect x="210" y="40" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <use href="#ci-check" x="246" y="82"/>
-  <text x="268" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <g transform="translate(262,71)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
+  </g>
+  <text x="290" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
   <use href="#ci-check" x="246" y="132"/>
-  <text x="268" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <g transform="translate(262,121)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
+    <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
+  </g>
+  <text x="290" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
   <use href="#ci-check" x="246" y="182"/>
-  <text x="268" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <g transform="translate(262,171)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="290" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
 
   <rect x="210" y="250" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <use href="#ci-check" x="246" y="292"/>
-  <text x="268" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <g transform="translate(262,281)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="290" y="297" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
   <use href="#ci-check" x="246" y="342"/>
-  <text x="268" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <g transform="translate(262,331)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="290" y="347" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
   <use href="#ci-check" x="246" y="392"/>
-  <text x="268" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <g transform="translate(262,381)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="290" y="397" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
   <circle cx="514" cy="124" r="4.5" fill="#8a8a8a"/>
   <circle cx="514" cy="334" r="4.5" fill="#8a8a8a"/>
@@ -1224,8 +1243,12 @@ class: flex flex-col
   <line x1="614" y1="229" x2="658" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
   <rect x="666" y="187" width="300" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="816" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
-  <text x="816" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+  <g transform="translate(690,214)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M6 21V9a9 9 0 0 0 9 9"/>
+  </g>
+  <text x="836" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="836" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 
   <path d="M 610 229 L 610 352 L 658 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
   <text x="600" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
