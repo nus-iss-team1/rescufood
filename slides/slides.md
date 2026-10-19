@@ -260,28 +260,33 @@ class: flex flex-col
 </div>
 
 <!--
-AGILE PRACTICE
+TIMELINE SCRIPT
 
-We ran Scrum over six two-week sprints - each starts from the backlog, gets
-a sprint plan, and closes with a review and a retrospective. The fortnightly
-progress reports ISS asked for fell straight out of that rhythm; we didn't
-write them separately.
+We ran the project as six two-week sprints, and each sprint had one
+clear objective we rallied around.
 
-The engineering side of "essential practices for agile teams": tests written alongside features, every change through a pull
-request and review, and CI on every one of those PRs. Nothing reaches a
-branch without going green first. If asked about TDD: we didn't practise
-formal red-green-refactor; tests were written with or after the code, and
-we say so in the report too.
+Sprint 1 was pure foundation: the repo, the CI/CD skeleton and the
+signup and login screens. Sprint 2 was about environments: reproducible
+AWS infrastructure, IAM, and our first seven automated QA cases.
+Sprint 3 was the big one, the claim: reservations, the pickup OTP and
+notifications all landed there. Sprint 4 closed the loop with pickup
+completion and a round of QA fixes. Sprint 5 handled the awkward paths,
+cancelling and relisting claims, plus claim history. And Sprint 6 was
+stabilisation: polishing, fixing what QA surfaced, and this report and
+deck.
 
-The numbers are real velocity from our burndowns - Sprint 2 closed 36 of 36
-points, Sprint 3 closed 32 of 40, about 80%. We're being honest that not
-every sprint hit 100%; the shortfall in Sprint 3 was the CDN and API Gateway
-migration running long, and it carried into the next sprint.
+Throughout all six, every change went in through a pull request with CI
+on it. Nothing merged red.
 
-The green tile is our retrospective format. The point isn't the three
-headings, it's that every sprint we carried exactly one concrete change
-forward - PR automation after Sprint 1, tests-in-CI after Sprint 2. That's
-how the pipeline in section 5 got as strict as it is.
+On the numbers: Sprint 2 closed all 36 points, Sprint 3 closed 32 of
+40, about 80 percent, because the CDN and API Gateway migration ran
+long. We'd rather show that honestly than pretend every sprint was
+perfect.
+
+And the habit that mattered most: every retro produced exactly one
+concrete change we carried into the next sprint. PR automation came out
+of Sprint 1's retro, tests-in-CI out of Sprint 2's. That's how the
+pipeline you'll see in section 5 got as strict as it is.
 -->
 
 ---
