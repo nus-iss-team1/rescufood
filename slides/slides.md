@@ -113,7 +113,7 @@ class: flex flex-col
 
 # With RescuFood
 
-<div class="mt-6 px-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center">
+<div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 
 <svg viewBox="0 0 1000 300" style="max-width:46rem;width:100%" fill="none">
   <defs>
@@ -147,7 +147,7 @@ class: flex flex-col
   <text x="850" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
 </svg>
 
-<div class="mt-8 grid grid-cols-2 gap-16 mx-auto" style="max-width:54rem;width:100%">
+<div class="mt-8 grid grid-cols-2 gap-16" style="max-width:46rem;width:100%">
   <div>
     <div class="dgm text-xs" style="color:#00000066">Today</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
