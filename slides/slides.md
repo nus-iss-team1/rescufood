@@ -196,41 +196,44 @@ SECTION MARKER
 -->
 
 ---
+class: flex flex-col
+---
 
 # Agile, in practice
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="grid grid-cols-2 gap-10">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Scrum &middot; six two-week sprints</div>
-  <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
-  <div class="text-sm">Fortnightly progress reports to ISS</div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Tests written with the feature (TDD where it paid off)</div>
-  <div class="text-sm">Every change lands via pull request &amp; review</div>
-  <div class="text-sm">Continuous integration on every PR</div>
-</div>
-</div>
+<div class="grid grid-cols-2 gap-6">
+  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+    <div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Scrum &middot; six two-week sprints</div>
+      <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
+      <div class="text-sm">Fortnightly progress reports to ISS</div>
+    </div>
+  </div>
+  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+    <div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Tests written alongside the feature</div>
+      <div class="text-sm">Every change lands via pull request &amp; review</div>
+      <div class="text-sm">Continuous integration on every PR</div>
+    </div>
+  </div>
 </div>
 
-<div class="mt-8 flex items-center" style="gap:1rem">
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
+<div class="mt-6 grid grid-cols-3 gap-6">
+  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;height:5.6rem">
     <div class="text-2xl font-bold" style="color:#1f6b45">36<span class="text-base" style="color:#00000099">/36</span></div>
     <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 2 points</div>
   </div>
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
+  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#0000001a;background:#ffffff;height:5.6rem">
     <div class="text-2xl font-bold" style="color:#1f6b45">32<span class="text-base" style="color:#00000099">/40</span></div>
     <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 3 points</div>
   </div>
-  <div class="flex-1 rounded-lg border px-5 py-3" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="text-sm" style="color:#000000">Retro format: <span class="font-semibold">went well</span> &middot; <span class="font-semibold">could be better</span> &middot; <span class="font-semibold">try next</span> &mdash; one concrete change carried forward each sprint.</div>
+  <div class="rounded-lg border px-5 text-center flex flex-col justify-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);height:5.6rem">
+    <div class="text-sm font-semibold" style="color:#1f6b45">went well &middot; could be better &middot; try next</div>
+    <div class="dgm text-xs mt-1" style="color:#00000066">one change carried forward each sprint</div>
   </div>
 </div>
 
@@ -244,17 +247,19 @@ a sprint plan, and closes with a review and a retrospective. The fortnightly
 progress reports ISS asked for fell straight out of that rhythm; we didn't
 write them separately.
 
-Top right is the engineering side of "essential practices for agile teams":
-tests written alongside features, every change through a pull request and
-review, and CI on every one of those PRs. Nothing reaches a branch without
-going green first.
+The right card is the engineering side of "essential practices for agile
+teams": tests written alongside features, every change through a pull
+request and review, and CI on every one of those PRs. Nothing reaches a
+branch without going green first. If asked about TDD: we didn't practise
+formal red-green-refactor; tests were written with or after the code, and
+we say so in the report too.
 
 The numbers are real velocity from our burndowns - Sprint 2 closed 36 of 36
 points, Sprint 3 closed 32 of 40, about 80%. We're being honest that not
 every sprint hit 100%; the shortfall in Sprint 3 was the CDN and API Gateway
 migration running long, and it carried into the next sprint.
 
-The green box is our retrospective format. The point isn't the three
+The green tile is our retrospective format. The point isn't the three
 headings, it's that every sprint we carried exactly one concrete change
 forward - PR automation after Sprint 1, tests-in-CI after Sprint 2. That's
 how the pipeline in section 5 got as strict as it is.
