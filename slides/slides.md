@@ -1181,85 +1181,82 @@ class: flex flex-col
 <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
 <svg viewBox="10 30 970 400" style="max-height:100%;max-width:100%" fill="none">
   <defs>
-    <g id="ci-check">
-      <circle r="10" fill="#1f6b45"/>
-      <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
     <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="ci-m-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
   </defs>
 
-  <rect x="20" y="187" width="150" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(38,217)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="20" y="170" width="230" height="118" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(50,200)" stroke="#1f6b45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
     <path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
   </g>
-  <text x="116" y="224" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Pull request</text>
-  <text x="116" y="245" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
+  <text x="151" y="217" text-anchor="middle" style="font-size:16px;font-weight:600" fill="#111111">Pull request</text>
+  <text x="151" y="243" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
+  <text x="151" y="268" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">into develop</text>
 
-  <path d="M 170 229 L 190 229 L 190 124 L 202 124" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
-  <path d="M 170 229 L 190 229 L 190 338 L 202 338" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 250 229 L 280 229 L 280 110 L 312 110" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 250 229 L 280 229 L 280 330 L 312 330" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <rect x="210" y="40" width="300" height="168" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(240,71)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="320" y="60" width="230" height="124" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,83)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
   </g>
-  <text x="268" y="87" style="font-size:13.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-  <g transform="translate(240,121)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="372" y="97" style="font-size:11.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+  <g transform="translate(344,123)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="268" y="137" style="font-size:13.5px;font-weight:600" fill="#111111">Unit tests</text>
-  <g transform="translate(240,171)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="372" y="137" style="font-size:11.5px;font-weight:600" fill="#111111">Unit tests</text>
+  <g transform="translate(344,153)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="268" y="187" style="font-size:13.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <text x="372" y="167" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
 
-  <rect x="210" y="250" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(240,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="320" y="256" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="282" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+  <text x="372" y="281" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
 
-  <rect x="210" y="311" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(240,327)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="320" y="306" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,316)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="343" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+  <text x="372" y="331" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
 
-  <rect x="210" y="372" width="300" height="54" rx="12" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(240,388)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="320" y="356" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,366)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
-  <text x="268" y="404" style="font-size:13.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+  <text x="372" y="381" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
 
-  <circle cx="514" cy="124" r="4.5" fill="#8a8a8a"/>
-  <circle cx="514" cy="277" r="4.5" fill="#8a8a8a"/>
-  <circle cx="514" cy="338" r="4.5" fill="#8a8a8a"/>
-  <circle cx="514" cy="399" r="4.5" fill="#8a8a8a"/>
-  <path d="M 518 124 C 575 124 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 518 277 C 575 277 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 518 338 C 575 338 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <path d="M 518 399 C 575 399 575 229 606 229" stroke="#8a8a8a" stroke-width="1.5"/>
-  <circle cx="610" cy="229" r="4.5" fill="#8a8a8a"/>
-  <line x1="614" y1="229" x2="658" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <circle cx="554" cy="122" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="276" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="326" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="376" r="4.5" fill="#8a8a8a"/>
+  <path d="M 558 122 C 600 122 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 276 C 600 276 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 326 C 600 326 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 376 C 600 376 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="632" cy="229" r="4.5" fill="#8a8a8a"/>
+  <line x1="636" y1="229" x2="676" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
 
-  <rect x="666" y="187" width="300" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(690,214)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="684" y="187" width="282" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(706,214)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
     <path d="M6 21V9a9 9 0 0 0 9 9"/>
   </g>
-  <text x="836" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
-  <text x="836" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+  <text x="846" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="846" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
 
-  <path d="M 610 229 L 610 352 L 658 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
-  <text x="600" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
-  <rect x="666" y="320" width="300" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
-  <g transform="translate(686,340)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 632 229 L 632 352 L 676 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
+  <text x="622" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
+  <rect x="684" y="320" width="282" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+  <g transform="translate(704,340)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
   </g>
-  <text x="834" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Merge blocked</text>
+  <text x="852" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Merge blocked</text>
 </svg>
 
 
