@@ -115,9 +115,10 @@ class: flex flex-col
 
 <div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 
-<svg viewBox="0 75 1000 160" style="max-width:46rem;width:100%" fill="none">
+<svg viewBox="0 75 1000 200" style="max-width:46rem;width:100%" fill="none">
   <defs>
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="scope-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
 
   <circle cx="150" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
@@ -130,12 +131,18 @@ class: flex flex-col
   <text x="289" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">gives away surplus food</text>
 
   <rect x="380" y="86" width="240" height="108" rx="14" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="500" y="134" text-anchor="middle" style="font-size:20px;font-weight:700;letter-spacing:-0.02em" fill="#111111">Rescu<tspan fill="#1f6b45">Food</tspan></text>
-  <g transform="translate(567,104) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <text x="493" y="118" text-anchor="middle" style="font-size:18px;font-weight:700;letter-spacing:-0.02em" fill="#111111">Rescu<tspan fill="#1f6b45">Food</tspan></text>
+  <g transform="translate(553,98) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
     <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
   </g>
-  <text x="500" y="164" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">listings</text>
+  <rect x="400" y="132" width="200" height="46" rx="8" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(410,144) scale(0.9)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+  </g>
+  <text x="516" y="151" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Surplus bread &middot; 40 loaves</text>
+  <text x="516" y="168" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">pickup tonight, 6-8pm</text>
 
   <line x1="628" y1="140" x2="794" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
   <text x="711" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">claims &amp; collects</text>
@@ -145,6 +152,9 @@ class: flex flex-col
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="850" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
+
+  <path d="M 820 196 C 740 252 260 252 180 196" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#scope-arr-m)"/>
+  <text x="500" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">they meet for pickup &middot; handover verified</text>
 </svg>
 
 <div class="mt-8 grid grid-cols-2 gap-16" style="max-width:46rem;width:100%">
