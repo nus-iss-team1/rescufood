@@ -378,11 +378,25 @@ SECTION MARKER
 # Logical view
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1100 510" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="0 -100 1100 610" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
+
+  <g transform="translate(367,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="380" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
+  <line x1="380" y1="-22" x2="380" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+
+  <g transform="translate(667,-78)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="680" y="-32" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
+  <line x1="680" y1="-22" x2="680" y2="26" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
   <rect x="260" y="30" width="240" height="64" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(278,41)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
