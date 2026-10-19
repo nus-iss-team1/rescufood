@@ -107,30 +107,33 @@ we replace them with.
 -->
 
 ---
+class: flex flex-col
+---
 
 # With RescuFood
 
-<div class="mt-8 grid grid-cols-2 gap-10 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div>
-<div class="dgm text-xs" style="color:#00000066">Today</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Phone calls between donors and rescue partners</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Ad-hoc chat groups</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Spreadsheets that go stale</div>
-</div>
-<div class="mt-4 text-sm" style="color:#00000099">Double allocations. Missed pickups. Food spoils.</div>
+<div class="grid grid-cols-2 gap-6 mx-auto" style="max-width:48rem;width:100%">
+  <div class="rounded-lg border px-6 py-5" style="border-color:#0000001a;background:#ffffff">
+    <div class="dgm text-xs" style="color:#00000066">Today</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Phone calls</div>
+      <div class="text-sm">Ad-hoc chat groups</div>
+      <div class="text-sm">Stale spreadsheets</div>
+    </div>
+  </div>
+  <div class="rounded-lg border px-6 py-5" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
+    <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
+    <div class="mt-3 flex flex-col" style="gap:0.6rem">
+      <div class="text-sm">Post a listing the moment food is free</div>
+      <div class="text-sm">Claims are first come, first served</div>
+      <div class="text-sm">OTP-verified pickup, tracked to handover</div>
+    </div>
+  </div>
 </div>
 
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">With RescuFood</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Donors post a listing the moment food is free</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it, first come first served</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP, tracked to handover</div>
-</div>
-<div class="mt-4 text-sm" style="color:#1f6b45">One claim per listing. One source of truth.</div>
-</div>
+<div class="mt-8 text-center text-base font-semibold"><span class="accent">One claim per listing. One source of truth.</span></div>
 
 </div>
 
