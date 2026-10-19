@@ -374,9 +374,7 @@ SECTION MARKER
 
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Logical view</div>
-
-# The system, from the top
+# Logical view
 
 <div class="mt-6 px-4">
 
@@ -460,9 +458,7 @@ independently deployable. It all runs on ECS Fargate via CloudFormation.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Deployment view</div>
-
-# Physical architecture
+# Deployment view
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
@@ -606,9 +602,9 @@ the honest cost trade-off to call out.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Behaviour &middot; state diagram</div>
+# State diagram
 
-# Listing lifecycle
+<div class="text-base mt-2" style="color:#00000099">The listing lifecycle</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1100 320" style="max-height:100%;max-width:100%" fill="none">
@@ -682,11 +678,9 @@ implementation leans on.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Behaviour &middot; sequence diagram</div>
+# Sequence diagram
 
-# The claim edge, step by step
-
-<div class="text-base mt-2" style="color:#00000099">Zooming into the green arrow from the lifecycle</div>
+<div class="text-base mt-2" style="color:#00000099">The claim edge from the lifecycle, step by step</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
@@ -788,9 +782,7 @@ frontend tells them someone else got it first.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
-
-# Repository
+# Repository pattern
 
 <div class="text-base mt-2" style="color:#00000099">All database access goes through a repository class</div>
 
@@ -843,9 +835,7 @@ Postgres in Docker.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
-
-# Strategy
+# Strategy pattern
 
 <div class="text-base mt-2" style="color:#00000099">The app codes against one interface and does not care which client it gets</div>
 
@@ -907,9 +897,7 @@ functions to one shared transition handler.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs" style="color:#1f6b45">Design pattern</div>
-
-# Publish / subscribe
+# Publish / subscribe pattern
 
 <div class="text-base mt-2" style="color:#00000099">Listings drops events on SQS, notifications picks them up</div>
 
