@@ -154,7 +154,7 @@ class: flex flex-col
 
 <div class="text-base mt-2" style="color:#00000099">A platform where donors give away surplus food as listings, and rescue partners claim it</div>
 
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
 <svg viewBox="0 0 1000 300" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
@@ -186,6 +186,26 @@ class: flex flex-col
   </g>
   <text x="850" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
 </svg>
+
+<div class="mt-8" style="max-width:38rem">
+  <div class="flex items-baseline">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Donors post surplus food as listings before it expires</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Rescue partners browse and claim, first come first served</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Handover is verified and tracked, with notifications along the way</span>
+  </div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Proof of concept; horizontal scale is out of scope</span>
+  </div>
+</div>
+
 </div>
 
 <!--
