@@ -249,10 +249,6 @@ class: flex flex-col
   </div>
   <div class="flex items-baseline mt-2">
     <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-sm">Sprint 2 cleared all <span class="font-semibold">36</span> points; Sprint 3 landed <span class="font-semibold">32 of 40</span></span>
-  </div>
-  <div class="flex items-baseline mt-2">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
     <span class="text-sm">One concrete change from each retro, carried into the next sprint</span>
   </div>
   <div class="flex items-baseline mt-2">
@@ -282,10 +278,9 @@ deck.
 Throughout all six, every change went in through a pull request with CI
 on it. Nothing merged red.
 
-On the numbers: Sprint 2 closed all 36 points, Sprint 3 closed 32 of
-40, about 80 percent, because the CDN and API Gateway migration ran
-long. We'd rather show that honestly than pretend every sprint was
-perfect.
+If asked about velocity: most sprints closed their planned points;
+Sprint 3 ran at about 80 percent because the CDN and API Gateway
+migration took longer than planned.
 
 On effort: there are seven of us at roughly 80 hours each, so about
 560 person-hours, split across the web app, identity, listings and
