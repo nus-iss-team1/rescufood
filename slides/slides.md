@@ -119,21 +119,19 @@ class: flex flex-col
     <div class="dgm text-xs" style="color:#00000066">Today</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
       <div class="text-base" style="color:#00000099">Phone calls</div>
-      <div class="text-base" style="color:#00000099">Ad-hoc chat groups</div>
-      <div class="text-base" style="color:#00000099">Stale spreadsheets</div>
+      <div class="text-base" style="color:#00000099">Chat groups</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets</div>
     </div>
   </div>
   <div>
     <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
     <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Post a listing the moment food is free</div>
-      <div class="text-base">Claims are first come, first served</div>
-      <div class="text-base">OTP-verified pickup, tracked to handover</div>
+      <div class="text-base">Post a listing</div>
+      <div class="text-base">Claim it</div>
+      <div class="text-base">Verified pickup</div>
     </div>
   </div>
 </div>
-
-<div class="mt-12 text-center text-base font-semibold"><span class="accent">One claim per listing. One source of truth.</span></div>
 
 </div>
 
