@@ -458,42 +458,6 @@ independently deployable. It all runs on ECS Fargate via CloudFormation.
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs px-6 pt-2" style="color:#3a3a3a;flex:0 0 auto">Physical architecture &middot; AWS</div>
-
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-  <img src="/infra.svg" alt="RescuFood physical architecture on AWS" style="max-height:100%;max-width:100%;object-fit:contain" />
-</div>
-
-<!--
-PHYSICAL ARCHITECTURE
-
-This is the deployment view - the logical picture from the last slide,
-placed on real AWS. Walk it left to right, briefly; don't read every box.
-
-Traffic enters through API Gateway, which terminates TLS, and crosses a VPC
-Link into the VPC. Inside, an internal load balancer path-routes to the
-Fargate services - /api/profile to profile, /api/listings and /api/requests
-to listings, and so on. The services run across two availability zones.
-
-Data sits in isolated subnets with no internet route: RDS PostgreSQL,
-Multi-AZ per environment, encrypted with a managed master secret. Identity
-is Cognito, with donor, rescue-partner and admin groups. Listing images go
-to a private S3 bucket fronted by CloudFront. And the notifications path is
-SQS with a dead-letter queue - the same decoupling we showed logically,
-here in infrastructure.
-
-The one thing to call out as honest: a single NAT gateway in AZ A - a
-deliberate cost trade-off for a proof of concept, and the obvious first
-change if this went to real production traffic.
-
-If the SVG isn't in place yet: export infra-plan.drawio to slides/infra.svg
-(VS Code Draw.io extension -> Export -> SVG), then this slide fills in.
--->
-
----
-class: flex flex-col
----
-
 # Physical architecture
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
@@ -632,6 +596,80 @@ The left column is everything managed: CloudFront fronting the private
 images bucket, Cognito for identity, SQS with a DLQ for notifications,
 Secrets Manager, CloudWatch and GHCR. The single NAT gateway in AZ A is
 the honest cost trade-off to call out.
+-->
+
+---
+class: flex flex-col
+---
+
+# Listing lifecycle
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 320" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="lc-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="lc-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
+
+  <rect x="50" y="80" width="160" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="130" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Draft</text>
+
+  <line x1="210" y1="108" x2="316" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="263" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish</text>
+
+  <rect x="320" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="405" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Available</text>
+
+  <line x1="490" y1="108" x2="596" y2="108" stroke="#1f6b45" stroke-width="2.5" marker-end="url(#lc-arr-g)"/>
+  <text x="543" y="94" text-anchor="middle" style="font-size:11.5px;font-weight:700" fill="#1f6b45">claim</text>
+
+  <rect x="600" y="80" width="170" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="685" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Reserved</text>
+
+  <line x1="770" y1="108" x2="876" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="823" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">OTP verified</text>
+
+  <rect x="880" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="965" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Collected</text>
+
+  <path d="M 685 80 L 685 42 L 405 42 L 405 76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="545" y="34" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim cancelled &middot; relisted</text>
+
+  <path d="M 355 136 L 355 196 L 130 196 L 130 236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="236" y="186" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">donor cancels</text>
+
+  <line x1="430" y1="136" x2="430" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="440" y="192" style="font-size:10px" fill="#5a5a5a" class="font-mono">pickup window passes</text>
+
+  <rect x="50" y="240" width="160" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#5a5a5a">Cancelled</text>
+
+  <rect x="345" y="240" width="170" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="430" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#5a5a5a">Expired</text>
+
+  <text x="760" y="206" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">one active claim per listing, even under retries</text>
+  <text x="760" y="226" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">idempotency key &middot; partial unique index in the database</text>
+</svg>
+</div>
+
+<!--
+LIFECYCLE
+
+This is the analysis in one picture: the listing's states and the legal
+transitions between them, which exist in the code as transition tables
+that reject anything else. Draft to Available on publish, Available to
+Reserved on a claim, Reserved to Collected once the donor verifies the
+OTP. A cancelled claim relists the lot if the window allows; otherwise
+it expires. Terminal states are dashed.
+
+The green edge is the hard design problem of the project. A claim must
+reserve the whole listing exactly once, even when two partners race for
+it or a phone resends the same request. Two safeguards cover it: an
+idempotency key, so an identical retry replays the original outcome
+instead of acting again, and a partial unique index in the database, so
+at most one active claim can exist per listing no matter what the
+application layer does. The next three slides show the patterns this
+implementation leans on.
 -->
 
 ---
