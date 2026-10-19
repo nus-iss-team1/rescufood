@@ -1179,7 +1179,7 @@ class: flex flex-col
 <div class="text-base mt-2" style="color:#00000099">Every pull request into develop</div>
 
 <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
-<svg viewBox="0 0 1000 470" style="max-height:100%;max-width:100%" fill="none">
+<svg viewBox="10 30 970 400" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <g id="ci-check">
       <circle r="10" fill="#1f6b45"/>
@@ -1225,6 +1225,14 @@ class: flex flex-col
   <rect x="666" y="187" width="300" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <text x="816" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
   <text x="816" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+
+  <path d="M 610 229 L 610 352 L 658 352" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr)"/>
+  <text x="600" y="310" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">any failure</text>
+  <rect x="666" y="320" width="300" height="64" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <g transform="translate(686,340)" stroke="#3a3a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+  </g>
+  <text x="834" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#3a3a3a">Merge blocked</text>
 </svg>
 
 <div class="mt-6" style="max-width:40rem">
