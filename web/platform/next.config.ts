@@ -35,7 +35,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
-  compress: false,
   // forbidden() and app/forbidden.tsx
   experimental: { authInterrupts: true },
   images: {
