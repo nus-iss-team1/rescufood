@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import type { Listing, ListingStatus } from "@rescufood/listings-sdk";
@@ -71,10 +71,25 @@ export function ListingsView({
   layout: "list" | "card";
   empty?: string;
 }) {
-  const [listings, setListings] = useState(initial);
+  // Only the pages scrolled past the first. `initial` stays the source of
+  // truth for the first page, so a server re-render after an edit or delete
+  // is not masked by stale state.
+  const [extra, setExtra] = useState<Listing[]>([]);
+  const [seenInitial, setSeenInitial] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [exhausted, setExhausted] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
+
+  if (initial !== seenInitial) {
+    setSeenInitial(initial);
+    setExtra([]);
+    setExhausted(false);
+  }
+
+  const listings = useMemo(() => {
+    const first = new Set(initial.map((l) => l.id));
+    return [...initial, ...extra.filter((l) => !first.has(l.id))];
+  }, [extra, initial]);
   const more = !exhausted && listings.length < total;
 
   const loadMore = useCallback(async () => {
@@ -87,10 +102,7 @@ export function ListingsView({
         return;
       }
       const seen = new Set(listings.map((l) => l.id));
-      setListings((shown) => [
-        ...shown,
-        ...next.filter((l) => !seen.has(l.id)),
-      ]);
+      setExtra((shown) => [...shown, ...next.filter((l) => !seen.has(l.id))]);
     } catch {
       setExhausted(true);
     } finally {
