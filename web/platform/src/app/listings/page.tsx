@@ -6,13 +6,12 @@ import { LayoutGrid, Rows3 } from "lucide-react";
 import { getMe, type Me } from "@/lib/profile";
 import { requireSession } from "@/lib/session";
 import { listingStatuses, type ListingStatus } from "@rescufood/listings-sdk";
-import { listListings, type Listing } from "@/lib/listings";
+import { getOrgSummary, listListings, type Listing } from "@/lib/listings";
+import { PAGE_SIZE } from "@/lib/paging";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
-import { ListingCards } from "@/components/listings/listing-cards";
-import { ListingList } from "@/components/listings/listing-list";
-import { DeleteListingButton } from "@/components/listings/delete-listing-button";
+import { ListingsView } from "@/components/listings/listings-view";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
   Card,
@@ -21,6 +20,8 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { cn } from "@/lib/utils";
+import { segmentedItem, segmentedTrack } from "@/lib/segmented";
+import { StatusFilter } from "@/components/filters/status-filter";
 
 export const metadata: Metadata = {
   title: "Your listings — RescuFood",
@@ -122,25 +123,28 @@ export default async function ListingsPage({
     const qs = params.toString();
     return qs ? `/listings?${qs}` : "/listings";
   };
-  // Every status, so the tab counts are right; the service has no
-  // "my organisation" filter beyond the donor's name.
-  let all: Listing[] = [];
+  // The first page; the rest arrives as the reader scrolls.
+  let listings: Listing[] = [];
+  let total = 0;
+  let tallies: Record<string, number> = {};
   let unavailable = false;
   try {
-    const page = await listListings(session.idToken!, {
-      donorOrgName: me.org.name,
-      sortBy: "createdAt",
-      sortOrder: "desc",
-      limit: 100,
-    });
-    all = page.items;
+    const [page, summary] = await Promise.all([
+      listListings(session.idToken!, {
+        donorOrgName: me.org.name,
+        status: active === "all" ? undefined : (active as ListingStatus),
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        limit: PAGE_SIZE,
+      }),
+      getOrgSummary(session.idToken!),
+    ]);
+    listings = page.items;
+    total = page.total;
+    tallies = summary.listings;
   } catch {
     unavailable = true;
   }
-  const listings =
-    active === "all"
-      ? all
-      : all.filter((l) => l.status === (active as ListingStatus));
 
   return shell(
     <AnimateIn className="flex flex-col gap-6">
@@ -162,35 +166,18 @@ export default async function ListingsPage({
         data-animate="field"
         className="flex items-start justify-between gap-3"
       >
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((tab) => {
-            const count =
-              tab === "all"
-                ? all.length
-                : all.filter((l) => l.status === tab).length;
-            return (
-              <Link
-                key={tab}
-                href={href({ status: tab })}
-                aria-current={tab === active ? "page" : undefined}
-                className={cn(
-                  buttonVariants({
-                    variant: tab === active ? "default" : "outline",
-                    size: "sm",
-                  }),
-                  "capitalize",
-                )}
-              >
-                {tab}
-                {count > 0 && (
-                  <span className="ml-1.5 text-xs opacity-70">{count}</span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
+        <StatusFilter
+          basePath="/listings"
+          active={active}
+          view={layout}
+          options={tabs.map((tab) => ({
+            value: tab,
+            label: tab === "all" ? "All statuses" : tab,
+            count: tab === "all" ? (tallies.total ?? 0) : (tallies[tab] ?? 0),
+          }))}
+        />
 
-        <div className="flex shrink-0 gap-1" role="group" aria-label="View">
+        <div className={cn(segmentedTrack, "shrink-0")} role="group" aria-label="View">
           {views.map(({ key, label, Icon }) => (
             <Link
               key={key}
@@ -198,10 +185,8 @@ export default async function ListingsPage({
               aria-current={key === layout ? "true" : undefined}
               title={label}
               className={cn(
-                buttonVariants({
-                  variant: key === layout ? "default" : "outline",
-                  size: "icon-sm",
-                }),
+                buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                segmentedItem(key === layout),
               )}
             >
               <Icon className="size-4" aria-hidden />
@@ -211,61 +196,20 @@ export default async function ListingsPage({
         </div>
       </nav>
 
-      {/* The list scrolls inside its own region: the header and filters
-          stay put, and scrollsmoother rules out position sticky. */}
-      <div
-        data-animate="field"
-        className="max-h-[60vh] overflow-y-auto px-1 pb-4 sm:max-h-[62vh]"
-      >
+      <div data-animate="field" className="px-1 pb-4">
         {unavailable ? (
           <Notice
             title="Listings service unavailable"
             body="We couldn't load your listings. Please try again shortly."
           />
-        ) : layout === "card" ? (
-          <ListingCards
-            listings={listings}
-            empty="No listings here yet."
-            action={(listing) => (
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/listings/${listing.id}`}
-                  prefetch={false}
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "flex-1",
-                  )}
-                >
-                  View / Edit
-                </Link>
-                <DeleteListingButton
-                  listingId={listing.id}
-                  listingDescription={listing.description}
-                />
-              </div>
-            )}
-          />
         ) : (
-          <ListingList
-            listings={listings}
-            empty="No listings here yet."
-            action={(listing) => (
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/listings/${listing.id}`}
-                  prefetch={false}
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                  )}
-                >
-                  View / Edit
-                </Link>
-                <DeleteListingButton
-                  listingId={listing.id}
-                  listingDescription={listing.description}
-                />
-              </div>
-            )}
+          <ListingsView
+            // Remount on tab change so the fetched pages start over.
+            key={active}
+            initial={listings}
+            total={total}
+            status={active === "all" ? null : (active as ListingStatus)}
+            layout={layout}
           />
         )}
       </div>

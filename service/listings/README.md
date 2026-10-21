@@ -49,6 +49,8 @@ notable ones:
 | `RATE_LIMIT_TTL_SECONDS` / `RATE_LIMIT_MAX_REQUESTS` | App-wide throttle, default 100 req/60s/client |
 | `IDEMPOTENCY_RETENTION_DAYS` | How long claim idempotency records are kept before a reused key counts as new, default 7 |
 | `PICKUP_REMINDER_LEAD_HOURS` | How far ahead of a pickup window opening/closing `PickupReminderService` fires a reminder, default 24 |
+| `CLAIM_CANCEL_CUTOFF_HOURS` | A claim cancelled later than this before its pickup window opens does not relist the listing (it expires instead), default 3 |
+| `RELIST_MIN_PICKUP_HOURS` | A cancelled claim relists its listing only if at least this much of the pickup window remains, default 3 |
 
 ## API
 

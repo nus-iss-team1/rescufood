@@ -126,6 +126,22 @@ describe('renderEmail', () => {
     expect(email.body).toContain('automatically been made available again');
   });
 
+  it('tells the donor when the rescue partner reported the no-show', () => {
+    const email = renderEmail('claim_cancelled', {
+      listingDescription: 'Milk',
+      endedBy: 'no_show',
+      reportedBy: 'rescue_partner',
+      counterpartyName: 'Alex Tan',
+      counterpartyOrgName: 'City Harvest',
+      reason: 'shop was closed',
+    });
+    expect(email.body).toContain(
+      'Alex Tan from City Harvest has reported that the pickup of "Milk" could not be completed',
+    );
+    expect(email.body).toContain('Reason: shop was closed');
+    expect(email.body).not.toContain('Your reservation');
+  });
+
   it('includes the reason in claim_cancelled when given', () => {
     const email = renderEmail('claim_cancelled', {
       listingDescription: 'Milk',

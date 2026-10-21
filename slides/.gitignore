@@ -1,7 +1,12 @@
 node_modules
 .DS_Store
+# Build/export output — regenerated, never committed.
 dist
 *.local
 .vite-inspect
 .remote-assets
 components.d.ts
+
+# NOTE: deliverables/ is intentionally NOT ignored. The exported
+# PowerPoint (deliverables/rescufood.pptx) is committed so non-technical
+# teammates get the finished file when they sync the project.

@@ -132,6 +132,8 @@ export type ClaimEndedPayload = {
   recipientName?: string | null;
   listingDescription: string | null;
   endedBy: 'donor' | 'rescue_partner' | 'no_show';
+  // Who reported a no-show; set only when endedBy is 'no_show'.
+  reportedBy?: 'donor' | 'rescue_partner';
   counterpartyName?: string | null;
   counterpartyOrgName?: string | null;
   reason?: string;

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import type { ListingRequest } from "@rescufood/listings-sdk";
 
 import {
@@ -25,7 +24,7 @@ export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
       <CardHeader>
         <CardTitle>Recent activity</CardTitle>
         <CardDescription>
-          The latest movement on your pickup requests.
+          What moved most recently.
         </CardDescription>
         <CardAction>
           <Link
@@ -42,18 +41,18 @@ export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
             Nothing has moved yet.
           </p>
         ) : (
-          <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2">
+          <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
             {requests.map((request) => {
               const unit = request.listingUnit ?? "requested";
               return (
                 <li
                   key={request.id}
-                  className="col-span-4 grid grid-cols-subgrid border-b border-border last:border-0"
+                  className="col-span-3 grid grid-cols-subgrid border-b border-border last:border-0"
                 >
                   <Link
                     href={`/requests/${request.id}`}
                     prefetch={false}
-                    className="group col-span-4 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
+                    className="group col-span-3 grid grid-cols-subgrid items-center py-2 hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors"
                   >
                     <span className="text-sm font-medium group-hover:underline">
                       {request.listingDescription ??
@@ -68,7 +67,6 @@ export function RecentRequests({ requests }: { requests: ListingRequest[] }) {
                     >
                       {requestStatusLabels[request.status]}
                     </Badge>
-                    <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 </li>
               );

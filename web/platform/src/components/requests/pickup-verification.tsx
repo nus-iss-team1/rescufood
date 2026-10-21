@@ -21,6 +21,7 @@ import {
 } from "@rescufood/ui/components/dialog";
 import { OtpInput } from "./otp-input";
 import { toastPickupCompleted } from "./pickup-completed-toast";
+import { CollectionExceptionDialog } from "./collection-exception-dialog";
 
 export function PickupVerification({
   request,
@@ -39,6 +40,8 @@ export function PickupVerification({
 
   const [codeOpen, setCodeOpen] = useState(false);
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [noShowOpen, setNoShowOpen] = useState(false);
+  const [failedCollectionOpen, setFailedCollectionOpen] = useState(false);
   const [credential, setCredential] = useState<PickupCode | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -191,33 +194,87 @@ export function PickupVerification({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCodeOpen(false);
       setVerifyOpen(false);
+      setNoShowOpen(false);
+      setFailedCollectionOpen(false);
     }
   }, [request.status]);
 
+  const isWindowStarted = listing?.pickupWindowStart
+    ? new Date() >= new Date(listing.pickupWindowStart)
+    : false;
+
   // Only an active claim has a live pickup code or trigger buttons.
   // When inactive and all dialogs are closed, unmount cleanly.
-  if (request.status !== "active" && !codeOpen && !verifyOpen) {
+  if (
+    request.status !== "active" &&
+    !codeOpen &&
+    !verifyOpen &&
+    !noShowOpen &&
+    !failedCollectionOpen
+  ) {
     return null;
   }
 
   return (
     <>
-      {request.status === "active" && (
-        isDonor ? (
-          waiting ? (
-            <Button size="sm" variant="outline" disabled>
-              Waiting for partner&apos;s code
+      {request.status === "active" &&
+        (isDonor ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {waiting ? (
+              <Button size="sm" variant="outline" disabled>
+                Waiting for partner&apos;s code
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setVerifyOpen(true)}>
+                Enter pickup code
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!isWindowStarted}
+              title={
+                !isWindowStarted
+                  ? "Can only be reported once the pickup window starts"
+                  : undefined
+              }
+              onClick={() => setNoShowOpen(true)}
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              Report No-Show
             </Button>
-          ) : (
-            <Button size="sm" onClick={() => setVerifyOpen(true)}>
-              Enter pickup code
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFailedCollectionOpen(true)}
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              Record Failed Collection
             </Button>
-          )
+          </div>
         ) : (
           <Button size="sm" onClick={showCode}>
-            {request.codeGeneratedBy ? "Show pickup code" : "Generate pickup code"}
+            {request.codeGeneratedBy
+              ? "Show pickup code"
+              : "Generate pickup code"}
           </Button>
-        )
+        ))}
+
+      {isDonor && (
+        <>
+          <CollectionExceptionDialog
+            requestId={request.id}
+            mode="no_show"
+            isOpen={noShowOpen && request.status === "active"}
+            onClose={() => setNoShowOpen(false)}
+          />
+          <CollectionExceptionDialog
+            requestId={request.id}
+            mode="failed_collection"
+            isOpen={failedCollectionOpen && request.status === "active"}
+            onClose={() => setFailedCollectionOpen(false)}
+          />
+        </>
       )}
 
       {isDonor ? (

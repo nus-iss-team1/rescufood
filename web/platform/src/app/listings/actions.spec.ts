@@ -82,7 +82,9 @@ describe("createListingAction", () => {
     ["a non-numeric quantity", { quantity: "lots" }, "Quantity must be a number greater than zero."],
     ["no allergens", { allergens: " , " }, /enter "none"/],
     ["no use-by date", { useBy: "" }, "Please give a use-by date and time."],
+    ["a zoneless use-by time", { useBy: "2025-06-18T00:00:00" }, "Please give a use-by date and time."],
     ["an incomplete pickup window", { pickupWindowEnd: "" }, "Please give both ends of the pickup window."],
+    ["a zoneless pickup window", { pickupWindowStart: "2025-06-16T10:00:00" }, "Please give both ends of the pickup window."],
     [
       "a window that ends before it starts",
       { pickupWindowEnd: "2025-06-16T09:00:00.000Z" },
@@ -130,6 +132,39 @@ describe("createListingAction", () => {
       status: "available",
     });
     expect(revalidatePathMock).toHaveBeenCalledWith("/listings");
+  });
+
+  it("keeps times as the same instant, normalised to UTC", async () => {
+    await createListingAction(
+      {},
+      form({
+        ...publishable,
+        pickupWindowStart: "2025-06-16T18:00:00+08:00",
+        pickupWindowEnd: "2025-06-16T20:00:00+08:00",
+        useBy: "2025-06-18T08:00:00+08:00",
+      }),
+    );
+
+    expect(listings.createListing.mock.calls[0][1]).toMatchObject({
+      pickupWindowStart: "2025-06-16T10:00:00.000Z",
+      pickupWindowEnd: "2025-06-16T12:00:00.000Z",
+      useBy: "2025-06-18T00:00:00.000Z",
+    });
+  });
+
+  it("drops a zoneless time from a draft instead of guessing its zone", async () => {
+    await createListingAction(
+      {},
+      form({
+        intent: "draft",
+        description: "Bread, details TBC",
+        useBy: "2025-06-18T00:00:00",
+      }),
+    );
+
+    expect(listings.createListing.mock.calls[0][1]).toMatchObject({
+      useBy: undefined,
+    });
   });
 
   it("attaches an uploaded photo but ignores an empty file input", async () => {
@@ -254,6 +289,39 @@ describe("updateListingAction", () => {
 
     expect(listings.updateListing.mock.calls[0][2].status).toBe("available");
     expect(listings.updateListing.mock.calls[1][2]).not.toHaveProperty("status");
+  });
+
+  it("forwards the donor's reason when cancelling", async () => {
+    await updateListingAction(
+      {},
+      form({ ...editing, status: "cancelled", cancelledReason: " Fridge failed " }),
+    );
+
+    expect(listings.updateListing.mock.calls[0][2]).toMatchObject({
+      status: "cancelled",
+      cancelledReason: "Fridge failed",
+    });
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { cancelledReason: "   " }],
+  ])("rejects a cancellation whose reason is %s", async (_label, extra) => {
+    const state = await updateListingAction(
+      {},
+      form({ ...editing, status: "cancelled", ...extra }),
+    );
+
+    expect(state.error).toBe("Please give a reason for cancelling this listing.");
+    expect(listings.updateListing).not.toHaveBeenCalled();
+  });
+
+  it("sends no reason when not cancelling", async () => {
+    await updateListingAction({}, form({ ...editing, status: "available" }));
+
+    expect(listings.updateListing.mock.calls[0][2]).not.toHaveProperty(
+      "cancelledReason",
+    );
   });
 
   it("explains a version conflict from a concurrent edit", async () => {

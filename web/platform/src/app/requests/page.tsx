@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
-import { listRequests, type ListingRequest } from "@/lib/listings";
+import {
+  getOrgSummary,
+  listRequests,
+  type ListingRequest,
+} from "@/lib/listings";
+import { PAGE_SIZE } from "@/lib/paging";
 import { requestStatuses } from "@rescufood/listings-sdk";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
@@ -13,8 +18,8 @@ import {
   requestsLabel,
 } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
-import { RequestCards } from "@/components/requests/request-cards";
-import { RequestList } from "@/components/requests/request-list";
+import { RequestsView } from "@/components/requests/requests-view";
+import { RefreshControl } from "@/components/reports/refresh-control";
 import { requestStatusLabels } from "@/lib/listing-labels";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import {
@@ -24,6 +29,7 @@ import {
   CardTitle,
 } from "@rescufood/ui/components/card";
 import { cn } from "@/lib/utils";
+import { segmentedItem, segmentedTrack } from "@/lib/segmented";
 
 export const metadata: Metadata = {
   title: "Requests — RescuFood",
@@ -94,6 +100,14 @@ export default async function RequestsPage({
       />
     );
   }
+  if (me.org.status !== "approved") {
+    return (
+      <Notice
+        title="Registration under review"
+        body={`${me.org.name} can view requests once an administrator approves it.`}
+      />
+    );
+  }
 
   const { status, view } = await searchParams;
   const active: (typeof tabs)[number] = tabs.includes(
@@ -115,21 +129,27 @@ export default async function RequestsPage({
     return qs ? `/requests?${qs}` : "/requests";
   };
 
-  // Every status, so the tab counts cover the whole set.
-  let all: ListingRequest[] = [];
+  // The first page; the rest arrives as the reader scrolls.
+  let requests: ListingRequest[] = [];
+  let total = 0;
+  let tallies: Record<string, number> = {};
   let unavailable = false;
   try {
-    const page = await listRequests(session.idToken!, {
-      sortBy: "requestedAt",
-      sortOrder: "desc",
-      limit: 100,
-    });
-    all = page.items;
+    const [page, summary] = await Promise.all([
+      listRequests(session.idToken!, {
+        status: active === "all" ? undefined : active,
+        sortBy: "requestedAt",
+        sortOrder: "desc",
+        limit: PAGE_SIZE,
+      }),
+      getOrgSummary(session.idToken!),
+    ]);
+    requests = page.items;
+    total = page.total;
+    tallies = summary.claims;
   } catch {
     unavailable = true;
   }
-  const requests =
-    active === "all" ? all : all.filter((r) => r.status === active);
 
   return (
     <PageShell>
@@ -138,11 +158,14 @@ export default async function RequestsPage({
           title={requestsLabel(me)}
           subtitle={describeOrg(me)}
           action={
-            me.org.type === "rescue_partner" ? (
-              <Link href="/browse" className={cn(buttonVariants())}>
-                Find surplus food
-              </Link>
-            ) : undefined
+            <div className="flex items-center gap-2">
+              <RefreshControl />
+              {me.org.type === "rescue_partner" && (
+                <Link href="/browse" className={cn(buttonVariants())}>
+                  Find surplus food
+                </Link>
+              )}
+            </div>
           }
           crumbs={[
             { label: "Dashboard", href: "/dashboard" },
@@ -155,22 +178,18 @@ export default async function RequestsPage({
             data-animate="field"
             className="flex items-start justify-between gap-3"
           >
-            <div className="flex flex-wrap gap-2">
+            <div className={segmentedTrack}>
               {tabs.map((tab) => {
                 const count =
-                  tab === "all"
-                    ? all.length
-                    : all.filter((r) => r.status === tab).length;
+                  tab === "all" ? (tallies.total ?? 0) : (tallies[tab] ?? 0);
                 return (
                   <Link
                     key={tab}
                     href={href({ status: tab })}
                     aria-current={tab === active ? "page" : undefined}
                     className={cn(
-                      buttonVariants({
-                        variant: tab === active ? "default" : "outline",
-                        size: "sm",
-                      }),
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      segmentedItem(tab === active),
                     )}
                   >
                     {tab === "all" ? "All" : requestStatusLabels[tab]}
@@ -182,7 +201,7 @@ export default async function RequestsPage({
               })}
             </div>
 
-            <div className="flex shrink-0 gap-1" role="group" aria-label="View">
+            <div className={cn(segmentedTrack, "shrink-0")} role="group" aria-label="View">
               {views.map(({ key, label, Icon }) => (
                 <Link
                   key={key}
@@ -190,10 +209,8 @@ export default async function RequestsPage({
                   aria-current={key === layout ? "true" : undefined}
                   title={label}
                   className={cn(
-                    buttonVariants({
-                      variant: key === layout ? "default" : "outline",
-                      size: "icon-sm",
-                    }),
+                    buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                    segmentedItem(key === layout),
                   )}
                 >
                   <Icon className="size-4" aria-hidden />
@@ -215,11 +232,14 @@ export default async function RequestsPage({
           </Card>
         ) : (
           <div data-animate="field">
-            {layout === "card" ? (
-              <RequestCards requests={requests} />
-            ) : (
-              <RequestList requests={requests} />
-            )}
+            <RequestsView
+              // Remount on tab change so the fetched pages start over.
+              key={active}
+              initial={requests}
+              total={total}
+              status={active === "all" ? null : active}
+              layout={layout}
+            />
           </div>
         )}
       </AnimateIn>

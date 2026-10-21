@@ -16,6 +16,8 @@ export const AuditAction = {
   ClaimIdempotencyConflict: 'claim.idempotency_conflict',
   PickupCodeGenerated: 'pickup_code.generated',
   PickupCodeExhausted: 'pickup_code.exhausted',
+  StatsSummaryViewed: 'stats.summary_viewed',
+  StatsMetricsViewed: 'stats.metrics_viewed',
 } as const;
 
 // Written by service/profile. Canonical strings: its internal/domain/audit.go.

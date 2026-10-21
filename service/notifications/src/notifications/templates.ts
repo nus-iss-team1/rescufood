@@ -123,7 +123,12 @@ const renderers: Partial<Record<NotificationType, Renderer>> = {
           '\n\nThe listing is no longer available, and no further action is needed from you.';
         break;
       case 'no_show':
-        line = `Your reservation for "${listing}" has been cancelled because the pickup was not completed in time (recorded as a no-show).`;
+        line =
+          payload.reportedBy === 'rescue_partner'
+            ? `${
+                other || 'The rescue partner'
+              } has reported that the pickup of "${listing}" could not be completed, so the reservation has ended and been recorded as a no-show.`
+            : `Your reservation for "${listing}" has been cancelled because the pickup was not completed in time (recorded as a no-show).`;
         tail = '';
         break;
       default:

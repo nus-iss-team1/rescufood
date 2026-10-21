@@ -141,6 +141,27 @@
       "when": 1791152616779,
       "tag": "0019_listing_published_at",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791234667362,
+      "tag": "0020_claim_cancelled_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791246710118,
+      "tag": "0021_claim_no_show_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792037629000,
+      "tag": "0022_rcf75_shift_listing_times",
+      "breakpoints": true
     }
   ]
 }

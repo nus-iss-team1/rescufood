@@ -45,11 +45,25 @@ preflight:
 			echo "missing $$d/node_modules - run npm install in $$d"; \
 			exit 1; \
 		fi; \
+		for pkg in $$(grep -oE '"[^"]+": "file:' "$$d/package.json" | sed 's/": "file:$$//; s/^"//'); do \
+			if [ ! -e "$$d/node_modules/$$pkg" ]; then \
+				echo "$$d/node_modules is stale - $$pkg is not linked - run npm install in $$d"; \
+				exit 1; \
+			fi; \
+		done; \
 	done
 
 db: ## start postgres and wait until healthy
 	@cd service/profile && podman compose up -d 2> /dev/null
-	@until [ "$$(podman inspect --format '{{.State.Health.Status}}' profile_profile-db_1 2>/dev/null)" = "healthy" ]; do sleep 1; done
+	@cd service/profile && for i in $$(seq 60); do \
+		cid=$$(podman compose ps -q profile-db 2>/dev/null); \
+		if [ "$$(podman inspect --format '{{.State.Health.Status}}' $$cid 2>/dev/null)" = "healthy" ]; then \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "postgres is not healthy after 60s - check: cd service/profile && podman compose logs profile-db"; \
+	exit 1
 	@echo "postgres healthy on localhost:5432"
 
 db-down: ## stop postgres (data volume survives)

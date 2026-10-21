@@ -1,4 +1,9 @@
-import { ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import type { AuditRepository } from '../audit/audit.repository';
 import type { AuthenticatedUser } from '../common/types/express';
 import { StatisticsRepository } from './statistics.repository';
 import { StatisticsService } from './statistics.service';
@@ -6,11 +11,25 @@ import { StatisticsService } from './statistics.service';
 const asOf = new Date('2026-09-13T04:12:07.881Z');
 
 function makeRepository() {
-  return { countsForOrg: jest.fn(), metricsForOrg: jest.fn() };
+  return {
+    countsForOrg: jest.fn(),
+    metricsForOrg: jest.fn(),
+    orgExists: jest.fn().mockResolvedValue(true),
+  };
 }
 
-function makeService(repository: ReturnType<typeof makeRepository>) {
-  return new StatisticsService(repository as unknown as StatisticsRepository);
+function makeAudit() {
+  return { record: jest.fn().mockResolvedValue(undefined) };
+}
+
+function makeService(
+  repository: ReturnType<typeof makeRepository>,
+  audit: ReturnType<typeof makeAudit> = makeAudit(),
+) {
+  return new StatisticsService(
+    repository as unknown as StatisticsRepository,
+    audit as unknown as AuditRepository,
+  );
 }
 
 const user: AuthenticatedUser = {
@@ -36,7 +55,7 @@ describe('StatisticsService', () => {
 
       const summary = await makeService(repository).getOrgSummary(user);
 
-      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(summary).toEqual({
         orgId: 'org-1',
         listings: {
@@ -60,6 +79,25 @@ describe('StatisticsService', () => {
       });
     });
 
+    it('counts over the Singapore days from `from` through `to`', async () => {
+      const repository = makeRepository();
+      repository.countsForOrg.mockResolvedValue({
+        listings: [],
+        claims: [],
+        asOf,
+      });
+
+      await makeService(repository).getOrgSummary(user, {
+        from: '2026-03-01',
+        to: '2026-03-31',
+      });
+
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {
+        start: new Date('2026-02-28T16:00:00.000Z'),
+        end: new Date('2026-03-31T16:00:00.000Z'),
+      });
+    });
+
     it("returns the repository's as-of timestamp unchanged", async () => {
       const repository = makeRepository();
       repository.countsForOrg.mockResolvedValue({
@@ -73,19 +111,6 @@ describe('StatisticsService', () => {
       ).resolves.toMatchObject({ asOf });
     });
 
-    it('scopes an admin to their own org rather than the whole platform', async () => {
-      const repository = makeRepository();
-      repository.countsForOrg.mockResolvedValue({
-        listings: [],
-        claims: [],
-        asOf,
-      });
-
-      await makeService(repository).getOrgSummary({ ...user, role: 'admin' });
-
-      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1');
-    });
-
     it('denies a caller with no organisation without counting anything', async () => {
       const repository = makeRepository();
 
@@ -93,6 +118,203 @@ describe('StatisticsService', () => {
         makeService(repository).getOrgSummary({ ...user, orgId: undefined }),
       ).rejects.toBeInstanceOf(ForbiddenException);
       expect(repository.countsForOrg).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('organisation selection', () => {
+    const otherOrgId = '6f1c2a4e-0b7d-4c1e-9a3f-2d8e5b7c9a10';
+    const admin: AuthenticatedUser = { userId: 'admin-1', role: 'admin' };
+
+    function emptyRepository() {
+      const repository = makeRepository();
+      repository.countsForOrg.mockResolvedValue({
+        listings: [],
+        claims: [],
+        asOf,
+      });
+      repository.metricsForOrg.mockResolvedValue({
+        units: [],
+        timing: noTiming,
+        asOf,
+      });
+      return repository;
+    }
+
+    it('reports on the org an admin names', async () => {
+      const repository = emptyRepository();
+      const service = makeService(repository);
+
+      const summary = await service.getOrgSummary(admin, {
+        orgId: otherOrgId,
+      });
+      const metrics = await service.getRescuedMetrics(admin, {
+        orgId: otherOrgId,
+      });
+
+      expect(repository.orgExists).toHaveBeenCalledWith(otherOrgId);
+      expect(repository.countsForOrg).toHaveBeenCalledWith(otherOrgId, {});
+      expect(repository.metricsForOrg).toHaveBeenCalledWith(otherOrgId, {});
+      expect(summary.orgId).toBe(otherOrgId);
+      expect(metrics.orgId).toBe(otherOrgId);
+    });
+
+    it('requires an admin to name an org, without reading anything', async () => {
+      const repository = emptyRepository();
+      const service = makeService(repository);
+
+      await expect(service.getOrgSummary(admin, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      await expect(
+        service.getRescuedMetrics(admin, { from: '2026-03-01' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.orgExists).not.toHaveBeenCalled();
+      expect(repository.countsForOrg).not.toHaveBeenCalled();
+      expect(repository.metricsForOrg).not.toHaveBeenCalled();
+    });
+
+    it('applies the period to the picked org', async () => {
+      const repository = emptyRepository();
+
+      await makeService(repository).getRescuedMetrics(admin, {
+        orgId: otherOrgId,
+        from: '2026-03-01',
+        to: '2026-03-31',
+      });
+
+      expect(repository.metricsForOrg).toHaveBeenCalledWith(otherOrgId, {
+        start: new Date('2026-02-28T16:00:00.000Z'),
+        end: new Date('2026-03-31T16:00:00.000Z'),
+      });
+    });
+
+    it('returns 404 for an org that does not exist, without reading figures', async () => {
+      const repository = emptyRepository();
+      repository.orgExists.mockResolvedValue(false);
+      const service = makeService(repository);
+
+      await expect(
+        service.getOrgSummary(admin, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.getRescuedMetrics(admin, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.countsForOrg).not.toHaveBeenCalled();
+      expect(repository.metricsForOrg).not.toHaveBeenCalled();
+    });
+
+    it("denies a non-admin another org's figures without reading anything", async () => {
+      const repository = emptyRepository();
+      const service = makeService(repository);
+
+      await expect(
+        service.getOrgSummary(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        service.getRescuedMetrics(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.orgExists).not.toHaveBeenCalled();
+      expect(repository.countsForOrg).not.toHaveBeenCalled();
+      expect(repository.metricsForOrg).not.toHaveBeenCalled();
+    });
+
+    it('accepts a non-admin naming their own org', async () => {
+      const repository = emptyRepository();
+
+      const summary = await makeService(repository).getOrgSummary(user, {
+        orgId: 'org-1',
+      });
+
+      expect(repository.countsForOrg).toHaveBeenCalledWith('org-1', {});
+      expect(summary.orgId).toBe('org-1');
+    });
+  });
+
+  describe('audit', () => {
+    const otherOrgId = '6f1c2a4e-0b7d-4c1e-9a3f-2d8e5b7c9a10';
+    const admin: AuthenticatedUser = { userId: 'admin-1', role: 'admin' };
+
+    function emptyRepository() {
+      const repository = makeRepository();
+      repository.countsForOrg.mockResolvedValue({
+        listings: [],
+        claims: [],
+        asOf,
+      });
+      repository.metricsForOrg.mockResolvedValue({
+        units: [],
+        timing: noTiming,
+        asOf,
+      });
+      return repository;
+    }
+
+    it('does not record the default, unfiltered view', async () => {
+      const audit = makeAudit();
+      const service = makeService(emptyRepository(), audit);
+
+      await service.getOrgSummary(user);
+      await service.getRescuedMetrics(user, {});
+
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it("records a member's filtered view against their org with the period", async () => {
+      const audit = makeAudit();
+
+      await makeService(emptyRepository(), audit).getOrgSummary(user, {
+        from: '2026-03-01',
+        to: '2026-03-31',
+      });
+
+      expect(audit.record).toHaveBeenCalledWith({
+        actor: { userId: 'user-1', orgId: 'org-1' },
+        action: 'stats.summary_viewed',
+        entityType: 'organisation',
+        entityId: 'org-1',
+        metadata: { from: '2026-03-01', to: '2026-03-31' },
+      });
+    });
+
+    it("records an admin's view against the org they named", async () => {
+      const audit = makeAudit();
+
+      await makeService(emptyRepository(), audit).getRescuedMetrics(admin, {
+        orgId: otherOrgId,
+      });
+
+      expect(audit.record).toHaveBeenCalledWith({
+        actor: { userId: 'admin-1', orgId: null },
+        action: 'stats.metrics_viewed',
+        entityType: 'organisation',
+        entityId: otherOrgId,
+        metadata: { from: null, to: null },
+      });
+    });
+
+    it('returns no figures when the view cannot be audited', async () => {
+      const audit = makeAudit();
+      audit.record.mockRejectedValue(new Error('audit write failed'));
+
+      await expect(
+        makeService(emptyRepository(), audit).getRescuedMetrics(user, {
+          from: '2026-03-01',
+        }),
+      ).rejects.toThrow('audit write failed');
+    });
+
+    it('records nothing for a denied request', async () => {
+      const audit = makeAudit();
+      const service = makeService(emptyRepository(), audit);
+
+      await expect(
+        service.getOrgSummary(user, { orgId: otherOrgId }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.getOrgSummary(admin, {})).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+
+      expect(audit.record).not.toHaveBeenCalled();
     });
   });
 
@@ -110,7 +332,7 @@ describe('StatisticsService', () => {
 
       const metrics = await makeService(repository).getRescuedMetrics(user);
 
-      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1');
+      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1', {});
       expect(metrics).toEqual({
         orgId: 'org-1',
         rescuedByUnit: [
@@ -125,6 +347,24 @@ describe('StatisticsService', () => {
         formattedMedianTimeToClaim: '1 hr 45 mins',
         timeToClaimCount: 4,
         asOf,
+      });
+    });
+
+    it('reads metrics over the Singapore days from `from` through `to`', async () => {
+      const repository = makeRepository();
+      repository.metricsForOrg.mockResolvedValue({
+        units: [],
+        timing: noTiming,
+        asOf,
+      });
+
+      await makeService(repository).getRescuedMetrics(user, {
+        from: '2026-03-01',
+      });
+
+      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1', {
+        start: new Date('2026-02-28T16:00:00.000Z'),
+        end: undefined,
       });
     });
 
@@ -183,22 +423,6 @@ describe('StatisticsService', () => {
         timeToClaimCount: 0,
         asOf,
       });
-    });
-
-    it('scopes an admin to their own org rather than the whole platform', async () => {
-      const repository = makeRepository();
-      repository.metricsForOrg.mockResolvedValue({
-        units: [],
-        timing: noTiming,
-        asOf,
-      });
-
-      await makeService(repository).getRescuedMetrics({
-        ...user,
-        role: 'admin',
-      });
-
-      expect(repository.metricsForOrg).toHaveBeenCalledWith('org-1');
     });
 
     it('denies a caller with no organisation without reading anything', async () => {

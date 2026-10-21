@@ -273,7 +273,7 @@ export function ListingFilters({ className }: { className?: string }) {
             size="sm"
             onClick={handleReset}
             disabled={isPending}
-            className="h-7 rounded-full px-2.5 text-xs text-muted-foreground hover:text-destructive"
+            className="h-7 px-2.5 text-xs text-muted-foreground hover:text-destructive"
           >
             <RotateCcw className="mr-1 size-3" />
             Clear filters

@@ -4,6 +4,8 @@ import {
   cancelRequestAction,
   createRequestAction,
   lookupPickupCodeAction,
+  recordFailedCollectionAction,
+  reportNoShowAction,
   verifyPickupCodeAction,
 } from "./actions";
 
@@ -84,14 +86,22 @@ describe("createRequestAction", () => {
 
 describe("cancelRequestAction", () => {
   it("cancels with the trimmed reason and refreshes the freed listing", async () => {
-    listings.decideRequest.mockResolvedValue({ listingId: "L1" });
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
 
     const state = await cancelRequestAction(
       {},
       form({ requestId: "R1", reason: "  van broke down  " }),
     );
 
-    expect(state).toEqual({ requestedId: "R1" });
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
     expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
       status: "cancelled",
       cancellationReason: "van broke down",
@@ -99,15 +109,151 @@ describe("cancelRequestAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/browse/L1");
   });
 
+  it("returns relistBlockedReason when the lot could not be relisted", async () => {
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: false,
+      relistBlockedReason: "past_cutoff",
+    });
+
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", reason: "Schedule conflict" }),
+    );
+
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: false,
+      relistBlockedReason: "past_cutoff",
+    });
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { reason: "   " }],
+  ])("rejects when the reason is %s", async (_label, extra) => {
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", ...extra }),
+    );
+
+    expect(state).toEqual({ error: "A cancellation reason is required." });
+    expect(listings.decideRequest).not.toHaveBeenCalled();
+  });
+
   it("surfaces the service's error and skips revalidation", async () => {
     listings.decideRequest.mockRejectedValue(
       new ListingsApiError(422, "Request is already completed"),
     );
 
-    const state = await cancelRequestAction({}, form({ requestId: "R1" }));
+    const state = await cancelRequestAction(
+      {},
+      form({ requestId: "R1", reason: "Van broke down" }),
+    );
 
     expect(state.error).toBe("Request is already completed");
     expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("reportNoShowAction", () => {
+  it("reports no-show with trimmed reason and refreshes the listing", async () => {
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
+
+    const state = await reportNoShowAction(
+      {},
+      form({ requestId: "R1", reason: "  Partner did not arrive  " }),
+    );
+
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
+    expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
+      status: "no_show",
+      noShowReason: "Partner did not arrive",
+    });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/browse/L1");
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { reason: "   " }],
+  ])("rejects when reason is %s", async (_label, extra) => {
+    const state = await reportNoShowAction(
+      {},
+      form({ requestId: "R1", ...extra }),
+    );
+
+    expect(state).toEqual({
+      error: "A reason is required to report a no-show.",
+    });
+    expect(listings.decideRequest).not.toHaveBeenCalled();
+  });
+
+  it("surfaces error when pickup window has not started yet", async () => {
+    listings.decideRequest.mockRejectedValue(
+      new ListingsApiError(
+        400,
+        "a no-show can only be reported once the pickup window has started",
+      ),
+    );
+
+    const state = await reportNoShowAction(
+      {},
+      form({ requestId: "R1", reason: "Partner did not arrive" }),
+    );
+
+    expect(state.error).toBe(
+      "a no-show can only be reported once the pickup window has started",
+    );
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("recordFailedCollectionAction", () => {
+  it("records failed collection with trimmed reason and refreshes the listing", async () => {
+    listings.decideRequest.mockResolvedValue({
+      listingId: "L1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
+
+    const state = await recordFailedCollectionAction(
+      {},
+      form({ requestId: "R1", reason: "  Inadequate cooling  " }),
+    );
+
+    expect(state).toEqual({
+      requestedId: "R1",
+      listingRelisted: true,
+      relistBlockedReason: null,
+    });
+    expect(listings.decideRequest).toHaveBeenCalledWith("token-1", "R1", {
+      status: "cancelled",
+      cancellationReason: "Inadequate cooling",
+    });
+    expect(revalidatePathMock).toHaveBeenCalledWith("/browse/L1");
+  });
+
+  it.each([
+    ["missing", {}],
+    ["blank", { reason: "   " }],
+  ])("rejects when reason is %s", async (_label, extra) => {
+    const state = await recordFailedCollectionAction(
+      {},
+      form({ requestId: "R1", ...extra }),
+    );
+
+    expect(state).toEqual({
+      error: "A reason is required to record a failed collection.",
+    });
+    expect(listings.decideRequest).not.toHaveBeenCalled();
   });
 });
 

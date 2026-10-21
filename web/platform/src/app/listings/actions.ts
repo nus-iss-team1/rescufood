@@ -34,20 +34,23 @@ export type ListingFormValues = {
 
 export type ListingFormState = {
   error?: string;
+  fieldErrors?: Record<string, string>;
   /** Set once the listing is live or saved as draft. */
   publishedId?: string;
   /** Status of the created listing: 'draft' | 'available' */
   status?: string;
   /** Set once the listing has been updated. */
   updatedId?: string;
+  updatedAt?: string;
   values?: ListingFormValues;
 };
 
 const text = (form: FormData, key: string) =>
   String(form.get(key) ?? "").trim();
 
-/** datetime-local values carry no zone; the browser's is the right one. */
+/** Parses an ISO datetime carrying a zone; null when blank, zoneless, or invalid. */
 function isoOrNull(value: string): string | null {
+  if (!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) return null;
   const at = new Date(value);
   return Number.isNaN(at.getTime()) ? null : at.toISOString();
 }
@@ -263,6 +266,15 @@ export async function updateListingAction(
     };
   }
 
+  // Cancelling requires a non-blank reason.
+  const cancelledReason = text(formData, "cancelledReason");
+  if (targetStatus === "cancelled" && !cancelledReason) {
+    return {
+      error: "Please give a reason for cancelling this listing.",
+      values,
+    };
+  }
+
   const isPublishingOrAvailable =
     targetStatus === "available" ||
     (!targetStatus && currentStatus === "available");
@@ -310,14 +322,15 @@ export async function updateListingAction(
     ...(targetStatus && listingStatuses.includes(targetStatus as ListingStatus)
       ? { status: targetStatus as ListingStatus }
       : {}),
+    ...(targetStatus === "cancelled" ? { cancelledReason } : {}),
     ...(deleteImageIds.length > 0 ? { deleteImageIds } : {}),
   };
 
   try {
-    await updateListing(idToken, id, updatePayload, images);
+    const updated = await updateListing(idToken, id, updatePayload, images);
     revalidatePath("/listings");
     revalidatePath(`/listings/${id}`);
-    return { updatedId: id };
+    return { updatedId: id, updatedAt: updated.updatedAt };
   } catch (err) {
     if (err instanceof ListingsApiError) {
       if (err.status === 409) {
@@ -327,7 +340,20 @@ export async function updateListingAction(
           values,
         };
       }
-      return { error: err.message, values };
+      const fieldErrors: Record<string, string> = {};
+      if (err.errors && Array.isArray(err.errors)) {
+        for (const item of err.errors) {
+          if (item.field && !fieldErrors[item.field]) {
+            fieldErrors[item.field] = item.message;
+          }
+        }
+      }
+      return {
+        error: err.message,
+        fieldErrors:
+          Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined,
+        values,
+      };
     }
     return {
       error: "Could not reach the listings service. Please try again.",

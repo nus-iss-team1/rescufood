@@ -31,7 +31,12 @@ export class LoginPage {
       requireEnv('TEST_DONOR_USERNAME'),
       requireEnv('TEST_DONOR_PASSWORD'),
     );
-    await expect(this.page.getByText('Post surplus food')).toBeVisible();
+    // The dashboard's primary action is role-specific, so it proves which
+    // workspace opened, not merely that one did. Scoped to main: the
+    // sidebar carries a link of the same name.
+    await expect(
+      this.page.getByRole('main').getByRole('link', { name: 'New listing' }),
+    ).toBeVisible();
   }
 
   async loginAsRescuePartner() {
@@ -40,7 +45,11 @@ export class LoginPage {
       requireEnv('TEST_RESCUE_PARTNER_USERNAME'),
       requireEnv('TEST_RESCUE_PARTNER_PASSWORD'),
     );
-    await expect(this.page.getByText('Find & claim surplus food')).toBeVisible();
+    await expect(
+      this.page
+        .getByRole('main')
+        .getByRole('link', { name: 'Find surplus food' }),
+    ).toBeVisible();
   }
 
   async logout() {

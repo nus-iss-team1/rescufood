@@ -41,6 +41,16 @@ describe('renderInApp', () => {
     expect(
       renderInApp('claim_cancelled', {
         listingDescription: 'Rice',
+        endedBy: 'no_show',
+        reportedBy: 'rescue_partner',
+        counterpartyOrgName: 'City Harvest',
+      }),
+    ).toBe(
+      'City Harvest reported that the pickup of "Rice" could not be completed (no-show).',
+    );
+    expect(
+      renderInApp('claim_cancelled', {
+        listingDescription: 'Rice',
         endedBy: 'rescue_partner',
       }),
     ).toContain('available again');
