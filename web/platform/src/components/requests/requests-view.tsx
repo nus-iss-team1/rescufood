@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ListingRequest, RequestStatus } from "@rescufood/listings-sdk";
 
 import { RequestCards } from "@/components/requests/request-cards";
@@ -23,10 +23,25 @@ export function RequestsView({
   status: RequestStatus | null;
   layout: "list" | "card";
 }) {
-  const [requests, setRequests] = useState(initial);
+  // Only the pages scrolled past the first. `initial` stays the source of
+  // truth for the first page, so a server re-render after a cancel or a
+  // decision is not masked by stale state.
+  const [extra, setExtra] = useState<ListingRequest[]>([]);
+  const [seenInitial, setSeenInitial] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [exhausted, setExhausted] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
+
+  if (initial !== seenInitial) {
+    setSeenInitial(initial);
+    setExtra([]);
+    setExhausted(false);
+  }
+
+  const requests = useMemo(() => {
+    const first = new Set(initial.map((r) => r.id));
+    return [...initial, ...extra.filter((r) => !first.has(r.id))];
+  }, [extra, initial]);
   const more = !exhausted && requests.length < total;
 
   const loadMore = useCallback(async () => {
@@ -39,10 +54,7 @@ export function RequestsView({
         return;
       }
       const seen = new Set(requests.map((r) => r.id));
-      setRequests((shown) => [
-        ...shown,
-        ...next.filter((r) => !seen.has(r.id)),
-      ]);
+      setExtra((shown) => [...shown, ...next.filter((r) => !seen.has(r.id))]);
     } catch {
       setExhausted(true);
     } finally {
