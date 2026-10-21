@@ -1345,19 +1345,12 @@ class: flex flex-col
 </div>
 
 <!--
-[OPENING A - slides-polish]
 CI
 
 Our CI runs on every pull request into develop. We lint, type-check,
 unit test and run integration tests against a real PostgreSQL via
 Testcontainers, then run three SAST scanners, each covering a different
 class of problem:
-
-[OPENING B - develop]
-CI/CD PIPELINE
-
-Every component goes through two pipelines - one on each pull request, one
-after a merge. Let me walk them in order.
 
 On a pull request, we run the fast checks - lint, type-check, unit and
 integration tests - then three security scanners, each for a different class
@@ -1366,25 +1359,9 @@ fast pattern-matching on insecure idioms and hardcoded secrets. The third is
 Trivy, which scans outward - known CVEs in dependencies, leaked secrets, and
 Dockerfile and infrastructure misconfigurations.
 
-[CLOSING A - slides-polish]
 Nothing merges without review and green checks, and a single red check
 blocks the merge. The workflows are path-filtered, so only the
 component that changed runs its pipeline.
-
-[CLOSING B - develop]
-CodeQL blocks a merge; Semgrep and Trivy are report-only for now - findings
-land as SARIF under the Security tab but don't fail the build yet. That's
-deliberate: we didn't want to gate on untriaged findings, and switching them
-to fail-on-findings is tracked on our product backlog.
-
-Once a change merges, the second pipeline re-runs SAST, builds and pushes the
-image to GHCR, and deploys to that branch's ECS environment - behind a
-circuit breaker, so if the new tasks don't come up healthy, ECS rolls back to
-the last good deployment and keeps serving the previous image. After deploy,
-ZAP runs a DAST pass against the live site, and Playwright runs end-to-end on
-dev and qa. We keep those e2e tests non-blocking - they run post-deploy and
-can flake on UI timing - so they're an early warning, with the PR checks as
-the real gate.
 -->
 
 ---
