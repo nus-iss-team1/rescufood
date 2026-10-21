@@ -100,43 +100,35 @@ test.describe.serial("Listing claim lifecycle", () => {
 
     // Opens a confirmation dialog first; the real submit lives inside it.
     await request.getByRole("button", { name: "Cancel", exact: true }).click();
-    // TODO: fill the required reason once the cancel dialog has one.
-    await partnerPage
-      .getByRole("dialog")
-      .getByRole("button", { name: "Cancel claim" })
-      .click();
+    // A reason is required: the confirm button stays disabled until one is
+    // picked or typed.
+    const dialog = partnerPage.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Schedule conflict" }).click();
+    await dialog.getByRole("button", { name: "Cancel claim" }).click();
 
-    await expect(request.getByText("Cancelled")).toBeVisible({
+    // Exact: the row also shows a "Cancelled on <date>" line.
+    await expect(request.getByText("Cancelled", { exact: true })).toBeVisible({
       timeout: 10_000,
     });
-    // TODO: assert the toast says the lot expired once the UI reads listingRelisted.
+    // Cancelled inside the cutoff (see the expired-listing test below), so
+    // the lot is not relisted.
+    await expect(
+      partnerPage
+        .getByLabel(/Notifications/i)
+        .getByText(/Lot could not be relisted/),
+    ).toBeVisible();
   });
 
-  // The listings service keeps any listing that has had a request, even a
-  // cancelled one, for audit history - so this run's listing can't be
-  // cleaned up by deleting it. (Deleting is covered in
+  // The expired listing is locked, so the UI offers no Delete; the listing
+  // stays for audit history. (Deleting is covered in
   // listing-draft-delete.spec.ts, on a listing that's never claimed.)
   test("donor cannot delete a listing that has had a request", async ({
     donorPage,
   }) => {
     const yourListings = new YourListingsPage(donorPage);
     await yourListings.goto();
-    await yourListings.delete(tag);
-
-    const notifications = donorPage.getByLabel(/Notifications/i);
-    await expect(
-      notifications.getByText("Could not delete listing"),
-    ).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(
-      notifications.getByText(
-        "This listing has associated requests and cannot be deleted.",
-      ),
-    ).toBeVisible();
-
-    await yourListings.goto();
     await expect(yourListings.rowFor(tag)).toBeVisible();
+    await expect(yourListings.deleteButtonFor(tag)).toHaveCount(0);
   });
 
   // The form's default pickup window opens within the cancellation cutoff,
