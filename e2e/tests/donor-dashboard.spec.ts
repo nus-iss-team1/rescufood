@@ -80,9 +80,14 @@ test.describe('Donor reports', () => {
     await donorPage.goto('/reports');
 
     const sevenDays = donorPage.getByRole('button', { name: '7 days' });
-    await sevenDays.click();
-
-    await expect(sevenDays).toHaveAttribute('aria-pressed', 'true');
+    // A click before hydration is dropped; retrying is safe, it only selects
+    // the same range again.
+    await expect(async () => {
+      await sevenDays.click();
+      await expect(sevenDays).toHaveAttribute('aria-pressed', 'true', {
+        timeout: 2_000,
+      });
+    }).toPass({ timeout: 20_000 });
   });
 
   test('pages the performance table', async ({ donorPage }) => {
