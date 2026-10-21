@@ -320,7 +320,7 @@ SECTION MARKER
 
 ---
 
-# Logical view
+# Logical View
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 -125 1100 510" style="max-height:100%;max-width:100%" fill="none">
@@ -598,7 +598,7 @@ the honest cost trade-off to call out.
 class: flex flex-col
 ---
 
-# State diagram
+# State Diagram
 
 <div class="text-base mt-2" style="color:#00000099">The listing lifecycle</div>
 
@@ -674,7 +674,7 @@ by step, and section 3 shows the patterns the implementation leans on.
 class: flex flex-col
 ---
 
-# Sequence diagram
+# Sequence Diagram
 
 <div class="text-base mt-2" style="color:#00000099">The claim edge from the lifecycle, step by step</div>
 
@@ -784,7 +784,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-Design <span class="accent">patterns</span>
+Design <span class="accent">Patterns</span>
 </div>
 
 <!--
@@ -913,7 +913,7 @@ functions to one shared transition handler.
 class: flex flex-col
 ---
 
-# Publish / subscribe pattern
+# Observer pattern
 
 <div class="text-base mt-2" style="color:#00000099">Listings drops events on SQS, notifications picks them up</div>
 
@@ -952,8 +952,7 @@ class: flex flex-col
 </div>
 
 <!--
-PUBLISH / SUBSCRIBE
-
+Observer Pattern
 When a claim is created, cancelled or completed, listings just drops an
 event on SQS and moves on. The notification service polls the queue,
 renders the templates and sends the email and in-app notification. The
