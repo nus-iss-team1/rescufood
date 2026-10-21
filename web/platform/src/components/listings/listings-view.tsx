@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import type { Listing } from "@rescufood/listings-sdk";
+import type { Listing, ListingStatus } from "@rescufood/listings-sdk";
 
 import { ListingCards } from "@/components/listings/listing-cards";
 import { ListingList } from "@/components/listings/listing-list";
 import { DeleteListingButton } from "@/components/listings/delete-listing-button";
+import { loadListingsPage } from "@/app/feed-actions";
 import { buttonVariants } from "@rescufood/ui/components/button";
 import { cn } from "@/lib/utils";
-
-/** Rows added each time the sentinel comes into view. */
-const STEP = 12;
 
 /** Past these a listing opens read-only, so the verb changes with it. */
 const LOCKED_STATUSES = new Set([
@@ -56,42 +54,67 @@ function rowActions(listing: Listing) {
 }
 
 /**
- * The donor's listings, revealed a page at a time as the reader reaches the
- * end. Every listing is already loaded; this only paces the rendering.
+ * The donor's listings, fetched a page at a time as the reader reaches the
+ * end. `initial` is the server-rendered first page and `total` the full
+ * match count, which together decide whether more remain.
  */
 export function ListingsView({
-  listings,
+  initial,
+  total,
+  status,
   layout,
   empty = "No listings here yet.",
 }: {
-  listings: Listing[];
+  initial: Listing[];
+  total: number;
+  status: ListingStatus | null;
   layout: "list" | "card";
   empty?: string;
 }) {
-  const [count, setCount] = useState(() => Math.min(STEP, listings.length));
+  const [listings, setListings] = useState(initial);
+  const [loading, setLoading] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
-  const more = count < listings.length;
+  const more = !exhausted && listings.length < total;
+
+  const loadMore = useCallback(async () => {
+    setLoading(true);
+    try {
+      const next = await loadListingsPage(status, listings.length);
+      // An empty page means the feed shifted under us; stop asking.
+      if (next.length === 0) {
+        setExhausted(true);
+        return;
+      }
+      const seen = new Set(listings.map((l) => l.id));
+      setListings((shown) => [
+        ...shown,
+        ...next.filter((l) => !seen.has(l.id)),
+      ]);
+    } catch {
+      setExhausted(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [listings, status]);
 
   useEffect(() => {
     const node = sentinel.current;
-    if (!node) return;
+    if (!node || !more || loading) return;
 
     const observer = new IntersectionObserver((entries) => {
-      if (!entries[0]?.isIntersecting) return;
-      setCount((shown) => Math.min(shown + STEP, listings.length));
+      if (entries[0]?.isIntersecting) void loadMore();
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [listings.length, more]);
-
-  const shown = listings.slice(0, count);
+  }, [loadMore, loading, more]);
 
   return (
     <>
       {layout === "card" ? (
-        <ListingCards listings={shown} empty={empty} action={rowActions} />
+        <ListingCards listings={listings} empty={empty} action={rowActions} />
       ) : (
-        <ListingList listings={shown} empty={empty} action={rowActions} />
+        <ListingList listings={listings} empty={empty} action={rowActions} />
       )}
 
       {more && (
@@ -99,7 +122,7 @@ export function ListingsView({
           ref={sentinel}
           className="py-6 text-center text-xs text-muted-foreground"
         >
-          Loading more… ({count} of {listings.length})
+          Loading more… ({listings.length} of {total})
         </div>
       )}
     </>
