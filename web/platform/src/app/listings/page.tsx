@@ -6,7 +6,8 @@ import { LayoutGrid, Rows3 } from "lucide-react";
 import { getMe, type Me } from "@/lib/profile";
 import { requireSession } from "@/lib/session";
 import { listingStatuses, type ListingStatus } from "@rescufood/listings-sdk";
-import { listListings, type Listing } from "@/lib/listings";
+import { getOrgSummary, listListings, type Listing } from "@/lib/listings";
+import { PAGE_SIZE } from "@/lib/paging";
 import { AnimateIn } from "@/components/animate-in";
 import { PageHeader, describeOrg } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
@@ -122,25 +123,28 @@ export default async function ListingsPage({
     const qs = params.toString();
     return qs ? `/listings?${qs}` : "/listings";
   };
-  // Every status, so the tab counts are right; the service has no
-  // "my organisation" filter beyond the donor's name.
-  let all: Listing[] = [];
+  // The first page; the rest arrives as the reader scrolls.
+  let listings: Listing[] = [];
+  let total = 0;
+  let tallies: Record<string, number> = {};
   let unavailable = false;
   try {
-    const page = await listListings(session.idToken!, {
-      donorOrgName: me.org.name,
-      sortBy: "createdAt",
-      sortOrder: "desc",
-      limit: 100,
-    });
-    all = page.items;
+    const [page, summary] = await Promise.all([
+      listListings(session.idToken!, {
+        donorOrgName: me.org.name,
+        status: active === "all" ? undefined : (active as ListingStatus),
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        limit: PAGE_SIZE,
+      }),
+      getOrgSummary(session.idToken!),
+    ]);
+    listings = page.items;
+    total = page.total;
+    tallies = summary.listings;
   } catch {
     unavailable = true;
   }
-  const listings =
-    active === "all"
-      ? all
-      : all.filter((l) => l.status === (active as ListingStatus));
 
   return shell(
     <AnimateIn className="flex flex-col gap-6">
@@ -169,10 +173,7 @@ export default async function ListingsPage({
           options={tabs.map((tab) => ({
             value: tab,
             label: tab === "all" ? "All statuses" : tab,
-            count:
-              tab === "all"
-                ? all.length
-                : all.filter((l) => l.status === tab).length,
+            count: tab === "all" ? (tallies.total ?? 0) : (tallies[tab] ?? 0),
           }))}
         />
 
@@ -203,9 +204,11 @@ export default async function ListingsPage({
           />
         ) : (
           <ListingsView
-            // Remount on tab change so the reveal count starts over.
+            // Remount on tab change so the fetched pages start over.
             key={active}
-            listings={listings}
+            initial={listings}
+            total={total}
+            status={active === "all" ? null : (active as ListingStatus)}
             layout={layout}
           />
         )}
