@@ -15,9 +15,26 @@ loadEnvConfig(
   true,
 );
 
+// Sent on every response. CSP is left for its own change: Next's inline
+// scripts need per-request nonces. COEP is omitted because require-corp
+// would block the CloudFront listing images.
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
-  compress: false,
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   // forbidden() and app/forbidden.tsx
   experimental: { authInterrupts: true },
   images: {

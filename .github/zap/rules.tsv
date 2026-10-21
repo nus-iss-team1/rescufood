@@ -3,3 +3,4 @@
 # (callers must also set fail-on-findings: true).
 # Alert ids: https://www.zaproxy.org/docs/alerts/
 10035	IGNORE	Strict-Transport-Security - ephemeral scan target is plain HTTP, TLS terminates at the ALB
+10202	IGNORE	Anti-CSRF tokens - forms are Next.js server actions, which reject cross-origin requests by Origin check

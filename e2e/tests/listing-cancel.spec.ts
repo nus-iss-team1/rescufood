@@ -5,7 +5,8 @@ import { ListingEditPage } from './pages/listing-edit-page';
 import { BrowsePage } from './pages/browse-page';
 import { buildQaListing } from './fixtures/listing-data';
 
-// The listing here is never claimed, so it can be deleted at the end.
+// A cancelled listing is locked, so it can't be deleted from the UI. Deleting
+// an unclaimed listing is covered in listing-draft-delete.spec.ts.
 test.describe.serial('Donor cancels an unclaimed listing', () => {
   // Unique per run, distinct from the other specs.
   const tag = `qa-cancel-${Date.now()}`;
@@ -53,14 +54,10 @@ test.describe.serial('Donor cancels an unclaimed listing', () => {
     await expect(browsePage.cardFor(tag)).toHaveCount(0);
   });
 
-  test('donor can delete the cancelled listing', async ({ donorPage }) => {
+  test('donor cannot delete the cancelled listing', async ({ donorPage }) => {
     const yourListings = new YourListingsPage(donorPage);
     await yourListings.goto();
-    await yourListings.delete(tag);
-
-    await expect(
-      donorPage.getByLabel(/Notifications/i).getByText('Listing deleted'),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(yourListings.rowFor(tag)).toHaveCount(0);
+    await expect(yourListings.rowFor(tag)).toBeVisible();
+    await expect(yourListings.deleteButtonFor(tag)).toHaveCount(0);
   });
 });
