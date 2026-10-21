@@ -837,9 +837,20 @@ class: flex flex-col
 </div>
 
 <!--
-We are adopting Gitflow with Environment branching as our branching strategy. Basically, each environment corresponds to a specific deployment stage (develop for dev, qa for testing, and main for production), where every merge or promotion moves features upward through pull requests, and releases are tagged automatically for easy rollbacks."
+BRANCHING STRATEGY
 
-Additionally, we adhere to strict semantic versioning across all components to ensure seamless dependency management and predictable upgrades.
+We adapt Gitflow with environment branches, and the key idea is that the
+branch decides the environment: develop feeds dev, qa feeds QA, main powers
+production. Day-to-day work is on short-lived feat/* and fix/* branches off
+develop - those are the ones branching off and merging back on the diagram.
+
+Nothing moves between environments except through a pull request. A change
+merges into develop for dev, then a PR promotes develop to qa, and a PR
+promotes qa to main for production. Same change, promoted upward environment
+by environment, each step reviewed rather than a direct push to prod.
+
+We tag releases on main with semantic versions - the v1.4.2 there - so any
+deployed state maps back to a specific tagged release.
 -->
 
 ---
@@ -884,7 +895,69 @@ class: flex flex-col
 </div>
 
 <!--
-Production bugs are handled by cutting a hotfix branch directly from main and merging back via PR. To prevent drift between environments, we immediately backport the fix by rebasing develop onto main once resolved. This ensure that developers dont encounter merge conflicts when merging develop back to main in future.
+HOTFIXES
+
+A production bug can't wait for the full develop-to-qa-to-main chain, so we
+branch a hotfix straight off main, fix it, and merge back via PR - that's
+the v1.4.3 patch release on the diagram.
+
+The important second step is the dashed line: once it lands on main, we
+immediately rebase the fix back into develop. Skip that and the branches
+diverge - the fix is in production but not in the branch everyone works
+from, and the next promotion either hits merge conflicts or silently reverts
+the hotfix. Rebasing at once keeps the environments from drifting and keeps
+future merges clean.
+-->
+
+---
+class: flex flex-col
+---
+
+# Source &amp; artifacts
+
+<div class="text-base mt-2" style="color:#00000099">How we manage the code and the things we ship</div>
+
+<div class="mt-8 px-6">
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+<div class="dgm text-xs" style="color:#1f6b45">Code &amp; backlog</div>
+<div class="mt-3 flex flex-col" style="gap:0.6rem">
+  <div class="text-sm">GitHub for source, Jira for the backlog &mdash; both from Sprint 1</div>
+  <div class="text-sm">Every change lands via pull request and review</div>
+  <div class="text-sm">Workflows are path-filtered &mdash; a change builds only its own service</div>
+</div>
+</div>
+<div>
+<div class="dgm text-xs" style="color:#1f6b45">Artifacts &amp; verification</div>
+<div class="mt-3 flex flex-col" style="gap:0.6rem">
+  <div class="text-sm">Artifacts are Docker images in GHCR, tagged by branch + commit SHA</div>
+  <div class="text-sm">Every running task traces back to an exact commit</div>
+  <div class="text-sm">Integration tests run on a real Postgres via Testcontainers</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!--
+SOURCE & ARTIFACTS
+
+This is the source and artifact management strategy - how we handle the code
+and the things we ship, before we get to the pipeline itself.
+
+Code lives on GitHub, the backlog in Jira, both stood up in Sprint 1 with
+the first CI/CD wiring. Every change lands through a pull request and
+review - nothing goes straight onto a long-lived branch. And the workflows
+are path-filtered, so a change to one service runs only that service's
+pipeline, which keeps builds fast and independent.
+
+On the artifact side: our build artifacts are Docker images, published to
+the GitHub Container Registry and tagged by branch and commit SHA, so every
+running task traces back to an exact commit - that's what makes a rollback
+just redeploying a known tag. And our integration tests aren't mocked; they
+spin up a real PostgreSQL through Testcontainers, so the data layer is
+exercised for real on every PR.
 -->
 
 ---
@@ -965,23 +1038,135 @@ class: flex flex-col
 </div>
 
 <!--
-Our CI/CD starts with the following,
+CI/CD PIPELINE
 
-On every pull request we lint, type-check and unit test, then run three
-SAST scanners, each covering a different class of problem:
+Every component goes through two pipelines - one on each pull request, one
+after a merge. Let me walk them in order.
 
-- CodeQL: Checks code semantics
-- Semgrep: fast pattern matching against the default and secrets
-  rulesets plus stack-specific ones. It catches insecure coding idioms
-  and hardcoded credentials or API keys.
-- Trivy: Scans for known CVEs in
-  dependencies, leaked secrets in files, and misconfigurations in
-  Dockerfiles and infrastructure code.
+On a pull request, we run the fast checks - lint, type-check, unit and
+integration tests - then three security scanners, each for a different class
+of problem. Two are SAST: CodeQL for deep data-flow analysis, and Semgrep for
+fast pattern-matching on insecure idioms and hardcoded secrets. The third is
+Trivy, which scans outward - known CVEs in dependencies, leaked secrets, and
+Dockerfile and infrastructure misconfigurations.
 
-Nothing merges without review and green checks. On merge, the push
-workflow re-runs SAST, builds and pushes the image to GHCR, rolls the
-ECS service for that branch's environment, then ZAP scans the deployed
-site and the Playwright e2e suite smoke-tests dev and qa.
+CodeQL blocks a merge; Semgrep and Trivy are report-only for now - findings
+land as SARIF under the Security tab but don't fail the build yet. That's
+deliberate: we didn't want to gate on untriaged findings, and switching them
+to fail-on-findings is tracked on our product backlog.
+
+Once a change merges, the second pipeline re-runs SAST, builds and pushes the
+image to GHCR, and deploys to that branch's ECS environment - behind a
+circuit breaker, so if the new tasks don't come up healthy, ECS rolls back to
+the last good deployment and keeps serving the previous image. After deploy,
+ZAP runs a DAST pass against the live site, and Playwright runs end-to-end on
+dev and qa. We keep those e2e tests non-blocking - they run post-deploy and
+can flake on UI timing - so they're an early warning, with the PR checks as
+the real gate.
+-->
+
+---
+class: flex flex-col
+---
+
+# Technical findings &amp; issues
+
+<div class="mt-10 px-6">
+
+<div class="grid grid-cols-2 gap-10">
+
+<div class="flex flex-col" style="gap:0.75rem">
+  <div class="dgm text-xs" style="color:#1f6b45">Configuration &amp; secrets</div>
+
+  <svg viewBox="0 0 440 96" style="width:100%;height:auto" fill="none">
+    <defs>
+      <marker id="tf1-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    </defs>
+    <!-- secret -->
+    <rect x="6" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
+    <text x="65" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Secret</text>
+    <text x="65" y="60" text-anchor="middle" style="font-size:9px" fill="#c0392b" class="font-mono">{ bad JSON</text>
+    <line x1="124" y1="48" x2="162" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf1-arr)"/>
+    <!-- ECS task -->
+    <rect x="166" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
+    <text x="225" y="52" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">ECS task</text>
+    <line x1="284" y1="48" x2="322" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf1-arr)"/>
+    <!-- crash -->
+    <rect x="326" y="28" width="108" height="40" rx="8" fill="rgba(192,57,43,0.07)" stroke="#c0392b"/>
+    <g stroke="#c0392b" stroke-width="2.2" stroke-linecap="round"><line x1="353" y1="41" x2="365" y2="55"/><line x1="365" y1="41" x2="353" y2="55"/></g>
+    <text x="398" y="52" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#c0392b">crash-loop</text>
+  </svg>
+
+  <div class="text-sm font-semibold">Tasks crash-looped on startup</div>
+  <ul class="text-sm" style="color:#00000099;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
+    <li>Secret JSON didn't match the schema ECS expected</li>
+    <li>Credential injection failed &mdash; tasks crash-looped</li>
+  </ul>
+  <div class="dgm text-xs mt-3" style="color:#1f6b45">Lesson</div>
+  <ul class="text-sm" style="color:#000000;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
+    <li>Validate secret schemas; least-privilege credentials</li>
+    <li>Shift left &mdash; catch config errors early in CI</li>
+  </ul>
+</div>
+
+<div class="flex flex-col" style="gap:0.75rem">
+  <div class="dgm text-xs" style="color:#1f6b45">Runtime performance</div>
+
+  <svg viewBox="0 0 440 96" style="width:100%;height:auto" fill="none">
+    <defs>
+      <marker id="tf2-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    </defs>
+    <!-- dashboard -->
+    <rect x="6" y="28" width="120" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
+    <text x="66" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Dashboard</text>
+    <text x="66" y="60" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">many requests</text>
+    <!-- burst of repeated arrows -->
+    <line x1="128" y1="36" x2="214" y2="36" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="128" y1="48" x2="214" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="128" y1="60" x2="214" y2="60" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <!-- rate-limit wall -->
+    <rect x="220" y="20" width="12" height="56" rx="2" fill="rgba(192,57,43,0.12)" stroke="#c0392b"/>
+    <text x="226" y="14" text-anchor="middle" style="font-size:8.5px;font-weight:700" fill="#c0392b">429</text>
+    <!-- API -->
+    <rect x="252" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
+    <text x="311" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API</text>
+    <text x="311" y="60" text-anchor="middle" style="font-size:9px" fill="#c0392b" class="font-mono">rate limit</text>
+    <!-- blocked user -->
+    <line x1="370" y1="48" x2="400" y2="48" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="420" y="52" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#c0392b">blocked</text>
+  </svg>
+
+  <div class="text-sm font-semibold">Listings became unreachable under load</div>
+  <ul class="text-sm" style="color:#00000099;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
+    <li>Dashboard refetched listing details redundantly</li>
+    <li>Rate limit tripped in one page load, blocking listings</li>
+  </ul>
+  <div class="dgm text-xs mt-3" style="color:#1f6b45">Lesson</div>
+  <ul class="text-sm" style="color:#000000;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
+    <li>Bad access patterns hurt availability, not just capacity</li>
+    <li>Fix the query pattern before scaling infra</li>
+  </ul>
+</div>
+
+</div>
+
+</div>
+
+<!--
+TECHNICAL FINDINGS & ISSUES
+
+Two findings, two different lessons - one infrastructure, one application.
+
+Finding one: secrets in Secrets Manager didn't match the JSON schema the ECS
+task expected, so credential injection failed and tasks crash-looped. Code
+was fine, the secret was malformed. Lesson: validate secret schemas,
+least-privilege credentials, and shift left so a bad secret fails in CI, not
+at runtime.
+
+Finding two: the Rescue Partner dashboard over-fetched - refetching listing
+details, even for past claims - and tripped the API rate limit in one page
+load, blocking listings. Infra had capacity; this was inefficient client
+behaviour. Lesson: fix the access pattern before scaling infra.
 -->
 
 ---
