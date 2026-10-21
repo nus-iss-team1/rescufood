@@ -1391,7 +1391,7 @@ the real gate.
 class: flex flex-col
 ---
 
-# CD
+# Continuous Delivery
 
 <div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
 
@@ -1510,85 +1510,88 @@ class: flex flex-col
 
 # Technical findings &amp; issues
 
-<div class="mt-10 px-6">
-
-<div class="grid grid-cols-2 gap-10">
-
+<div class="mt-10 px-6" style="width:100%">
+<div class="grid grid-cols-2 gap-10" style="width:100%">
 <div class="flex flex-col" style="gap:0.75rem">
   <div class="dgm text-xs" style="color:#1f6b45">Configuration &amp; secrets</div>
-
-  <svg viewBox="0 0 440 96" style="width:100%;height:auto" fill="none">
+  <svg viewBox="0 0 540 120" style="width:100%;height:auto" fill="none">
     <defs>
       <marker id="tf1-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+      <marker id="tf1-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
     </defs>
-    <!-- secret -->
-    <rect x="6" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
-    <text x="65" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Secret</text>
-    <text x="65" y="60" text-anchor="middle" style="font-size:9px" fill="#c0392b" class="font-mono">{ bad JSON</text>
-    <line x1="124" y1="48" x2="162" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf1-arr)"/>
-    <!-- ECS task -->
-    <rect x="166" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
-    <text x="225" y="52" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">ECS task</text>
-    <line x1="284" y1="48" x2="322" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf1-arr)"/>
-    <!-- crash -->
-    <rect x="326" y="28" width="108" height="40" rx="8" fill="rgba(192,57,43,0.07)" stroke="#c0392b"/>
-    <g stroke="#c0392b" stroke-width="2.2" stroke-linecap="round"><line x1="353" y1="41" x2="365" y2="55"/><line x1="365" y1="41" x2="353" y2="55"/></g>
-    <text x="398" y="52" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#c0392b">crash-loop</text>
+    <rect x="4" y="28" width="160" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(22,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </g>
+    <text x="56" y="56" style="font-size:13px;font-weight:600" fill="#111111">Secret</text>
+    <text x="56" y="75" style="font-size:9px" fill="#b42318" class="font-mono">malformed JSON</text>
+    <circle cx="172" cy="60" r="4.5" fill="#8a8a8a"/>
+    <circle cx="186" cy="60" r="4.5" fill="#8a8a8a"/>
+    <rect x="196" y="28" width="160" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(214,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+      <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    </g>
+    <text x="248" y="56" style="font-size:13px;font-weight:600" fill="#111111">ECS task</text>
+    <text x="248" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">injection failed</text>
+    <path d="M 356 60 L 378 60" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#tf1-arr-r)"/>
+    <rect x="384" y="28" width="152" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+    <g transform="translate(402,48)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
+    </g>
+    <text x="436" y="56" style="font-size:13px;font-weight:600" fill="#b42318">Crash-loop</text>
+    <text x="436" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">never starts</text>
   </svg>
-
   <div class="text-sm font-semibold">Tasks crash-looped on startup</div>
-  <ul class="text-sm" style="color:#00000099;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
-    <li>Secret JSON didn't match the schema ECS expected</li>
-    <li>Credential injection failed &mdash; tasks crash-looped</li>
-  </ul>
-  <div class="dgm text-xs mt-3" style="color:#1f6b45">Lesson</div>
-  <ul class="text-sm" style="color:#000000;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
-    <li>Validate secret schemas; least-privilege credentials</li>
-    <li>Shift left &mdash; catch config errors early in CI</li>
-  </ul>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm" style="color:#00000099">Secret JSON didn't match the schema ECS expected</div>
+    <div class="text-sm" style="color:#00000099">Credential injection failed &mdash; tasks crash-looped</div>
+  </div>
+  <div class="dgm text-xs mt-2" style="color:#1f6b45">Lesson</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm">Validate secret schemas; least-privilege credentials</div>
+    <div class="text-sm">Shift left &mdash; catch config errors early in CI</div>
+  </div>
 </div>
-
 <div class="flex flex-col" style="gap:0.75rem">
   <div class="dgm text-xs" style="color:#1f6b45">Runtime performance</div>
-
-  <svg viewBox="0 0 440 96" style="width:100%;height:auto" fill="none">
+  <svg viewBox="0 0 540 120" style="width:100%;height:auto" fill="none">
     <defs>
       <marker id="tf2-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     </defs>
-    <!-- dashboard -->
-    <rect x="6" y="28" width="120" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
-    <text x="66" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Dashboard</text>
-    <text x="66" y="60" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">many requests</text>
-    <!-- burst of repeated arrows -->
-    <line x1="128" y1="36" x2="214" y2="36" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
-    <line x1="128" y1="48" x2="214" y2="48" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
-    <line x1="128" y1="60" x2="214" y2="60" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
-    <!-- rate-limit wall -->
-    <rect x="220" y="20" width="12" height="56" rx="2" fill="rgba(192,57,43,0.12)" stroke="#c0392b"/>
-    <text x="226" y="14" text-anchor="middle" style="font-size:8.5px;font-weight:700" fill="#c0392b">429</text>
-    <!-- API -->
-    <rect x="252" y="28" width="118" height="40" rx="8" fill="#ffffff" stroke="#0000002a"/>
-    <text x="311" y="46" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API</text>
-    <text x="311" y="60" text-anchor="middle" style="font-size:9px" fill="#c0392b" class="font-mono">rate limit</text>
-    <!-- blocked user -->
-    <line x1="370" y1="48" x2="400" y2="48" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4 3"/>
-    <text x="420" y="52" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#c0392b">blocked</text>
+    <rect x="4" y="28" width="176" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(22,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/>
+      <rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>
+    </g>
+    <text x="56" y="56" style="font-size:13px;font-weight:600" fill="#111111">Dashboard</text>
+    <text x="56" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">refetches details</text>
+    <line x1="188" y1="44" x2="246" y2="44" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="188" y1="60" x2="246" y2="60" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="188" y1="76" x2="246" y2="76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <rect x="256" y="22" width="10" height="76" rx="2" fill="rgba(180,35,24,0.12)" stroke="#b42318"/>
+    <text x="261" y="14" text-anchor="middle" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">429</text>
+    <rect x="284" y="28" width="248" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+    <g transform="translate(302,48)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+      <path d="M6 6h.01"/><path d="M6 18h.01"/>
+    </g>
+    <text x="336" y="56" style="font-size:13px;font-weight:600" fill="#b42318">Rate limited</text>
+    <text x="336" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">listings unreachable</text>
   </svg>
-
   <div class="text-sm font-semibold">Listings became unreachable under load</div>
-  <ul class="text-sm" style="color:#00000099;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
-    <li>Dashboard refetched listing details redundantly</li>
-    <li>Rate limit tripped in one page load, blocking listings</li>
-  </ul>
-  <div class="dgm text-xs mt-3" style="color:#1f6b45">Lesson</div>
-  <ul class="text-sm" style="color:#000000;list-style:disc;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.4rem">
-    <li>Bad access patterns hurt availability, not just capacity</li>
-    <li>Fix the query pattern before scaling infra</li>
-  </ul>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm" style="color:#00000099">Dashboard refetched listing details redundantly</div>
+    <div class="text-sm" style="color:#00000099">Rate limit tripped in one page load, blocking listings</div>
+  </div>
+  <div class="dgm text-xs mt-2" style="color:#1f6b45">Lesson</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm">Bad access patterns hurt availability, not just capacity</div>
+    <div class="text-sm">Fix the query pattern before scaling infra</div>
+  </div>
 </div>
-
 </div>
-
 </div>
 
 <!--
