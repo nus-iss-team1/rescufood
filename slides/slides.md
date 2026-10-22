@@ -1199,25 +1199,60 @@ class: flex flex-col
 
 <div class="text-base mt-2" style="color:#00000099">How we manage the code and the things we ship</div>
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:1.6rem">
 
-<div class="grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Code &amp; backlog</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">GitHub for source, Jira for the backlog &mdash; both from Sprint 1</div>
-  <div class="text-sm">Every change lands via pull request and review</div>
-  <div class="text-sm">Workflows are path-filtered &mdash; a change builds only its own service</div>
+<!-- Traceability: one commit SHA ties source to the shipped artifact (not a pipeline) -->
+<div class="flex justify-center">
+<svg viewBox="0 0 900 118" style="width:100%;max-width:50rem" fill="none">
+  <!-- source side -->
+  <circle cx="150" cy="59" r="46" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(135,36)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+  </g>
+  <text x="150" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Source</text>
+
+  <!-- artifact side -->
+  <circle cx="750" cy="59" r="46" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(736,37)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+  </g>
+  <text x="750" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Artifact</text>
+
+  <!-- linking thread (no arrowhead -> not a flow; a shared identity) -->
+  <line x1="196" y1="59" x2="382" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
+  <line x1="518" y1="59" x2="704" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
+
+  <!-- the shared commit SHA at the centre -->
+  <rect x="384" y="39" width="132" height="40" rx="20" fill="#1f6b45"/>
+  <text x="450" y="58" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#ffffffcc" class="font-mono">commit</text>
+  <text x="450" y="72" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#ffffff" class="font-mono">fcfce09</text>
+  <text x="450" y="104" text-anchor="middle" style="font-size:11px" fill="#5a5a5a">one SHA ties code to what ships</text>
+</svg>
 </div>
+
+<!-- Two concise cards -->
+<div class="grid grid-cols-2 gap-6 px-4">
+
+<div class="flex flex-col" style="border:1px solid #1f6b4533;border-radius:14px;padding:1.1rem 1.3rem;gap:0.75rem">
+  <div class="flex items-center" style="gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    <span class="dgm text-xs" style="color:#1f6b45">Code &amp; backlog</span>
+  </div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Source on <b>GitHub</b>, backlog in <b>Jira</b> &mdash; live since Sprint 1</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every change lands via <b>pull request + review</b></span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Path-filtered workflows &mdash; each change builds only its own service</span></div>
 </div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Artifacts &amp; verification</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Artifacts are Docker images in GHCR, tagged by branch + commit SHA</div>
-  <div class="text-sm">Every running task traces back to an exact commit</div>
-  <div class="text-sm">Integration tests run on a real Postgres via Testcontainers</div>
+
+<div class="flex flex-col" style="border:1px solid #1f6b4533;border-radius:14px;padding:1.1rem 1.3rem;gap:0.75rem">
+  <div class="flex items-center" style="gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    <span class="dgm text-xs" style="color:#1f6b45">Artifacts &amp; verification</span>
+  </div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Docker images in <b>GHCR</b>, tagged by branch + commit SHA</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every running task traces back to an <b>exact commit</b></span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Integration tests hit a <b>real Postgres</b> via Testcontainers</span></div>
 </div>
-</div>
+
 </div>
 
 </div>
