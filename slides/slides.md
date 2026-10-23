@@ -971,115 +971,139 @@ by real code.
 class: flex flex-col
 ---
 
-# Repository pattern
-
-<div class="text-base mt-2" style="color:#00000099">All database access goes through a repository class</div>
-
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
-  <defs>
-    <marker id="pat-r-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
-  </defs>
-
-  <rect x="40" y="130" width="250" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="165" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">RequestsService</text>
-  <text x="165" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">business rules only</text>
-
-  <line x1="290" y1="178" x2="366" y2="178" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-r-arr)"/>
-
-  <rect x="370" y="130" width="260" height="96" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="500" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">RequestsRepository</text>
-  <text x="500" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">all the sql lives here</text>
-
-  <line x1="630" y1="178" x2="706" y2="178" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-r-arr)"/>
-
-  <rect x="710" y="130" width="250" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="835" y="174" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">PostgreSQL</text>
-  <text x="835" y="198" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">schema per service</text>
-
-  <text x="500" y="290" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">We can change the SQL without touching the services.</text>
-
-  <rect x="170" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="270" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">listings &middot; 6 repositories</text>
-  <rect x="400" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="500" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">notifications &middot; 1</text>
-  <rect x="630" y="320" width="200" height="32" rx="16" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="730" y="340" text-anchor="middle" style="font-size:10px" fill="#1f6b45" class="font-mono">profile (Go) &middot; 4</text>
-</svg>
-</div>
-
-<!--
-REPOSITORY
-
-All our SQL lives in repository classes. The services only hold business
-logic and call the repositories, so when we change a query or add an
-index, nothing outside the repository changes. We use the same structure
-in all three backends: listings has 6 repositories, notifications has 1,
-and the Go profile service has 4. It also makes integration testing
-easy, since we just run the real repositories against a throwaway
-Postgres in Docker.
--->
-
----
-class: flex flex-col
----
-
 # Strategy pattern
 
-<div class="text-base mt-2" style="color:#00000099">The app codes against one interface and does not care which client it gets</div>
+<div class="text-base mt-2" style="color:#00000099">Define one interface and swap the implementation behind it.</div>
 
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;gap:2rem;padding:0.5rem 0.25rem">
+<div style="flex:1 1 0;min-width:0;align-self:flex-start;margin-top:1rem">
+  <div style="">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">No code changes needed</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">The app only talks to the interface, so switching from real servers to mocks is just changing a flag.</div>
+  </div>
+  <div style="margin-top:2.6rem">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Work in parallel</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">The frontend does not have to wait for the backend to be ready before it can be built and tested.</div>
+  </div>
+</div>
+<div style="flex:0 0 46%;min-width:0;align-self:flex-start;margin-top:1rem;display:flex;align-items:flex-start;justify-content:center">
+<svg viewBox="0 0 620 380" style="max-height:100%;max-width:100%" fill="none">
   <defs>
     <marker id="pat-s-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
-    <marker id="pat-s-tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="#ffffff" stroke="#1f6b45"/></marker>
+    <marker id="pat-s-tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="#ffffff" stroke="#1f6b45"/></marker>
   </defs>
-
-  <rect x="40" y="152" width="280" height="96" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="180" y="196" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">web-platform</text>
-  <text x="180" y="220" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">createListingsClient({ mock })</text>
-
-  <line x1="320" y1="200" x2="426" y2="200" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-arr)"/>
-  <text x="373" y="186" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">factory</text>
-
-  <rect x="430" y="152" width="240" height="96" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <text x="550" y="190" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">ListingsApi</text>
-  <text x="550" y="212" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">interface &middot; 16 methods</text>
-
-  <path d="M 736 102 L 706 102 L 706 180 L 678 180" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-tri)"/>
-  <path d="M 736 298 L 706 298 L 706 220 L 678 220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-s-tri)"/>
-  <text x="716" y="156" style="font-size:10px" fill="#5a5a5a" class="font-mono">implements</text>
-
-  <rect x="736" y="60" width="230" height="84" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="851" y="98" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">ListingsClient</text>
-  <text x="851" y="120" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">real HTTP &middot; bearer token</text>
-
-  <rect x="736" y="256" width="230" height="84" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <text x="851" y="294" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">MockListingsClient</text>
-  <text x="851" y="316" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">in-memory &middot; same rules</text>
-
-  <text x="500" y="366" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">We built the whole frontend on the mock before the backend was ready.</text>
-  <text x="500" y="392" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">also used for: notification renderers &middot; relist policy &middot; org transitions (go)</text>
+  <rect x="170" y="16" width="280" height="72" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(192,40)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="318" y="58" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">web-platform</text>
+  <line x1="310" y1="88" x2="310" y2="126" stroke="#1f6b45" stroke-width="1.8" marker-end="url(#pat-s-arr)"/>
+  <rect x="170" y="130" width="280" height="72" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="310" y="172" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">ListingsApi</text>
+  <line x1="150" y1="276" x2="150" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="470" y1="276" x2="470" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="150" y1="242" x2="470" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="310" y1="242" x2="310" y2="208" stroke="#1f6b45" stroke-width="1.6" marker-end="url(#pat-s-tri)"/>
+  <text x="322" y="234" style="font-size:10px" fill="#5a5a5a" class="font-mono">implements</text>
+  <rect x="20" y="280" width="260" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <text x="150" y="326" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">ListingsClient</text>
+  <rect x="340" y="280" width="260" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <text x="470" y="326" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">MockListingsClient</text>
 </svg>
+</div>
 </div>
 
 <!--
 STRATEGY
 
-The listings SDK has one interface, ListingsApi, with two
-implementations. ListingsClient does the real HTTP calls with the
-user's token. MockListingsClient keeps everything in memory but follows
-the same rules as the server, same status transitions and even the
-idempotency replay. The factory returns the interface, so the app never
+The listings SDK has one interface, ListingsApi, with sixteen methods
+and two implementations. ListingsClient makes the real HTTP calls with
+the user's token. MockListingsClient keeps everything in memory but
+mirrors the server's rules, the same status transitions and even the
+idempotency replay. A factory returns the interface, so the app never
 knows which one it is holding.
 
-This let us build and demo the frontend before the listings service was
-ready, and switching to the real service was literally one boolean.
+That is what let us build and demo the whole frontend before the
+listings service was ready, and switching over was one boolean in
+lib/listings.ts.
 
-We use the same idea in a few other places: the notification templates
-are a type-to-renderer map, the relist policy is an injected config
-object, and the Go service passes Approve, Reject and Suspend in as
-functions to one shared transition handler.
+If asked where else we use it: the notification templates are a
+type-to-renderer map, the relist policy is an injected config object,
+and the Go service passes Approve, Reject and Suspend in as functions to
+one shared transition handler.
+-->
+
+---
+class: flex flex-col
+clicks: 1
+---
+
+# Repository Pattern
+
+<div class="text-base mt-2" style="color:#00000099">Separate the business logic from the database.</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;gap:2rem;padding:0.5rem 0.25rem">
+<div style="flex:1 1 0;min-width:0;align-self:flex-start;margin-top:1rem">
+  <div style="">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Business rules stay pure</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">Services only handle business rules, never raw database queries.</div>
+  </div>
+  <div style="margin-top:2.6rem">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Easy mocking</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">Easy to mock the repository to test core business logic</div>
+  </div>
+</div>
+<div style="flex:0 0 46%;min-width:0;align-self:flex-start;margin-top:1rem;display:flex;align-items:flex-start;justify-content:center">
+<svg viewBox="0 0 620 440" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-r-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+  <g :style="{ opacity: $clicks > 0 ? 0 : 1, transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="20" y="100" width="580" height="124" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="124" style="font-size:12px;font-weight:600" fill="#1f6b45">service layer</text>
+    <line x1="310" y1="198" x2="310" y2="302" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+  </g>
+  <g :style="{ opacity: $clicks > 0 ? 1 : 0, transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="20" y="16" width="580" height="104" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="40" style="font-size:12px;font-weight:600" fill="#1f6b45">service layer</text>
+    <rect x="20" y="180" width="580" height="104" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="204" style="font-size:12px;font-weight:600" fill="#1f6b45">data access layer</text>
+    <line x1="20" y1="150" x2="600" y2="150" stroke="#1f6b45" stroke-width="1.8" stroke-dasharray="7 6"/>
+    <line x1="310" y1="104" x2="310" y2="192" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+    <line x1="310" y1="268" x2="310" y2="302" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+  </g>
+  <g :style="{ transform: $clicks > 0 ? 'translateY(-94px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="170" y="130" width="280" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(190,148)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+    </g>
+    <text x="310" y="160" text-anchor="middle" fill="#111111" :style="{ fontSize: '16px', fontWeight: 600, transform: $clicks > 0 ? 'translateY(8px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">Service</text>
+    <text x="310" y="181" text-anchor="middle" class="font-mono" :style="{ fontSize: '11px', fill: '#5a5a5a', opacity: $clicks > 0 ? 0 : 1, transition: 'opacity 300ms ease' }">business rules and SQL together</text>
+  </g>
+  <g :style="{ opacity: $clicks > 0 ? 1 : 0, transform: $clicks > 0 ? 'translateY(70px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="170" y="130" width="280" height="64" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+    <g transform="translate(190,150)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+      <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    </g>
+    <text x="310" y="168" text-anchor="middle" style="font-size:16px;font-weight:600" fill="#111111">Repository</text>
+  </g>
+  <rect x="170" y="306" width="280" height="62" rx="12" fill="#ffffff" stroke="#1f6b45"/>
+  <g transform="translate(190,325)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="310" y="344" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">PostgreSQL</text>
+</svg>
+</div>
+</div>
+
+<!--
+REPOSITORY PATTERN
+
+Basically its a pattern mostly used in backend services to seperate the business logic from the database. Instad the service layer communicates with something called a Repository which talks to the database. 
+
+Its benefits are
+*Explain*
 -->
 
 ---
