@@ -319,6 +319,143 @@ SECTION MARKER
 -->
 
 ---
+class: flex flex-col
+---
+
+# Microservice
+
+<div style="margin-top:2.5rem;padding:0 0.5rem">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3rem;max-width:58rem;width:100%">
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Polyglot flexibility</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Go and TypeScript, each developer in their core competency</div>
+      <div style="font-size:1rem;line-height:1.5">No time to standardise on one language</div>
+    </div>
+  </div>
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Team-driven (Conway's Law)</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Day jobs, so we rarely code at the same hours</div>
+      <div style="font-size:1rem;line-height:1.5">One service each, so far fewer merge conflicts</div>
+    </div>
+  </div>
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Optimised CI/CD</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Each service builds on its own</div>
+      <div style="font-size:1rem;line-height:1.5">Smaller, faster runs</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!--
+Team-Driven Architecture (Conway's Law): Service boundaries were intentionally mapped to individual developer schedules and ownership, preventing bottlenecks caused by fragmented, asynchronous working hours.
+
+Polyglot Flexibility: Allowed each developer to build within their core competency (Go and TypeScript) without forcing an artificial, uniform language stack.
+
+Optimized CI/CD Pipelines: Decoupled the backend into independent services, enabling faster, isolated build runs and deployments tailored to each specific stack.
+-->
+
+---
+class: flex flex-col
+---
+
+# Use cases
+
+<div class="text-base mt-2" style="color:#00000099">What each role can do</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 470" style="max-height:100%;max-width:100%" fill="none">
+
+  <rect x="300" y="40" width="510" height="390" rx="14" stroke="#00000033"/>
+  <text x="318" y="64" style="font-size:10px" fill="#5a5a5a" class="font-mono">RescuFood</text>
+
+  <line x1="180" y1="190" x2="326" y2="120" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="184" y1="205" x2="326" y2="205" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="180" y1="220" x2="326" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="190" x2="784" y2="120" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="205" x2="784" y2="205" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="220" x2="784" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="178" y1="385" x2="323" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="922" y1="385" x2="787" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
+
+  <ellipse cx="430" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Post a listing</text>
+  <ellipse cx="430" cy="205" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="210" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a listing</text>
+  <ellipse cx="430" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Verify pickup</text>
+
+  <ellipse cx="680" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Browse listings</text>
+  <ellipse cx="680" cy="205" rx="100" ry="28" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.6"/>
+  <text x="680" y="210" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Claim a listing</text>
+  <ellipse cx="680" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a claim</text>
+
+  <ellipse cx="430" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Register organisation</text>
+  <ellipse cx="680" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Approve organisation</text>
+
+  <circle cx="140" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(116,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="140" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
+
+  <circle cx="960" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(936,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="960" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
+
+  <circle cx="140" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
+  <g transform="translate(121,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="140" y="447" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#5a5a5a">Org admin</text>
+
+  <circle cx="960" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
+  <g transform="translate(941,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="960" y="447" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#5a5a5a">Platform admin</text>
+</svg>
+</div>
+
+<!--
+USE CASES
+
+The actors and what each one can do, before we show how the system is
+built.
+
+A donor posts a listing, can cancel it while nobody has claimed it, and
+verifies the pickup when the rescue partner turns up. A rescue partner
+browses what is available, claims a listing and can cancel that claim if
+plans change.
+
+Along the bottom is the onboarding path. An org admin registers their
+organisation, and a platform admin approves it before anyone from that
+organisation can transact at all. That is why signup and approval come
+first in the demo.
+
+The green one is the use case the rest of this section is about. Claiming
+a listing is the only place where two users can collide, so it is the one
+we had to design carefully. The state diagram and the sequence diagram
+coming up both zoom into it.
+
+If asked what is missing from the picture: the system itself is an actor
+too. It expires listings whose pickup window has passed, sends pickup
+reminders and prunes idempotency keys on a schedule.
+-->
+
+---
 
 # Logical View
 
