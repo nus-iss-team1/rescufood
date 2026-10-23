@@ -457,7 +457,7 @@ reminders and prunes idempotency keys on a schedule.
 
 ---
 
-# Logical View
+# Logical Diagram
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 -125 1100 510" style="max-height:100%;max-width:100%" fill="none">
@@ -491,70 +491,64 @@ reminders and prunes idempotency keys on a schedule.
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
   <text x="394" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
-  <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js app, in the browser</text>
+  <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js (browser)</text>
 
   <rect x="865" y="-50" width="200" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(878,-38)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
   <text x="983" y="-27" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
-  <text x="983" y="-8" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA &middot; runs locally</text>
+  <text x="983" y="-8" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA (local)</text>
 
-  <line x1="368" y1="64" x2="368" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="965" y1="6" x2="965" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="530" y="104" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS / JSON</text>
-  <line x1="195" y1="122" x2="965" y2="122" stroke="#8a8a8a" stroke-width="1.5"/>
-  <line x1="195" y1="122" x2="195" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="550" y1="122" x2="550" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="905" y1="122" x2="905" y2="156" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="368" y1="64" x2="368" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="965" y1="6" x2="965" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="530" y="82" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS</text>
+  <line x1="195" y1="94" x2="965" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="94" x2="195" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="94" x2="550" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="94" x2="905" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="60" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(80,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="60" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(80,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="207" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile</text>
-  <text x="207" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Go &middot; identity &amp; orgs</text>
+  <text x="207" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile (Go)</text>
+  <text x="207" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">identity &amp; orgs</text>
 
-  <rect x="415" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(435,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="415" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(435,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="562" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
-  <text x="562" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; listings &amp; claims</text>
+  <text x="562" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings (NestJS)</text>
+  <text x="562" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">listings &amp; claims</text>
 
-  <rect x="770" y="160" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(790,182)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="770" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(790,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
-  <text x="917" y="190" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications</text>
-  <text x="917" y="209" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NestJS &middot; queue consumer</text>
+  <text x="917" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications (NestJS)</text>
+  <text x="917" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">queue</text>
 
-  <line x1="685" y1="194" x2="764" y2="194" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
-  <text x="725" y="182" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
+  <line x1="685" y1="174" x2="764" y2="174" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
+  <text x="725" y="162" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
 
-  <line x1="195" y1="228" x2="195" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="550" y1="228" x2="550" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-  <line x1="905" y1="228" x2="905" y2="262" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="95" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(112,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-  </g>
-  <text x="207" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <rect x="60" y="218" width="270" height="42" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/cognito.png" x="78" y="228" width="22" height="22"/>
+  <text x="207" y="244" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Cognito</text>
 
-  <rect x="450" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(467,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-  </g>
-  <text x="562" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <line x1="195" y1="260" x2="195" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="550" y1="208" x2="550" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="905" y1="208" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="270" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="550" y1="270" x2="550" y2="288" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-  <rect x="805" y="266" width="200" height="46" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(822,277)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-  </g>
-  <text x="917" y="294" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">PostgreSQL</text>
+  <rect x="350" y="292" width="400" height="64" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/rds.png" x="370" y="311" width="26" height="26"/>
+  <text x="560" y="330" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
+ 
 
-  <text x="550" y="348" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">database per service &middot; no shared data</text>
+
 </svg>
 </div>
 
@@ -583,8 +577,19 @@ don't call each other synchronously for
 side-effects - listings emits an event onto SQS and notifications reacts.
 That decoupling is deliberate: a slow email never blocks a claim.
 
-Each service owns its own PostgreSQL - no shared database, so services stay
-independently deployable. It all runs on ECS Fargate via CloudFormation.
+On data, we were deliberate about what we did and did not separate. There
+is one shared PostgreSQL instance, not a database per service. What each
+service owns is its own tables and its own migrations: listings' migration
+tool is scoped so it can never touch profile's schema. Sharing the
+instance keeps a proof of concept cheap and lets us keep real foreign keys
+between a listing and the organisation that posted it, which we would have
+lost by splitting the databases. The cost is that the services are not as
+independently deployable as the diagram might suggest, and we would split
+them if this went further.
+
+Every request carries a Cognito JWT, and each service validates it before
+doing anything. Listings layers org membership and admin checks on top of
+that. It all runs on ECS Fargate via CloudFormation.
 -->
 
 ---
@@ -600,7 +605,11 @@ class: flex flex-col
     <marker id="aws-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
 
-  <text x="50" y="32" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#111111">Users</text>
+  <g transform="translate(38,6)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="50" y="48" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#111111">Users</text>
   <line x1="78" y1="28" x2="146" y2="28" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
   <text x="113" y="18" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">HTTPS</text>
   <rect x="150" y="8" width="156" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
@@ -608,127 +617,152 @@ class: flex flex-col
   <text x="246" y="32" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
   <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
 
-  <rect x="20" y="65" width="345" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
+  <rect x="20" y="65" width="250" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
   <text x="35" y="85" style="font-size:10px;font-weight:700" fill="#3a3a3a">AWS managed services</text>
 
-  <rect x="35" y="95" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/cloudfront.png" x="48" y="105" width="32" height="32"/>
-  <image href="/aws/s3.png" x="297" y="105" width="32" height="32"/>
-  <text x="94" y="116" style="font-size:11px;font-weight:600" fill="#111111">CloudFront + S3 (private)</text>
-  <text x="94" y="133" style="font-size:9px" fill="#5a5a5a" class="font-mono">listing images &middot; OAC &middot; SSE</text>
+  <rect x="35" y="95" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cloudfront.png" x="48" y="102" width="32" height="32"/>
+  <text x="94" y="123" style="font-size:11px;font-weight:600" fill="#111111">CloudFront</text>
 
-  <rect x="35" y="163" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/cognito.png" x="48" y="173" width="32" height="32"/>
-  <text x="94" y="184" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
-  <text x="94" y="201" style="font-size:9px" fill="#5a5a5a" class="font-mono">OIDC &middot; donor, rescue partner, admin</text>
+  <rect x="35" y="153" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/s3.png" x="48" y="160" width="32" height="32"/>
+  <text x="94" y="181" style="font-size:11px;font-weight:600" fill="#111111">S3 (private)</text>
 
-  <rect x="35" y="231" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/sqs.png" x="48" y="241" width="32" height="32"/>
-  <text x="94" y="252" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
-  <text x="94" y="269" style="font-size:9px" fill="#5a5a5a" class="font-mono">notification events &middot; SSE</text>
+  <rect x="35" y="211" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cognito.png" x="48" y="218" width="32" height="32"/>
+  <text x="94" y="239" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
 
-  <rect x="35" y="299" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/secrets-manager.png" x="48" y="309" width="32" height="32"/>
-  <text x="94" y="320" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
-  <text x="94" y="337" style="font-size:9px" fill="#5a5a5a" class="font-mono">app, DB and registry secrets</text>
+  <rect x="35" y="269" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/sqs.png" x="48" y="276" width="32" height="32"/>
+  <text x="94" y="297" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
 
-  <rect x="35" y="367" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/cloudwatch.png" x="48" y="377" width="32" height="32"/>
-  <text x="94" y="388" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
-  <text x="94" y="405" style="font-size:9px" fill="#5a5a5a" class="font-mono">container logs &middot; 30-day retention</text>
+  <rect x="35" y="327" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/secrets-manager.png" x="48" y="334" width="32" height="32"/>
+  <text x="94" y="355" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
 
-  <rect x="35" y="435" width="310" height="52" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/github.svg" x="50" y="447" width="28" height="28"/>
-  <text x="94" y="456" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
-  <text x="94" y="473" style="font-size:9px" fill="#5a5a5a" class="font-mono">container images, pulled via NAT</text>
+  <rect x="35" y="385" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cloudwatch.png" x="48" y="392" width="32" height="32"/>
+  <text x="94" y="413" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
 
-  <text x="35" y="508" style="font-size:9px" fill="#5a5a5a" class="font-mono">Gmail SMTP :587 &middot; outbound email (external)</text>
+  <rect x="35" y="443" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/github.svg" x="50" y="452" width="28" height="28"/>
+  <text x="94" y="471" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
 
-  <path d="M 345 121 L 358 121 L 358 320 L 410 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
-  <path d="M 345 189 L 368 189 L 368 335 L 410 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
-  <path d="M 345 257 L 378 257 L 378 350 L 410 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 234 L 263 234 L 263 320 L 300 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 292 L 273 292 L 273 335 L 300 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 350 L 283 350 L 283 350 L 300 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
 
-  <rect x="390" y="65" width="795" height="455" rx="8" stroke="#00000033"/>
-  <text x="405" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
+  <rect x="290" y="65" width="895" height="455" rx="8" stroke="#00000033"/>
+  <text x="305" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
 
   <rect x="727" y="75" width="120" height="32" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <text x="787" y="95" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">VPC Link</text>
 
-  <rect x="405" y="122" width="765" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
-  <text x="417" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
+  <rect x="305" y="122" width="865" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
   <text x="1158" y="138" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
   <rect x="430" y="146" width="164" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/internet-gateway.png" x="438" y="153" width="30" height="30"/>
   <text x="533" y="173" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internet Gateway</text>
   <rect x="950" y="146" width="170" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/nat-gateway.png" x="958" y="153" width="30" height="30"/>
-  <text x="1056" y="164" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
-  <text x="1056" y="180" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">single &middot; AZ A &middot; egress</text>
+  <text x="1056" y="174" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
 
-  <rect x="405" y="208" width="765" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
-  <text x="417" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
+  <rect x="305" y="208" width="865" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
   <text x="1158" y="224" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
 
-  <path d="M 787 107 L 787 228" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
-  <rect x="687" y="230" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
-  <image href="/aws/alb.png" x="694" y="235" width="30" height="30"/>
-  <text x="805" y="246" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
-  <text x="805" y="261" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">path routing</text>
+  <path d="M 787 107 L 787 214" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+  <rect x="687" y="216" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/alb.png" x="694" y="221" width="30" height="30"/>
+  <text x="805" y="241" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
 
-  <rect x="412" y="282" width="750" height="108" rx="6" fill="rgba(31,107,69,0.05)" stroke="rgba(31,107,69,0.3)"/>
-  <image href="/aws/ecs.png" x="422" y="360" width="24" height="24"/>
-  <image href="/aws/fargate.png" x="450" y="360" width="24" height="24"/>
-  <text x="480" y="376" style="font-size:9px" fill="#5a5a5a" class="font-mono">ECS cluster &middot; Fargate</text>
 
-  <path d="M 787 270 L 787 276 L 505 276 L 505 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
-  <path d="M 787 276 L 693 276 L 693 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
-  <path d="M 787 276 L 881 276 L 881 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
-  <path d="M 787 276 L 1069 276 L 1069 294" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 256 L 787 276 L 430 276 L 430 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 640 276 L 640 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 850 276 L 850 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 1060 276 L 1060 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
 
-  <rect x="420" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="505" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">web-platform</text>
-  <text x="505" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/</text>
+  <rect x="355" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(367,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="355" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="367" y="364" width="20" height="20"/>
+  <text x="430" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="430" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">web-platform</text>
 
-  <rect x="608" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="693" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">profile</text>
-  <text x="693" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/profile</text>
+  <rect x="565" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(577,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="565" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="577" y="364" width="20" height="20"/>
+  <text x="640" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="640" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">profile</text>
 
-  <rect x="796" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="881" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">listings</text>
-  <text x="881" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/listings &middot; /api/requests</text>
+  <rect x="775" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(787,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="775" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="787" y="364" width="20" height="20"/>
+  <text x="850" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="850" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">listings</text>
 
-  <rect x="984" y="296" width="170" height="72" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <text x="1069" y="326" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">notification</text>
-  <text x="1069" y="346" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">/api/notifications</text>
+  <rect x="985" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(997,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="985" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="997" y="364" width="20" height="20"/>
+  <text x="1060" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="1060" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">notification</text>
 
-  <rect x="405" y="412" width="765" height="100" rx="6" fill="#00000005" stroke="#0000001a"/>
-  <text x="417" y="428" style="font-size:10px;font-weight:600" fill="#3a3a3a">Data subnets</text>
-  <text x="1158" y="428" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B &middot; isolated, no internet route</text>
+  <rect x="305" y="412" width="865" height="100" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="428" style="font-size:10px;font-weight:600" fill="#3a3a3a">Data subnets</text>
 
-  <path d="M 693 368 L 693 401 L 1069 401 L 1069 368" stroke="#8a8a8a" stroke-width="1.2"/>
-  <path d="M 881 368 L 881 401" stroke="#8a8a8a" stroke-width="1.2"/>
-  <path d="M 787 401 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
+  <path d="M 640 390 L 640 414 L 1060 414 L 1060 390" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 850 390 L 850 414" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 787 414 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
 
   <rect x="700" y="438" width="174" height="60" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/rds.png" x="708" y="451" width="34" height="34"/>
-  <text x="808" y="463" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
-  <text x="808" y="481" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Multi-AZ &middot; encrypted</text>
+  <text x="808" y="473" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
 </svg>
 </div>
 
 <!--
-PHYSICAL ARCHITECTURE (NATIVE)
+DEPLOYMENT
 
-Same deployment view as the previous slide, redrawn in the deck's own
-style so it stays crisp at any zoom. Walk the green path left to right:
-users hit API Gateway over TLS, a VPC Link crosses into the VPC, the
-internal ALB path-routes to the four Fargate services, and the backend
-services talk to RDS on 5432 in the isolated data subnets.
+This is the same system, but where it actually runs. Follow the green
+line, it is one request.
 
-The left column is everything managed: CloudFront fronting the private
-images bucket, Cognito for identity, SQS with a DLQ for notifications,
-Secrets Manager, CloudWatch and GHCR. The single NAT gateway in AZ A is
-the honest cost trade-off to call out.
+Someone opens the site. They land on API Gateway, and that is the only
+door we leave open to the internet. From there the request crosses into
+our private network and reaches the load balancer, which is internal, so
+nobody outside can reach it directly. The load balancer looks at the
+path and hands the request to one of our four services, each running as
+its own ECS task on Fargate. If it needs data, the service talks to the
+database.
+
+The database is the part we were strictest about. It sits in subnets
+with no route to the internet at all, in either direction. The only way
+to reach it is from inside, from one of our own services. It is
+encrypted and it backs itself up.
+
+Everything on the left is stuff we did not write. CloudFront and a
+private S3 bucket for listing images, Cognito for sign in, SQS for
+notification events, Secrets Manager for passwords, CloudWatch for logs,
+and GitHub for our container images. The dashed lines are the three our
+services actually talk to while running.
+
+Two things we would rather say ourselves than be asked. We run in two
+availability zones, but there is only one NAT gateway, so our outbound
+traffic depends on that one zone. We chose that to keep the bill small
+for a proof of concept. And none of this was clicked together by hand:
+it is all CloudFormation, the same templates for dev, qa and prod, with
+one parameter file different between them.
 -->
 
 ---
@@ -768,22 +802,24 @@ class: flex flex-col
   <text x="965" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Collected</text>
 
   <path d="M 685 80 L 685 42 L 405 42 L 405 76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
-  <text x="545" y="34" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim cancelled &middot; relisted</text>
+  <text x="545" y="34" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim ends &middot; relisted</text>
 
-  <path d="M 355 136 L 355 196 L 130 196 L 130 236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
-  <text x="236" y="186" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">donor cancels</text>
+  <line x1="130" y1="136" x2="130" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="380" y1="136" x2="380" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="640" y1="136" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="110" y1="196" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="110" y1="196" x2="110" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="300" y="188" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">donor cancels</text>
 
-  <line x1="430" y1="136" x2="430" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
-  <text x="440" y="192" style="font-size:10px" fill="#5a5a5a" class="font-mono">pickup window passes</text>
+  <line x1="460" y1="136" x2="460" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <path d="M 720 136 L 720 226 L 460 226" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="540" y="220" style="font-size:10px" fill="#5a5a5a" class="font-mono">pickup window passes</text>
 
-  <rect x="50" y="240" width="160" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
-  <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#5a5a5a">Cancelled</text>
+  <rect x="50" y="240" width="160" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
+  <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Cancelled</text>
 
-  <rect x="345" y="240" width="170" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
-  <text x="430" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#5a5a5a">Expired</text>
-
-  <text x="760" y="206" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">one active claim per listing, even under retries</text>
-  <text x="760" y="226" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">idempotency key &middot; partial unique index in the database</text>
+  <rect x="345" y="240" width="170" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
+  <text x="430" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Expired</text>
 </svg>
 </div>
 
@@ -859,7 +895,7 @@ class: flex flex-col
   <line x1="150" y1="115" x2="444" y2="115" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
   <text x="300" y="103" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the listing</text>
   <line x1="450" y1="150" x2="744" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="600" y="138" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">POST /api/requests &middot; idempotency key</text>
+  <text x="600" y="138" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">POST /api/requests</text>
   <line x1="754" y1="185" x2="1044" y2="185" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
   <text x="900" y="173" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the key slot</text>
   <line x1="754" y1="220" x2="1044" y2="220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
