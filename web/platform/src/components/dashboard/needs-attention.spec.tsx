@@ -54,7 +54,7 @@ function request(overrides: Partial<ListingRequest> = {}): ListingRequest {
 
 /** The table row carrying the given item text. */
 function row(item: string): HTMLElement {
-  return screen.getByRole("row", { name: new RegExp(item) });
+  return screen.getByRole("row", { name: (name) => name.includes(item) });
 }
 
 beforeEach(() => {

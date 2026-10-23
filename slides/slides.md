@@ -18,22 +18,18 @@ transition: fade
 mdc: true
 ---
 
-<div class="text-8xl font-extrabold leading-none">
-Rescu<span class="accent">Food</span>
+<div class="text-8xl font-bold leading-none" style="letter-spacing:-0.04em">
+<span class="relative inline-block" style="padding-right:0.78em">
+Rescu<span class="accent">Food</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="accent" style="position:absolute;top:-0.22em;right:0;width:0.78em;height:0.78em;transform:rotate(18deg)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+</span>
 </div>
-
-<div class="rule-green mt-10" style="margin-left:auto;margin-right:auto"></div>
 
 <div class="text-base mt-10" style="color:#00000099">
 Discover, claim and hand over surplus food before it is thrown away.
 </div>
 
-<div class="text-sm mt-12 dgm-wide" style="color:#00000066">
-SWE5006 &middot; Designing Modern Software Systems &middot; NUS-ISS Team 1
-</div>
-
-<div class="text-xs mt-4 font-mono" style="color:#00000066">
-github.com/nus-iss-team1/rescufood
+<div class="text-sm mt-16 dgm-wide" style="color:#00000066">
+SWE5006 &middot; NUS-ISS Team 1
 </div>
 
 <!--
@@ -49,15 +45,15 @@ inside each section.
 
 ---
 
-# What we'll cover
+# Contents
 
 <div class="mt-10 mx-auto" style="max-width:40rem">
 
-<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Overview &mdash; the problem and our scope</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Project conduct &amp; agile practices</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Analysis &amp; design</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Design patterns &mdash; the hard problems</span></div>
-<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">DevSecOps engineering &amp; automation</span></div>
+<div class="flex items-baseline"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">01</span><span class="text-lg">Introduction &amp; project management</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">02</span><span class="text-lg">Analysis &amp; design</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">03</span><span class="text-lg">Design patterns</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">04</span><span class="text-lg">Testing</span></div>
+<div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">05</span><span class="text-lg">CI/CD pipeline demo</span></div>
 <div class="flex items-baseline mt-4"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.5rem">06</span><span class="text-lg">Demo</span></div>
 
 </div>
@@ -65,9 +61,10 @@ inside each section.
 <!--
 AGENDA
 
-Read the six markers once, quickly. This maps to the six segments the
-graders expect. Tell them the timings are roughly: overview 3, conduct 6,
-design 9, patterns 8, devsecops 7, demo 10 - Q&A folded into each. Then move.
+Read the six markers once, quickly. Timings: intro and project
+management 3-4, analysis and design plus patterns 5 together, testing
+3, pipeline demo 10-12, system demo 12-15. Both demos have a recorded video as
+backup if anything breaks live. Then move.
 -->
 
 ---
@@ -78,7 +75,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 01</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-The <span class="accent">problem</span>
+<span class="accent">Introduction</span>
 </div>
 
 <!--
@@ -88,31 +85,15 @@ Say the title and move on. Marker, not a slide to talk over.
 -->
 
 ---
+class: flex flex-col justify-center text-center
+---
 
-# Surplus food is a coordination problem
-
-<div class="mt-8 grid grid-cols-2 gap-10 px-6">
-
-<div>
-<div class="dgm text-xs" style="color:#00000066">Today</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Phone calls between donors and rescue partners</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Ad-hoc chat groups</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#0000001a;background:#ffffff">Spreadsheets that go stale</div>
-</div>
-<div class="mt-4 text-sm" style="color:#00000099">Double allocations. Missed pickups. Food spoils.</div>
+<div class="text-6xl font-extrabold leading-tight px-12">
+Surplus food is a <span class="accent">coordination</span> problem.
 </div>
 
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">With RescuFood</div>
-<div class="mt-4 flex flex-col" style="gap:0.75rem">
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Donors post a listing the moment food is free</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Rescue partners claim it &mdash; first come, first served</div>
-  <div class="rounded-lg border px-4 py-3 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">Pickup verified by OTP / QR, tracked to handover</div>
-</div>
-<div class="mt-4 text-sm" style="color:#1f6b45">One claim per listing. One source of truth.</div>
-</div>
-
+<div class="text-lg mt-12 mx-auto" style="max-width:42rem;color:#00000099">
+There is no formal channel to move excess food to rescue partners before it expires. Today it is coordinated over phone calls, chat groups and spreadsheets.
 </div>
 
 <!--
@@ -122,66 +103,204 @@ Surplus food is time-sensitive. A tray of bread is useful for a few hours,
 then it's waste. The blocker is never goodwill - it's coordination. Donors
 and rescue partners today rely on calls, chat groups and spreadsheets,
 which means two partners show up for the same tray, or nobody shows up.
+Hold on the three failure modes at the bottom; the next slide shows what
+we replace them with.
+-->
+
+---
+class: flex flex-col
+---
+
+# With RescuFood
+
+<div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
+
+<svg viewBox="0 75 1000 200" style="max-width:46rem;width:100%" fill="none">
+  <defs>
+    <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="scope-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <circle cx="110" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(86,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="110" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
+
+  <line x1="166" y1="140" x2="424" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
+  <rect x="206" y="116" width="180" height="48" rx="8" fill="#ffffff" stroke="#1f6b45"/>
+  <g transform="translate(214,128) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+  </g>
+  <text x="306" y="136" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">Surplus bread &middot; 40 loaves</text>
+  <text x="306" y="152" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">pickup tonight, 6-8pm</text>
+  <text x="296" y="184" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">gives away surplus food</text>
+
+  <rect x="430" y="86" width="220" height="108" rx="14" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="533" y="138" text-anchor="middle" style="font-size:20px;font-weight:700;letter-spacing:-0.02em" fill="#111111">Rescu<tspan fill="#1f6b45">Food</tspan></text>
+  <g transform="translate(600,116) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+  </g>
+  <text x="540" y="166" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">listings</text>
+
+  <line x1="650" y1="140" x2="834" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
+  <text x="742" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">claims &amp; collects</text>
+
+  <circle cx="890" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(866,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="890" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
+
+  <path d="M 858 192 C 760 254 240 254 142 192" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#scope-arr-m)"/>
+  <text x="500" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">they meet for pickup &middot; handover verified</text>
+</svg>
+
+<div class="mt-8 grid grid-cols-2 gap-16" style="max-width:46rem;width:100%">
+  <div v-click>
+    <div class="dgm text-xs" style="color:#00000066">Today</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base" style="color:#00000099">Calling around hoping someone can take the food</div>
+      <div class="text-base" style="color:#00000099">WhatsApp groups nobody keeps up with</div>
+      <div class="text-base" style="color:#00000099">Spreadsheets that are already out of date</div>
+    </div>
+  </div>
+  <div v-click>
+    <div class="dgm text-xs" style="color:#1f6b45">RescuFood</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Donors post a listing the moment food is free</div>
+      <div class="text-base">Rescue partners claim it, first come first served</div>
+      <div class="text-base">Pickup verified by OTP, tracked to handover</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!--
+THE COMPARISON
 
 RescuFood makes the workflow digital and real-time. A donor posts a
 listing the instant food becomes available; a rescue partner claims it on
 a first-come-first-served basis; and the handover is verified and tracked.
 The core promise is on the right: one claim per listing, one source of
 truth. Hold that phrase - the whole design defends it.
+
+Scope details if asked: both roles sign up and an admin approves the
+organisation before it can transact; handover is verified with an OTP
+and tracked; email and in-app notifications fire along the way. This is
+a proof of concept, so horizontal scale is out of scope.
 -->
 
 ---
+class: flex flex-col
+---
 
-# Scope: what we built
+# Timeline
 
-<div class="mt-6 px-6">
+<div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
+<svg viewBox="0 85 1100 205" style="max-height:100%;max-width:100%" fill="none">
+  <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
 
-<div class="grid grid-cols-3 gap-4">
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Identity</div>
-    <div class="text-sm mt-2 font-semibold">Users, orgs, approval</div>
-    <div class="text-xs mt-1" style="color:#00000099">Donors and rescue partners register; admins approve organisations.</div>
+  <circle cx="110" cy="180" r="6" fill="#1f6b45"/>
+  <text x="110" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">CI/CD foundation</text>
+  <text x="110" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">repo &middot; auth UI</text>
+  <text x="110" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 1</text>
+  <text x="110" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
+
+  <g v-click>
+  <circle cx="290" cy="180" r="6" fill="#1f6b45"/>
+  <text x="290" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 2</text>
+  <text x="290" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">8 - 21 Aug</text>
+  <text x="290" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Environments &middot; IAM</text>
+  <text x="290" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">first automated QA</text>
+  </g>
+
+  <g v-click>
+  <circle cx="470" cy="180" r="6" fill="#1f6b45"/>
+  <text x="470" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Claims &middot; pickup OTP</text>
+  <text x="470" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">notifications</text>
+  <text x="470" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 3</text>
+  <text x="470" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
+  </g>
+
+  <g v-click>
+  <circle cx="650" cy="180" r="6" fill="#1f6b45"/>
+  <text x="650" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 4</text>
+  <text x="650" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">5 - 18 Sep</text>
+  <text x="650" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Pickup completion</text>
+  <text x="650" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">QA fixes</text>
+  </g>
+
+  <g v-click>
+  <circle cx="830" cy="180" r="6" fill="#1f6b45"/>
+  <text x="830" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Cancel &amp; relist</text>
+  <text x="830" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">claim history</text>
+  <text x="830" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 5</text>
+  <text x="830" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
+  </g>
+
+  <g v-click>
+  <circle cx="1010" cy="180" r="6" fill="#1f6b45"/>
+  <text x="1010" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 6</text>
+  <text x="1010" y="230" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">3 - 16 Oct</text>
+  <text x="1010" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Stabilisation</text>
+  <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
+  </g>
+
+</svg>
+
+<div v-click class="mt-8" style="width:100%;padding-left:3.5rem">
+  <div class="flex items-baseline">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Scrum over six two-week sprints; every change went in through a PR with CI</span>
   </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Listings &amp; claims</div>
-    <div class="text-sm mt-2 font-semibold">Post, browse, claim</div>
-    <div class="text-xs mt-1" style="color:#00000099">The core loop. Claiming is the hard part &mdash; section 04.</div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">One concrete change from each retro, carried into the next sprint</span>
   </div>
-  <div class="rounded-lg border px-4 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="dgm text-xs" style="color:#1f6b45">Pickup &amp; notify</div>
-    <div class="text-sm mt-2 font-semibold">Verify, hand over, notify</div>
-    <div class="text-xs mt-1" style="color:#00000099">OTP / QR-verified handover; email + in-app notifications.</div>
+  <div class="flex items-baseline mt-2">
+    <span class="mr-3" style="color:#1f6b45">&bull;</span>
+    <span class="text-sm">Team of 7, about 80 hours each: <span class="font-semibold">560 person-hours</span> across web, identity, listings, notifications and infra</span>
   </div>
-</div>
-
-<div class="mt-8 grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Design goals</div>
-<div class="text-sm mt-3" style="color:#000000">Robust &middot; maintainable &middot; extensible &middot; secure by default</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#00000066">Out of scope</div>
-<div class="text-sm mt-3" style="color:#00000099">Horizontal scale &amp; auto-scaling &mdash; a proof of concept, not a load test</div>
-</div>
 </div>
 
 </div>
 
 <!--
-SCOPE
+TIMELINE SCRIPT
 
-Three capability areas. Identity: donors and rescue partners register, and
-an admin approves organisations before they can transact - that approval
-gate matters because a claim reserves real food. Listings and claims are
-the core loop and the source of our most interesting design work, so I'll
-defer the detail to section 4. Pickup and notify closes the loop: an
-OTP/QR-verified handover, plus email and in-app notifications.
+We ran the project as six two-week sprints, and each sprint had one
+clear objective we rallied around.
 
-Design goals, bottom left, are the DMSS quality attributes - robustness,
-maintainability, extensibility, security by default. Bottom right, the
-honest boundary: this is a proof of concept, so horizontal scaling and
-auto-scaling are deliberately out of scope. We optimised for correct and
-maintainable, not for ten million users.
+Sprint 1 was pure foundation: the repo, the CI/CD skeleton and the
+signup and login screens. Sprint 2 was about environments: reproducible
+AWS infrastructure, IAM, and our first seven automated QA cases.
+Sprint 3 was the big one, the claim: reservations, the pickup OTP and
+notifications all landed there. Sprint 4 closed the loop with pickup
+completion and a round of QA fixes. Sprint 5 handled the awkward paths,
+cancelling and relisting claims, plus claim history. And Sprint 6 was
+stabilisation: polishing, fixing what QA surfaced, and this report and
+deck.
+
+Throughout all six, every change went in through a pull request with CI
+on it. Nothing merged red.
+
+If asked about velocity: most sprints closed their planned points;
+Sprint 3 ran at about 80 percent because the CDN and API Gateway
+migration took longer than planned.
+
+On effort: there are seven of us at roughly 80 hours each, so about
+560 person-hours, split across the web app, identity, listings and
+claims, notifications and the infrastructure. Name who owned what if
+asked.
+
+And the habit that mattered most: every retro produced exactly one
+concrete change we carried into the next sprint. PR automation came out
+of Sprint 1's retro, tests-in-CI out of Sprint 2's. That's how the
+pipeline you'll see in section 5 got as strict as it is.
 -->
 
 ---
@@ -192,7 +311,7 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 02</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-How we <span class="accent">ran</span> it
+Analysis &amp; <span class="accent">Design</span>
 </div>
 
 <!--
@@ -200,188 +319,237 @@ SECTION MARKER
 -->
 
 ---
+class: flex flex-col
+---
 
-# Agile, in practice
+# Microservice
 
-<div class="mt-8 px-6">
-
-<div class="grid grid-cols-2 gap-10">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Cadence</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Scrum &middot; six two-week sprints</div>
-  <div class="text-sm">Backlog &rarr; sprint plan &rarr; review &rarr; retrospective</div>
-  <div class="text-sm">Fortnightly progress reports to ISS</div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Engineering discipline</div>
-<div class="mt-3 flex flex-col" style="gap:0.6rem">
-  <div class="text-sm">Tests written with the feature (TDD where it paid off)</div>
-  <div class="text-sm">Every change lands via pull request &amp; review</div>
-  <div class="text-sm">Continuous integration on every PR</div>
-</div>
-</div>
-</div>
-
-<div class="mt-8 flex items-center" style="gap:1rem">
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-2xl font-bold" style="color:#1f6b45">36<span class="text-base" style="color:#00000099">/36</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 2 points</div>
+<div style="margin-top:2.5rem;padding:0 0.5rem">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3rem;max-width:58rem;width:100%">
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Polyglot flexibility</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Go and TypeScript, each developer in their core competency</div>
+      <div style="font-size:1rem;line-height:1.5">No time to standardise on one language</div>
+    </div>
   </div>
-  <div class="rounded-lg border px-5 py-3 text-center" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-2xl font-bold" style="color:#1f6b45">32<span class="text-base" style="color:#00000099">/40</span></div>
-    <div class="dgm text-xs mt-1" style="color:#00000066">Sprint 3 points</div>
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Team-driven (Conway's Law)</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Day jobs, so we rarely code at the same hours</div>
+      <div style="font-size:1rem;line-height:1.5">One service each, so far fewer merge conflicts</div>
+    </div>
   </div>
-  <div class="flex-1 rounded-lg border px-5 py-3" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="text-sm" style="color:#000000">Retro format: <span class="font-semibold">went well</span> &middot; <span class="font-semibold">could be better</span> &middot; <span class="font-semibold">try next</span> &mdash; one concrete change carried forward each sprint.</div>
+  <div v-click>
+    <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Optimised CI/CD</div>
+    <div style="display:flex;flex-direction:column;gap:0.8rem">
+      <div style="font-size:1rem;line-height:1.5">Each service builds on its own</div>
+      <div style="font-size:1rem;line-height:1.5">Smaller, faster runs</div>
+    </div>
   </div>
 </div>
-
 </div>
 
 <!--
-AGILE PRACTICE
+Team-Driven Architecture (Conway's Law): Service boundaries were intentionally mapped to individual developer schedules and ownership, preventing bottlenecks caused by fragmented, asynchronous working hours.
 
-We ran Scrum over six two-week sprints - each starts from the backlog, gets
-a sprint plan, and closes with a review and a retrospective. The fortnightly
-progress reports ISS asked for fell straight out of that rhythm; we didn't
-write them separately.
+Polyglot Flexibility: Allowed each developer to build within their core competency (Go and TypeScript) without forcing an artificial, uniform language stack.
 
-Top right is the engineering side of "essential practices for agile teams":
-tests written alongside features, every change through a pull request and
-review, and CI on every one of those PRs. Nothing reaches a branch without
-going green first.
+Optimized CI/CD Pipelines: Decoupled the backend into independent services, enabling faster, isolated build runs and deployments tailored to each specific stack.
+-->
 
-The numbers are real velocity from our burndowns - Sprint 2 closed 36 of 36
-points, Sprint 3 closed 32 of 40, about 80%. We're being honest that not
-every sprint hit 100%; the shortfall in Sprint 3 was the CDN and API Gateway
-migration running long, and it carried into the next sprint.
+---
+class: flex flex-col
+---
 
-The green box is our retrospective format. The point isn't the three
-headings, it's that every sprint we carried exactly one concrete change
-forward - PR automation after Sprint 1, tests-in-CI after Sprint 2. That's
-how the pipeline in section 5 got as strict as it is.
+# Use cases
+
+<div class="text-base mt-2" style="color:#00000099">What each role can do</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 470" style="max-height:100%;max-width:100%" fill="none">
+
+  <rect x="300" y="40" width="510" height="390" rx="14" stroke="#00000033"/>
+  <text x="318" y="64" style="font-size:10px" fill="#5a5a5a" class="font-mono">RescuFood</text>
+
+  <line x1="180" y1="190" x2="326" y2="120" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="184" y1="205" x2="326" y2="205" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="180" y1="220" x2="326" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="190" x2="784" y2="120" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="205" x2="784" y2="205" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="916" y1="220" x2="784" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="178" y1="385" x2="323" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
+  <line x1="922" y1="385" x2="787" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
+
+  <ellipse cx="430" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Post a listing</text>
+  <ellipse cx="430" cy="205" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="210" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a listing</text>
+  <ellipse cx="430" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Verify pickup</text>
+
+  <ellipse cx="680" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Browse listings</text>
+  <ellipse cx="680" cy="205" rx="100" ry="28" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.6"/>
+  <text x="680" y="210" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Claim a listing</text>
+  <ellipse cx="680" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a claim</text>
+
+  <ellipse cx="430" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="430" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Register organisation</text>
+  <ellipse cx="680" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
+  <text x="680" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Approve organisation</text>
+
+  <circle cx="140" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(116,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="140" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
+
+  <circle cx="960" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(936,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="960" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
+
+  <circle cx="140" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
+  <g transform="translate(121,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="140" y="447" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#5a5a5a">Org admin</text>
+
+  <circle cx="960" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
+  <g transform="translate(941,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="960" y="447" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#5a5a5a">Platform admin</text>
+</svg>
+</div>
+
+<!--
+USE CASES
+
+The actors and what each one can do, before we show how the system is
+built.
+
+A donor posts a listing, can cancel it while nobody has claimed it, and
+verifies the pickup when the rescue partner turns up. A rescue partner
+browses what is available, claims a listing and can cancel that claim if
+plans change.
+
+Along the bottom is the onboarding path. An org admin registers their
+organisation, and a platform admin approves it before anyone from that
+organisation can transact at all. That is why signup and approval come
+first in the demo.
+
+The green one is the use case the rest of this section is about. Claiming
+a listing is the only place where two users can collide, so it is the one
+we had to design carefully. The state diagram and the sequence diagram
+coming up both zoom into it.
+
+If asked what is missing from the picture: the system itself is an actor
+too. It expires listings whose pickup window has passed, sends pickup
+reminders and prunes idempotency keys on a schedule.
 -->
 
 ---
 
-# Status &amp; effort
+# Logical Diagram
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 -125 1100 510" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="grid grid-cols-2 gap-10">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Where we are</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">Three services + two web apps, deployed to prod</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">Core loop working end to end: post &rarr; claim &rarr; pickup</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#1f6b45">&check;</span><span class="text-sm">CI/CD across all three environments</span></div>
-</div>
-<div class="dgm text-xs mt-6" style="color:#00000066">Outstanding</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="flex items-baseline"><span class="mr-3" style="color:#00000066">&middot;</span><span class="text-sm" style="color:#00000099">Richer conflict/retry UX on claim</span></div>
-  <div class="flex items-baseline"><span class="mr-3" style="color:#00000066">&middot;</span><span class="text-sm" style="color:#00000099">Broaden SAST gating once findings are triaged</span></div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Effort</div>
-<div class="mt-3 text-sm" style="color:#00000099">Team of 7 &middot; ~80 hours each &middot; <span class="font-semibold" style="color:#000000">560 person-hours</span>. Split across web, identity, listings/claims, notifications and infrastructure.</div>
-<div class="mt-5 rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-<div class="text-xs dgm" style="color:#00000066">Six sprints &mdash; four delivered</div>
-<div class="text-sm mt-2">S1 CI/CD + auth &middot; S2 IaC + IAM + QA &middot; S3 claim, OTP, notify, CDN+API GW &middot; S4 pickup completion</div>
-</div>
-</div>
-</div>
+  <path d="M 40 -85 L 790 -85 L 790 95 L 1060 95 L 1060 370 L 40 370 Z" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="56" y="-67" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
 
-</div>
+  <rect x="855" y="-115" width="225" height="130" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
+  <text x="869" y="-99" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
 
-<!--
-STATUS & EFFORT
+  <g transform="translate(355,-58)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="388" y="-40" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
+  <line x1="368" y1="-30" x2="368" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-Quick and honest. Where we are: three backend services and two web apps are
-deployed; the core loop works end to end; and CI/CD runs across all three
-environments. Outstanding work is genuine but small - a richer conflict and
-retry experience on the claim screen, and turning on fail-on-findings for
-the security scanners once we've triaged the backlog. We chose not to block
-the pipeline on untriaged findings rather than rubber-stamp them.
+  <g transform="translate(905,-108)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="938" y="-90" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
+  <line x1="918" y1="-80" x2="918" y2="-54" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-Effort: seven of us, about 80 hours each, so roughly 560 person-hours,
-split across the areas listed. The plan is six two-week sprints; four are
-delivered and evidenced. The one-liner traces the arc: Sprint 1 stood up
-CI/CD and authentication, Sprint 2 the infrastructure-as-code, sandbox
-environments, IAM and the first automated QA cases, Sprint 3 the
-claim/reservation workflow, pickup OTP, notifications and the move from a
-public load balancer to CDN plus API Gateway, and Sprint 4 pickup
-completion. Name who owned what if asked.
--->
+  <rect x="260" y="8" width="240" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(276,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="394" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
+  <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js (browser)</text>
 
----
-layout: section
-class: flex flex-col justify-center text-center
----
+  <rect x="865" y="-50" width="200" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(878,-38)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="983" y="-27" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
+  <text x="983" y="-8" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA (local)</text>
 
-<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
+  <line x1="368" y1="64" x2="368" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="965" y1="6" x2="965" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="530" y="82" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS</text>
+  <line x1="195" y1="94" x2="965" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="94" x2="195" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="550" y1="94" x2="550" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
+  <line x1="905" y1="94" x2="905" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-<div class="text-5xl font-extrabold leading-tight mt-6">
-Analysis &amp; <span class="accent">design</span>
-</div>
+  <rect x="60" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(80,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="207" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile (Go)</text>
+  <text x="207" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">identity &amp; orgs</text>
 
-<!--
-SECTION MARKER
--->
+  <rect x="415" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(435,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="562" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings (NestJS)</text>
+  <text x="562" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">listings &amp; claims</text>
 
----
+  <rect x="770" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(790,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="917" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications (NestJS)</text>
+  <text x="917" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">queue</text>
 
-# The system, from the top
+  <line x1="685" y1="174" x2="764" y2="174" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
+  <text x="725" y="162" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
 
-<div class="mt-6 px-4">
 
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#0000001a;background:#ffffff;width:11rem">
-    <div class="text-sm font-semibold">Platform web</div>
-    <div class="text-xs" style="color:#00000099">Next.js &middot; donors &amp; partners</div>
-  </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#0000001a;background:#ffffff;width:11rem">
-    <div class="text-sm font-semibold">Admin console</div>
-    <div class="text-xs" style="color:#00000099">React SPA &middot; local only</div>
-  </div>
-</div>
+  <rect x="60" y="218" width="270" height="42" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/cognito.png" x="78" y="228" width="22" height="22"/>
+  <text x="207" y="244" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Cognito</text>
 
-<div class="text-center mt-2" style="color:#00000066">&darr;&nbsp;&nbsp;HTTPS / JSON&nbsp;&nbsp;&darr;</div>
+  <line x1="195" y1="260" x2="195" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="550" y1="208" x2="550" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="905" y1="208" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="195" y1="270" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="550" y1="270" x2="550" y2="288" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
 
-<div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-1.5 text-center text-xs font-medium" style="border-color:#0000001a;background:#f2f0ed;width:23rem;color:#3a3a3a">CDN &middot; API Gateway &nbsp;<span style="color:#5a5a5a">(hardened ingress, Sprint 3)</span></div>
-</div>
+  <rect x="350" y="292" width="400" height="64" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/rds.png" x="370" y="311" width="26" height="26"/>
+  <text x="560" y="330" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
+ 
 
-<div class="text-center my-1" style="color:#00000066">&darr;</div>
 
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
-    <div class="text-sm font-semibold">Profile</div>
-    <div class="text-xs" style="color:#00000099">Go &middot; users, orgs, approval</div>
-  </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
-    <div class="text-sm font-semibold">Listings</div>
-    <div class="text-xs" style="color:#00000099">NestJS &middot; listings, claims, pickup</div>
-  </div>
-  <div class="rounded-lg border px-4 py-3 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:11rem">
-    <div class="text-sm font-semibold">Notifications</div>
-    <div class="text-xs" style="color:#00000099">NestJS &middot; queue consumer</div>
-  </div>
-</div>
-
-<div class="flex items-center justify-center mt-2" style="gap:0.6rem">
-  <div class="text-center" style="width:11rem"></div>
-  <div class="text-center" style="width:11rem"><span style="color:#00000066">&rarr; SQS &rarr;</span></div>
-  <div class="text-center" style="width:11rem"></div>
-</div>
-
-<div class="flex items-center justify-center mt-1" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-center text-xs font-mono" style="border-color:#0000001a;background:#f2f0ed;width:23rem;color:#00000099">PostgreSQL (per service)</div>
-  <div class="rounded-lg border px-4 py-2 text-center text-xs font-mono" style="border-color:#0000001a;background:#f2f0ed;width:11rem;color:#00000099">AWS ECS Fargate</div>
-</div>
-
+</svg>
 </div>
 
 <!--
@@ -409,112 +577,588 @@ don't call each other synchronously for
 side-effects - listings emits an event onto SQS and notifications reacts.
 That decoupling is deliberate: a slow email never blocks a claim.
 
-Each service owns its own PostgreSQL - no shared database, so services stay
-independently deployable. It all runs on ECS Fargate via CloudFormation.
+On data, we were deliberate about what we did and did not separate. There
+is one shared PostgreSQL instance, not a database per service. What each
+service owns is its own tables and its own migrations: listings' migration
+tool is scoped so it can never touch profile's schema. Sharing the
+instance keeps a proof of concept cheap and lets us keep real foreign keys
+between a listing and the organisation that posted it, which we would have
+lost by splitting the databases. The cost is that the services are not as
+independently deployable as the diagram might suggest, and we would split
+them if this went further.
+
+Every request carries a Cognito JWT, and each service validates it before
+doing anything. Listings layers org membership and admin checks on top of
+that. It all runs on ECS Fargate via CloudFormation.
 -->
 
 ---
 class: flex flex-col
 ---
 
-<div class="dgm-wide text-xs px-6 pt-2" style="color:#3a3a3a;flex:0 0 auto">Physical architecture &middot; AWS</div>
+# Deployment
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-  <img src="/infra.svg" alt="RescuFood physical architecture on AWS" style="max-height:100%;max-width:100%;object-fit:contain" />
+<svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="aws-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="aws-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <g transform="translate(38,6)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </g>
+  <text x="50" y="48" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#111111">Users</text>
+  <line x1="78" y1="28" x2="146" y2="28" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+  <text x="113" y="18" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">HTTPS</text>
+  <rect x="150" y="8" width="156" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/api-gateway.png" x="157" y="13" width="30" height="30"/>
+  <text x="246" y="32" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
+  <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+
+  <rect x="20" y="65" width="250" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
+  <text x="35" y="85" style="font-size:10px;font-weight:700" fill="#3a3a3a">AWS managed services</text>
+
+  <rect x="35" y="95" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cloudfront.png" x="48" y="102" width="32" height="32"/>
+  <text x="94" y="123" style="font-size:11px;font-weight:600" fill="#111111">CloudFront</text>
+
+  <rect x="35" y="153" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/s3.png" x="48" y="160" width="32" height="32"/>
+  <text x="94" y="181" style="font-size:11px;font-weight:600" fill="#111111">S3 (private)</text>
+
+  <rect x="35" y="211" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cognito.png" x="48" y="218" width="32" height="32"/>
+  <text x="94" y="239" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
+
+  <rect x="35" y="269" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/sqs.png" x="48" y="276" width="32" height="32"/>
+  <text x="94" y="297" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
+
+  <rect x="35" y="327" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/secrets-manager.png" x="48" y="334" width="32" height="32"/>
+  <text x="94" y="355" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
+
+  <rect x="35" y="385" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cloudwatch.png" x="48" y="392" width="32" height="32"/>
+  <text x="94" y="413" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
+
+  <rect x="35" y="443" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/github.svg" x="50" y="452" width="28" height="28"/>
+  <text x="94" y="471" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
+
+  <path d="M 250 234 L 263 234 L 263 320 L 300 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 292 L 273 292 L 273 335 L 300 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 350 L 283 350 L 283 350 L 300 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+
+  <rect x="290" y="65" width="895" height="455" rx="8" stroke="#00000033"/>
+  <text x="305" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
+
+  <rect x="727" y="75" width="120" height="32" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="787" y="95" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">VPC Link</text>
+
+  <rect x="305" y="122" width="865" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
+  <text x="1158" y="138" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
+  <rect x="430" y="146" width="164" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/internet-gateway.png" x="438" y="153" width="30" height="30"/>
+  <text x="533" y="173" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internet Gateway</text>
+  <rect x="950" y="146" width="170" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/nat-gateway.png" x="958" y="153" width="30" height="30"/>
+  <text x="1056" y="174" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
+
+  <rect x="305" y="208" width="865" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
+  <text x="1158" y="224" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
+
+  <path d="M 787 107 L 787 214" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
+  <rect x="687" y="216" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/alb.png" x="694" y="221" width="30" height="30"/>
+  <text x="805" y="241" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
+
+
+  <path d="M 787 256 L 787 276 L 430 276 L 430 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 640 276 L 640 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 850 276 L 850 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+  <path d="M 787 276 L 1060 276 L 1060 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
+
+  <rect x="355" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(367,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="355" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="367" y="364" width="20" height="20"/>
+  <text x="430" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="430" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">web-platform</text>
+
+  <rect x="565" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(577,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="565" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="577" y="364" width="20" height="20"/>
+  <text x="640" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="640" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">profile</text>
+
+  <rect x="775" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(787,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="775" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="787" y="364" width="20" height="20"/>
+  <text x="850" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="850" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">listings</text>
+
+  <rect x="985" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(997,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <rect x="985" y="356" width="150" height="34" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/ecs.png" x="997" y="364" width="20" height="20"/>
+  <text x="1060" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
+  <text x="1060" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">notification</text>
+
+  <rect x="305" y="412" width="865" height="100" rx="6" fill="#00000005" stroke="#0000001a"/>
+  <text x="317" y="428" style="font-size:10px;font-weight:600" fill="#3a3a3a">Data subnets</text>
+
+  <path d="M 640 390 L 640 414 L 1060 414 L 1060 390" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 850 390 L 850 414" stroke="#8a8a8a" stroke-width="1.2"/>
+  <path d="M 787 414 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
+
+  <rect x="700" y="438" width="174" height="60" rx="6" fill="#ffffff" stroke="#1f6b45"/>
+  <image href="/aws/rds.png" x="708" y="451" width="34" height="34"/>
+  <text x="808" y="473" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
+</svg>
 </div>
 
 <!--
-PHYSICAL ARCHITECTURE
+DEPLOYMENT
 
-This is the deployment view - the logical picture from the last slide,
-placed on real AWS. Walk it left to right, briefly; don't read every box.
+This is the same system, but where it actually runs. Follow the green
+line, it is one request.
 
-Traffic enters through API Gateway, which terminates TLS, and crosses a VPC
-Link into the VPC. Inside, an internal load balancer path-routes to the
-Fargate services - /api/profile to profile, /api/listings and /api/requests
-to listings, and so on. The services run across two availability zones.
+Someone opens the site. They land on API Gateway, and that is the only
+door we leave open to the internet. From there the request crosses into
+our private network and reaches the load balancer, which is internal, so
+nobody outside can reach it directly. The load balancer looks at the
+path and hands the request to one of our four services, each running as
+its own ECS task on Fargate. If it needs data, the service talks to the
+database.
 
-Data sits in isolated subnets with no internet route: RDS PostgreSQL,
-Multi-AZ per environment, encrypted with a managed master secret. Identity
-is Cognito, with donor, rescue-partner and admin groups. Listing images go
-to a private S3 bucket fronted by CloudFront. And the notifications path is
-SQS with a dead-letter queue - the same decoupling we showed logically,
-here in infrastructure.
+The database is the part we were strictest about. It sits in subnets
+with no route to the internet at all, in either direction. The only way
+to reach it is from inside, from one of our own services. It is
+encrypted and it backs itself up.
 
-The one thing to call out as honest: a single NAT gateway in AZ A - a
-deliberate cost trade-off for a proof of concept, and the obvious first
-change if this went to real production traffic.
+Everything on the left is stuff we did not write. CloudFront and a
+private S3 bucket for listing images, Cognito for sign in, SQS for
+notification events, Secrets Manager for passwords, CloudWatch for logs,
+and GitHub for our container images. The dashed lines are the three our
+services actually talk to while running.
 
-If the SVG isn't in place yet: export infra-plan.drawio to slides/infra.svg
-(VS Code Draw.io extension -> Export -> SVG), then this slide fills in.
+Two things we would rather say ourselves than be asked. We run in two
+availability zones, but there is only one NAT gateway, so our outbound
+traffic depends on that one zone. We chose that to keep the bill small
+for a proof of concept. And none of this was clicked together by hand:
+it is all CloudFormation, the same templates for dev, qa and prod, with
+one parameter file different between them.
 -->
 
 ---
+class: flex flex-col
+---
 
-# From analysis to design
+# State Diagram
 
-<div class="mt-8 px-6">
+<div class="text-base mt-2" style="color:#00000099">The listing lifecycle</div>
 
-<div class="flex items-center justify-center" style="gap:1rem">
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#0000001a;background:#ffffff;width:12rem">
-    <div class="dgm text-xs" style="color:#00000066">Analysis</div>
-    <div class="text-sm mt-2 font-semibold">User story</div>
-    <div class="text-xs mt-1" style="color:#00000099">"As a rescue partner I claim a listing so no one else can take it."</div>
-  </div>
-  <div style="color:#1f6b45">&rarr;</div>
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#0000001a;background:#ffffff;width:12rem">
-    <div class="dgm text-xs" style="color:#00000066">Domain</div>
-    <div class="text-sm mt-2 font-semibold">Listing, Claim, Org</div>
-    <div class="text-xs mt-1" style="color:#00000099">Invariant: at most one active claim per listing.</div>
-  </div>
-  <div style="color:#1f6b45">&rarr;</div>
-  <div class="rounded-lg border px-5 py-4 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06);width:12rem">
-    <div class="dgm text-xs" style="color:#1f6b45">Design</div>
-    <div class="text-sm mt-2 font-semibold">Modules &amp; tables</div>
-    <div class="text-xs mt-1" style="color:#00000099">Guarded transaction + unique index enforce the invariant.</div>
-  </div>
-</div>
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1100 320" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="lc-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="lc-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+  </defs>
 
-<div class="mt-10 grid grid-cols-2 gap-8">
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Security, designed in</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="text-sm">JWT auth guard on every protected route</div>
-  <div class="text-sm">Org-membership guard &mdash; you act only for your org</div>
-  <div class="text-sm">Admin claim gates the admin API</div>
-</div>
-</div>
-<div>
-<div class="dgm text-xs" style="color:#1f6b45">Quality attributes</div>
-<div class="mt-3 flex flex-col" style="gap:0.5rem">
-  <div class="text-sm">Maintainability &mdash; one module per capability</div>
-  <div class="text-sm">Extensibility &mdash; repositories hide the schema</div>
-  <div class="text-sm">Robustness &mdash; invariants in the database, not just code</div>
-</div>
-</div>
-</div>
+  <rect x="50" y="80" width="160" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="130" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Draft</text>
 
+  <line x1="210" y1="108" x2="316" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="263" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish</text>
+
+  <rect x="320" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="405" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Available</text>
+
+  <line x1="490" y1="108" x2="596" y2="108" stroke="#1f6b45" stroke-width="2.5" marker-end="url(#lc-arr-g)"/>
+  <text x="543" y="94" text-anchor="middle" style="font-size:11.5px;font-weight:700" fill="#1f6b45">claim</text>
+
+  <rect x="600" y="80" width="170" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="685" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Reserved</text>
+
+  <line x1="770" y1="108" x2="876" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="823" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">OTP verified</text>
+
+  <rect x="880" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#1f6b45"/>
+  <text x="965" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Collected</text>
+
+  <path d="M 685 80 L 685 42 L 405 42 L 405 76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="545" y="34" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim ends &middot; relisted</text>
+
+  <line x1="130" y1="136" x2="130" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="380" y1="136" x2="380" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="640" y1="136" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="110" y1="196" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="110" y1="196" x2="110" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <text x="300" y="188" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">donor cancels</text>
+
+  <line x1="460" y1="136" x2="460" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
+  <path d="M 720 136 L 720 226 L 460 226" stroke="#8a8a8a" stroke-width="1.5"/>
+  <text x="540" y="220" style="font-size:10px" fill="#5a5a5a" class="font-mono">pickup window passes</text>
+
+  <rect x="50" y="240" width="160" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
+  <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Cancelled</text>
+
+  <rect x="345" y="240" width="170" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
+  <text x="430" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Expired</text>
+</svg>
 </div>
 
 <!--
-ANALYSIS TO DESIGN
+LIFECYCLE
 
-This is the transition DMSS cares about most - how a user story becomes a
-design. Take the claim story on the left. In analysis it's one sentence.
-We turn it into a domain model - Listing, Claim, Org - and the moment we
-write that model we surface the invariant that defines the whole system:
-at most one active claim per listing. Design is then the answer to "how do
-we guarantee that invariant even under retries and races" - a guarded
-transaction plus a unique index. Section 4 is that answer in full.
+This is the analysis in one picture: the listing's states and the legal
+transitions between them, which exist in the code as transition tables
+that reject anything else. Draft to Available on publish, Available to
+Reserved on a claim, Reserved to Collected once the donor verifies the
+OTP. A cancelled claim relists the lot if the window allows; otherwise
+it expires. Terminal states are dashed.
 
-Security was designed in, not bolted on. Every protected route runs behind
-a JWT auth guard; an org-membership guard ensures you can only act for your
-own organisation; and the admin API is gated by an admin claim. On the
-right, the quality attributes made concrete: a module per capability for
-maintainability, repositories hiding the schema for extensibility, and -
-the one I'd underline - invariants enforced in the database, not only in
-application code. Code can have bugs; a unique index cannot be talked out
-of its job.
+The green edge is the hard design problem of the project. A claim must
+reserve the whole listing exactly once, even when two partners race for
+it or a phone resends the same request. Two safeguards cover it: an
+idempotency key, so an identical retry replays the original outcome
+instead of acting again, and a partial unique index in the database, so
+at most one active claim can exist per listing no matter what the
+application layer does. The sequence diagram next walks this edge step
+by step, and section 3 shows the patterns the implementation leans on.
+-->
+
+---
+class: flex flex-col
+---
+
+# Sequence Diagram
+
+<div class="text-base mt-2" style="color:#00000099">The claim edge from the lifecycle, step by step</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="sq-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="sq-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="sq-arr-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#111111"/></marker>
+  </defs>
+
+  <rect x="50" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(66,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </g>
+  <text x="168" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Rescue partner</text>
+
+  <rect x="350" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(366,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="468" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Web app</text>
+
+  <rect x="650" y="16" width="200" height="50" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(666,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+  </g>
+  <text x="768" y="40" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
+  <text x="768" y="57" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">backend service</text>
+
+  <rect x="950" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(966,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="1068" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">PostgreSQL</text>
+
+  <line x1="150" y1="66" x2="150" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="450" y1="66" x2="450" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="750" y1="66" x2="750" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+  <line x1="1050" y1="66" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
+
+  <rect x="746" y="145" width="8" height="115" rx="2" fill="rgba(31,107,69,0.2)"/>
+
+  <text x="28" y="119" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">CLAIM</text>
+  <line x1="150" y1="115" x2="444" y2="115" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="300" y="103" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the listing</text>
+  <line x1="450" y1="150" x2="744" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="600" y="138" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">POST /api/requests</text>
+  <line x1="754" y1="185" x2="1044" y2="185" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="173" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the key slot</text>
+  <line x1="754" y1="220" x2="1044" y2="220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="208" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">tx: reserve &middot; insert claim &middot; audit</text>
+  <line x1="746" y1="255" x2="156" y2="255" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
+  <text x="450" y="243" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; Reserved</text>
+
+  <g v-click>
+  <line x1="30" y1="290" x2="1170" y2="290" stroke="#0000000d" stroke-width="1"/>
+  <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
+  <text x="28" y="319" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RETRY</text>
+  <line x1="150" y1="315" x2="744" y2="315" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="450" y="303" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">the same request, resent</text>
+  <line x1="754" y1="350" x2="1044" y2="350" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="338" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">key found &middot; fingerprint matches</text>
+  <line x1="746" y1="385" x2="156" y2="385" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
+  <text x="450" y="373" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; the original claim, replayed</text>
+  </g>
+
+  <g v-click>
+  <line x1="30" y1="410" x2="1170" y2="410" stroke="#0000000d" stroke-width="1"/>
+  <rect x="746" y="460" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
+  <text x="28" y="439" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RACE</text>
+  <line x1="150" y1="435" x2="744" y2="435" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
+  <text x="450" y="423" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">another partner, same listing</text>
+  <line x1="754" y1="470" x2="1044" y2="470" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
+  <text x="900" y="458" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">reserve fails &middot; unique index holds</text>
+  <line x1="746" y1="505" x2="156" y2="505" stroke="#111111" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr-k)"/>
+  <text x="450" y="493" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111" class="font-mono">409 Conflict</text>
+  </g>
+</svg>
+</div>
+
+<!--
+CLAIM SEQUENCE
+
+Three runs of the same endpoint. Top: the happy path. The request
+carries an idempotency key; the service claims a slot for that key,
+then reserves the listing, inserts the claim and writes the audit row
+in one transaction, and the partner gets 201 Reserved.
+
+Middle: the phone resends the same request. The key is already
+completed and the fingerprint matches, so the service replays the
+original claim instead of doing anything. Same answer, no second
+reservation.
+
+Bottom: a different partner races for the same listing. The conditional
+reserve finds the listing no longer available, and even if the
+application got it wrong, the partial unique index in the database
+cannot admit a second active claim. That partner gets a 409 and the
+frontend tells them someone else got it first.
+-->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Section 03</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Design <span class="accent">Patterns</span>
+</div>
+
+<!--
+SECTION MARKER
+
+Say the title and move on. Three patterns, one slide each, all backed
+by real code.
+-->
+
+---
+class: flex flex-col
+---
+
+# Strategy pattern
+
+<div class="text-base mt-2" style="color:#00000099">Define one interface and swap the implementation behind it.</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;gap:2rem;padding:0.5rem 0.25rem">
+<div style="flex:1 1 0;min-width:0;align-self:flex-start;margin-top:1rem">
+  <div style="">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">No code changes needed</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">The app only talks to the interface, so switching from real servers to mocks is just changing a flag.</div>
+  </div>
+  <div style="margin-top:2.6rem">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Work in parallel</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">The frontend does not have to wait for the backend to be ready before it can be built and tested.</div>
+  </div>
+</div>
+<div style="flex:0 0 46%;min-width:0;align-self:flex-start;margin-top:1rem;display:flex;align-items:flex-start;justify-content:center">
+<svg viewBox="0 0 620 380" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-s-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="pat-s-tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M0.5 0.5 L9.5 5 L0.5 9.5 Z" fill="#ffffff" stroke="#1f6b45"/></marker>
+  </defs>
+  <rect x="170" y="16" width="280" height="72" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(192,40)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+  </g>
+  <text x="318" y="58" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">web-platform</text>
+  <line x1="310" y1="88" x2="310" y2="126" stroke="#1f6b45" stroke-width="1.8" marker-end="url(#pat-s-arr)"/>
+  <rect x="170" y="130" width="280" height="72" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="310" y="172" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">ListingsApi</text>
+  <line x1="150" y1="276" x2="150" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="470" y1="276" x2="470" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="150" y1="242" x2="470" y2="242" stroke="#1f6b45" stroke-width="1.6"/>
+  <line x1="310" y1="242" x2="310" y2="208" stroke="#1f6b45" stroke-width="1.6" marker-end="url(#pat-s-tri)"/>
+  <text x="322" y="234" style="font-size:10px" fill="#5a5a5a" class="font-mono">implements</text>
+  <rect x="20" y="280" width="260" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <text x="150" y="326" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">ListingsClient</text>
+  <rect x="340" y="280" width="260" height="80" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <text x="470" y="326" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">MockListingsClient</text>
+</svg>
+</div>
+</div>
+
+<!--
+STRATEGY
+
+The listings SDK has one interface, ListingsApi, with sixteen methods
+and two implementations. ListingsClient makes the real HTTP calls with
+the user's token. MockListingsClient keeps everything in memory but
+mirrors the server's rules, the same status transitions and even the
+idempotency replay. A factory returns the interface, so the app never
+knows which one it is holding.
+
+That is what let us build and demo the whole frontend before the
+listings service was ready, and switching over was one boolean in
+lib/listings.ts.
+
+If asked where else we use it: the notification templates are a
+type-to-renderer map, the relist policy is an injected config object,
+and the Go service passes Approve, Reject and Suspend in as functions to
+one shared transition handler.
+-->
+
+---
+class: flex flex-col
+clicks: 1
+---
+
+# Repository Pattern
+
+<div class="text-base mt-2" style="color:#00000099">Separate the business logic from the database.</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;gap:2rem;padding:0.5rem 0.25rem">
+<div style="flex:1 1 0;min-width:0;align-self:flex-start;margin-top:1rem">
+  <div style="">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Business rules stay pure</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">Services only handle business rules, never raw database queries.</div>
+  </div>
+  <div style="margin-top:2.6rem">
+    <div class="accent" style="font-size:1.25rem;font-weight:600">Easy mocking</div>
+    <div style="font-size:1rem;line-height:1.6;margin-top:0.5rem">Easy to mock the repository to test core business logic</div>
+  </div>
+</div>
+<div style="flex:0 0 46%;min-width:0;align-self:flex-start;margin-top:1rem;display:flex;align-items:flex-start;justify-content:center">
+<svg viewBox="0 0 620 440" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-r-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+  <g :style="{ opacity: $clicks > 0 ? 0 : 1, transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="20" y="100" width="580" height="124" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="124" style="font-size:12px;font-weight:600" fill="#1f6b45">service layer</text>
+    <line x1="310" y1="198" x2="310" y2="302" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+  </g>
+  <g :style="{ opacity: $clicks > 0 ? 1 : 0, transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="20" y="16" width="580" height="104" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="40" style="font-size:12px;font-weight:600" fill="#1f6b45">service layer</text>
+    <rect x="20" y="180" width="580" height="104" rx="10" fill="#00000005" stroke="#0000001a"/>
+    <text x="38" y="204" style="font-size:12px;font-weight:600" fill="#1f6b45">data access layer</text>
+    <line x1="20" y1="150" x2="600" y2="150" stroke="#1f6b45" stroke-width="1.8" stroke-dasharray="7 6"/>
+    <line x1="310" y1="104" x2="310" y2="192" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+    <line x1="310" y1="268" x2="310" y2="302" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#pat-r-arr-m)"/>
+  </g>
+  <g :style="{ transform: $clicks > 0 ? 'translateY(-94px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="170" y="130" width="280" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(190,148)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
+    </g>
+    <text x="310" y="160" text-anchor="middle" fill="#111111" :style="{ fontSize: '16px', fontWeight: 600, transform: $clicks > 0 ? 'translateY(8px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">Service</text>
+    <text x="310" y="181" text-anchor="middle" class="font-mono" :style="{ fontSize: '11px', fill: '#5a5a5a', opacity: $clicks > 0 ? 0 : 1, transition: 'opacity 300ms ease' }">business rules and SQL together</text>
+  </g>
+  <g :style="{ opacity: $clicks > 0 ? 1 : 0, transform: $clicks > 0 ? 'translateY(70px)' : 'translateY(0px)', transition: 'all 650ms cubic-bezier(.4,0,.2,1)' }">
+    <rect x="170" y="130" width="280" height="64" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+    <g transform="translate(190,150)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+      <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    </g>
+    <text x="310" y="168" text-anchor="middle" style="font-size:16px;font-weight:600" fill="#111111">Repository</text>
+  </g>
+  <rect x="170" y="306" width="280" height="62" rx="12" fill="#ffffff" stroke="#1f6b45"/>
+  <g transform="translate(190,325)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </g>
+  <text x="310" y="344" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">PostgreSQL</text>
+</svg>
+</div>
+</div>
+
+<!--
+REPOSITORY PATTERN
+
+Basically its a pattern mostly used in backend services to seperate the business logic from the database. Instad the service layer communicates with something called a Repository which talks to the database. 
+
+Its benefits are
+*Explain*
+-->
+
+---
+class: flex flex-col
+---
+
+# Observer pattern
+
+<div class="text-base mt-2" style="color:#00000099">Listings drops events on SQS, notifications picks them up</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="0 0 1000 400" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="pat-p-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
+    <marker id="pat-p-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <rect x="40" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="175" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">listings</text>
+  <text x="175" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NotificationsPublisher</text>
+
+  <text x="370" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish &middot; eventId</text>
+  <line x1="310" y1="170" x2="426" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
+
+  <rect x="430" y="120" width="180" height="100" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <text x="520" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">SQS</text>
+  <text x="520" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">notifications queue</text>
+
+  <text x="670" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">long poll</text>
+  <line x1="610" y1="170" x2="726" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
+
+  <rect x="730" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <text x="865" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">notification</text>
+  <text x="865" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">SqsConsumerService</text>
+
+  <line x1="520" y1="220" x2="520" y2="266" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#pat-p-arr-m)"/>
+  <rect x="430" y="270" width="180" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <text x="520" y="295" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">DLQ</text>
+  <text x="520" y="313" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">after 5 failures</text>
+
+  <text x="500" y="378" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Neither service knows the other exists.</text>
+</svg>
+</div>
+
+<!--
+Observer Pattern
+When a claim is created, cancelled or completed, listings just drops an
+event on SQS and moves on. The notification service polls the queue,
+renders the templates and sends the email and in-app notification. The
+two services don't import each other at all, which is how we added the
+whole notification service without touching the claim flow.
+
+Every event has a deterministic eventId and the consumer dedupes on it,
+so a redelivered message can't send twice. If a message keeps failing
+it goes to a dead letter queue after 5 tries and an alarm fires.
 -->
 
 ---
@@ -525,155 +1169,75 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 04</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-The hard problem: <span class="accent">claiming</span>
+<span class="accent">Testing</span>
 </div>
 
 <!--
 SECTION MARKER
 
-This is our centrepiece. The graders want "design problems solved by
-applying patterns" - this is ours, end to end.
+Say the title and move on.
 -->
 
 ---
+class: flex flex-col
+---
 
-# One listing, one claim &mdash; even under retries
+# Types of testing
 
-<div class="mt-8 px-6">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="rounded-lg border px-6 py-4" style="border-color:#0000001a;background:#ffffff">
-<div class="dgm text-xs" style="color:#00000066">The problem</div>
-<div class="text-sm mt-2">A claim reserves a whole listing for one org. A network blip or a double-tap must never create two claims &mdash; and an honest retry must return the <span class="font-semibold">same</span> answer, not an error.</div>
+<div class="grid grid-cols-3 gap-12 mx-auto" style="max-width:56rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">Unit</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Jest for the NestJS services</div>
+      <div class="text-base">go test for profile</div>
+      <div class="text-base">Frontend logic with fixed clocks</div>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">Integration</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Real PostgreSQL via testcontainers</div>
+      <div class="text-base">Each service runs its own migrations</div>
+      <div class="text-base">Coverage reported on every PR</div>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">End-to-end</div>
+    <div class="mt-4 flex flex-col" style="gap:0.8rem">
+      <div class="text-base">Playwright against live dev &amp; QA</div>
+      <div class="text-base">Full journey, post &rarr; claim &rarr; pickup</div>
+      <div class="text-base">Post-deploy smoke check</div>
+    </div>
+  </div>
 </div>
 
-<div class="mt-6 grid grid-cols-2 gap-6">
-  <div class="rounded-lg border px-5 py-4" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="dgm text-xs" style="color:#1f6b45">Pattern 1 &middot; Idempotency key</div>
-    <div class="text-sm mt-2">Each claim carries a key. First call does the work; identical retries replay the stored outcome.</div>
-    <div class="text-xs mt-2 font-mono" style="color:#00000099">request_idempotency_keys</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="dgm text-xs" style="color:#1f6b45">Pattern 2 &middot; Guarded transaction</div>
-    <div class="text-sm mt-2">A partial unique index makes "at most one active claim" a database law &mdash; not a hopeful check.</div>
-    <div class="text-xs mt-2 font-mono" style="color:#00000099">requests_active_claim_per_listing_uq</div>
-  </div>
+<div class="mt-12 text-center text-sm" style="color:#00000099">
+Unit and integration tests gate every PR &middot; e2e never blocks and never touches prod
 </div>
 
 </div>
 
 <!--
-THE HARD PROBLEM
+TYPES OF TESTING
 
-Here's the problem stated plainly. A claim reserves an entire listing for
-one organisation. Two things can go wrong: a network blip or a double-tap
-could create two claims, and separately, an honest retry - the user's phone
-resent the request - must come back with the same answer, not a confusing
-error.
+Three levels, each with its own tool. Unit tests run per service: Jest
+for the two NestJS services, go test with fakes for profile, and the
+frontend mappers and filters get unit tests with a fixed clock so the
+results are stable. Integration tests spin up a real PostgreSQL in CI
+with testcontainers, run each service's migrations and hit the actual
+schema; a combined coverage report lands on every PR. End-to-end is
+Playwright against the live dev or QA environment after each deploy,
+running the whole journey of posting, claiming, cancelling and
+completing pickups, including negative cases like a second claim being
+refused.
 
-Two patterns, working together. Pattern one is an idempotency key: every
-claim request carries a key, the first call does the real work, and an
-identical retry replays the stored outcome instead of acting again. Pattern
-two is a guarded transaction backed by a partial unique index, which makes
-"at most one active claim per listing" a law the database enforces, not a
-check we hope runs at the right time. The next slide shows how the key
-handles each case.
--->
-
----
-
-# The decision table does the reasoning
-
-<div class="mt-6 px-6">
-
-<table class="text-sm" style="width:100%;border-collapse:collapse">
-<thead>
-<tr style="border-bottom:2px solid #1f6b45">
-<th class="text-left py-2" style="color:#1f6b45">Situation</th>
-<th class="text-left py-2" style="color:#1f6b45">Result</th>
-</tr>
-</thead>
-<tbody>
-<tr style="border-bottom:1px solid #0000001a"><td class="py-2">New key</td><td class="py-2">Slot claimed, claim created, completed in one transaction</td></tr>
-<tr style="border-bottom:1px solid #0000001a"><td class="py-2">Identical retry</td><td class="py-2">Original claim returned &mdash; no second claim</td></tr>
-<tr style="border-bottom:1px solid #0000001a"><td class="py-2">Same key, different data</td><td class="py-2"><span class="font-mono">409</span>, original untouched, conflict audited</td></tr>
-<tr style="border-bottom:1px solid #0000001a"><td class="py-2">Retry while first is in flight</td><td class="py-2"><span class="font-mono">409</span> "still processing" &mdash; retry gets the outcome</td></tr>
-<tr><td class="py-2">Lost the race</td><td class="py-2">Re-read the winner and replay their result</td></tr>
-</tbody>
-</table>
-
-<div class="mt-6 flex items-center" style="gap:1rem">
-  <div class="rounded-lg border px-4 py-2 font-mono text-xs" style="border-color:#0000001a;background:#ffffff">INSERT … ON CONFLICT DO NOTHING</div>
-  <div class="text-sm" style="color:#00000099">claims the slot atomically; the loser re-reads instead of erroring</div>
-</div>
-
-</div>
-
-<!--
-DECISION TABLE
-
-This table is the design - it's lifted straight from our ADR-0002. Each row
-is a situation the claim path must survive, and the point is that every one
-resolves to a defined, tested outcome. New key: everything commits in one
-transaction - the slot, the claim and the audit row together. Identical
-retry: you get the original claim back, no duplicate. Same key but different
-data: that's a client bug, so we 409 and audit it rather than silently
-doing the wrong thing. Retry while the first is still running: a 409 that
-says "still processing", and the retry picks up the real outcome. And if two
-requests race, exactly one wins the ON CONFLICT and the loser re-reads the
-winner's result instead of throwing.
-
-The bottom line is the mechanism: INSERT ... ON CONFLICT DO NOTHING claims
-the slot atomically. No lock held across a request, no lost updates. This
-is what "solving a design problem with a pattern" looks like in our system.
--->
-
----
-
-# The same patterns, reused everywhere
-
-<div class="mt-8 px-6">
-
-<div class="grid grid-cols-2 gap-5">
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Repository</div>
-    <div class="text-xs mt-1" style="color:#00000099">Every service talks to its schema through a repository. Swap the query, not the caller.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Guard</div>
-    <div class="text-xs mt-1" style="color:#00000099">Auth and org-membership as composable guards on the routes that need them.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Publish / subscribe</div>
-    <div class="text-xs mt-1" style="color:#00000099">Listings publishes events; notifications subscribes. Neither knows the other.</div>
-  </div>
-  <div class="rounded-lg border px-5 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="text-sm font-semibold">Scheduled sweeper</div>
-    <div class="text-xs mt-1" style="color:#00000099">An hourly job prunes expired idempotency keys &mdash; retention without manual work.</div>
-  </div>
-</div>
-
-<div class="mt-8 text-center text-sm" style="color:#00000099">
-Patterns earn their place by being <span class="accent font-semibold">reused</span> &mdash; not applied once for show.
-</div>
-
-</div>
-
-<!--
-PATTERNS REUSED
-
-Design patterns count when they're reused, not name-dropped once. Four that
-recur across the codebase. Repository: every service reaches its schema
-through one, so we change a query without touching callers - that's our
-extensibility story. Guard: authentication and org-membership are
-composable guards dropped onto the routes that need them. Publish/subscribe:
-listings publishes an event and notifications subscribes, and crucially
-neither service knows the other exists - that's what let us add
-notifications without touching the claim path. And a scheduled sweeper: an
-hourly cron prunes expired idempotency keys, so retention is automatic.
-
-The line at the bottom is the message for the graders: we applied patterns
-where they solved a real problem and reused them, rather than sprinkling one
-in to tick a box.
+The gates: unit and integration must be green before a merge. The e2e
+suite is a post-deploy smoke check on purpose - it runs after the
+environment has already updated, and browser tests can go red for
+reasons that are not real regressions, so it reports without blocking.
+It never runs on prod because it creates real data.
 -->
 
 ---
@@ -684,306 +1248,575 @@ class: flex flex-col justify-center text-center
 <div class="text-xs dgm-wide" style="color:#00000066">Section 05</div>
 
 <div class="text-5xl font-extrabold leading-tight mt-6">
-DevSecOps &amp; <span class="accent">automation</span>
+<span class="accent">CI/CD</span>
 </div>
 
 <!--
 SECTION MARKER
+
+This segment is a live demo: the next four slides set the context, then
+switch to GitHub Actions and walk a real run. Have the recorded video
+ready as backup in case the live demo breaks.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 1
+class: flex flex-col
 ---
 
-<div class="text-5xl font-extrabold leading-tight px-16 text-center">
-One branch per <span class="accent">environment</span>.
-</div>
+# Branching strategy
 
-<div class="rule-green mt-8" style="margin-left:auto;margin-right:auto"></div>
+<div class="text-base mt-2" style="color:#00000099">Environment branching (GitLab Flow), with Git Flow-style hotfixes</div>
 
-<div class="text-xl mt-8 text-center transition-all duration-700" style="color:#00000099" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">
-The branch you are on is the environment you are changing.
-</div>
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center">
 
-<!--
-THE RULE
-
-Our whole delivery model follows from one sentence. We keep three
-long-lived branches, and each owns exactly one deployed environment.
-
-Click. That's the mental model. If you know which branch you're on, you
-know what you're about to affect. There is no separate deploy procedure to
-remember, because there isn't one.
--->
-
----
-class: flex flex-col justify-center
-clicks: 5
----
-
-# dev &rarr; qa &rarr; prod
-
-<div class="mt-10">
-
-<div class="flex items-center justify-center" style="gap:0.75rem">
-  <div class="rounded-lg border text-sm py-2 px-4 font-medium text-center" style="border-color:#0000001a;background:#f2f0ed;color:#00000099">feat/* &nbsp;fix/*</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center" style="width:8.5rem;border-color:#0000001a;background:#ffffff;color:#000000">develop</div>
-  <div class="transition-all duration-700" style="color:#00000066" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center transition-all duration-700" style="width:8.5rem" :style="$clicks >= 1 ? 'border-color:#0000001a;background:#ffffff;color:#000000' : 'border-color:#0000001a;background:#f2f0ed;color:#00000044'">qa</div>
-  <div class="transition-all duration-700" style="color:#00000066" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'">&rarr;</div>
-  <div class="rounded-lg border text-base py-2 font-semibold text-center transition-all duration-700" style="width:8.5rem" :style="$clicks >= 2 ? 'border-color:#1f6b45;background:#1f6b45;color:#ffffff' : 'border-color:#0000001a;background:#f2f0ed;color:#00000044'">main</div>
-</div>
-
-<div class="flex items-center justify-center mt-2" style="gap:0.75rem">
-  <div class="text-sm py-2 px-4" style="width:8rem"></div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono" style="width:8.5rem;color:#00000066">dev.rescufood.com</div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono transition-all duration-700" style="width:8.5rem;color:#00000066" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">qa.rescufood.com</div>
-  <div style="opacity:0">&rarr;</div>
-  <div class="text-center text-xs font-mono transition-all duration-700" style="width:8.5rem;color:#00000066" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">rescufood.com</div>
-</div>
-
-<div class="mt-10 mx-auto" style="max-width:36rem">
-  <div class="flex items-baseline transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base">Every arrow is a <span class="accent font-semibold">pull request</span> with approval</span>
-  </div>
-  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 4 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base">A promotion carries <span class="font-semibold">everything</span> since the last one</span>
-  </div>
-  <div class="flex items-baseline mt-3 transition-all duration-700" :class="$clicks >= 5 ? 'opacity-100' : 'opacity-0'">
-    <span class="mr-3" style="color:#1f6b45">&bull;</span>
-    <span class="text-base font-mono text-sm">git diff qa..develop</span><span class="text-base">&nbsp;is the release note</span>
-  </div>
+<div class="flex justify-center">
+<svg viewBox="0 0 880 258" style="width:100%;max-width:52rem" fill="none">
+  <g>
+    <text x="115" y="44" text-anchor="end" style="font-size:14px;font-weight:700" fill="#1f6b45">main</text>
+    <path d="M 660 105 C 676 105 692 40 710 40" stroke="#1f6b45" stroke-width="2"/>
+    <line x1="710" y1="40" x2="845" y2="40" stroke="#1f6b45" stroke-width="3"/>
+    <circle cx="710" cy="40" r="5.5" fill="#1f6b45"/>
+    <rect x="682" y="4" width="56" height="20" rx="10" fill="rgba(31,107,69,0.08)" stroke="#1f6b45"/>
+    <text x="710" y="18" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#1f6b45" class="font-mono">v1.4.2</text>
+    <text x="845" y="26" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">rescufood.com</text>
+  </g>
+  <g>
+    <text x="115" y="109" text-anchor="end" style="font-size:14px;font-weight:600" fill="#1f6b45">qa</text>
+    <path d="M 520 170 C 538 170 542 105 560 105" stroke="#1f6b45" stroke-width="2"/>
+    <path d="M 620 170 C 638 170 642 105 660 105" stroke="#1f6b45" stroke-width="2"/>
+    <line x1="560" y1="105" x2="845" y2="105" stroke="#1f6b45" stroke-width="2"/>
+    <circle cx="560" cy="105" r="5" fill="#ffffff" stroke="#1f6b45" stroke-width="2"/>
+    <circle cx="660" cy="105" r="5" fill="#ffffff" stroke="#1f6b45" stroke-width="2"/>
+    <text x="845" y="91" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">qa.rescufood.com</text>
+  </g>
+  <g>
+    <text x="115" y="174" text-anchor="end" style="font-size:14px;font-weight:600" fill="#111111">develop</text>
+    <line x1="125" y1="170" x2="845" y2="170" stroke="#111111" stroke-width="2"/>
+    <circle cx="150" cy="170" r="5" fill="#111111"/>
+    <circle cx="270" cy="170" r="5" fill="#111111"/>
+    <circle cx="330" cy="170" r="5" fill="#111111"/>
+    <circle cx="450" cy="170" r="5" fill="#111111"/>
+    <circle cx="520" cy="170" r="5" fill="#111111"/>
+    <circle cx="620" cy="170" r="5" fill="#111111"/>
+    <text x="845" y="156" text-anchor="end" style="font-size:11px" fill="#5a5a5a" class="font-mono">dev.rescufood.com</text>
+  </g>
+  <g>
+    <path d="M 150 170 C 162 170 162 225 178 225 L 245 225 C 258 225 258 170 270 170" stroke="#8a8a8a" stroke-width="1.5"/>
+    <circle cx="200" cy="225" r="4" fill="#8a8a8a"/>
+    <circle cx="232" cy="225" r="4" fill="#8a8a8a"/>
+    <text x="210" y="248" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/*</text>
+    <path d="M 330 170 C 342 170 342 225 358 225 L 425 225 C 438 225 438 170 450 170" stroke="#8a8a8a" stroke-width="1.5"/>
+    <circle cx="380" cy="225" r="4" fill="#8a8a8a"/>
+    <circle cx="412" cy="225" r="4" fill="#8a8a8a"/>
+    <text x="392" y="248" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">fix/*</text>
+  </g>
+</svg>
 </div>
 
 </div>
 
 <!--
-THE PIPELINE
+BRANCHING STRATEGY
 
-This is the branching strategy the brief asked us to make explicit. Work
-starts on a feature or fix branch and merges into develop - the one place
-day-to-day work lands. develop deploys to dev.rescufood.com.
+We adapt Gitflow with environment branches, and the key idea is that the
+branch decides the environment: develop feeds dev, qa feeds QA, main powers
+production. Day-to-day work is on short-lived feat/* and fix/* branches off
+develop - those are the ones branching off and merging back on the diagram.
 
-Click. Promoting to qa is a merge from develop; it deploys qa.rescufood.com.
-Nothing is rebuilt by hand, nothing cherry-picked.
+Nothing moves between environments except through a pull request. A change
+merges into develop for dev, then a PR promotes develop to qa, and a PR
+promotes qa to main for production. Same change, promoted upward environment
+by environment, each step reviewed rather than a direct push to prod.
 
-Click. Promoting to prod is a merge from qa into main - same shape - and
-main deploys rescufood.com. Three branches, three environments, one route
-into each.
-
-Click. Every arrow is a pull request that requires approval, so every
-promotion between environments is reviewed.
-
-Click. A promotion carries whatever accumulated since the last one - no
-release branch assembled under pressure.
-
-Click. Which makes that git diff the entire release note. If you want to
-know what's about to ship to qa, you read that diff. Nothing else is
-authoritative.
+We tag releases on main with semantic versions - the v1.4.2 there - so any
+deployed state maps back to a specific tagged release.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 3
+class: flex flex-col
 ---
 
-# Semantic versioning on prod
+# Handling Production Hotfixes
 
-<div class="mt-10 px-8">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center">
 
-<div class="flex items-center justify-center" style="gap:1rem">
-  <div class="rounded-lg border px-6 py-4 text-center" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)">
-    <div class="font-mono text-2xl font-bold" style="color:#1f6b45">v<span>1</span>.<span>4</span>.<span>2</span></div>
-  </div>
-  <div class="flex flex-col text-sm" style="gap:0.5rem">
-    <div class="transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">MAJOR</span> &mdash; a breaking API change</div>
-    <div class="transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">MINOR</span> &mdash; a backward-compatible feature</div>
-    <div class="transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-30'"><span class="font-mono font-semibold">PATCH</span> &mdash; a fix, no contract change</div>
-  </div>
-</div>
-
-<div class="mt-10 mx-auto text-center text-sm" style="max-width:34rem;color:#00000099">
-Each merge to <span class="font-mono">main</span> is tagged <span class="font-mono">vMAJOR.MINOR.PATCH</span>. The tag names the release, the image, and what to roll back to.
+<div class="flex justify-center">
+<svg viewBox="0 0 880 235" style="width:100%;max-width:52rem" fill="none">
+  <g>
+    <text x="115" y="44" text-anchor="end" style="font-size:14px;font-weight:700" fill="#1f6b45">main</text>
+    <line x1="125" y1="40" x2="845" y2="40" stroke="#1f6b45" stroke-width="3"/>
+    <circle cx="210" cy="40" r="5.5" fill="#1f6b45"/>
+    <rect x="182" y="4" width="56" height="20" rx="10" fill="rgba(31,107,69,0.08)" stroke="#1f6b45"/>
+    <text x="210" y="18" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#1f6b45" class="font-mono">v1.4.2</text>
+    <text x="125" y="72" text-anchor="start" style="font-size:11px" fill="#5a5a5a">bug reported on prod</text>
+    <text x="115" y="154" text-anchor="end" style="font-size:14px;font-weight:600" fill="#1f6b45">qa</text>
+    <line x1="125" y1="150" x2="845" y2="150" stroke="#1f6b45" stroke-width="2"/>
+    <text x="115" y="209" text-anchor="end" style="font-size:14px;font-weight:600" fill="#111111">develop</text>
+    <line x1="125" y1="205" x2="845" y2="205" stroke="#111111" stroke-width="2"/>
+  </g>
+  <g>
+    <path d="M 210 40 C 222 40 222 95 238 95 L 310 95 C 323 95 323 40 335 40" stroke="#1f6b45" stroke-width="2.5"/>
+    <circle cx="262" cy="95" r="5.5" fill="#1f6b45"/>
+    <circle cx="292" cy="95" r="5.5" fill="#1f6b45"/>
+    <text x="277" y="124" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#1f6b45" class="font-mono">hotfix/*</text>
+    <circle cx="335" cy="40" r="6.5" fill="#1f6b45"/>
+    <rect x="305" y="2" width="60" height="22" rx="11" fill="#1f6b45"/>
+    <text x="335" y="17" text-anchor="middle" style="font-size:11px;font-weight:700" fill="#ffffff" class="font-mono">v1.4.3</text>
+  </g>
+  <g>
+    <path d="M 335 40 C 420 40 440 205 525 205" stroke="#1f6b45" stroke-width="2" stroke-dasharray="6 4"/>
+    <circle cx="525" cy="205" r="5.5" fill="#1f6b45"/>
+    <text x="545" y="178" text-anchor="start" style="font-size:12px;font-weight:600" fill="#1f6b45">rebased into develop</text>
+  </g>
+</svg>
 </div>
 
 </div>
 
 <!--
-SEMANTIC VERSIONING
+HOTFIXES
 
-Promotion tells you where code is; the version tells you what it is. Every
-merge to main is tagged with a semantic version.
+A production bug can't wait for the full develop-to-qa-to-main chain, so we
+branch a hotfix straight off main, fix it, and merge back via PR - that's
+the v1.4.3 patch release on the diagram.
 
-Click. MAJOR goes up on a breaking API change - anything that would force a
-client to change.
-
-Click. MINOR for a backward-compatible feature.
-
-Click. PATCH for a fix that changes no contract.
-
-The tag is the anchor for the release, the built image, and the rollback
-target. If prod misbehaves, "roll back to v1.4.1" is unambiguous - no
-guessing which commit was live. Versioning and the branch model answer two
-different questions: which environment, and which release.
+The important second step is the dashed line: once it lands on main, we
+immediately rebase the fix back into develop. Skip that and the branches
+diverge - the fix is in production but not in the branch everyone works
+from, and the next promotion either hits merge conflicts or silently reverts
+the hotfix. Rebasing at once keeps the environments from drifting and keeps
+future merges clean.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 3
+class: flex flex-col
 ---
 
-# What a push does
+# Source &amp; artifacts
 
-<div class="mt-10 px-8">
+<div class="text-base mt-2" style="color:#00000099">How we manage the code and the things we ship</div>
 
-<div class="flex items-start" style="gap:2rem">
-  <div class="rounded-lg border px-5 py-3 font-mono text-sm" style="border-color:#0000001a;background:#ffffff;color:#000000;white-space:nowrap">git push origin qa</div>
-  <div class="flex-1">
-    <div class="transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Builds only what changed</div>
-      <div class="text-sm mt-1" style="color:#00000099">Path filters per service. Touch <span class="font-mono">service/listings</span>, only listings rebuilds.</div>
-    </div>
-    <div class="mt-5 transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Tags the image for the environment</div>
-      <div class="text-sm mt-1" style="color:#00000099"><span class="font-mono">:qa</span>, not <span class="font-mono">:main</span>. Parameter files name environments, never branches.</div>
-    </div>
-    <div class="mt-5 transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'">
-      <div class="text-base font-semibold">Rolls that environment only</div>
-      <div class="text-sm mt-1" style="color:#00000099">The cluster is resolved from the branch. <span class="font-mono">qa</span> can never reach <span class="font-mono">rescufood-prod</span>.</div>
-    </div>
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:1.6rem">
+
+<!-- Traceability: one commit SHA ties source to the shipped artifact (not a pipeline) -->
+<div class="flex justify-center">
+<svg viewBox="0 0 900 118" style="width:100%;max-width:50rem" fill="none">
+  <!-- source side -->
+  <circle cx="150" cy="59" r="46" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(135,36)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+  </g>
+  <text x="150" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Source</text>
+
+  <!-- artifact side -->
+  <circle cx="750" cy="59" r="46" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-width="1.5"/>
+  <g transform="translate(736,37)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+  </g>
+  <text x="750" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Artifact</text>
+
+  <!-- linking thread (no arrowhead -> not a flow; a shared identity) -->
+  <line x1="196" y1="59" x2="382" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
+  <line x1="518" y1="59" x2="704" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
+
+  <!-- the shared commit SHA at the centre -->
+  <rect x="384" y="39" width="132" height="40" rx="20" fill="#1f6b45"/>
+  <text x="450" y="58" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#ffffffcc" class="font-mono">commit</text>
+  <text x="450" y="72" text-anchor="middle" style="font-size:12px;font-weight:700" fill="#ffffff" class="font-mono">fcfce09</text>
+  <text x="450" y="104" text-anchor="middle" style="font-size:11px" fill="#5a5a5a">one SHA ties code to what ships</text>
+</svg>
+</div>
+
+<!-- Two concise cards -->
+<div class="grid grid-cols-2 gap-6 px-4">
+
+<div class="flex flex-col" style="border:1px solid #1f6b4533;border-radius:14px;padding:1.1rem 1.3rem;gap:0.75rem">
+  <div class="flex items-center" style="gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    <span class="dgm text-xs" style="color:#1f6b45">Code &amp; backlog</span>
   </div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Source on <b>GitHub</b>, backlog in <b>Jira</b> &mdash; live since Sprint 1</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every change lands via <b>pull request + review</b></span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Path-filtered workflows &mdash; each change builds only its own service</span></div>
 </div>
 
+<div class="flex flex-col" style="border:1px solid #1f6b4533;border-radius:14px;padding:1.1rem 1.3rem;gap:0.75rem">
+  <div class="flex items-center" style="gap:0.5rem">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    <span class="dgm text-xs" style="color:#1f6b45">Artifacts &amp; verification</span>
+  </div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Docker images in <b>GHCR</b>, tagged by branch + commit SHA</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every running task traces back to an <b>exact commit</b></span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Integration tests hit a <b>real Postgres</b> via Testcontainers</span></div>
 </div>
 
-<!--
-WHAT A PUSH DOES
-
-One push, three automatic consequences.
-
-Click. Each service has a path filter, so a change under service/listings
-rebuilds listings and nothing else - a one-line fix doesn't redeploy the
-whole platform.
-
-Click. The image is tagged for the environment, not the branch. Pushing to
-main produces a prod tag, because the CloudFormation parameter files read
-environment names - nobody has to remember that main means prod.
-
-Click. The target cluster is derived from the branch inside the workflow.
-There's no input to get wrong and no way for a qa push to touch prod; the
-GitHub Environment resolves the same way, so credentials follow too.
--->
-
----
-class: flex flex-col justify-center
-clicks: 3
----
-
-# Security runs on every change
-
-<div class="mt-10 px-10">
-
-<div class="flex items-center justify-center" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Lint</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Unit test</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Build</div>
-  <div style="color:#00000066">&rarr;</div>
-  <div class="rounded-lg border px-4 py-2 text-sm font-medium" style="border-color:#0000001a;background:#ffffff">Integration<br/><span class="text-xs font-normal" style="color:#00000099">testcontainers</span></div>
-</div>
-
-<div class="mt-8 transition-all duration-700" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-20'">
-<div class="dgm text-xs" style="color:#1f6b45">Static analysis, in parallel</div>
-<div class="flex items-center mt-3" style="gap:0.6rem">
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">CodeQL</span> &middot; security-extended</div>
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">Semgrep</span> &middot; default, secrets, node</div>
-  <div class="rounded-lg border px-4 py-2 text-sm" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="font-semibold">Trivy</span> &middot; deps, secrets, IaC</div>
-</div>
-</div>
-
-<div class="mt-6 text-sm transition-all duration-700" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-0'" style="color:#00000099">
-Findings upload to GitHub code scanning as SARIF &mdash; visible on the PR.
-</div>
-<div class="mt-2 text-sm transition-all duration-700" :class="$clicks >= 3 ? 'opacity-100' : 'opacity-0'" style="color:#00000099">
-qa promotions also run the <span class="accent font-semibold">Playwright</span> suite against the deployed site.
 </div>
 
 </div>
 
 <!--
-SECURITY IN THE PIPELINE
+SOURCE & ARTIFACTS
 
-This is the "Sec" in DevSecOps, and it's real, not a slide. Every PR runs
-lint, unit tests, a build, and an integration suite - that last one spins
-up a real Postgres with testcontainers, so we test against the actual
-database, not a mock.
+This is the source and artifact management strategy - how we handle the code
+and the things we ship, before we get to the pipeline itself.
 
-Click. In parallel, three static-analysis tools. CodeQL on the
-security-extended query set. Semgrep with the default, secrets and Node
-rule sets. Trivy scanning dependencies, secrets and infrastructure-as-code
-misconfiguration. Three tools because they catch different things.
+Code lives on GitHub, the backlog in Jira, both stood up in Sprint 1 with
+the first CI/CD wiring. Every change lands through a pull request and
+review - nothing goes straight onto a long-lived branch. And the workflows
+are path-filtered, so a change to one service runs only that service's
+pipeline, which keeps builds fast and independent.
 
-Click. Every finding uploads to GitHub code scanning as SARIF, so it shows
-up right on the pull request - the reviewer sees security findings next to
-the diff. We run report-only for now and will gate once the backlog is
-triaged; that's a deliberate call, not an oversight.
-
-Click. And promoting to qa additionally runs the Playwright end-to-end
-suite against the deployed environment - a green qa is evidence the real
-site works, not just that a local build passed.
+On the artifact side: our build artifacts are Docker images, published to
+the GitHub Container Registry and tagged by branch and commit SHA, so every
+running task traces back to an exact commit - that's what makes a rollback
+just redeploying a known tag. And our integration tests aren't mocked; they
+spin up a real PostgreSQL through Testcontainers, so the data layer is
+exercised for real on every PR.
 -->
 
 ---
-class: flex flex-col justify-center
-clicks: 2
+class: flex flex-col
 ---
 
-# The gates get stricter
+# Continuous Integration
 
-<div class="mt-12 px-12">
+<div class="text-base mt-2" style="color:#00000099">Every pull request into develop</div>
 
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
+<svg viewBox="10 30 970 400" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="ci-m-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
+  </defs>
+
+  <rect x="20" y="170" width="230" height="118" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(50,200)" stroke="#1f6b45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+  </g>
+  <text x="151" y="217" text-anchor="middle" style="font-size:16px;font-weight:600" fill="#111111">Pull request</text>
+  <text x="151" y="243" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
+  <text x="151" y="268" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">into develop</text>
+
+  <path d="M 250 229 L 280 229 L 280 132 L 312 132" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+  <path d="M 250 229 L 280 229 L 280 326 L 312 326" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+
+  <rect x="320" y="62" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,72)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
+  </g>
+  <text x="372" y="87" style="font-size:11.5px;font-weight:600" fill="#111111">Lint + type-check</text>
+
+  <rect x="320" y="112" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,122)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
+    <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
+  </g>
+  <text x="372" y="137" style="font-size:11.5px;font-weight:600" fill="#111111">Unit tests</text>
+
+  <rect x="320" y="162" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,172)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
+    <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
+  </g>
+  <text x="372" y="187" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
+
+  <rect x="320" y="256" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="372" y="281" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+
+  <rect x="320" y="306" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,316)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="372" y="331" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+
+  <rect x="320" y="356" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(344,366)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="372" y="381" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+
+  <circle cx="554" cy="82" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="132" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="182" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="276" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="326" r="4.5" fill="#8a8a8a"/>
+  <circle cx="554" cy="376" r="4.5" fill="#8a8a8a"/>
+  <path d="M 558 82 C 600 82 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 132 C 600 132 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 182 C 600 182 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 276 C 600 276 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 326 C 600 326 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 558 376 C 600 376 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="632" cy="229" r="4.5" fill="#8a8a8a"/>
+  <line x1="636" y1="229" x2="676" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
+
+  <rect x="684" y="187" width="282" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(706,214)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M6 21V9a9 9 0 0 0 9 9"/>
+  </g>
+  <text x="846" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
+  <text x="846" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
+
+  <path d="M 632 229 L 632 352 L 676 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
+  <text x="622" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
+  <rect x="684" y="320" width="282" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+  <g transform="translate(704,340)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+  </g>
+  <text x="852" y="357" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Merge blocked</text>
+</svg>
+
+
+
+</div>
+
+<!--
+CI
+
+Our CI runs on every pull request into develop. We lint, type-check,
+unit test and run integration tests against a real PostgreSQL via
+Testcontainers, then run three SAST scanners, each covering a different
+class of problem:
+
+On a pull request, we run the fast checks - lint, type-check, unit and
+integration tests - then three security scanners, each for a different class
+of problem. Two are SAST: CodeQL for deep data-flow analysis, and Semgrep for
+fast pattern-matching on insecure idioms and hardcoded secrets. The third is
+Trivy, which scans outward - known CVEs in dependencies, leaked secrets, and
+Dockerfile and infrastructure misconfigurations.
+
+Nothing merges without review and green checks, and a single red check
+blocks the merge. The workflows are path-filtered, so only the
+component that changed runs its pipeline.
+-->
+
+---
+class: flex flex-col
+---
+
+# Continuous Delivery
+
+<div class="text-base mt-2" style="color:#00000099">Every push to develop, qa or main; merging is the deployment</div>
+
+<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
+<svg viewBox="10 112 1170 312" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <g id="cd-check">
+      <circle r="10" fill="#1f6b45"/>
+      <path d="M -4 0.5 L -1.2 3.6 L 4.2 -3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <marker id="cd-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    <marker id="cd-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
+  </defs>
+
+  <rect x="20" y="140" width="160" height="92" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
+  <g transform="translate(40,174)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
+    <path d="M6 21V9a9 9 0 0 0 9 9"/>
+  </g>
+  <text x="112" y="192" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Push to branch</text>
+
+  <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
+
+  <rect x="220" y="126" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,135)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="266" y="149" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
+
+  <rect x="220" y="168" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,177)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="266" y="191" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
+
+  <rect x="220" y="210" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(238,219)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </g>
+  <text x="266" y="233" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
+
+  <circle cx="416" cy="144" r="4.5" fill="#8a8a8a"/>
+  <circle cx="416" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="416" cy="228" r="4.5" fill="#8a8a8a"/>
+  <path d="M 420 144 C 432 144 432 186 444 186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <path d="M 420 228 C 432 228 432 186 444 186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <line x1="420" y1="186" x2="444" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
+  <circle cx="448" cy="186" r="4.5" fill="#8a8a8a"/>
+  <line x1="452" y1="186" x2="461" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
+
+  <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(491,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m7.5 4.27 9 5.15"/>
+    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+    <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+  </g>
+  <text x="521" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">build-and-push</text>
+  <text x="521" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">image &rarr; GHCR &middot; branch + sha</text>
+
+  <circle cx="686" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="704" cy="186" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="710" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(736,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+    <path d="m8 17 4-4 4 4"/>
+  </g>
+  <text x="766" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">Deploy to ECS</text>
+  <text x="766" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">rolls the matching env</text>
+
+  <circle cx="931" cy="186" r="4.5" fill="#8a8a8a"/>
+  <circle cx="949" cy="186" r="4.5" fill="#8a8a8a"/>
+
+  <rect x="955" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
+  <g transform="translate(981,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+  </g>
+  <text x="1011" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">DAST / ZAP</text>
+  <text x="1011" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">scans the live site</text>
+
+  <path d="M 817 232 L 817 322" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr-r)"/>
+  <text x="828" y="284" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">rollout fails</text>
+  <rect x="710" y="330" width="215" height="76" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+  <g transform="translate(728,356)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+    <path d="M3 3v5h5"/>
+  </g>
+  <text x="846" y="364" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Rollback</text>
+  <text x="846" y="386" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">circuit breaker, automatic</text>
+
+  <path d="M 1062 232 L 1062 322" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr)"/>
+  <rect x="955" y="330" width="215" height="76" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
+  <g transform="translate(975,350)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20"/><path d="M6 6.5h.01"/>
+  </g>
+  <text x="1077" y="364" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#5a5a5a">End-to-End Tests</text>
+  <text x="1077" y="386" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">Playwright &middot; dev + qa</text>
+</svg>
+</div>
+
+<!--
+CD
+
+On merge, the push workflow re-runs SAST, builds the Docker image and
+pushes it to GHCR tagged with the branch and commit SHA, then rolls the
+ECS service for that branch's environment. The pipeline waits for the
+rollout and the circuit breaker rolls back automatically if the new
+tasks fail health checks. After the deploy, ZAP scans the deployed site
+and the Playwright e2e suite smoke-tests dev and qa. Nobody deploys
+anything by hand; pushing to a branch is the deployment.
+-->
+
+---
+class: flex flex-col
+---
+
+# Technical findings &amp; issues
+
+<div class="mt-10 px-6" style="width:100%">
+<div class="grid grid-cols-2 gap-10" style="width:100%">
 <div class="flex flex-col" style="gap:0.75rem">
-  <div class="flex items-center rounded-lg border px-6 py-4" style="border-color:#0000001a;background:#ffffff">
-    <div class="font-mono text-base font-semibold" style="width:8rem">develop</div>
-    <div class="text-sm" style="color:#00000099">Pull request &middot; one approval &middot; team may bypass</div>
+  <div class="dgm text-xs" style="color:#1f6b45">Configuration &amp; secrets</div>
+  <svg viewBox="0 0 540 120" style="width:100%;height:auto" fill="none">
+    <defs>
+      <marker id="tf1-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+      <marker id="tf1-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
+    </defs>
+    <rect x="4" y="28" width="160" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(22,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </g>
+    <text x="56" y="56" style="font-size:13px;font-weight:600" fill="#111111">Secret</text>
+    <text x="56" y="75" style="font-size:9px" fill="#b42318" class="font-mono">malformed JSON</text>
+    <circle cx="172" cy="60" r="4.5" fill="#8a8a8a"/>
+    <circle cx="186" cy="60" r="4.5" fill="#8a8a8a"/>
+    <rect x="196" y="28" width="160" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(214,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+      <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    </g>
+    <text x="248" y="56" style="font-size:13px;font-weight:600" fill="#111111">ECS task</text>
+    <text x="248" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">injection failed</text>
+    <path d="M 356 60 L 378 60" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#tf1-arr-r)"/>
+    <rect x="384" y="28" width="152" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+    <g transform="translate(402,48)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
+    </g>
+    <text x="436" y="56" style="font-size:13px;font-weight:600" fill="#b42318">Crash-loop</text>
+    <text x="436" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">never starts</text>
+  </svg>
+  <div class="text-sm font-semibold">Tasks crash-looped on startup</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm" style="color:#00000099">Secret JSON didn't match the schema ECS expected</div>
+    <div class="text-sm" style="color:#00000099">Credential injection failed &mdash; tasks crash-looped</div>
   </div>
-  <div class="flex items-center rounded-lg border px-6 py-4 transition-all duration-700" style="border-color:#0000001a;background:#ffffff" :class="$clicks >= 1 ? 'opacity-100' : 'opacity-30'">
-    <div class="font-mono text-base font-semibold" style="width:8rem">qa</div>
-    <div class="text-sm" style="color:#00000099">Same, plus the end-to-end suite runs against the deployed site</div>
-  </div>
-  <div class="flex items-center rounded-lg border px-6 py-4 transition-all duration-700" :style="$clicks >= 2 ? 'border-color:#1f6b45;background:rgba(31,107,69,0.06)' : 'border-color:#0000001a;background:#ffffff'" :class="$clicks >= 2 ? 'opacity-100' : 'opacity-30'">
-    <div class="font-mono text-base font-semibold" style="width:8rem" :style="$clicks >= 2 ? 'color:#1f6b45' : ''">main</div>
-    <div class="text-sm" :style="$clicks >= 2 ? 'color:#1f6b45' : 'color:#00000099'">No force pushes &middot; no deletion &middot; approval required, no exceptions</div>
+  <div class="dgm text-xs mt-2" style="color:#1f6b45">Lesson</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm">Validate secret schemas; least-privilege credentials</div>
+    <div class="text-sm">Shift left &mdash; catch config errors early in CI</div>
   </div>
 </div>
-
+<div class="flex flex-col" style="gap:0.75rem">
+  <div class="dgm text-xs" style="color:#1f6b45">Runtime performance</div>
+  <svg viewBox="0 0 540 120" style="width:100%;height:auto" fill="none">
+    <defs>
+      <marker id="tf2-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+    </defs>
+    <rect x="4" y="28" width="176" height="64" rx="12" fill="#ffffff" stroke="#0000002a"/>
+    <g transform="translate(22,48)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/>
+      <rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>
+    </g>
+    <text x="56" y="56" style="font-size:13px;font-weight:600" fill="#111111">Dashboard</text>
+    <text x="56" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">refetches details</text>
+    <line x1="188" y1="44" x2="246" y2="44" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="188" y1="60" x2="246" y2="60" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <line x1="188" y1="76" x2="246" y2="76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tf2-arr)"/>
+    <rect x="256" y="22" width="10" height="76" rx="2" fill="rgba(180,35,24,0.12)" stroke="#b42318"/>
+    <text x="261" y="14" text-anchor="middle" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">429</text>
+    <rect x="284" y="28" width="248" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
+    <g transform="translate(302,48)" stroke="#b42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+      <path d="M6 6h.01"/><path d="M6 18h.01"/>
+    </g>
+    <text x="336" y="56" style="font-size:13px;font-weight:600" fill="#b42318">Rate limited</text>
+    <text x="336" y="75" style="font-size:9px" fill="#5a5a5a" class="font-mono">listings unreachable</text>
+  </svg>
+  <div class="text-sm font-semibold">Listings became unreachable under load</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm" style="color:#00000099">Dashboard refetched listing details redundantly</div>
+    <div class="text-sm" style="color:#00000099">Rate limit tripped in one page load, blocking listings</div>
+  </div>
+  <div class="dgm text-xs mt-2" style="color:#1f6b45">Lesson</div>
+  <div class="flex flex-col" style="gap:0.4rem">
+    <div class="text-sm">Bad access patterns hurt availability, not just capacity</div>
+    <div class="text-sm">Fix the query pattern before scaling infra</div>
+  </div>
+</div>
+</div>
 </div>
 
 <!--
-THE GATES
+TECHNICAL FINDINGS & ISSUES
 
-Same rule set on all three branches, tightened as you move right. Deletion
-and force pushes are blocked everywhere.
+Two findings, two different lessons - one infrastructure, one application.
 
-Click. qa adds the real signal - the Playwright suite runs against the
-deployed environment after every promotion, not against a local build. A
-green qa is evidence, not a hope.
+Finding one: secrets in Secrets Manager didn't match the JSON schema the ECS
+task expected, so credential injection failed and tasks crash-looped. Code
+was fine, the secret was malformed. Lesson: validate secret schemas,
+least-privilege credentials, and shift left so a bad secret fails in CI, not
+at runtime.
 
-Click. main is the one branch with no bypass. Prod can't be force-pushed
-and can't be merged without a review, including of the author's own change.
-If that feels inconvenient, that's the point.
-
-Worth saying out loud: we learned this the hard way. A change that passed
-typecheck, lint and build still took dev down. The environment in front of
-prod is what caught the second attempt - which is exactly why the approval
-flow tightens as the blast radius grows.
+Finding two: the Rescue Partner dashboard over-fetched - refetching listing
+details, even for past claims - and tripped the API rate limit in one page
+load, blocking listings. Infra had capacity; this was inefficient client
+behaviour. Lesson: fix the access pattern before scaling infra.
 -->
 
 ---
@@ -1006,52 +1839,12 @@ here, so there's no fumbling.
 -->
 
 ---
-
-# What we'll show
-
-<div class="mt-8 px-6">
-
-<div class="flex flex-col" style="gap:0.75rem">
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">1</span><span class="text-sm">Donor posts a listing &mdash; it appears in the browse feed in real time</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">2</span><span class="text-sm">Rescue partner claims it &mdash; and a second claim is refused</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">3</span><span class="text-sm">Pickup verified by OTP / QR &mdash; status tracked to handover</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#0000001a;background:#ffffff"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">4</span><span class="text-sm">Notification arrives &mdash; email + in-app feed</span></div>
-  <div class="flex items-baseline rounded-lg border px-5 py-3" style="border-color:#1f6b45;background:rgba(31,107,69,0.06)"><span class="dgm text-xs mr-4" style="color:#1f6b45;width:1.2rem">5</span><span class="text-sm">The pipeline &mdash; a green PR, SARIF findings, a promotion</span></div>
-</div>
-
-</div>
-
-<!--
-DEMO SCRIPT
-
-Narrate the running system, don't read this list. Drive the core loop on
-qa: donor posts, the listing shows up live in the partner's feed. Partner
-claims it - then try to claim from the second browser and show the refusal.
-That refusal is the idempotency and unique-index work from section 4 doing
-its job in front of them; call that back explicitly.
-
-Then verify pickup with the OTP or QR code and show the status advance, and
-show the notification landing both as email and in the in-app feed - that's
-the pub/sub path.
-
-Finish on the pipeline: open a real pull request, show a green check, show
-the SARIF security findings attached to the PR, and show a promotion. Tie
-it back - this is the same pipeline every one of our changes went through.
-Keep a screen recording ready as a fallback if the network misbehaves.
--->
-
----
 layout: section
 class: flex flex-col justify-center text-center
 ---
 
-<div class="text-4xl font-extrabold leading-tight px-16">
-Correct where it counts.<br/>
-<span class="accent">Automated</span> everywhere else.
-</div>
-
-<div class="text-base mt-10" style="color:#00000099">
-Thank you &mdash; questions welcome.
+<div class="text-6xl font-bold leading-none" style="letter-spacing:-0.04em">
+Thank <span class="accent">you</span>
 </div>
 
 <div class="text-sm mt-12 dgm-wide" style="color:#00000066">
@@ -1061,10 +1854,6 @@ RescuFood &middot; NUS-ISS Team 1
 <!--
 CLOSE
 
-Land the two ideas the deck was built around. Where correctness mattered -
-the claim - we pushed the invariant down into the database and designed the
-retry behaviour deliberately. Everywhere else, we automated: one route into
-each environment, security on every change, versioned releases. Then open
-the floor. If Q&A time was folded into sections, invite any remaining
-questions here.
+Thank the audience and open the floor. If Q&A time was folded into
+sections, invite any remaining questions here.
 -->

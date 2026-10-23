@@ -98,3 +98,14 @@ html.dark .slidev-layout h3 {
   letter-spacing: 0.16em;
   font-weight: 500;
 }
+
+/* Presenter view — shrink the speaker-notes text by ~1px so longer notes fit
+   without scrolling. Targets Slidev's notes pane (.slidev-note), which renders
+   the markdown inside each slide's <!-- --> comment. Presenter UI only; does
+   not affect the slides the audience sees. */
+.slidev-note,
+.slidev-note p,
+.slidev-note li {
+  font-size: 14px !important;
+  line-height: 1.5;
+}

@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { getMe, type Me } from "@/lib/profile";
-import { listRequests, type ListingRequest } from "@/lib/listings";
+import {
+  getOrgSummary,
+  listRequests,
+  type ListingRequest,
+} from "@/lib/listings";
+import { PAGE_SIZE } from "@/lib/paging";
 import { requestStatuses } from "@rescufood/listings-sdk";
 import { requireSession } from "@/lib/session";
 import { AnimateIn } from "@/components/animate-in";
@@ -13,8 +18,12 @@ import {
   requestsLabel,
 } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
+<<<<<<< HEAD
 import { RequestCards } from "@/components/requests/request-cards";
 import { RequestList } from "@/components/requests/request-list";
+=======
+import { RequestsView } from "@/components/requests/requests-view";
+>>>>>>> aa027a6a0b45eb8a0c8ebc94e1dde8f19adb34eb
 import { RefreshControl } from "@/components/reports/refresh-control";
 import { requestStatusLabels } from "@/lib/listing-labels";
 import { buttonVariants } from "@rescufood/ui/components/button";
@@ -125,21 +134,27 @@ export default async function RequestsPage({
     return qs ? `/requests?${qs}` : "/requests";
   };
 
-  // Every status, so the tab counts cover the whole set.
-  let all: ListingRequest[] = [];
+  // The first page; the rest arrives as the reader scrolls.
+  let requests: ListingRequest[] = [];
+  let total = 0;
+  let tallies: Record<string, number> = {};
   let unavailable = false;
   try {
-    const page = await listRequests(session.idToken!, {
-      sortBy: "requestedAt",
-      sortOrder: "desc",
-      limit: 100,
-    });
-    all = page.items;
+    const [page, summary] = await Promise.all([
+      listRequests(session.idToken!, {
+        status: active === "all" ? undefined : active,
+        sortBy: "requestedAt",
+        sortOrder: "desc",
+        limit: PAGE_SIZE,
+      }),
+      getOrgSummary(session.idToken!),
+    ]);
+    requests = page.items;
+    total = page.total;
+    tallies = summary.claims;
   } catch {
     unavailable = true;
   }
-  const requests =
-    active === "all" ? all : all.filter((r) => r.status === active);
 
   return (
     <PageShell>
@@ -171,9 +186,7 @@ export default async function RequestsPage({
             <div className={segmentedTrack}>
               {tabs.map((tab) => {
                 const count =
-                  tab === "all"
-                    ? all.length
-                    : all.filter((r) => r.status === tab).length;
+                  tab === "all" ? (tallies.total ?? 0) : (tallies[tab] ?? 0);
                 return (
                   <Link
                     key={tab}
@@ -224,11 +237,14 @@ export default async function RequestsPage({
           </Card>
         ) : (
           <div data-animate="field">
-            {layout === "card" ? (
-              <RequestCards requests={requests} />
-            ) : (
-              <RequestList requests={requests} />
-            )}
+            <RequestsView
+              // Remount on tab change so the fetched pages start over.
+              key={active}
+              initial={requests}
+              total={total}
+              status={active === "all" ? null : active}
+              layout={layout}
+            />
           </div>
         )}
       </AnimateIn>
