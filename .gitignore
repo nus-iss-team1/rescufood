@@ -9,3 +9,7 @@ infrastructure/infra-plan.drawio
 
 # Secrets
 infrastructure/cloudformation/secrets
+
+# Python cache
+__pycache__/
+*.pyc
