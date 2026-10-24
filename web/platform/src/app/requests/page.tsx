@@ -18,12 +18,7 @@ import {
   requestsLabel,
 } from "@/components/page-header";
 import { PageShell } from "@/components/page-shell";
-<<<<<<< HEAD
-import { RequestCards } from "@/components/requests/request-cards";
-import { RequestList } from "@/components/requests/request-list";
-=======
 import { RequestsView } from "@/components/requests/requests-view";
->>>>>>> aa027a6a0b45eb8a0c8ebc94e1dde8f19adb34eb
 import { RefreshControl } from "@/components/reports/refresh-control";
 import { requestStatusLabels } from "@/lib/listing-labels";
 import { buttonVariants } from "@rescufood/ui/components/button";
