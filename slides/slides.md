@@ -355,6 +355,7 @@ class: flex flex-col
 
 <!--
 Team-Driven Architecture (Conway's Law): Service boundaries were intentionally mapped to individual developer schedules and ownership, preventing bottlenecks caused by fragmented, asynchronous working hours.
+Conway's Law states that a company's software will eventually end up looking just like the company's communication structure.
 
 Polyglot Flexibility: Allowed each developer to build within their core competency (Go and TypeScript) without forcing an artificial, uniform language stack.
 
@@ -624,33 +625,28 @@ class: flex flex-col
   <image href="/aws/cloudfront.png" x="48" y="102" width="32" height="32"/>
   <text x="94" y="123" style="font-size:11px;font-weight:600" fill="#111111">CloudFront</text>
 
-  <rect x="35" y="153" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/s3.png" x="48" y="160" width="32" height="32"/>
-  <text x="94" y="181" style="font-size:11px;font-weight:600" fill="#111111">S3 (private)</text>
+  <rect x="35" y="165" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/s3.png" x="48" y="172" width="32" height="32"/>
+  <text x="94" y="193" style="font-size:11px;font-weight:600" fill="#111111">S3 (private)</text>
 
-  <rect x="35" y="211" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/cognito.png" x="48" y="218" width="32" height="32"/>
-  <text x="94" y="239" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
+  <rect x="35" y="235" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cognito.png" x="48" y="242" width="32" height="32"/>
+  <text x="94" y="263" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
 
-  <rect x="35" y="269" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/sqs.png" x="48" y="276" width="32" height="32"/>
-  <text x="94" y="297" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
+  <rect x="35" y="305" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/sqs.png" x="48" y="312" width="32" height="32"/>
+  <text x="94" y="333" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
 
-  <rect x="35" y="327" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/secrets-manager.png" x="48" y="334" width="32" height="32"/>
-  <text x="94" y="355" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
+  <rect x="35" y="375" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/cloudwatch.png" x="48" y="382" width="32" height="32"/>
+  <text x="94" y="403" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
 
-  <rect x="35" y="385" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/cloudwatch.png" x="48" y="392" width="32" height="32"/>
-  <text x="94" y="413" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
+  <rect x="35" y="445" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
+  <image href="/aws/github.svg" x="50" y="454" width="28" height="28"/>
+  <text x="94" y="473" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
 
-  <rect x="35" y="443" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
-  <image href="/aws/github.svg" x="50" y="452" width="28" height="28"/>
-  <text x="94" y="471" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
-
-  <path d="M 250 234 L 263 234 L 263 320 L 300 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
-  <path d="M 250 292 L 273 292 L 273 335 L 300 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
-  <path d="M 250 350 L 283 350 L 283 350 L 300 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 258 L 263 258 L 263 320 L 300 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
+  <path d="M 250 328 L 273 328 L 273 335 L 300 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
 
   <rect x="290" y="65" width="895" height="455" rx="8" stroke="#00000033"/>
   <text x="305" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
@@ -753,9 +749,9 @@ encrypted and it backs itself up.
 
 Everything on the left is stuff we did not write. CloudFront and a
 private S3 bucket for listing images, Cognito for sign in, SQS for
-notification events, Secrets Manager for passwords, CloudWatch for logs,
-and GitHub for our container images. The dashed lines are the three our
-services actually talk to while running.
+notification events, CloudWatch for logs, and GitHub for our container
+images. The dashed lines are the two our services actually talk to
+while running.
 
 Two things we would rather say ourselves than be asked. We run in two
 availability zones, but there is only one NAT gateway, so our outbound
