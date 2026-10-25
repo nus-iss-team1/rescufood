@@ -447,8 +447,7 @@ first in the demo.
 
 The green one is the use case the rest of this section is about. Claiming
 a listing is the only place where two users can collide, so it is the one
-we had to design carefully. The state diagram and the sequence diagram
-coming up both zoom into it.
+we had to design carefully. The state diagram coming up zooms into it.
 
 If asked what is missing from the picture: the system itself is an actor
 too. It expires listings whose pickup window has passed, sends pickup
@@ -839,114 +838,8 @@ it or a phone resends the same request. Two safeguards cover it: an
 idempotency key, so an identical retry replays the original outcome
 instead of acting again, and a partial unique index in the database, so
 at most one active claim can exist per listing no matter what the
-application layer does. The sequence diagram next walks this edge step
-by step, and section 3 shows the patterns the implementation leans on.
--->
-
----
-class: flex flex-col
----
-
-# Sequence Diagram
-
-<div class="text-base mt-2" style="color:#00000099">The claim edge from the lifecycle, step by step</div>
-
-<div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
-<svg viewBox="0 0 1200 530" style="max-height:100%;max-width:100%" fill="none">
-  <defs>
-    <marker id="sq-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
-    <marker id="sq-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
-    <marker id="sq-arr-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#111111"/></marker>
-  </defs>
-
-  <rect x="50" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(66,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-  </g>
-  <text x="168" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Rescue partner</text>
-
-  <rect x="350" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(366,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-  </g>
-  <text x="468" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Web app</text>
-
-  <rect x="650" y="16" width="200" height="50" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
-  <g transform="translate(666,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
-  </g>
-  <text x="768" y="40" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings</text>
-  <text x="768" y="57" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">backend service</text>
-
-  <rect x="950" y="16" width="200" height="50" rx="10" fill="#ffffff" stroke="#0000002a"/>
-  <g transform="translate(966,30)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
-  </g>
-  <text x="1068" y="46" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">PostgreSQL</text>
-
-  <line x1="150" y1="66" x2="150" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="450" y1="66" x2="450" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="750" y1="66" x2="750" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-  <line x1="1050" y1="66" x2="1050" y2="515" stroke="#0000002a" stroke-dasharray="4 4"/>
-
-  <rect x="746" y="145" width="8" height="115" rx="2" fill="rgba(31,107,69,0.2)"/>
-
-  <text x="28" y="119" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">CLAIM</text>
-  <line x1="150" y1="115" x2="444" y2="115" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
-  <text x="300" y="103" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the listing</text>
-  <line x1="450" y1="150" x2="744" y2="150" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="600" y="138" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">POST /api/requests</text>
-  <line x1="754" y1="185" x2="1044" y2="185" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="900" y="173" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim the key slot</text>
-  <line x1="754" y1="220" x2="1044" y2="220" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="900" y="208" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">tx: reserve &middot; insert claim &middot; audit</text>
-  <line x1="746" y1="255" x2="156" y2="255" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
-  <text x="450" y="243" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; Reserved</text>
-
-  <g v-click>
-  <line x1="30" y1="290" x2="1170" y2="290" stroke="#0000000d" stroke-width="1"/>
-  <rect x="746" y="345" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
-  <text x="28" y="319" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RETRY</text>
-  <line x1="150" y1="315" x2="744" y2="315" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
-  <text x="450" y="303" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">the same request, resent</text>
-  <line x1="754" y1="350" x2="1044" y2="350" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="900" y="338" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">key found &middot; fingerprint matches</text>
-  <line x1="746" y1="385" x2="156" y2="385" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr)"/>
-  <text x="450" y="373" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">201 &middot; the original claim, replayed</text>
-  </g>
-
-  <g v-click>
-  <line x1="30" y1="410" x2="1170" y2="410" stroke="#0000000d" stroke-width="1"/>
-  <rect x="746" y="460" width="8" height="45" rx="2" fill="rgba(31,107,69,0.2)"/>
-  <text x="28" y="439" style="font-size:10px;font-weight:700;letter-spacing:0.08em" fill="#1f6b45" class="font-mono">RACE</text>
-  <line x1="150" y1="435" x2="744" y2="435" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#sq-arr)"/>
-  <text x="450" y="423" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">another partner, same listing</text>
-  <line x1="754" y1="470" x2="1044" y2="470" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#sq-arr-g)"/>
-  <text x="900" y="458" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">reserve fails &middot; unique index holds</text>
-  <line x1="746" y1="505" x2="156" y2="505" stroke="#111111" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sq-arr-k)"/>
-  <text x="450" y="493" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111" class="font-mono">409 Conflict</text>
-  </g>
-</svg>
-</div>
-
-<!--
-CLAIM SEQUENCE
-
-Three runs of the same endpoint. Top: the happy path. The request
-carries an idempotency key; the service claims a slot for that key,
-then reserves the listing, inserts the claim and writes the audit row
-in one transaction, and the partner gets 201 Reserved.
-
-Middle: the phone resends the same request. The key is already
-completed and the fingerprint matches, so the service replays the
-original claim instead of doing anything. Same answer, no second
-reservation.
-
-Bottom: a different partner races for the same listing. The conditional
-reserve finds the listing no longer available, and even if the
-application got it wrong, the partial unique index in the database
-cannot admit a second active claim. That partner gets a 409 and the
-frontend tells them someone else got it first.
+application layer does. Section 3 shows the patterns the implementation
+leans on.
 -->
 
 ---
