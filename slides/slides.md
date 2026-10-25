@@ -1182,62 +1182,155 @@ Say the title and move on.
 class: flex flex-col
 ---
 
-# Types of testing
+# Testing strategy
+
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0.5rem">
+<svg viewBox="0 0 960 432" style="max-height:100%;max-width:100%" fill="none">
+  <defs>
+    <marker id="tp-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+  </defs>
+
+  <path d="M 50 398 L 50 30" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tp-m-arr)"/>
+  <text x="40" y="14" style="font-size:11px" fill="#5a5a5a" class="font-mono">slower &middot; fewer &middot; more realistic</text>
+  <text x="40" y="424" style="font-size:11px" fill="#5a5a5a" class="font-mono">faster &middot; more &middot; more precise</text>
+
+  <polygon points="360,20 442.1,140 277.9,140" fill="#1f6b45" stroke="#1f6b45" stroke-linejoin="round"/>
+  <text x="360" y="110" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#ffffff">E2E</text>
+  <text x="360" y="129" text-anchor="middle" style="font-size:10.5px" fill="#ffffff" class="font-mono">Playwright</text>
+
+  <polygon points="269.7,152 450.3,152 529,267 191,267" fill="rgba(31,107,69,0.22)" stroke="#1f6b45" stroke-linejoin="round"/>
+  <text x="360" y="205" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Integration</text>
+  <text x="360" y="227" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Testcontainers &middot; real PostgreSQL</text>
+
+  <polygon points="182.8,279 537.2,279 620,400 100,400" fill="rgba(31,107,69,0.07)" stroke="#1f6b45" stroke-linejoin="round"/>
+  <text x="360" y="336" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Unit</text>
+  <text x="360" y="358" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Vitest &middot; Jest &middot; go test</text>
+
+  <path d="M 420 95 L 652 95" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="664" y="90" style="font-size:15px;font-weight:600" fill="#111111">52 tests, full user journeys</text>
+  <text x="664" y="110" style="font-size:12px" fill="#5a5a5a">Live dev and QA, after every deploy</text>
+
+  <path d="M 492 210 L 652 210" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="664" y="205" style="font-size:15px;font-weight:600" fill="#111111">About 230 tests on a real database</text>
+  <text x="664" y="225" style="font-size:12px" fill="#5a5a5a">Throwaway container, real migrations</text>
+
+  <path d="M 586 340 L 652 340" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="664" y="335" style="font-size:15px;font-weight:600" fill="#111111">Over 800 tests (239 frontend)</text>
+  <text x="664" y="355" style="font-size:12px" fill="#5a5a5a">Seconds per suite, every backend PR</text>
+</svg>
+</div>
+
+<div class="text-center text-sm" style="color:#00000099">
+Security testing runs alongside: SAST on the code, DAST on the running app
+</div>
+
+<!--
+TESTING STRATEGY
+
+We structured our testing as a pyramid, because tests get slower and
+more expensive the higher you go. Unit tests are cheap and fast: the
+listings service runs its whole unit suite in about thirteen seconds, so
+backend unit tests run on every pull request. Integration tests are
+fewer and slower. Each run starts a throwaway PostgreSQL container,
+applies the real migrations once, and resets the tables between tests,
+so we test real SQL, not mocks. That takes under a minute per service.
+The numbers follow the shape: over eight hundred unit tests, about two
+hundred and thirty integration tests, and fifty-two end-to-end.
+-->
+
+---
+class: flex flex-col
+---
+
+# End-to-end testing
 
 <div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
 
-<div class="grid grid-cols-3 gap-12 mx-auto" style="max-width:56rem;width:100%">
-  <div>
-    <div class="dgm text-xs" style="color:#1f6b45">Unit</div>
-    <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Jest for the NestJS services</div>
-      <div class="text-base">go test for profile</div>
-      <div class="text-base">Frontend logic with fixed clocks</div>
-    </div>
-  </div>
-  <div>
-    <div class="dgm text-xs" style="color:#1f6b45">Integration</div>
-    <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Real PostgreSQL via testcontainers</div>
-      <div class="text-base">Each service runs its own migrations</div>
-      <div class="text-base">Coverage reported on every PR</div>
-    </div>
-  </div>
-  <div>
-    <div class="dgm text-xs" style="color:#1f6b45">End-to-end</div>
-    <div class="mt-4 flex flex-col" style="gap:0.8rem">
-      <div class="text-base">Playwright against live dev &amp; QA</div>
-      <div class="text-base">Full journey, post &rarr; claim &rarr; pickup</div>
-      <div class="text-base">Post-deploy smoke check</div>
-    </div>
-  </div>
+<div class="mx-auto text-center" style="max-width:56rem;width:100%">
+  <div class="dgm text-xs" style="color:#1f6b45">Playwright</div>
+  <div class="text-2xl font-bold mt-3">A real donor and a real rescue partner, in a real browser</div>
 </div>
 
-<div class="mt-12 text-center text-sm" style="color:#00000099">
-Unit and integration tests gate every PR &middot; e2e never blocks and never touches prod
+<div class="grid grid-cols-2 gap-12 mx-auto mt-12" style="max-width:56rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">The full journey</div>
+    <div class="text-base mt-3">Post &rarr; claim &rarr; pickup code &rarr; collected, plus the failure cases: a wrong pickup code, a partner opening donor pages</div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">After every deploy</div>
+    <div class="text-base mt-3">52 tests against dev and QA, never prod; failures have led to several bug reports in Jira</div>
+  </div>
 </div>
 
 </div>
 
 <!--
-TYPES OF TESTING
+END-TO-END TESTING
 
-Three levels, each with its own tool. Unit tests run per service: Jest
-for the two NestJS services, go test with fakes for profile, and the
-frontend mappers and filters get unit tests with a fixed clock so the
-results are stable. Integration tests spin up a real PostgreSQL in CI
-with testcontainers, run each service's migrations and hit the actual
-schema; a combined coverage report lands on every PR. End-to-end is
-Playwright against the live dev or QA environment after each deploy,
-running the whole journey of posting, claiming, cancelling and
-completing pickups, including negative cases like a second claim being
-refused.
+End-to-end tests are the most expensive, so we keep them few and focused
+on the critical journey. Playwright drives a real browser as a donor and
+a rescue partner: post a listing, claim it, and confirm the pickup with
+a code, plus negative cases like a wrong code or a partner opening donor
+pages. The fifty-two tests run after each deploy to dev and QA, never
+against production, because they create real data. Failing runs have
+led to several bug reports in Jira, some indirectly:
+investigating a broken run uncovered hidden issues, such as the
+dashboard triggering rate limiting.
+-->
 
-The gates: unit and integration must be green before a merge. The e2e
-suite is a post-deploy smoke check on purpose - it runs after the
-environment has already updated, and browser tests can go red for
-reasons that are not real regressions, so it reports without blocking.
-It never runs on prod because it creates real data.
+---
+class: flex flex-col
+---
+
+# Security testing
+
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center" class="px-6">
+
+<div class="grid grid-cols-2 gap-12 mx-auto text-center" style="max-width:56rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">SAST &middot; reads the code</div>
+    <div class="text-2xl font-bold mt-3">CodeQL, Semgrep, Trivy</div>
+    <div class="text-sm mt-2 mx-auto" style="color:#00000099;display:grid;grid-template-columns:auto auto;column-gap:0.75rem;row-gap:0.15rem;width:max-content;text-align:left">
+      <b style="color:#111111">CodeQL</b><span>traces data flow</span>
+      <b style="color:#111111">Semgrep</b><span>insecure patterns &amp; secrets</span>
+      <b style="color:#111111">Trivy</b><span>vulnerable dependencies &amp; config</span>
+    </div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">DAST &middot; attacks the running site</div>
+    <div class="text-2xl font-bold mt-3">OWASP ZAP</div>
+    <div class="text-sm mt-2" style="color:#00000099">crawls the live app for weaknesses like missing headers</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 gap-12 mx-auto mt-12" style="max-width:56rem;width:100%">
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">What SAST found</div>
+    <div class="text-base mt-3">9 vulnerable dependencies, upgraded and closed, with the build and tests re-run</div>
+  </div>
+  <div>
+    <div class="dgm text-xs" style="color:#1f6b45">What DAST found</div>
+    <div class="text-base mt-3">9 findings, mostly missing security settings, cut to 2, left on purpose for a later change</div>
+  </div>
+</div>
+
+</div>
+
+<!--
+SECURITY TESTING
+
+Functional tests don't prove security, so SAST and DAST run alongside.
+SAST uses three tools, each catching something different: CodeQL traces
+data flow, such as user input reaching a query; Semgrep matches known
+insecure patterns and secrets; and Trivy checks dependencies and Docker
+configuration for known vulnerabilities. DAST runs OWASP ZAP against the
+running app. Acting on the findings, we upgraded nine vulnerable
+dependencies, and added security headers that cut the ZAP findings from
+nine to two. The remaining two need a larger change, so we deferred them.
+
+The two left: Content Security Policy, which needs a per-request nonce
+for Next.js scripts, and COEP, which would block the listing photos
+served from CloudFront.
 -->
 
 ---
