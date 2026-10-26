@@ -120,13 +120,11 @@ class: flex flex-col
     <marker id="scope-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
     <marker id="scope-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
-
   <circle cx="110" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
   <g transform="translate(86,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="110" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
-
   <line x1="166" y1="140" x2="424" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
   <rect x="206" y="116" width="180" height="48" rx="8" fill="#ffffff" stroke="#1f6b45"/>
   <g transform="translate(214,128) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,7 +134,6 @@ class: flex flex-col
   <text x="306" y="136" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">Surplus bread &middot; 40 loaves</text>
   <text x="306" y="152" text-anchor="middle" style="font-size:8.5px" fill="#5a5a5a" class="font-mono">pickup tonight, 6-8pm</text>
   <text x="296" y="184" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">gives away surplus food</text>
-
   <rect x="430" y="86" width="220" height="108" rx="14" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <text x="533" y="138" text-anchor="middle" style="font-size:20px;font-weight:700;letter-spacing:-0.02em" fill="#111111">Rescu<tspan fill="#1f6b45">Food</tspan></text>
   <g transform="translate(600,116) scale(0.8)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -144,16 +141,13 @@ class: flex flex-col
     <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
   </g>
   <text x="540" y="166" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">listings</text>
-
   <line x1="650" y1="140" x2="834" y2="140" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#scope-arr-g)"/>
   <text x="742" y="124" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">claims &amp; collects</text>
-
   <circle cx="890" cy="140" r="48" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
   <g transform="translate(866,116) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="890" y="226" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
-
   <path d="M 858 192 C 760 254 240 254 142 192" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#scope-arr-m)"/>
   <text x="500" y="262" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">they meet for pickup &middot; handover verified</text>
 </svg>
@@ -203,13 +197,11 @@ class: flex flex-col
 <div class="mt-6" style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:0.5rem">
 <svg viewBox="0 85 1100 205" style="max-height:100%;max-width:100%" fill="none">
   <line x1="60" y1="180" x2="1040" y2="180" stroke="#1f6b45" stroke-width="2"/>
-
   <circle cx="110" cy="180" r="6" fill="#1f6b45"/>
   <text x="110" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">CI/CD foundation</text>
   <text x="110" y="120" text-anchor="middle" style="font-size:13.5px" fill="#111111">repo &middot; auth UI</text>
   <text x="110" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 1</text>
   <text x="110" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">24 Jul - 7 Aug</text>
-
   <g v-click>
   <circle cx="290" cy="180" r="6" fill="#1f6b45"/>
   <text x="290" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 2</text>
@@ -217,7 +209,6 @@ class: flex flex-col
   <text x="290" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Environments &middot; IAM</text>
   <text x="290" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">first automated QA</text>
   </g>
-
   <g v-click>
   <circle cx="470" cy="180" r="6" fill="#1f6b45"/>
   <text x="470" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Claims &middot; pickup OTP</text>
@@ -225,7 +216,6 @@ class: flex flex-col
   <text x="470" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 3</text>
   <text x="470" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">22 Aug - 4 Sep</text>
   </g>
-
   <g v-click>
   <circle cx="650" cy="180" r="6" fill="#1f6b45"/>
   <text x="650" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 4</text>
@@ -233,7 +223,6 @@ class: flex flex-col
   <text x="650" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Pickup completion</text>
   <text x="650" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">QA fixes</text>
   </g>
-
   <g v-click>
   <circle cx="830" cy="180" r="6" fill="#1f6b45"/>
   <text x="830" y="98" text-anchor="middle" style="font-size:13.5px" fill="#111111">Cancel &amp; relist</text>
@@ -241,7 +230,6 @@ class: flex flex-col
   <text x="830" y="150" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 5</text>
   <text x="830" y="168" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">19 Sep - 2 Oct</text>
   </g>
-
   <g v-click>
   <circle cx="1010" cy="180" r="6" fill="#1f6b45"/>
   <text x="1010" y="210" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#1f6b45">Sprint 6</text>
@@ -249,7 +237,6 @@ class: flex flex-col
   <text x="1010" y="256" text-anchor="middle" style="font-size:13.5px" fill="#111111">Stabilisation</text>
   <text x="1010" y="280" text-anchor="middle" style="font-size:13.5px" fill="#111111">report &amp; polish</text>
   </g>
-
 </svg>
 
 <div v-click class="mt-8" style="width:100%;padding-left:3.5rem">
@@ -379,10 +366,8 @@ class: flex flex-col
 
 <div style="flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:0.5rem">
 <svg viewBox="0 0 1100 470" style="max-height:100%;max-width:100%" fill="none">
-
   <rect x="300" y="40" width="510" height="390" rx="14" stroke="#00000033"/>
   <text x="318" y="64" style="font-size:10px" fill="#5a5a5a" class="font-mono">RescuFood</text>
-
   <line x1="180" y1="190" x2="326" y2="120" stroke="#8a8a8a" stroke-width="1.3"/>
   <line x1="184" y1="205" x2="326" y2="205" stroke="#8a8a8a" stroke-width="1.3"/>
   <line x1="180" y1="220" x2="326" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
@@ -391,44 +376,37 @@ class: flex flex-col
   <line x1="916" y1="220" x2="784" y2="290" stroke="#8a8a8a" stroke-width="1.3"/>
   <line x1="178" y1="385" x2="323" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
   <line x1="922" y1="385" x2="787" y2="385" stroke="#8a8a8a" stroke-width="1.3"/>
-
   <ellipse cx="430" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="430" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Post a listing</text>
   <ellipse cx="430" cy="205" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="430" y="210" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a listing</text>
   <ellipse cx="430" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="430" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Verify pickup</text>
-
   <ellipse cx="680" cy="115" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="680" y="120" text-anchor="middle" style="font-size:13px" fill="#111111">Browse listings</text>
   <ellipse cx="680" cy="205" rx="100" ry="28" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.6"/>
   <text x="680" y="210" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Claim a listing</text>
   <ellipse cx="680" cy="295" rx="100" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="680" y="300" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a claim</text>
-
   <ellipse cx="430" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="430" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Register organisation</text>
   <ellipse cx="680" cy="385" rx="105" ry="28" fill="#ffffff" stroke="#0000002a"/>
   <text x="680" y="390" text-anchor="middle" style="font-size:13px" fill="#111111">Approve organisation</text>
-
   <circle cx="140" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
   <g transform="translate(116,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="140" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Donor</text>
-
   <circle cx="960" cy="205" r="44" fill="rgba(31,107,69,0.08)" stroke="#1f6b45" stroke-width="1.5"/>
   <g transform="translate(936,181) scale(2)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="960" y="277" text-anchor="middle" style="font-size:15px;font-weight:600" fill="#111111">Rescue partner</text>
-
   <circle cx="140" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
   <g transform="translate(121,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </g>
   <text x="140" y="447" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#5a5a5a">Org admin</text>
-
   <circle cx="960" cy="385" r="38" fill="#ffffff" stroke="#0000002a" stroke-width="1.5"/>
   <g transform="translate(941,366) scale(1.6)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -475,41 +453,34 @@ reminders and prunes idempotency keys on a schedule.
     <marker id="lv-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="lv-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
-
   <path d="M 40 -85 L 790 -85 L 790 95 L 1060 95 L 1060 370 L 40 370 Z" stroke="#00000033" stroke-dasharray="6 5"/>
   <text x="56" y="-67" style="font-size:9px" fill="#5a5a5a" class="font-mono">web</text>
-
   <rect x="855" y="-115" width="225" height="130" rx="12" stroke="#00000033" stroke-dasharray="6 5"/>
   <text x="869" y="-99" style="font-size:9px" fill="#5a5a5a" class="font-mono">local</text>
-
   <g transform="translate(355,-58)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
   <text x="388" y="-40" style="font-size:12px;font-weight:600" fill="#111111">Donors &amp; rescue partners</text>
   <line x1="368" y1="-30" x2="368" y2="4" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-
   <g transform="translate(905,-108)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </g>
   <text x="938" y="-90" style="font-size:12px;font-weight:600" fill="#111111">Admin users</text>
   <line x1="918" y1="-80" x2="918" y2="-54" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-
   <rect x="260" y="8" width="240" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(276,20)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
   <text x="394" y="31" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Platform web</text>
   <text x="394" y="50" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">Next.js (browser)</text>
-
   <rect x="865" y="-50" width="200" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(878,-38)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
   </g>
   <text x="983" y="-27" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Admin console</text>
   <text x="983" y="-8" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">React SPA (local)</text>
-
   <line x1="368" y1="64" x2="368" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="965" y1="6" x2="965" y2="94" stroke="#8a8a8a" stroke-width="1.5"/>
   <text x="530" y="82" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">HTTPS</text>
@@ -517,48 +488,37 @@ reminders and prunes idempotency keys on a schedule.
   <line x1="195" y1="94" x2="195" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <line x1="550" y1="94" x2="550" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
   <line x1="905" y1="94" x2="905" y2="136" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-
   <rect x="60" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(80,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
   <text x="207" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Profile (Go)</text>
   <text x="207" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">identity &amp; orgs</text>
-
   <rect x="415" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(435,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
   <text x="562" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Listings (NestJS)</text>
   <text x="562" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">listings &amp; claims</text>
-
   <rect x="770" y="140" width="270" height="68" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(790,162)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
   </g>
   <text x="917" y="170" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Notifications (NestJS)</text>
   <text x="917" y="189" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">queue</text>
-
   <line x1="685" y1="174" x2="764" y2="174" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#lv-arr-g)"/>
   <text x="725" y="162" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#1f6b45" class="font-mono">SQS</text>
-
-
   <rect x="60" y="218" width="270" height="42" rx="10" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/cognito.png" x="78" y="228" width="22" height="22"/>
   <text x="207" y="244" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#111111">Cognito</text>
-
   <line x1="195" y1="260" x2="195" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="550" y1="208" x2="550" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="905" y1="208" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="195" y1="270" x2="905" y2="270" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="550" y1="270" x2="550" y2="288" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lv-arr)"/>
-
   <rect x="350" y="292" width="400" height="64" rx="10" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/rds.png" x="370" y="311" width="26" height="26"/>
   <text x="560" y="330" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
- 
-
-
 </svg>
 </div>
 
@@ -614,7 +574,6 @@ class: flex flex-col
     <marker id="aws-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
     <marker id="aws-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
-
   <g transform="translate(38,6)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
     <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -626,48 +585,36 @@ class: flex flex-col
   <image href="/aws/api-gateway.png" x="157" y="13" width="30" height="30"/>
   <text x="246" y="32" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">API Gateway</text>
   <path d="M 290 28 L 787 28 L 787 73" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
-
   <rect x="20" y="65" width="250" height="455" rx="8" stroke="#00000033" stroke-dasharray="5 4"/>
   <text x="35" y="85" style="font-size:10px;font-weight:700" fill="#3a3a3a">AWS managed services</text>
-
   <rect x="35" y="95" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/cloudfront.png" x="48" y="102" width="32" height="32"/>
   <text x="94" y="123" style="font-size:11px;font-weight:600" fill="#111111">CloudFront</text>
-
   <rect x="35" y="153" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/s3.png" x="48" y="160" width="32" height="32"/>
   <text x="94" y="181" style="font-size:11px;font-weight:600" fill="#111111">S3 (private)</text>
-
   <rect x="35" y="211" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/cognito.png" x="48" y="218" width="32" height="32"/>
   <text x="94" y="239" style="font-size:11px;font-weight:600" fill="#111111">Cognito user pool</text>
-
   <rect x="35" y="269" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/sqs.png" x="48" y="276" width="32" height="32"/>
   <text x="94" y="297" style="font-size:11px;font-weight:600" fill="#111111">SQS + dead-letter queue</text>
-
   <rect x="35" y="327" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/secrets-manager.png" x="48" y="334" width="32" height="32"/>
   <text x="94" y="355" style="font-size:11px;font-weight:600" fill="#111111">Secrets Manager</text>
-
   <rect x="35" y="385" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/cloudwatch.png" x="48" y="392" width="32" height="32"/>
   <text x="94" y="413" style="font-size:11px;font-weight:600" fill="#111111">CloudWatch</text>
-
   <rect x="35" y="443" width="215" height="46" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/github.svg" x="50" y="452" width="28" height="28"/>
   <text x="94" y="471" style="font-size:11px;font-weight:600" fill="#111111">GHCR</text>
-
   <path d="M 250 234 L 263 234 L 263 320 L 300 320" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
   <path d="M 250 292 L 273 292 L 273 335 L 300 335" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
   <path d="M 250 350 L 283 350 L 283 350 L 300 350" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#aws-arr-m)"/>
-
   <rect x="290" y="65" width="895" height="455" rx="8" stroke="#00000033"/>
   <text x="305" y="86" style="font-size:10px;font-weight:700" fill="#3a3a3a">VPC 10.0.0.0/16 <tspan style="font-weight:400" fill="#5a5a5a">&middot; two availability zones</tspan></text>
-
   <rect x="727" y="75" width="120" height="32" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <text x="787" y="95" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">VPC Link</text>
-
   <rect x="305" y="122" width="865" height="74" rx="6" fill="#00000005" stroke="#0000001a"/>
   <text x="317" y="138" style="font-size:10px;font-weight:600" fill="#3a3a3a">Public subnets</text>
   <text x="1158" y="138" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
@@ -677,22 +624,17 @@ class: flex flex-col
   <rect x="950" y="146" width="170" height="44" rx="6" fill="#ffffff" stroke="#0000002a"/>
   <image href="/aws/nat-gateway.png" x="958" y="153" width="30" height="30"/>
   <text x="1056" y="174" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">NAT Gateway</text>
-
   <rect x="305" y="208" width="865" height="192" rx="6" fill="#00000005" stroke="#0000001a"/>
   <text x="317" y="224" style="font-size:10px;font-weight:600" fill="#3a3a3a">App subnets</text>
   <text x="1158" y="224" text-anchor="end" style="font-size:9px" fill="#5a5a5a" class="font-mono">A + B</text>
-
   <path d="M 787 107 L 787 214" stroke="#1f6b45" stroke-width="2" marker-end="url(#aws-arr-g)"/>
   <rect x="687" y="216" width="200" height="40" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/alb.png" x="694" y="221" width="30" height="30"/>
   <text x="805" y="241" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">Internal ALB</text>
-
-
   <path d="M 787 256 L 787 276 L 430 276 L 430 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
   <path d="M 787 276 L 640 276 L 640 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
   <path d="M 787 276 L 850 276 L 850 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
   <path d="M 787 276 L 1060 276 L 1060 300" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#aws-arr-g)"/>
-
   <rect x="355" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(367,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
@@ -701,7 +643,6 @@ class: flex flex-col
   <image href="/aws/ecs.png" x="367" y="364" width="20" height="20"/>
   <text x="430" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
   <text x="430" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">web-platform</text>
-
   <rect x="565" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(577,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
@@ -710,7 +651,6 @@ class: flex flex-col
   <image href="/aws/ecs.png" x="577" y="364" width="20" height="20"/>
   <text x="640" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
   <text x="640" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">profile</text>
-
   <rect x="775" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(787,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
@@ -719,7 +659,6 @@ class: flex flex-col
   <image href="/aws/ecs.png" x="787" y="364" width="20" height="20"/>
   <text x="850" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
   <text x="850" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">listings</text>
-
   <rect x="985" y="302" width="150" height="42" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(997,314) scale(0.7)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/>
@@ -728,14 +667,11 @@ class: flex flex-col
   <image href="/aws/ecs.png" x="997" y="364" width="20" height="20"/>
   <text x="1060" y="378" text-anchor="middle" style="font-size:10.5px;font-weight:600" fill="#111111">ECS Fargate</text>
   <text x="1060" y="328" text-anchor="middle" style="font-size:11.5px;font-weight:600" fill="#111111">notification</text>
-
   <rect x="305" y="412" width="865" height="100" rx="6" fill="#00000005" stroke="#0000001a"/>
   <text x="317" y="428" style="font-size:10px;font-weight:600" fill="#3a3a3a">Data subnets</text>
-
   <path d="M 640 390 L 640 414 L 1060 414 L 1060 390" stroke="#8a8a8a" stroke-width="1.2"/>
   <path d="M 850 390 L 850 414" stroke="#8a8a8a" stroke-width="1.2"/>
   <path d="M 787 414 L 787 434" stroke="#8a8a8a" stroke-width="1.2" marker-end="url(#aws-arr-m)"/>
-
   <rect x="700" y="438" width="174" height="60" rx="6" fill="#ffffff" stroke="#1f6b45"/>
   <image href="/aws/rds.png" x="708" y="451" width="34" height="34"/>
   <text x="808" y="473" text-anchor="middle" style="font-size:11px;font-weight:600" fill="#111111">RDS PostgreSQL 17</text>
@@ -789,45 +725,33 @@ class: flex flex-col
     <marker id="lc-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="lc-arr-g" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
   </defs>
-
   <rect x="50" y="80" width="160" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <text x="130" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Draft</text>
-
   <line x1="210" y1="108" x2="316" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <text x="263" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish</text>
-
   <rect x="320" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <text x="405" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Available</text>
-
   <line x1="490" y1="108" x2="596" y2="108" stroke="#1f6b45" stroke-width="2.5" marker-end="url(#lc-arr-g)"/>
   <text x="543" y="94" text-anchor="middle" style="font-size:11.5px;font-weight:700" fill="#1f6b45">claim</text>
-
   <rect x="600" y="80" width="170" height="56" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <text x="685" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Reserved</text>
-
   <line x1="770" y1="108" x2="876" y2="108" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <text x="823" y="96" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">OTP verified</text>
-
   <rect x="880" y="80" width="170" height="56" rx="10" fill="#ffffff" stroke="#1f6b45"/>
   <text x="965" y="113" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Collected</text>
-
   <path d="M 685 80 L 685 42 L 405 42 L 405 76" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <text x="545" y="34" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">claim ends &middot; relisted</text>
-
   <line x1="130" y1="136" x2="130" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="380" y1="136" x2="380" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="640" y1="136" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="110" y1="196" x2="640" y2="196" stroke="#8a8a8a" stroke-width="1.5"/>
   <line x1="110" y1="196" x2="110" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <text x="300" y="188" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">donor cancels</text>
-
   <line x1="460" y1="136" x2="460" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <path d="M 720 136 L 720 226 L 460 226" stroke="#8a8a8a" stroke-width="1.5"/>
   <text x="540" y="220" style="font-size:10px" fill="#5a5a5a" class="font-mono">Listings expires</text>
-
   <rect x="50" y="240" width="160" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
   <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Cancelled</text>
-
   <rect x="345" y="240" width="170" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
   <text x="430" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Expired</text>
 </svg>
@@ -1025,30 +949,23 @@ class: flex flex-col
     <marker id="pat-p-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#1f6b45"/></marker>
     <marker id="pat-p-arr-m" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
-
   <rect x="40" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <text x="175" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">listings</text>
   <text x="175" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">NotificationsPublisher</text>
-
   <text x="370" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">publish &middot; eventId</text>
   <line x1="310" y1="170" x2="426" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
-
   <rect x="430" y="120" width="180" height="100" rx="10" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <text x="520" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">SQS</text>
   <text x="520" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">notifications queue</text>
-
   <text x="670" y="156" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">long poll</text>
   <line x1="610" y1="170" x2="726" y2="170" stroke="#1f6b45" stroke-width="1.5" marker-end="url(#pat-p-arr)"/>
-
   <rect x="730" y="120" width="270" height="100" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <text x="865" y="166" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">notification</text>
   <text x="865" y="190" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">SqsConsumerService</text>
-
   <line x1="520" y1="220" x2="520" y2="266" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#pat-p-arr-m)"/>
   <rect x="430" y="270" width="180" height="56" rx="10" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
   <text x="520" y="295" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">DLQ</text>
   <text x="520" y="313" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">after 5 failures</text>
-
 </svg>
 </div>
 
@@ -1093,31 +1010,24 @@ class: flex flex-col
   <defs>
     <marker id="tp-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
   </defs>
-
   <path d="M 50 398 L 50 30" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#tp-m-arr)"/>
   <text x="40" y="14" style="font-size:11px" fill="#5a5a5a" class="font-mono">slower &middot; fewer &middot; more realistic</text>
   <text x="40" y="424" style="font-size:11px" fill="#5a5a5a" class="font-mono">faster &middot; more &middot; more precise</text>
-
   <polygon points="360,20 442.1,140 277.9,140" fill="#1f6b45" stroke="#1f6b45" stroke-linejoin="round"/>
   <text x="360" y="110" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#ffffff">E2E</text>
   <text x="360" y="129" text-anchor="middle" style="font-size:10.5px" fill="#ffffff" class="font-mono">Playwright</text>
-
   <polygon points="269.7,152 450.3,152 529,267 191,267" fill="rgba(31,107,69,0.22)" stroke="#1f6b45" stroke-linejoin="round"/>
   <text x="360" y="205" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Integration</text>
   <text x="360" y="227" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Testcontainers &middot; real PostgreSQL</text>
-
   <polygon points="182.8,279 537.2,279 620,400 100,400" fill="rgba(31,107,69,0.07)" stroke="#1f6b45" stroke-linejoin="round"/>
   <text x="360" y="336" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Unit</text>
   <text x="360" y="358" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Vitest &middot; Jest &middot; go test</text>
-
   <path d="M 420 95 L 652 95" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
   <text x="664" y="90" style="font-size:15px;font-weight:600" fill="#111111">52 tests, full user journeys</text>
   <text x="664" y="110" style="font-size:12px" fill="#5a5a5a">Live dev and QA, after every deploy</text>
-
   <path d="M 492 210 L 652 210" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
   <text x="664" y="205" style="font-size:15px;font-weight:600" fill="#111111">About 230 tests on a real database</text>
   <text x="664" y="225" style="font-size:12px" fill="#5a5a5a">Throwaway container, real migrations</text>
-
   <path d="M 586 340 L 652 340" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
   <text x="664" y="335" style="font-size:15px;font-weight:600" fill="#111111">Over 800 tests (239 frontend)</text>
   <text x="664" y="355" style="font-size:12px" fill="#5a5a5a">Seconds per suite, every backend PR</text>
@@ -1404,18 +1314,15 @@ class: flex flex-col
     <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
   </g>
   <text x="150" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Source</text>
-
   <!-- artifact side -->
   <circle cx="750" cy="59" r="46" fill="rgba(31,107,69,0.06)" stroke="#1f6b45" stroke-width="1.5"/>
   <g transform="translate(736,37)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
   </g>
   <text x="750" y="78" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#1f6b45">Artifact</text>
-
   <!-- linking thread (no arrowhead -> not a flow; a shared identity) -->
   <line x1="196" y1="59" x2="382" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
   <line x1="518" y1="59" x2="704" y2="59" stroke="#1f6b45" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"/>
-
   <!-- the shared commit SHA at the centre -->
   <rect x="384" y="39" width="132" height="40" rx="20" fill="#1f6b45"/>
   <text x="450" y="58" text-anchor="middle" style="font-size:10px;font-weight:600" fill="#ffffffcc" class="font-mono">commit</text>
@@ -1485,7 +1392,6 @@ class: flex flex-col
     <marker id="ci-m-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="ci-m-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
   </defs>
-
   <rect x="20" y="170" width="230" height="118" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(50,200)" stroke="#1f6b45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
@@ -1494,48 +1400,40 @@ class: flex flex-col
   <text x="151" y="217" text-anchor="middle" style="font-size:16px;font-weight:600" fill="#111111">Pull request</text>
   <text x="151" y="243" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">feat/* &middot; fix/*</text>
   <text x="151" y="268" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">into develop</text>
-
   <path d="M 250 229 L 280 229 L 280 132 L 312 132" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
   <path d="M 250 229 L 280 229 L 280 326 L 312 326" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
-
   <rect x="320" y="62" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,72)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>
   </g>
   <text x="372" y="87" style="font-size:11.5px;font-weight:600" fill="#111111">Lint + type-check</text>
-
   <rect x="320" y="112" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,122)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
   <text x="372" y="137" style="font-size:11.5px;font-weight:600" fill="#111111">Unit tests</text>
-
   <rect x="320" y="162" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,172)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
   <text x="372" y="187" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
-
   <rect x="320" y="256" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="372" y="281" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-
   <rect x="320" y="306" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,316)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="372" y="331" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-
   <rect x="320" y="356" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,366)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="372" y="381" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
-
   <circle cx="554" cy="82" r="4.5" fill="#8a8a8a"/>
   <circle cx="554" cy="132" r="4.5" fill="#8a8a8a"/>
   <circle cx="554" cy="182" r="4.5" fill="#8a8a8a"/>
@@ -1550,7 +1448,6 @@ class: flex flex-col
   <path d="M 558 376 C 600 376 600 229 628 229" stroke="#8a8a8a" stroke-width="1.5"/>
   <circle cx="632" cy="229" r="4.5" fill="#8a8a8a"/>
   <line x1="636" y1="229" x2="676" y2="229" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#ci-m-arr)"/>
-
   <rect x="684" y="187" width="282" height="84" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(706,214)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
@@ -1558,7 +1455,6 @@ class: flex flex-col
   </g>
   <text x="846" y="225" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Merge into develop</text>
   <text x="846" y="247" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">review + all checks green</text>
-
   <path d="M 632 229 L 632 352 L 676 352" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ci-m-arr-r)"/>
   <text x="622" y="310" text-anchor="end" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">any failure</text>
   <rect x="684" y="320" width="282" height="64" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
@@ -1610,34 +1506,28 @@ class: flex flex-col
     <marker id="cd-arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
     <marker id="cd-arr-r" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 Z" fill="#b42318"/></marker>
   </defs>
-
   <rect x="20" y="140" width="160" height="92" rx="12" fill="rgba(31,107,69,0.06)" stroke="#1f6b45"/>
   <g transform="translate(40,174)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/>
     <path d="M6 21V9a9 9 0 0 0 9 9"/>
   </g>
   <text x="112" y="192" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">Push to branch</text>
-
   <line x1="180" y1="186" x2="214" y2="186" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#cd-arr)"/>
-
   <rect x="220" y="126" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(238,135)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="266" y="149" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / CodeQL</text>
-
   <rect x="220" y="168" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(238,177)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="266" y="191" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Semgrep</text>
-
   <rect x="220" y="210" width="190" height="36" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(238,219)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </g>
   <text x="266" y="233" style="font-size:11.5px;font-weight:600" fill="#111111">SAST / Trivy</text>
-
   <circle cx="416" cy="144" r="4.5" fill="#8a8a8a"/>
   <circle cx="416" cy="186" r="4.5" fill="#8a8a8a"/>
   <circle cx="416" cy="228" r="4.5" fill="#8a8a8a"/>
@@ -1646,7 +1536,6 @@ class: flex flex-col
   <line x1="420" y1="186" x2="444" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
   <circle cx="448" cy="186" r="4.5" fill="#8a8a8a"/>
   <line x1="452" y1="186" x2="461" y2="186" stroke="#8a8a8a" stroke-width="1.5"/>
-
   <rect x="465" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(491,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m7.5 4.27 9 5.15"/>
@@ -1655,10 +1544,8 @@ class: flex flex-col
   </g>
   <text x="521" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">build-and-push</text>
   <text x="521" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">image &rarr; GHCR &middot; branch + sha</text>
-
   <circle cx="686" cy="186" r="4.5" fill="#8a8a8a"/>
   <circle cx="704" cy="186" r="4.5" fill="#8a8a8a"/>
-
   <rect x="710" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(736,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
@@ -1666,17 +1553,14 @@ class: flex flex-col
   </g>
   <text x="766" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">Deploy to ECS</text>
   <text x="766" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">rolls the matching env</text>
-
   <circle cx="931" cy="186" r="4.5" fill="#8a8a8a"/>
   <circle cx="949" cy="186" r="4.5" fill="#8a8a8a"/>
-
   <rect x="955" y="140" width="215" height="92" rx="12" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(981,175)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
   </g>
   <text x="1011" y="182" style="font-size:13.5px;font-weight:600" fill="#111111">DAST / ZAP</text>
   <text x="1011" y="204" style="font-size:9px" fill="#5a5a5a" class="font-mono">scans the live site</text>
-
   <path d="M 817 232 L 817 322" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr-r)"/>
   <text x="828" y="284" style="font-size:9px;font-weight:600" fill="#b42318" class="font-mono">rollout fails</text>
   <rect x="710" y="330" width="215" height="76" rx="12" fill="rgba(180,35,24,0.06)" stroke="#b42318"/>
@@ -1686,7 +1570,6 @@ class: flex flex-col
   </g>
   <text x="846" y="364" text-anchor="middle" style="font-size:13px;font-weight:600" fill="#b42318">Rollback</text>
   <text x="846" y="386" text-anchor="middle" style="font-size:9px" fill="#5a5a5a" class="font-mono">circuit breaker, automatic</text>
-
   <path d="M 1062 232 L 1062 322" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#cd-arr)"/>
   <rect x="955" y="330" width="215" height="76" rx="12" fill="#ffffff" stroke="#0000002a" stroke-dasharray="4 3"/>
   <g transform="translate(975,350)" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1889,7 +1772,6 @@ class: flex flex-col uml-slide
 
 <div class="uml-figure">
 <svg viewBox="0 0 1100 440"  fill="none">
-
   <g stroke="#1a1a1a" stroke-width="1.1">
     <line x1="158" y1="220" x2="325" y2="48"/>
     <line x1="158" y1="220" x2="325" y2="134"/>
@@ -1902,7 +1784,6 @@ class: flex flex-col uml-slide
     <line x1="942" y1="220" x2="785" y2="306"/>
     <line x1="942" y1="220" x2="785" y2="392"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <ellipse cx="430" cy="48" rx="105" ry="28"/>
     <ellipse cx="430" cy="134" rx="105" ry="28"/>
@@ -1915,7 +1796,6 @@ class: flex flex-col uml-slide
     <ellipse cx="680" cy="306" rx="105" ry="28"/>
     <ellipse cx="680" cy="392" rx="105" ry="28"/>
   </g>
-
   <g text-anchor="middle" style="font-size:13px" fill="#111111">
     <text x="430" y="53">Register organisation</text>
     <text x="430" y="139">Look up org by domain</text>
@@ -1928,7 +1808,6 @@ class: flex flex-col uml-slide
     <text x="680" y="311">Unlock a locked account</text>
     <text x="680" y="397">Read the audit log</text>
   </g>
-
   <g transform="translate(140,220)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -1938,9 +1817,7 @@ class: flex flex-col uml-slide
       <line x1="0" y1="12" x2="13" y2="33"/>
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Guest</text>
-    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">no session yet</text>
   </g>
-
   <g transform="translate(960,220)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -1950,7 +1827,6 @@ class: flex flex-col uml-slide
       <line x1="0" y1="12" x2="13" y2="33"/>
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Platform administrator</text>
-    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">admin console only</text>
   </g>
 </svg>
 </div>
@@ -1985,7 +1861,6 @@ class: flex flex-col uml-slide
 
 <div class="uml-figure">
 <svg viewBox="0 0 1100 480"  fill="none">
-
   <g stroke="#1a1a1a" stroke-width="1.1">
     <line x1="158" y1="236" x2="325" y2="38"/>
     <line x1="158" y1="236" x2="325" y2="104"/>
@@ -1999,7 +1874,6 @@ class: flex flex-col uml-slide
     <line x1="942" y1="236" x2="785" y2="269"/>
     <line x1="942" y1="236" x2="785" y2="335"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <ellipse cx="430" cy="38" rx="105" ry="24"/>
     <ellipse cx="430" cy="104" rx="105" ry="24"/>
@@ -2013,7 +1887,6 @@ class: flex flex-col uml-slide
     <ellipse cx="680" cy="269" rx="105" ry="24"/>
     <ellipse cx="680" cy="335" rx="105" ry="24"/>
   </g>
-
   <g text-anchor="middle" style="font-size:12.5px" fill="#111111">
     <text x="430" y="43">Create a listing</text>
     <text x="430" y="109">Publish a listing</text>
@@ -2027,7 +1900,6 @@ class: flex flex-col uml-slide
     <text x="680" y="274">Claim a listing</text>
     <text x="680" y="340">Generate pickup code</text>
   </g>
-
   <g transform="translate(140,236)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -2037,9 +1909,7 @@ class: flex flex-col uml-slide
       <line x1="0" y1="12" x2="13" y2="33"/>
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
-    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">approved donor org</text>
   </g>
-
   <g transform="translate(960,236)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -2049,7 +1919,6 @@ class: flex flex-col uml-slide
       <line x1="0" y1="12" x2="13" y2="33"/>
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
-    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">approved rescue org</text>
   </g>
 </svg>
 </div>
@@ -2089,7 +1958,6 @@ class: flex flex-col uml-slide
 
 <div class="uml-figure">
 <svg viewBox="0 0 1100 440"  fill="none">
-
   <g stroke="#1a1a1a" stroke-width="1.1">
     <line x1="158" y1="220" x2="423" y2="40"/>
     <line x1="158" y1="220" x2="423" y2="112"/>
@@ -2104,7 +1972,6 @@ class: flex flex-col uml-slide
     <line x1="942" y1="220" x2="687" y2="328"/>
     <line x1="942" y1="220" x2="687" y2="400"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <ellipse cx="555" cy="40" rx="132" ry="26"/>
     <ellipse cx="555" cy="112" rx="132" ry="26"/>
@@ -2113,7 +1980,6 @@ class: flex flex-col uml-slide
     <ellipse cx="555" cy="328" rx="132" ry="26"/>
     <ellipse cx="555" cy="400" rx="132" ry="26"/>
   </g>
-
   <g text-anchor="middle" style="font-size:13px" fill="#111111">
     <text x="555" y="45">Cancel a claim</text>
     <text x="555" y="117">Report a no-show</text>
@@ -2122,7 +1988,6 @@ class: flex flex-col uml-slide
     <text x="555" y="333">Read &amp; clear notifications</text>
     <text x="555" y="405">View profile, change password</text>
   </g>
-
   <g transform="translate(140,220)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -2133,7 +1998,6 @@ class: flex flex-col uml-slide
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
   </g>
-
   <g transform="translate(960,220)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
@@ -2181,7 +2045,6 @@ class: flex flex-col uml-slide
 
 <div class="uml-figure">
 <svg viewBox="0 0 1100 340"  fill="none">
-
   <g stroke="#1a1a1a" stroke-width="1.1">
     <line x1="240" y1="170" x2="405" y2="60"/>
     <line x1="240" y1="170" x2="405" y2="170"/>
@@ -2189,13 +2052,11 @@ class: flex flex-col uml-slide
     <line x1="705" y1="60" x2="880" y2="158"/>
     <line x1="705" y1="170" x2="880" y2="176"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <ellipse cx="555" cy="60" rx="150" ry="38"/>
     <ellipse cx="555" cy="170" rx="150" ry="38"/>
     <ellipse cx="555" cy="280" rx="150" ry="38"/>
   </g>
-
   <g text-anchor="middle" fill="#111111">
     <text x="555" y="57" style="font-size:13px">Expire listings past the window</text>
     <text x="555" y="76" style="font-size:10px;font-style:italic" fill="#444444">every minute</text>
@@ -2204,11 +2065,9 @@ class: flex flex-col uml-slide
     <text x="555" y="277" style="font-size:13px">Prune idempotency keys</text>
     <text x="555" y="296" style="font-size:10px;font-style:italic" fill="#444444">hourly</text>
   </g>
-
   <rect x="60" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
   <text x="150" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
   <text x="150" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
-
   <rect x="880" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
   <text x="970" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;external&#187;</text>
   <text x="970" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Email provider</text>
@@ -2281,7 +2140,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="25" y="14" width="160" height="40"/>
     <rect x="240" y="14" width="160" height="40"/>
@@ -2296,7 +2154,6 @@ class: flex flex-col uml-slide
     <text x="760" y="39">Database</text>
     <text x="980" y="39">Queue</text>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
     <line x1="105" y1="54" x2="105" y2="530"/>
     <line x1="320" y1="54" x2="320" y2="530"/>
@@ -2304,7 +2161,6 @@ class: flex flex-col uml-slide
     <line x1="760" y1="54" x2="760" y2="530"/>
     <line x1="980" y1="54" x2="980" y2="530"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
     <rect x="100" y="96" width="10" height="406"/>
     <rect x="315" y="96" width="10" height="406"/>
@@ -2312,11 +2168,9 @@ class: flex flex-col uml-slide
     <rect x="755" y="164" width="10" height="234"/>
     <rect x="975" y="434" width="10" height="14"/>
   </g>
-
   <rect x="515" y="284" width="290" height="132" stroke="#1a1a1a" stroke-width="1.1"/>
   <path d="M515 284 h78 v12 l-10 10 h-68 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
   <text x="521" y="300" style="font-size:10px;font-weight:600" fill="#111111">transaction</text>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="110" y1="96" x2="313" y2="96" marker-end="url(#s1-call)"/>
     <line x1="325" y1="130" x2="533" y2="130" marker-end="url(#s1-call)"/>
@@ -2331,7 +2185,6 @@ class: flex flex-col uml-slide
     <line x1="535" y1="468" x2="327" y2="468" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
     <line x1="315" y1="502" x2="112" y2="502" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
   </g>
-
   <g text-anchor="middle" style="font-size:11px" fill="#111111">
     <text x="212" y="89">claim listing</text>
     <text x="430" y="123">POST /requests + idempotency key</text>
@@ -2391,7 +2244,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="40" y="14" width="180" height="40"/>
     <rect x="300" y="14" width="180" height="40"/>
@@ -2404,21 +2256,18 @@ class: flex flex-col uml-slide
     <text x="650" y="39">Listings API</text>
     <text x="910" y="39">Database</text>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
     <line x1="130" y1="54" x2="130" y2="430"/>
     <line x1="390" y1="54" x2="390" y2="430"/>
     <line x1="650" y1="54" x2="650" y2="430"/>
     <line x1="910" y1="54" x2="910" y2="430"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
     <rect x="125" y="96" width="10" height="136"/>
     <rect x="385" y="232" width="10" height="180"/>
     <rect x="645" y="96" width="10" height="316"/>
     <rect x="905" y="130" width="10" height="252"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="135" y1="96" x2="643" y2="96" marker-end="url(#s2-call)"/>
     <line x1="655" y1="130" x2="903" y2="130" marker-end="url(#s2-call)"/>
@@ -2431,7 +2280,6 @@ class: flex flex-col uml-slide
     <line x1="655" y1="368" x2="903" y2="368" marker-end="url(#s2-call)"/>
     <line x1="645" y1="402" x2="397" y2="402" stroke-dasharray="5 4" marker-end="url(#s2-ret)"/>
   </g>
-
   <g text-anchor="middle" style="font-size:11px" fill="#111111">
     <text x="250" y="89">POST /requests/{id}/pickup-code</text>
     <text x="780" y="123">assert claiming partner</text>
@@ -2444,7 +2292,6 @@ class: flex flex-col uml-slide
     <text x="780" y="361">claim completed, listing collected</text>
     <text x="520" y="395">201 completed</text>
   </g>
-
   <path d="M60 470 H430 L450 490 V548 H60 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
   <path d="M430 470 V490 H450" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
   <text x="74" y="492" style="font-size:11px;font-weight:600" fill="#111111">note</text>
@@ -2494,7 +2341,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="25" y="14" width="170" height="40"/>
     <rect x="245" y="14" width="170" height="40"/>
@@ -2509,7 +2355,6 @@ class: flex flex-col uml-slide
     <text x="770" y="39">Notifications</text>
     <text x="985" y="39">Email provider</text>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
     <line x1="110" y1="54" x2="110" y2="505"/>
     <line x1="330" y1="54" x2="330" y2="505"/>
@@ -2517,7 +2362,6 @@ class: flex flex-col uml-slide
     <line x1="770" y1="54" x2="770" y2="505"/>
     <line x1="985" y1="54" x2="985" y2="505"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
     <rect x="105" y="96" width="10" height="186"/>
     <rect x="325" y="96" width="10" height="186"/>
@@ -2525,7 +2369,6 @@ class: flex flex-col uml-slide
     <rect x="765" y="316" width="10" height="174"/>
     <rect x="980" y="446" width="10" height="38"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="115" y1="96" x2="323" y2="96" marker-end="url(#s3-call)"/>
     <path d="M335 126 H375 V162 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
@@ -2538,7 +2381,6 @@ class: flex flex-col uml-slide
     <line x1="775" y1="446" x2="978" y2="446" marker-end="url(#s3-call)"/>
     <line x1="980" y1="480" x2="777" y2="480" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
   </g>
-
   <g style="font-size:11px" fill="#111111">
     <text x="220" y="89" text-anchor="middle">POST /admin/orgs/{id}/approve</text>
     <text x="383" y="130">validate transition</text>
@@ -2616,7 +2458,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="6 4">
     <line x1="290" y1="112" x2="398" y2="112" marker-end="url(#dp1-dep)"/>
     <line x1="375" y1="278" x2="465" y2="190" marker-end="url(#dp1-impl)"/>
@@ -2624,7 +2465,6 @@ class: flex flex-col uml-slide
     <line x1="470" y1="438" x2="392" y2="392" marker-end="url(#dp1-dep)"/>
     <line x1="630" y1="438" x2="708" y2="392" marker-end="url(#dp1-dep)"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="400" y="36" width="300" height="150"/>
     <rect x="60" y="80" width="230" height="64"/>
@@ -2632,13 +2472,11 @@ class: flex flex-col uml-slide
     <rect x="600" y="280" width="250" height="110"/>
     <rect x="430" y="440" width="240" height="56"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="400" y1="94" x2="700" y2="94"/>
     <line x1="250" y1="318" x2="500" y2="318"/>
     <line x1="600" y1="318" x2="850" y2="318"/>
   </g>
-
   <g text-anchor="middle" fill="#111111">
     <text x="550" y="60" style="font-size:11px;font-style:italic">&#171;interface&#187;</text>
     <text x="550" y="80" style="font-size:15px;font-weight:700">ListingsApi</text>
@@ -2649,7 +2487,6 @@ class: flex flex-col uml-slide
     <text x="550" y="462" style="font-size:11px;font-style:italic">&#171;factory&#187;</text>
     <text x="550" y="483" style="font-size:12px">createListingsClient(opts)</text>
   </g>
-
   <g style="font-size:11.5px" fill="#111111">
     <text x="414" y="116">+ listListings(query)</text>
     <text x="414" y="134">+ createRequest(request)</text>
@@ -2662,13 +2499,11 @@ class: flex flex-col uml-slide
     <text x="614" y="360">- requests : array of ListingRequest</text>
     <text x="614" y="380" style="font-size:11px;font-style:italic" fill="#444444">all 18 in memory</text>
   </g>
-
   <g style="font-size:10.5px" fill="#444444">
     <text x="344" y="104" text-anchor="middle">&#171;uses&#187;</text>
     <text x="408" y="424" text-anchor="middle">&#171;creates&#187;</text>
     <text x="700" y="424" text-anchor="middle">&#171;creates&#187;</text>
   </g>
-
   <path d="M760 420 H1060 L1080 440 V496 H760 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
   <path d="M1060 420 V440 H1080" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
   <text x="774" y="442" style="font-size:11px;font-weight:600" fill="#111111">note</text>
@@ -2715,7 +2550,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="550" y1="84" x2="550" y2="128" marker-end="url(#dp2-dep)"/>
     <line x1="430" y1="242" x2="195" y2="288" marker-end="url(#dp2-dep)"/>
@@ -2725,7 +2559,6 @@ class: flex flex-col uml-slide
     <line x1="550" y1="384" x2="550" y2="438" marker-end="url(#dp2-dep)"/>
     <line x1="925" y1="384" x2="675" y2="438" marker-end="url(#dp2-dep)"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="410" y="24" width="280" height="60"/>
     <rect x="380" y="130" width="340" height="112"/>
@@ -2734,14 +2567,12 @@ class: flex flex-col uml-slide
     <rect x="800" y="290" width="250" height="94"/>
     <rect x="400" y="440" width="300" height="60"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="380" y1="166" x2="720" y2="166"/>
     <line x1="50" y1="326" x2="300" y2="326"/>
     <line x1="425" y1="326" x2="675" y2="326"/>
     <line x1="800" y1="326" x2="1050" y2="326"/>
   </g>
-
   <g text-anchor="middle" fill="#111111">
     <text x="550" y="50" style="font-size:11px;font-style:italic">&#171;controller&#187;</text>
     <text x="550" y="71" style="font-size:14px;font-weight:600">RequestsController</text>
@@ -2752,7 +2583,6 @@ class: flex flex-col uml-slide
     <text x="550" y="466" style="font-size:11px;font-style:italic">&#171;database&#187;</text>
     <text x="550" y="487" style="font-size:13.5px;font-weight:600">PostgreSQL via Drizzle</text>
   </g>
-
   <g style="font-size:11.5px" fill="#111111">
     <text x="394" y="188">+ create(dto, user)</text>
     <text x="394" y="206">+ decide(id, dto, user)</text>
@@ -2764,7 +2594,6 @@ class: flex flex-col uml-slide
     <text x="814" y="350">+ record()</text>
     <text x="814" y="370">+ findMany()</text>
   </g>
-
   <path d="M40 24 H340 L360 44 V100 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
   <path d="M340 24 V44 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
   <text x="54" y="46" style="font-size:11px;font-weight:600" fill="#111111">note</text>
@@ -2808,7 +2637,6 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="220" y1="86" x2="276" y2="176" marker-end="url(#dp3-dep)"/>
     <line x1="220" y1="154" x2="276" y2="182" marker-end="url(#dp3-dep)"/>
@@ -2819,7 +2647,6 @@ class: flex flex-col uml-slide
     <line x1="850" y1="227" x2="730" y2="316" marker-end="url(#dp3-dep)"/>
     <line x1="910" y1="227" x2="960" y2="316" marker-end="url(#dp3-dep)"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="30" y="60" width="190" height="52"/>
     <rect x="30" y="128" width="190" height="52"/>
@@ -2831,12 +2658,10 @@ class: flex flex-col uml-slide
     <rect x="600" y="318" width="230" height="60"/>
     <rect x="870" y="318" width="190" height="60"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="280" y1="182" x2="480" y2="182"/>
     <line x1="770" y1="182" x2="990" y2="182"/>
   </g>
-
   <g text-anchor="middle" fill="#111111">
     <text x="125" y="91" style="font-size:12.5px;font-weight:600">RequestsService</text>
     <text x="125" y="159" style="font-size:12.5px;font-weight:600">ListingExpiryService</text>
@@ -2851,17 +2676,14 @@ class: flex flex-col uml-slide
     <text x="965" y="344" style="font-size:11px;font-style:italic">&#171;email&#187;</text>
     <text x="965" y="365" style="font-size:13px;font-weight:600">MailerService</text>
   </g>
-
   <g style="font-size:11.5px" fill="#111111">
     <text x="294" y="204">+ publish(type, to, payload)</text>
     <text x="784" y="204">+ process(message)</text>
   </g>
-
   <g style="font-size:10.5px" fill="#444444" text-anchor="middle">
     <text x="514" y="177">&#171;publish&#187;</text>
     <text x="734" y="177">&#171;consume&#187;</text>
   </g>
-
   <path d="M30 348 H400 L420 368 V424 H30 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
   <path d="M400 348 V368 H420" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
   <text x="44" y="370" style="font-size:11px;font-weight:600" fill="#111111">note</text>
@@ -2912,26 +2734,22 @@ class: flex flex-col uml-slide
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
-
   <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="6 4">
     <line x1="305" y1="168" x2="452" y2="112" marker-end="url(#dp4-impl)"/>
     <line x1="530" y1="168" x2="530" y2="112" marker-end="url(#dp4-impl)"/>
     <line x1="765" y1="168" x2="618" y2="112" marker-end="url(#dp4-impl)"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="172" y1="210" x2="211" y2="210" marker-end="url(#dp4-dep)"/>
     <line x1="397" y1="210" x2="436" y2="210" marker-end="url(#dp4-dep)"/>
     <line x1="622" y1="210" x2="661" y2="210" marker-end="url(#dp4-dep)"/>
     <line x1="867" y1="210" x2="906" y2="210" marker-end="url(#dp4-dep)"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="5 4">
     <line x1="305" y1="252" x2="448" y2="316" marker-end="url(#dp4-dep)"/>
     <line x1="530" y1="252" x2="542" y2="316" marker-end="url(#dp4-dep)"/>
     <line x1="765" y1="252" x2="652" y2="316" marker-end="url(#dp4-dep)"/>
   </g>
-
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
     <rect x="400" y="20" width="260" height="90"/>
     <rect x="20" y="185" width="150" height="50"/>
@@ -2941,14 +2759,12 @@ class: flex flex-col uml-slide
     <rect x="908" y="185" width="172" height="50"/>
     <rect x="430" y="318" width="240" height="56"/>
   </g>
-
   <g stroke="#1a1a1a" stroke-width="1.2">
     <line x1="400" y1="72" x2="660" y2="72"/>
     <line x1="215" y1="208" x2="395" y2="208"/>
     <line x1="440" y1="208" x2="620" y2="208"/>
     <line x1="665" y1="208" x2="865" y2="208"/>
   </g>
-
   <g text-anchor="middle" fill="#111111">
     <text x="530" y="44" style="font-size:11px;font-style:italic">&#171;interface&#187;</text>
     <text x="530" y="64" style="font-size:15px;font-weight:700">CanActivate</text>
@@ -2961,15 +2777,12 @@ class: flex flex-col uml-slide
     <text x="550" y="342" style="font-size:11px;font-style:italic">&#171;rejected&#187;</text>
     <text x="550" y="363" style="font-size:13px;font-weight:600">Problem+JSON response</text>
   </g>
-
   <text x="414" y="94" style="font-size:11.5px" fill="#111111">+ canActivate(context) : boolean</text>
-
   <g text-anchor="middle" style="font-size:10.5px;font-style:italic" fill="#444444">
     <text x="305" y="232">verifies the bearer token</text>
     <text x="530" y="232">rate limits per caller</text>
     <text x="765" y="232">org approved, user active</text>
   </g>
-
   <g style="font-size:10.5px" fill="#444444">
     <text x="330" y="296">401</text>
     <text x="500" y="296">429</text>
@@ -3868,4 +3681,289 @@ either upstream knowing.
 If asked why Conformist and not Shared Kernel: a shared kernel implies
 neither side changes the model unilaterally. Here profile changes it
 freely and listings follows, which is exactly the Conformist definition.
+-->
+---
+class: flex flex-col uml-slide
+---
+
+# Logical architecture
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 368" fill="none">
+  <defs>
+    <marker id="sl-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <rect x="220" y="20" width="300" height="50" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="370.0" y="50.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Web app</text>
+  <rect x="580" y="20" width="300" height="50" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="730.0" y="50.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Admin console</text>
+  <text x="200" y="49" text-anchor="end" style="font-size:9.5px;font-weight:700;letter-spacing:0.08em" fill="#777777">CLIENTS</text>
+  <rect x="220" y="112" width="660" height="46" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="550.0" y="140.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">API Gateway</text>
+  <text x="200" y="139" text-anchor="end" style="font-size:9.5px;font-weight:700;letter-spacing:0.08em" fill="#777777">API</text>
+  <rect x="220" y="200" width="200" height="56" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="320.0" y="233.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Profile</text>
+  <rect x="450" y="200" width="200" height="56" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="550.0" y="233.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Listings</text>
+  <rect x="680" y="200" width="200" height="56" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="780.0" y="233.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Notifications</text>
+  <text x="200" y="233" text-anchor="end" style="font-size:9.5px;font-weight:700;letter-spacing:0.08em" fill="#777777">SERVICES</text>
+  <rect x="220" y="298" width="660" height="50" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="550.0" y="328.0" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Shared PostgreSQL database</text>
+  <text x="200" y="327" text-anchor="end" style="font-size:9.5px;font-weight:700;letter-spacing:0.08em" fill="#777777">DATA</text>
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="370" y1="72" x2="370" y2="110" marker-end="url(#sl-arr)"/>
+    <line x1="730" y1="72" x2="730" y2="110" marker-end="url(#sl-arr)"/>
+    <line x1="320" y1="160" x2="320" y2="198" marker-end="url(#sl-arr)"/>
+    <line x1="550" y1="160" x2="550" y2="198" marker-end="url(#sl-arr)"/>
+    <line x1="780" y1="160" x2="780" y2="198" marker-end="url(#sl-arr)"/>
+    <line x1="320" y1="258" x2="320" y2="296" marker-end="url(#sl-arr)"/>
+    <line x1="550" y1="258" x2="550" y2="296" marker-end="url(#sl-arr)"/>
+    <line x1="780" y1="258" x2="780" y2="296" marker-end="url(#sl-arr)"/>
+  </g>
+</svg>
+</div>
+
+<!--
+LOGICAL ARCHITECTURE
+
+Four layers, read top to bottom.
+
+Two clients. The platform web app is what donors and rescue partners use.
+The admin console is a separate, smaller app for platform administrators,
+and it is run locally rather than deployed.
+
+Both go through one API gateway. That is the only publicly reachable
+address in the system; it routes each request to a service purely on the
+path, and every request past it carries a bearer token.
+
+Three services, split by what they are responsible for. Profile owns
+users, organisations and the approval workflow. Listings owns listings,
+claims and pickup verification, so it holds the whole donation flow.
+Notifications sends the email and serves the in-app alert feed.
+
+All three read and write the same PostgreSQL database. That was a
+deliberate choice: it keeps foreign keys between a claim and the
+organisation that made it as real database constraints rather than
+something the application has to check, and it lets a status change and
+its audit record commit in one transaction.
+
+If asked about the cost of a shared database: the services are coupled at
+the storage layer, so a careless migration in one can break another. We
+contain that by giving each service sole ownership of the tables it
+migrates.
+-->
+---
+class: flex flex-col uml-slide
+---
+
+# Use case model
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 470" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="138" y1="170" x2="298" y2="80"/>
+    <line x1="138" y1="170" x2="298" y2="170"/>
+    <line x1="138" y1="170" x2="298" y2="260"/>
+    <line x1="962" y1="170" x2="802" y2="80"/>
+    <line x1="962" y1="170" x2="802" y2="170"/>
+    <line x1="962" y1="170" x2="802" y2="260"/>
+    <line x1="138" y1="390" x2="293" y2="390"/>
+    <line x1="962" y1="390" x2="807" y2="390"/>
+  </g>
+  <ellipse cx="400" cy="80" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="400" y="85" text-anchor="middle" style="font-size:13px" fill="#111111">Post a listing</text>
+  <ellipse cx="400" cy="170" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="400" y="175" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a listing</text>
+  <ellipse cx="400" cy="260" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="400" y="265" text-anchor="middle" style="font-size:13px" fill="#111111">Verify pickup</text>
+  <ellipse cx="700" cy="80" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="700" y="85" text-anchor="middle" style="font-size:13px" fill="#111111">Browse listings</text>
+  <ellipse cx="700" cy="170" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="700" y="175" text-anchor="middle" style="font-size:13px" fill="#111111">Claim a listing</text>
+  <ellipse cx="700" cy="260" rx="102" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="700" y="265" text-anchor="middle" style="font-size:13px" fill="#111111">Cancel a claim</text>
+  <ellipse cx="400" cy="390" rx="107" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="400" y="395" text-anchor="middle" style="font-size:13px" fill="#111111">Register organisation</text>
+  <ellipse cx="700" cy="390" rx="107" ry="28" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="700" y="395" text-anchor="middle" style="font-size:13px" fill="#111111">Approve organisation</text>
+  <g transform="translate(120,170)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Donor</text>
+  </g>
+  <g transform="translate(980,170)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Rescue partner</text>
+  </g>
+  <g transform="translate(120,390)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Guest</text>
+  </g>
+  <g transform="translate(980,390)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:700" fill="#111111">Platform administrator</text>
+  </g>
+</svg>
+</div>
+
+<!--
+USE CASE MODEL
+
+Four actors. A Guest has no account yet and can only register an
+organisation, which is deliberately a public action because the first
+person from a charity has nowhere to sign in to. A Platform administrator
+approves that organisation, and until they do, nobody from it can post or
+claim anything. That is why the bottom row comes first in any demo.
+
+The top two rows are the donation flow itself, and it reads left to
+right. A donor posts a listing. A rescue partner browses what is
+available and claims one. The donor verifies the pickup when the partner
+turns up, which is the only action that completes a claim. Either side
+can cancel before that happens.
+
+Claim a listing is the one that mattered most in design, because it is
+the only place two users can collide: two rescue partners can want the
+same tray of food at the same moment. The rest of the system is
+single-actor and much less interesting.
+
+Two notes on accuracy if anyone asks. Cancel a claim is drawn on the
+rescue partner's side because that is the common case, but the API lets
+either party to a claim cancel it. And there is no org-admin role in the
+system; the profile service has exactly two roles, platform administrator
+and member.
+-->
+---
+class: flex flex-col uml-slide
+---
+
+# Domain model
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 470" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.3">
+    <line x1="320" y1="95" x2="418" y2="95"/>
+    <line x1="190" y1="212" x2="190" y2="273"/>
+    <line x1="322" y1="148" x2="416" y2="273"/>
+    <line x1="320" y1="350" x2="418" y2="350"/>
+    <line x1="682" y1="330" x2="778" y2="330"/>
+  </g>
+  <rect x="60" y="40" width="260" height="170" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="190.0" y="63" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#111111">Organisation</text>
+  <line x1="60" y1="74" x2="320" y2="74" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="74" y="92" style="font-size:11.5px" fill="#111111">name</text>
+  <text x="74" y="109" style="font-size:11.5px" fill="#111111">type</text>
+  <text x="74" y="126" style="font-size:11.5px" fill="#111111">status</text>
+  <text x="74" y="143" style="font-size:11.5px" fill="#111111">emailDomain</text>
+  <line x1="60" y1="148" x2="320" y2="148" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="74" y="166" style="font-size:11.5px" fill="#111111">approve()</text>
+  <text x="74" y="183" style="font-size:11.5px" fill="#111111">reject()</text>
+  <text x="74" y="200" style="font-size:11.5px" fill="#111111">suspend()</text>
+  <rect x="420" y="40" width="260" height="113" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="550.0" y="63" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#111111">User</text>
+  <line x1="420" y1="74" x2="680" y2="74" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="434" y="92" style="font-size:11.5px" fill="#111111">name</text>
+  <text x="434" y="109" style="font-size:11.5px" fill="#111111">username</text>
+  <text x="434" y="126" style="font-size:11.5px" fill="#111111">email</text>
+  <text x="434" y="143" style="font-size:11.5px" fill="#111111">isPlatformAdmin</text>
+  <rect x="60" y="275" width="260" height="170" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="190.0" y="298" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#111111">Listing</text>
+  <line x1="60" y1="309" x2="320" y2="309" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="74" y="327" style="font-size:11.5px" fill="#111111">contents</text>
+  <text x="74" y="344" style="font-size:11.5px" fill="#111111">useBy</text>
+  <text x="74" y="361" style="font-size:11.5px" fill="#111111">pickupWindow</text>
+  <text x="74" y="378" style="font-size:11.5px" fill="#111111">status</text>
+  <line x1="60" y1="383" x2="320" y2="383" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="74" y="401" style="font-size:11.5px" fill="#111111">publish()</text>
+  <text x="74" y="418" style="font-size:11.5px" fill="#111111">edit()</text>
+  <text x="74" y="435" style="font-size:11.5px" fill="#111111">cancel()</text>
+  <rect x="420" y="275" width="260" height="153" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="550.0" y="298" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#111111">Claim</text>
+  <line x1="420" y1="309" x2="680" y2="309" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="434" y="327" style="font-size:11.5px" fill="#111111">status</text>
+  <text x="434" y="344" style="font-size:11.5px" fill="#111111">quantity</text>
+  <text x="434" y="361" style="font-size:11.5px" fill="#111111">outcome</text>
+  <line x1="420" y1="366" x2="680" y2="366" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="434" y="384" style="font-size:11.5px" fill="#111111">cancel()</text>
+  <text x="434" y="401" style="font-size:11.5px" fill="#111111">reportNoShow()</text>
+  <text x="434" y="418" style="font-size:11.5px" fill="#111111">complete()</text>
+  <rect x="780" y="275" width="250" height="102" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5"/>
+  <text x="905.0" y="298" text-anchor="middle" style="font-size:15px;font-weight:700" fill="#111111">PickupCode</text>
+  <line x1="780" y1="309" x2="1030" y2="309" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="794" y="327" style="font-size:11.5px" fill="#111111">expiresAt</text>
+  <text x="794" y="344" style="font-size:11.5px" fill="#111111">attempts</text>
+  <line x1="780" y1="349" x2="1030" y2="349" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="794" y="367" style="font-size:11.5px" fill="#111111">verify(code)</text>
+  <g style="font-size:10.5px" fill="#444444">
+    <text x="327" y="88">1</text>
+    <text x="411" y="88" text-anchor="end">0..*</text>
+    <text x="369" y="112" text-anchor="middle" style="font-style:italic">employs</text>
+    <text x="198" y="228">1</text>
+    <text x="198" y="266">0..*</text>
+    <text x="205" y="250" style="font-style:italic">donates</text>
+    <text x="332" y="163">1</text>
+    <text x="398" y="268">0..*</text>
+    <text x="378" y="212" style="font-style:italic">claims</text>
+    <text x="327" y="343">1</text>
+    <text x="411" y="343" text-anchor="end">0..*</text>
+    <text x="369" y="367" text-anchor="middle" style="font-style:italic">claimed by</text>
+    <text x="689" y="323">1</text>
+    <text x="771" y="323" text-anchor="end">0..1</text>
+    <text x="730" y="347" text-anchor="middle" style="font-style:italic">secured by</text>
+  </g>
+</svg>
+</div>
+
+<!--
+DOMAIN MODEL
+
+Five conceptual classes. This is not the database schema; there are no
+column types or nullability here, and two of the classes do not map
+one-to-one onto a table.
+
+Organisation is the party. It is the thing that gets approved, and it is
+what donates and what claims. A User is a person acting on its behalf,
+which is why the associations for donating and claiming run from
+Organisation and not from User.
+
+Listing and Claim carry the donation. The multiplicity between them is
+one to many because a listing accumulates a history of claims over its
+life, but the system constrains it further than the diagram can show: at
+most one of those claims is active at any moment.
+
+PickupCode is modelled as its own class rather than as fields on Claim
+because it has behaviour of its own. It verifies a presented code, counts
+failures and voids itself after three. Pulling it out is what let that
+rule be tested on its own.
+
+Operations in the boxes are responsibilities, not method signatures.
+Organisation really does own its transitions in the Go service.
+Listing's and Claim's rules are implemented as pure functions beside the
+data rather than as methods on it, which is a difference worth
+explaining rather than hiding.
 -->
