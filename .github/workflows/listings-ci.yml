@@ -68,7 +68,7 @@ jobs:
 
   integration:
     name: Integration test
-    # Gated on `test`: skip the container spin-up if lint/unit/build already failed.
+    # Gated on `test`: skip the DB spin-up if lint/unit/build already failed.
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -77,6 +77,21 @@ jobs:
     defaults:
       run:
         working-directory: service/listings
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: profile
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -92,8 +107,12 @@ jobs:
       - name: Install
         run: npm ci
 
-      # Runs the unit + integration suites (testcontainers starts its own
-      # Postgres) and writes a merged coverage table to the job summary.
-      # Report-only - it fails on a test failure, never on low coverage.
+      # Runs the unit + integration suites against the Postgres service
+      # container (provided via DATABASE_URL; listings applies profile's
+      # migrations into the shared `profile` DB) and writes a merged coverage
+      # table to the job summary. Report-only - it fails on a test failure,
+      # never on low coverage.
       - name: Test & coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
         run: npm run test:coverage

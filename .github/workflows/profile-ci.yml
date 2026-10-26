@@ -53,7 +53,7 @@ jobs:
 
   integration:
     name: Integration test
-    # Gated on `test`: skip the container spin-up if vet/unit already failed.
+    # Gated on `test`: skip the DB spin-up if vet/unit already failed.
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -62,6 +62,21 @@ jobs:
     defaults:
       run:
         working-directory: service/profile
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: profile
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -76,9 +91,14 @@ jobs:
       - name: Vet
         run: go vet -tags=integration ./integration/...
 
-      # Runs the unit + integration tests (testcontainers starts its own
-      # Postgres) and writes a coverage table to the job summary. Report-only.
+      # Runs the unit + integration tests against the Postgres service
+      # container (provided via DATABASE_URL) and writes a coverage table to
+      # the job summary. Report-only.
       - name: Test & coverage
+        # postgres:// (not postgresql://) so runMigrations' scheme rewrite to
+        # pgx5:// fires; pgxpool accepts this form too.
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/profile?sslmode=disable
         run: bash scripts/coverage.sh
 
   sast:
