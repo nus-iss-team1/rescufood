@@ -336,7 +336,7 @@ class: flex flex-col
   </div>
   <div v-click>
     <svg viewBox="0 0 24 24" style="width:30px;height:30px;display:block" fill="none" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Team-driven (Conway's Law)</div>
+    <div class="dgm text-xs" style="color:#1f6b45;margin-top:0.9rem;min-height:3.4rem">Temporal Decoupling</div>
     <div style="display:flex;flex-direction:column;gap:0.8rem">
       <div style="font-size:1rem;line-height:1.5">Day jobs, so we rarely code at the same hours</div>
       <div style="font-size:1rem;line-height:1.5">One service each, so far fewer merge conflicts</div>
@@ -354,11 +354,19 @@ class: flex flex-col
 </div>
 
 <!--
-Team-Driven Architecture (Conway's Law): Service boundaries were intentionally mapped to individual developer schedules and ownership, preventing bottlenecks caused by fragmented, asynchronous working hours.
+So the first question we asked ourselves is: Microservice or Monolith?
 
-Polyglot Flexibility: Allowed each developer to build within their core competency (Go and TypeScript) without forcing an artificial, uniform language stack.
+We went for microservice. This is because a few reasons. The main being 
 
-Optimized CI/CD Pipelines: Decoupled the backend into independent services, enabling faster, isolated build runs and deployments tailored to each specific stack.
+Polyglot flexibility
+As we are all of proficient in different programing languages. It allows us to use them without having any of us to compromise on a single language
+
+It allow us to decouple our work easily.
+As we are all from different walks of life and have different schedules. This allow us to conribute to the project with minimal conflicts as we rarely
+work on each other coding spaces
+
+Lightweight CI/CD
+As we split our platform into multiple compomenents. Each of them have their own CI/CD pipelines which keeps them lightweight and fast with no dependencies on each other
 -->
 
 ---
@@ -431,9 +439,12 @@ class: flex flex-col
 
 <!--
 USE CASES
+In our platform we enviosion 4 kidns of users
 
-The actors and what each one can do, before we show how the system is
-built.
+Donor, rescue partner. 
+
+
+We have this concept of an organisation
 
 A donor posts a listing, can cancel it while nobody has claimed it, and
 verifies the pickup when the rescue partner turns up. A rescue partner
@@ -812,7 +823,7 @@ class: flex flex-col
 
   <line x1="460" y1="136" x2="460" y2="236" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#lc-arr)"/>
   <path d="M 720 136 L 720 226 L 460 226" stroke="#8a8a8a" stroke-width="1.5"/>
-  <text x="540" y="220" style="font-size:10px" fill="#5a5a5a" class="font-mono">pickup window passes</text>
+  <text x="540" y="220" style="font-size:10px" fill="#5a5a5a" class="font-mono">Listings expires</text>
 
   <rect x="50" y="240" width="160" height="56" rx="10" fill="rgba(180,35,24,0.06)" stroke="#b42318" stroke-dasharray="4 3"/>
   <text x="130" y="273" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#b42318">Cancelled</text>
@@ -909,6 +920,7 @@ class: flex flex-col
 <!--
 STRATEGY
 
+The strategy pattern is a behavioral design pattern
 The listings SDK has one interface, ListingsApi, with sixteen methods
 and two implementations. ListingsClient makes the real HTTP calls with
 the user's token. MockListingsClient keeps everything in memory but
@@ -1037,7 +1049,6 @@ class: flex flex-col
   <text x="520" y="295" text-anchor="middle" style="font-size:12px;font-weight:600" fill="#5a5a5a">DLQ</text>
   <text x="520" y="313" text-anchor="middle" style="font-size:10px" fill="#5a5a5a" class="font-mono">after 5 failures</text>
 
-  <text x="500" y="378" text-anchor="middle" style="font-size:13.5px;font-weight:600" fill="#111111">Neither service knows the other exists.</text>
 </svg>
 </div>
 
