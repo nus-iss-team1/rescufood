@@ -171,7 +171,7 @@ export function Landing() {
                 </span>
 
                 <h1 className="text-5xl font-bold tracking-tight text-balance sm:text-6xl xl:text-[4.25rem] xl:leading-[1.03]">
-                  Fill plates.
+                  Fill bellies.
                   <br />
                   <span className="text-primary">Not landfill.</span>
                 </h1>
