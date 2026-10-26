@@ -4,6 +4,10 @@ node_modules/
 # Kiro spec files (local tooling)
 .kiro/
 
+# Agent working notes and local git worktrees
+.agents/
+.worktrees/
+
 # Local diagrams
 infrastructure/infra-plan.drawio
 
