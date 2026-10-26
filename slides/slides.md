@@ -3745,3 +3745,127 @@ SQS delivers the same message twice the second insert loses. That is
 deduplication in the schema rather than in the consumer.
 -->
 
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Appendix</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Architecture <span class="accent">design</span>
+</div>
+
+<div class="text-sm mt-10" style="color:#00000066">
+Figures for chapter 2
+</div>
+
+<!--
+ARCHITECTURE SECTION MARKER
+
+Figures backing chapter two of the report. First up is the component
+diagram for 2.2, service decomposition and bounded contexts.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Bounded contexts
+
+<div class="text-base mt-2" style="color:#00000099">Three contexts, two integration patterns</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 480" fill="none">
+  <defs>
+    <marker id="cm-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <rect x="50" y="46" width="340" height="152" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.6"/>
+  <text x="220.0" y="66" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">&#171;bounded context&#187;</text>
+  <text x="220.0" y="89" text-anchor="middle" style="font-size:16px;font-weight:700" fill="#111111">Identity &amp; Access</text>
+  <line x1="50" y1="101" x2="390" y2="101" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="66" y="120" style="font-size:8.5px;font-weight:700;letter-spacing:0.08em" fill="#444444">AGGREGATES</text>
+  <text x="66" y="140" style="font-size:12.5px" fill="#111111">Organisation</text>
+  <text x="66" y="158" style="font-size:12.5px" fill="#111111">User</text>
+  <line x1="50" y1="166" x2="390" y2="166" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="220.0" y="187" text-anchor="middle" style="font-size:11px" fill="#555555">service/profile  ·  Go</text>
+  <rect x="50" y="286" width="340" height="152" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.6"/>
+  <text x="220.0" y="306" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">&#171;bounded context&#187;</text>
+  <text x="220.0" y="329" text-anchor="middle" style="font-size:16px;font-weight:700" fill="#111111">Donation</text>
+  <line x1="50" y1="341" x2="390" y2="341" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="66" y="360" style="font-size:8.5px;font-weight:700;letter-spacing:0.08em" fill="#444444">AGGREGATES</text>
+  <text x="66" y="380" style="font-size:12.5px" fill="#111111">Listing</text>
+  <text x="66" y="398" style="font-size:12.5px" fill="#111111">Claim</text>
+  <line x1="50" y1="406" x2="390" y2="406" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="220.0" y="427" text-anchor="middle" style="font-size:11px" fill="#555555">service/listings  ·  NestJS</text>
+  <rect x="700" y="186" width="340" height="134" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.6"/>
+  <text x="870.0" y="206" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">&#171;bounded context&#187;</text>
+  <text x="870.0" y="229" text-anchor="middle" style="font-size:16px;font-weight:700" fill="#111111">Notification</text>
+  <line x1="700" y1="241" x2="1040" y2="241" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="716" y="260" style="font-size:8.5px;font-weight:700;letter-spacing:0.08em" fill="#444444">AGGREGATES</text>
+  <text x="716" y="280" style="font-size:12.5px" fill="#111111">Notification</text>
+  <line x1="700" y1="288" x2="1040" y2="288" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="870.0" y="309" text-anchor="middle" style="font-size:11px" fill="#555555">service/notifications  ·  NestJS</text>
+  <g stroke="#1a1a1a" stroke-width="1.3">
+    <line x1="220" y1="200" x2="220" y2="284" marker-end="url(#cm-arr)"/>
+    <line x1="392" y1="150" x2="698" y2="226" marker-end="url(#cm-arr)"/>
+    <line x1="392" y1="345" x2="698" y2="296" marker-end="url(#cm-arr)"/>
+  </g>
+  <g style="font-size:11px;font-weight:700" fill="#111111">
+    <text x="206" y="236" text-anchor="end">U</text>
+    <text x="206" y="276" text-anchor="end">D</text>
+    <text x="402" y="144">U</text>
+    <text x="686" y="220" text-anchor="end">D</text>
+    <text x="402" y="360">U</text>
+    <text x="686" y="312" text-anchor="end">D</text>
+  </g>
+  <g style="font-size:11.5px;font-style:italic" fill="#111111">
+    <text x="238" y="260">&#171;Conformist&#187;</text>
+    <text x="545" y="172" text-anchor="middle">&#171;Published Language&#187;</text>
+    <text x="545" y="340" text-anchor="middle">&#171;Published Language&#187;</text>
+  </g>
+  <path d="M560 380 H1022 L1040 398 V461 H560 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1022 380 V398 H1040" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="572" y="399" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="572" y="418" style="font-size:10.5px" fill="#111111">U upstream, D downstream.</text>
+  <text x="572" y="435" style="font-size:10.5px" fill="#111111">Conformist: the downstream context uses the upstream model as it is.</text>
+  <text x="572" y="452" style="font-size:10.5px" fill="#111111">Published Language: a shared event envelope, owned by neither producer.</text>
+</svg>
+</div>
+
+<!--
+BOUNDED CONTEXTS
+
+Three contexts, one service each, drawn where the model divides rather
+than where the code happened to be split. Identity and Access owns
+Organisation and User and answers who a caller is and whether they may
+transact. Donation owns Listing and Claim and holds the whole donation
+lifecycle. Notification owns Notification and cares only about getting a
+message to a person. Each has its own ubiquitous language, and no term
+crosses a boundary meaning two different things.
+
+Two integration patterns, and both are deliberate.
+
+Donation is a Conformist to Identity and Access. It consumes the
+Organisation and User model exactly as that context defines it, with no
+anticorruption layer. We chose conformity because the upstream model is
+small, stable, and genuinely the same concept on both sides, so a
+translation layer would have added cost without adding meaning. The
+listings service mirrors the profile service's column definitions and
+foreign-keys against them directly, while profile stays the sole owner of
+their schema.
+
+Both contexts are upstream of Notification through a Published Language:
+a small envelope of type, channel, recipient and payload, published to a
+queue, that belongs to neither producer's internal model. That is what
+lets a Go service and a TypeScript service publish into the same
+consumer, and lets Notification add channels or change templates without
+either upstream knowing.
+
+If asked why Conformist and not Shared Kernel: a shared kernel implies
+neither side changes the model unilaterally. Here profile changes it
+freely and listings follows, which is exactly the Conformist definition.
+-->
