@@ -55,12 +55,30 @@ export class NotificationBell {
     await this.close();
   }
 
+  /** Any notification in the open feed whose body matches `pattern`, scoped
+   * to the panel so it can't match toast or page text. */
+  notificationMatching(pattern: RegExp): Locator {
+    return this.page.getByRole('dialog').getByRole('button', { name: pattern });
+  }
+
   /** The donor's "<partner> reserved "<listing>"." notification for the
    * tagged QA listing. */
   claimNotificationFor(tag: string): Locator {
-    return this.page
-      .getByRole('dialog')
-      .getByRole('button', { name: new RegExp(`reserved ".*${tag}`) });
+    return this.notificationMatching(new RegExp(`reserved ".*${tag}`));
+  }
+
+  /** The rescue partner's "You reserved "<listing>"..." notification for the
+   * tagged QA listing. */
+  ownClaimNotificationFor(tag: string): Locator {
+    return this.notificationMatching(new RegExp(`You reserved ".*${tag}`));
+  }
+
+  /** Either role's "Pickup for "<listing>" is confirmed..." notification for
+   * the tagged QA listing. */
+  pickupCompletedNotificationFor(tag: string): Locator {
+    return this.notificationMatching(
+      new RegExp(`Pickup for ".*${tag}" is confirmed`),
+    );
   }
 
   /** Marks one notification read with its own "Mark as read" button, which

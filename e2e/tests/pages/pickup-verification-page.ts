@@ -46,4 +46,23 @@ export class PickupVerificationPage {
   async backToCodeEntry() {
     await this.page.getByRole('dialog').getByRole('button', { name: 'Back' }).click();
   }
+
+  /** Donor side: reports the rescue partner as a no-show. Only enabled once
+   * the pickup window has opened - publish with
+   * ListingFormPage.publishWithOpenPickupWindow so this button is live. */
+  async reportNoShow() {
+    // The trigger sits beside "Enter pickup code"; a click lost to hydration
+    // is safe to retry, it only opens the dialog.
+    const reportButton = this.page.getByRole('button', { name: 'Report No-Show' });
+    const dialog = this.page.getByRole('dialog');
+    await expect(async () => {
+      await reportButton.click();
+      await expect(dialog).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 20_000 });
+
+    // A preset fills the required reason and enables "Review outcome".
+    await dialog.getByRole('button', { name: 'Partner did not arrive' }).click();
+    await dialog.getByRole('button', { name: 'Review outcome' }).click();
+    await dialog.getByRole('button', { name: 'Confirm No-Show' }).click();
+  }
 }
