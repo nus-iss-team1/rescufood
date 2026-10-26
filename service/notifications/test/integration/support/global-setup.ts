@@ -1,17 +1,11 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { migrate } from './migrate';
-import { CONTAINER_GLOBAL, DATABASE_URL_FILE } from './db';
 
-// Starts and migrates the Postgres container the whole run shares.
+// Migrates the externally-provided Postgres the whole run shares.
 export default async function globalSetup(): Promise<void> {
-  const container = await new PostgreSqlContainer('postgres:17-alpine').start();
-  const url = container.getConnectionUri();
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL is not set');
+  }
 
   await migrate(url);
-
-  (globalThis as Record<string, unknown>)[CONTAINER_GLOBAL] = container;
-  mkdirSync(dirname(DATABASE_URL_FILE), { recursive: true });
-  writeFileSync(DATABASE_URL_FILE, url);
 }
