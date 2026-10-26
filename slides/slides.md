@@ -1015,7 +1015,7 @@ Its benefits are
 class: flex flex-col
 ---
 
-# Observer pattern
+# Observer Pattern
 
 <div class="text-base mt-2" style="color:#00000099">Listings drops events on SQS, notifications picks them up</div>
 
@@ -1854,3 +1854,1894 @@ CLOSE
 Thank the audience and open the floor. If Q&A time was folded into
 sections, invite any remaining questions here.
 -->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Appendix</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Use cases <span class="accent">in detail</span>
+</div>
+
+<div class="text-sm mt-10" style="color:#00000066">
+Backup slides for Q&amp;A
+</div>
+
+<!--
+APPENDIX MARKER
+
+Don't present these. They are here for questions about scope: the full
+actor-by-actor breakdown behind the one-slide use case diagram in section
+two, then three sequence diagrams for the flows people ask about. All
+drawn on white so they can be lifted straight into the report.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Onboarding &amp; administration
+
+<div class="text-base mt-2" style="color:#00000099">Getting an organisation and its members onto the platform</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440"  fill="none">
+
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="158" y1="220" x2="325" y2="48"/>
+    <line x1="158" y1="220" x2="325" y2="134"/>
+    <line x1="158" y1="220" x2="325" y2="220"/>
+    <line x1="158" y1="220" x2="325" y2="306"/>
+    <line x1="158" y1="220" x2="325" y2="392"/>
+    <line x1="942" y1="220" x2="785" y2="48"/>
+    <line x1="942" y1="220" x2="785" y2="134"/>
+    <line x1="942" y1="220" x2="785" y2="220"/>
+    <line x1="942" y1="220" x2="785" y2="306"/>
+    <line x1="942" y1="220" x2="785" y2="392"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="430" cy="48" rx="105" ry="28"/>
+    <ellipse cx="430" cy="134" rx="105" ry="28"/>
+    <ellipse cx="430" cy="220" rx="105" ry="28"/>
+    <ellipse cx="430" cy="306" rx="105" ry="28"/>
+    <ellipse cx="430" cy="392" rx="105" ry="28"/>
+    <ellipse cx="680" cy="48" rx="105" ry="28"/>
+    <ellipse cx="680" cy="134" rx="105" ry="28"/>
+    <ellipse cx="680" cy="220" rx="105" ry="28"/>
+    <ellipse cx="680" cy="306" rx="105" ry="28"/>
+    <ellipse cx="680" cy="392" rx="105" ry="28"/>
+  </g>
+
+  <g text-anchor="middle" style="font-size:13px" fill="#111111">
+    <text x="430" y="53">Register organisation</text>
+    <text x="430" y="139">Look up org by domain</text>
+    <text x="430" y="225">Sign up &amp; verify email</text>
+    <text x="430" y="311">Sign in</text>
+    <text x="430" y="397">Reset password</text>
+    <text x="680" y="53">Approve organisation</text>
+    <text x="680" y="139">Reject or suspend org</text>
+    <text x="680" y="225">Suspend or reactivate user</text>
+    <text x="680" y="311">Unlock a locked account</text>
+    <text x="680" y="397">Read the audit log</text>
+  </g>
+
+  <g transform="translate(140,220)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Guest</text>
+    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">no session yet</text>
+  </g>
+
+  <g transform="translate(960,220)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Platform administrator</text>
+    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">admin console only</text>
+  </g>
+</svg>
+</div>
+
+<!--
+ONBOARDING & ADMINISTRATION
+
+Everything on the left is public. You do not need an account to register an
+organisation - that is deliberate, because the first person from a charity
+has nowhere to sign in to yet. Registration takes the org details, signup
+looks the org up by the email domain, and the two are joined when the user
+is provisioned.
+
+There is no org-admin role in the system. The profile service has exactly
+two roles: platform administrator and member. Whoever registers the org is
+just the first member of it.
+
+Approve organisation is the gate. Until a platform admin approves the
+organisation, nobody from it can post or claim anything - the listings
+service rejects them at the guard. Reject, suspend, user suspension and
+unlock are the rest of the admin surface, and every one of them requires a
+reason that lands in the audit log.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Donor &amp; rescue partner
+
+<div class="text-base mt-2" style="color:#00000099">What each role can do on its own</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 480"  fill="none">
+
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="158" y1="236" x2="325" y2="38"/>
+    <line x1="158" y1="236" x2="325" y2="104"/>
+    <line x1="158" y1="236" x2="325" y2="170"/>
+    <line x1="158" y1="236" x2="325" y2="236"/>
+    <line x1="158" y1="236" x2="325" y2="302"/>
+    <line x1="158" y1="236" x2="325" y2="368"/>
+    <line x1="158" y1="236" x2="325" y2="434"/>
+    <line x1="942" y1="236" x2="785" y2="137"/>
+    <line x1="942" y1="236" x2="785" y2="203"/>
+    <line x1="942" y1="236" x2="785" y2="269"/>
+    <line x1="942" y1="236" x2="785" y2="335"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="430" cy="38" rx="105" ry="24"/>
+    <ellipse cx="430" cy="104" rx="105" ry="24"/>
+    <ellipse cx="430" cy="170" rx="105" ry="24"/>
+    <ellipse cx="430" cy="236" rx="105" ry="24"/>
+    <ellipse cx="430" cy="302" rx="105" ry="24"/>
+    <ellipse cx="430" cy="368" rx="105" ry="24"/>
+    <ellipse cx="430" cy="434" rx="105" ry="24"/>
+    <ellipse cx="680" cy="137" rx="105" ry="24"/>
+    <ellipse cx="680" cy="203" rx="105" ry="24"/>
+    <ellipse cx="680" cy="269" rx="105" ry="24"/>
+    <ellipse cx="680" cy="335" rx="105" ry="24"/>
+  </g>
+
+  <g text-anchor="middle" style="font-size:12.5px" fill="#111111">
+    <text x="430" y="43">Create a listing</text>
+    <text x="430" y="109">Publish a listing</text>
+    <text x="430" y="175">Edit a listing</text>
+    <text x="430" y="241">Cancel a listing</text>
+    <text x="430" y="307">Delete a draft listing</text>
+    <text x="430" y="373">Look up claim by code</text>
+    <text x="430" y="439">Verify the pickup code</text>
+    <text x="680" y="142">Browse listings</text>
+    <text x="680" y="208">View listing detail</text>
+    <text x="680" y="274">Claim a listing</text>
+    <text x="680" y="340">Generate pickup code</text>
+  </g>
+
+  <g transform="translate(140,236)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
+    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">approved donor org</text>
+  </g>
+
+  <g transform="translate(960,236)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
+    <text x="0" y="71" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">approved rescue org</text>
+  </g>
+</svg>
+</div>
+
+<!--
+DONOR & RESCUE PARTNER
+
+These are the use cases only one side can reach. Nothing here is shared.
+
+Donor side, top to bottom, is the listing lifecycle: create as a draft,
+publish it, edit it, cancel it. Delete is draft-only - once a listing has
+a claim against it the delete returns a 409, because the audit trail has
+to survive.
+
+The last two on the donor side are the handover. The donor types the
+six-digit code the partner shows them, or looks the claim up by the code
+if they are not sure which one it belongs to. Verify is the only call that
+completes a claim and marks the listing collected.
+
+Rescue partner side: browse, open a listing, claim it, and generate the
+pickup code. Claim is first come first served, one claim for the whole
+listing, idempotency key on the request so a retry replays rather than
+double-books.
+
+The split matters because the code enforces it. Only the claiming partner
+can generate the code and only the donor can verify it, so neither side
+can complete a handover on its own.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Shared by both parties
+
+<div class="text-base mt-2" style="color:#00000099">Either side of a claim can do these</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440"  fill="none">
+
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="158" y1="220" x2="423" y2="40"/>
+    <line x1="158" y1="220" x2="423" y2="112"/>
+    <line x1="158" y1="220" x2="423" y2="184"/>
+    <line x1="158" y1="220" x2="423" y2="256"/>
+    <line x1="158" y1="220" x2="423" y2="328"/>
+    <line x1="158" y1="220" x2="423" y2="400"/>
+    <line x1="942" y1="220" x2="687" y2="40"/>
+    <line x1="942" y1="220" x2="687" y2="112"/>
+    <line x1="942" y1="220" x2="687" y2="184"/>
+    <line x1="942" y1="220" x2="687" y2="256"/>
+    <line x1="942" y1="220" x2="687" y2="328"/>
+    <line x1="942" y1="220" x2="687" y2="400"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="555" cy="40" rx="132" ry="26"/>
+    <ellipse cx="555" cy="112" rx="132" ry="26"/>
+    <ellipse cx="555" cy="184" rx="132" ry="26"/>
+    <ellipse cx="555" cy="256" rx="132" ry="26"/>
+    <ellipse cx="555" cy="328" rx="132" ry="26"/>
+    <ellipse cx="555" cy="400" rx="132" ry="26"/>
+  </g>
+
+  <g text-anchor="middle" style="font-size:13px" fill="#111111">
+    <text x="555" y="45">Cancel a claim</text>
+    <text x="555" y="117">Report a no-show</text>
+    <text x="555" y="189">View claims they are party to</text>
+    <text x="555" y="261">View reports &amp; statistics</text>
+    <text x="555" y="333">Read &amp; clear notifications</text>
+    <text x="555" y="405">View profile, change password</text>
+  </g>
+
+  <g transform="translate(140,220)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
+  </g>
+
+  <g transform="translate(960,220)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
+  </g>
+</svg>
+</div>
+
+<!--
+SHARED BY BOTH PARTIES
+
+Six use cases where the system does not care which side you are on, only
+that you are a party to the claim.
+
+Cancel a claim and report a no-show are the interesting ones. Cancelling
+is symmetric on purpose: the partner's van breaks down, or the donor's
+kitchen needs the tray back, and either way the listing has to come out of
+reserved. What happens next depends on the relist policy - if there is
+still enough of the pickup window left the listing reopens as available,
+otherwise it goes straight to expired.
+
+No-show is the same shape but time-gated. You cannot report one before the
+pickup window has even opened. In practice the donor reports the partner,
+but the API does not hard-code that, and the record stores who reported it
+and from which org.
+
+The rest is read-only or personal: claims you are party to, the reports
+page, the notification feed, and your own profile. Reports and claims are
+both scoped - you only ever see rows your organisation touched. Admins are
+the exception and see everything.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Scheduled jobs
+
+<div class="text-base mt-2" style="color:#00000099">The system acting without a user</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 340"  fill="none">
+
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="240" y1="170" x2="405" y2="60"/>
+    <line x1="240" y1="170" x2="405" y2="170"/>
+    <line x1="240" y1="170" x2="405" y2="280"/>
+    <line x1="705" y1="60" x2="880" y2="158"/>
+    <line x1="705" y1="170" x2="880" y2="176"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="555" cy="60" rx="150" ry="38"/>
+    <ellipse cx="555" cy="170" rx="150" ry="38"/>
+    <ellipse cx="555" cy="280" rx="150" ry="38"/>
+  </g>
+
+  <g text-anchor="middle" fill="#111111">
+    <text x="555" y="57" style="font-size:13px">Expire listings past the window</text>
+    <text x="555" y="76" style="font-size:10px;font-style:italic" fill="#444444">every minute</text>
+    <text x="555" y="167" style="font-size:13px">Send pickup reminders</text>
+    <text x="555" y="186" style="font-size:10px;font-style:italic" fill="#444444">every 10 minutes</text>
+    <text x="555" y="277" style="font-size:13px">Prune idempotency keys</text>
+    <text x="555" y="296" style="font-size:10px;font-style:italic" fill="#444444">hourly</text>
+  </g>
+
+  <rect x="60" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="150" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
+  <text x="150" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
+
+  <rect x="880" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="970" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;external&#187;</text>
+  <text x="970" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Email provider</text>
+</svg>
+</div>
+
+<!--
+SCHEDULED JOBS
+
+The question people ask about the first use case diagram is who moves a
+listing to expired when nobody touches it. The answer is that the system
+is an actor too, which is why Scheduler is drawn as a «system» actor
+rather than a stick figure.
+
+Three cron jobs, all in the listings service. Expiry runs every minute and
+sweeps listings whose pickup window has closed. Pickup reminders run every
+ten minutes and fire twice per claim: once before the window opens, once
+when it is about to close. Idempotency key pruning runs hourly and is pure
+housekeeping - it drops claim keys past their retention window so a
+long-dead key eventually becomes new again.
+
+The links on the right are the notification path. Expiry and reminders
+both publish to the queue, the notifications service consumes it and fans
+out to email and the in-app feed. Pruning notifies nobody, which is why it
+has no association.
+
+Worth saying out loud: because these run on a schedule rather than on a
+request, they are the hardest part of the system to test, and they are
+also why the reports page can show an expired listing nobody ever opened.
+-->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Appendix</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Sequence <span class="accent">diagrams</span>
+</div>
+
+<div class="text-sm mt-10" style="color:#00000066">
+Three flows worth tracing end to end
+</div>
+
+<!--
+SEQUENCE SECTION MARKER
+
+Three diagrams: claiming a listing (the only place two users collide),
+the pickup handover (the only two-sided confirmation), and organisation
+approval (the whole asynchronous notification path in one picture).
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Claiming a listing
+
+<div class="text-base mt-2" style="color:#00000099">First come first served, idempotent per rescue org</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 556"  fill="none">
+  <defs>
+    <marker id="s1-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s1-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="160" height="40"/>
+    <rect x="240" y="14" width="160" height="40"/>
+    <rect x="460" y="14" width="160" height="40"/>
+    <rect x="680" y="14" width="160" height="40"/>
+    <rect x="900" y="14" width="160" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="105" y="39">Rescue partner</text>
+    <text x="320" y="39">Web app</text>
+    <text x="540" y="39">Listings API</text>
+    <text x="760" y="39">Database</text>
+    <text x="980" y="39">Queue</text>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="105" y1="54" x2="105" y2="530"/>
+    <line x1="320" y1="54" x2="320" y2="530"/>
+    <line x1="540" y1="54" x2="540" y2="530"/>
+    <line x1="760" y1="54" x2="760" y2="530"/>
+    <line x1="980" y1="54" x2="980" y2="530"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="100" y="96" width="10" height="406"/>
+    <rect x="315" y="96" width="10" height="406"/>
+    <rect x="535" y="130" width="10" height="338"/>
+    <rect x="755" y="164" width="10" height="234"/>
+    <rect x="975" y="434" width="10" height="14"/>
+  </g>
+
+  <rect x="515" y="284" width="290" height="132" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M515 284 h78 v12 l-10 10 h-68 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="521" y="300" style="font-size:10px;font-weight:600" fill="#111111">transaction</text>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="110" y1="96" x2="313" y2="96" marker-end="url(#s1-call)"/>
+    <line x1="325" y1="130" x2="533" y2="130" marker-end="url(#s1-call)"/>
+    <line x1="545" y1="164" x2="753" y2="164" marker-end="url(#s1-call)"/>
+    <line x1="755" y1="198" x2="547" y2="198" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
+    <line x1="545" y1="232" x2="753" y2="232" marker-end="url(#s1-call)"/>
+    <line x1="545" y1="266" x2="753" y2="266" marker-end="url(#s1-call)"/>
+    <line x1="545" y1="326" x2="753" y2="326" marker-end="url(#s1-call)"/>
+    <line x1="755" y1="360" x2="547" y2="360" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
+    <line x1="545" y1="394" x2="753" y2="394" marker-end="url(#s1-call)"/>
+    <line x1="545" y1="434" x2="973" y2="434" marker-end="url(#s1-call)"/>
+    <line x1="535" y1="468" x2="327" y2="468" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
+    <line x1="315" y1="502" x2="112" y2="502" stroke-dasharray="5 4" marker-end="url(#s1-ret)"/>
+  </g>
+
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="212" y="89">claim listing</text>
+    <text x="430" y="123">POST /requests + idempotency key</text>
+    <text x="650" y="157">find idempotency key</text>
+    <text x="650" y="191">no prior claim</text>
+    <text x="650" y="225">load listing, check window</text>
+    <text x="650" y="259">claim idempotency slot</text>
+    <text x="650" y="319">reserve listing (guarded UPDATE)</text>
+    <text x="650" y="353">1 row, else 409 Conflict</text>
+    <text x="650" y="387">insert claim + audit entry</text>
+    <text x="870" y="427">publish claim_created</text>
+    <text x="430" y="461">201 Created</text>
+    <text x="212" y="495">claim confirmed</text>
+  </g>
+</svg>
+</div>
+
+<!--
+CLAIMING A LISTING
+
+This is the only flow where two users can collide, so it is worth the
+detail.
+
+The idempotency key comes first, before anything else is read. An
+identical retry replays the original claim even after the listing has
+moved on, which is what makes a flaky network safe. The same key with a
+different listing is a 409, and a retry while the first is still in
+flight is a 409 asking the caller to try again.
+
+The line that actually prevents double allocation is the guarded UPDATE
+inside the transaction: set the listing reserved only where it is still
+available. Two orgs racing both reach it; the database serialises them;
+the loser updates zero rows and gets a 409. There is no application-level
+lock and no queue in front of it.
+
+The claim row, the audit entry and the idempotency completion all commit
+in that same transaction. The notification is published after the commit,
+deliberately - a failed publish logs and moves on rather than rolling back
+a claim that genuinely happened.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# The pickup handover
+
+<div class="text-base mt-2" style="color:#00000099">Neither side can complete it alone</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 560"  fill="none">
+  <defs>
+    <marker id="s2-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s2-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="40" y="14" width="180" height="40"/>
+    <rect x="300" y="14" width="180" height="40"/>
+    <rect x="560" y="14" width="180" height="40"/>
+    <rect x="820" y="14" width="180" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="130" y="39">Rescue partner</text>
+    <text x="390" y="39">Donor</text>
+    <text x="650" y="39">Listings API</text>
+    <text x="910" y="39">Database</text>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="130" y1="54" x2="130" y2="430"/>
+    <line x1="390" y1="54" x2="390" y2="430"/>
+    <line x1="650" y1="54" x2="650" y2="430"/>
+    <line x1="910" y1="54" x2="910" y2="430"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="125" y="96" width="10" height="136"/>
+    <rect x="385" y="232" width="10" height="180"/>
+    <rect x="645" y="96" width="10" height="316"/>
+    <rect x="905" y="130" width="10" height="252"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="135" y1="96" x2="643" y2="96" marker-end="url(#s2-call)"/>
+    <line x1="655" y1="130" x2="903" y2="130" marker-end="url(#s2-call)"/>
+    <line x1="655" y1="164" x2="903" y2="164" marker-end="url(#s2-call)"/>
+    <line x1="645" y1="198" x2="137" y2="198" stroke-dasharray="5 4" marker-end="url(#s2-ret)"/>
+    <line x1="135" y1="232" x2="383" y2="232" marker-end="url(#s2-call)"/>
+    <line x1="395" y1="266" x2="643" y2="266" marker-end="url(#s2-call)"/>
+    <line x1="655" y1="300" x2="903" y2="300" marker-end="url(#s2-call)"/>
+    <line x1="905" y1="334" x2="657" y2="334" stroke-dasharray="5 4" marker-end="url(#s2-ret)"/>
+    <line x1="655" y1="368" x2="903" y2="368" marker-end="url(#s2-call)"/>
+    <line x1="645" y1="402" x2="397" y2="402" stroke-dasharray="5 4" marker-end="url(#s2-ret)"/>
+  </g>
+
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="250" y="89">POST /requests/{id}/pickup-code</text>
+    <text x="780" y="123">assert claiming partner</text>
+    <text x="780" y="157">store code hash, set expiry</text>
+    <text x="250" y="191">201 { code }</text>
+    <text x="258" y="225">show the 6-digit code</text>
+    <text x="520" y="259">POST /requests/{id}/verify</text>
+    <text x="780" y="293">assert donor, compare hash</text>
+    <text x="780" y="327">match</text>
+    <text x="780" y="361">claim completed, listing collected</text>
+    <text x="520" y="395">201 completed</text>
+  </g>
+
+  <path d="M60 470 H430 L450 490 V548 H60 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M430 470 V490 H450" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="74" y="492" style="font-size:11px;font-weight:600" fill="#111111">note</text>
+  <text x="74" y="513" style="font-size:11px" fill="#111111">Three wrong codes void it. The partner mints a</text>
+  <text x="74" y="532" style="font-size:11px" fill="#111111">replacement, limited to one per minute.</text>
+</svg>
+</div>
+
+<!--
+THE PICKUP HANDOVER
+
+Two endpoints, two different callers, and the code enforces which is
+which. Only the rescue partner that holds the claim can mint the code;
+only the donor on that listing can verify it.
+
+The code is stored hashed and never returned on a GET. Asking for it
+again returns the same live code rather than a new one, so a reload or a
+second device does not strand the partner with a code the donor cannot
+accept.
+
+Verification is the only path that completes a claim and flips the
+listing to collected, and it does both in one transaction. Resubmitting a
+code that already completed the claim replays the completed request
+instead of erroring, which matters when the donor double-taps on a bad
+connection.
+
+The note is the abuse guard. Three wrong attempts void that code, and
+minting a replacement is capped at one a minute, on top of the endpoint
+rate limits.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Approving an organisation
+
+<div class="text-base mt-2" style="color:#00000099">The asynchronous notification path, end to end</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 520"  fill="none">
+  <defs>
+    <marker id="s3-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s3-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="170" height="40"/>
+    <rect x="245" y="14" width="170" height="40"/>
+    <rect x="465" y="14" width="170" height="40"/>
+    <rect x="685" y="14" width="170" height="40"/>
+    <rect x="900" y="14" width="170" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="110" y="39">Platform admin</text>
+    <text x="330" y="39">Profile API</text>
+    <text x="550" y="39">Queue</text>
+    <text x="770" y="39">Notifications</text>
+    <text x="985" y="39">Email provider</text>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="110" y1="54" x2="110" y2="505"/>
+    <line x1="330" y1="54" x2="330" y2="505"/>
+    <line x1="550" y1="54" x2="550" y2="505"/>
+    <line x1="770" y1="54" x2="770" y2="505"/>
+    <line x1="985" y1="54" x2="985" y2="505"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="105" y="96" width="10" height="186"/>
+    <rect x="325" y="96" width="10" height="186"/>
+    <rect x="545" y="248" width="10" height="112"/>
+    <rect x="765" y="316" width="10" height="174"/>
+    <rect x="980" y="446" width="10" height="38"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="115" y1="96" x2="323" y2="96" marker-end="url(#s3-call)"/>
+    <path d="M335 126 H375 V162 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <path d="M335 182 H375 V218 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="335" y1="248" x2="543" y2="248" marker-end="url(#s3-call)"/>
+    <line x1="325" y1="282" x2="117" y2="282" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <line x1="765" y1="316" x2="557" y2="316" marker-end="url(#s3-call)"/>
+    <line x1="555" y1="350" x2="763" y2="350" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <path d="M775 380 H815 V416 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="775" y1="446" x2="978" y2="446" marker-end="url(#s3-call)"/>
+    <line x1="980" y1="480" x2="777" y2="480" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+  </g>
+
+  <g style="font-size:11px" fill="#111111">
+    <text x="220" y="89" text-anchor="middle">POST /admin/orgs/{id}/approve</text>
+    <text x="383" y="130">validate transition</text>
+    <text x="383" y="186">update status + audit entry</text>
+    <text x="440" y="241" text-anchor="middle">publish org_approved</text>
+    <text x="220" y="275" text-anchor="middle">200 OK</text>
+    <text x="660" y="309" text-anchor="middle">long poll</text>
+    <text x="660" y="343" text-anchor="middle">org_approved</text>
+    <text x="823" y="384">write in-app notification</text>
+    <text x="877" y="439" text-anchor="middle">send approval email</text>
+    <text x="877" y="473" text-anchor="middle">accepted</text>
+  </g>
+</svg>
+</div>
+
+<!--
+APPROVING AN ORGANISATION
+
+One admin click, and the whole asynchronous path falls out of it.
+
+Everything the admin waits for is the left half: validate the transition,
+write the new status and the audit entry, publish one message, return 200.
+The admin console is not waiting on an inbox.
+
+The right half is the notifications service, which long-polls the queue
+on its own schedule. It writes the in-app feed row first, then sends the
+email. Those are separately tracked: a bounced email does not lose the
+in-app notification, and a permanent delivery failure is recorded rather
+than retried forever.
+
+This is the same path every notification takes - claim created, claim
+cancelled, pickup reminder, pickup completed, listing expired. Only the
+publisher at the left end changes. That is why the listings service and
+the profile service can both notify without knowing anything about email.
+-->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Appendix</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Design <span class="accent">patterns</span>
+</div>
+
+<div class="text-sm mt-10" style="color:#00000066">
+Class diagrams for the four patterns the codebase leans on
+</div>
+
+<!--
+DESIGN PATTERN SECTION MARKER
+
+Class-diagram backing for the three patterns in section three, plus the
+guard chain, which the main deck never names. Same white canvas as the
+rest of the appendix.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Strategy
+
+<div class="text-base mt-2" style="color:#00000099">One interface, two implementations, one factory</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 520" fill="none">
+  <defs>
+    <marker id="dp1-impl" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="dp1-dep" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="6 4">
+    <line x1="290" y1="112" x2="398" y2="112" marker-end="url(#dp1-dep)"/>
+    <line x1="375" y1="278" x2="465" y2="190" marker-end="url(#dp1-impl)"/>
+    <line x1="725" y1="278" x2="635" y2="190" marker-end="url(#dp1-impl)"/>
+    <line x1="470" y1="438" x2="392" y2="392" marker-end="url(#dp1-dep)"/>
+    <line x1="630" y1="438" x2="708" y2="392" marker-end="url(#dp1-dep)"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="400" y="36" width="300" height="150"/>
+    <rect x="60" y="80" width="230" height="64"/>
+    <rect x="250" y="280" width="250" height="110"/>
+    <rect x="600" y="280" width="250" height="110"/>
+    <rect x="430" y="440" width="240" height="56"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="400" y1="94" x2="700" y2="94"/>
+    <line x1="250" y1="318" x2="500" y2="318"/>
+    <line x1="600" y1="318" x2="850" y2="318"/>
+  </g>
+
+  <g text-anchor="middle" fill="#111111">
+    <text x="550" y="60" style="font-size:11px;font-style:italic">&#171;interface&#187;</text>
+    <text x="550" y="80" style="font-size:15px;font-weight:700">ListingsApi</text>
+    <text x="175" y="104" style="font-size:11px;font-style:italic">&#171;component&#187;</text>
+    <text x="175" y="126" style="font-size:14px;font-weight:600">web/platform</text>
+    <text x="375" y="306" style="font-size:14px;font-weight:600">ListingsClient</text>
+    <text x="725" y="306" style="font-size:14px;font-weight:600">MockListingsClient</text>
+    <text x="550" y="462" style="font-size:11px;font-style:italic">&#171;factory&#187;</text>
+    <text x="550" y="483" style="font-size:12px">createListingsClient(opts)</text>
+  </g>
+
+  <g style="font-size:11.5px" fill="#111111">
+    <text x="414" y="116">+ listListings(query)</text>
+    <text x="414" y="134">+ createRequest(request)</text>
+    <text x="414" y="152">+ verifyPickupCode(id, code)</text>
+    <text x="414" y="172" style="font-size:11px;font-style:italic" fill="#444444">+ 15 more operations</text>
+    <text x="264" y="342">- baseUrl : string</text>
+    <text x="264" y="360">- getToken() : string</text>
+    <text x="264" y="380" style="font-size:11px;font-style:italic" fill="#444444">all 18 over fetch()</text>
+    <text x="614" y="342">- listings : array of Listing</text>
+    <text x="614" y="360">- requests : array of ListingRequest</text>
+    <text x="614" y="380" style="font-size:11px;font-style:italic" fill="#444444">all 18 in memory</text>
+  </g>
+
+  <g style="font-size:10.5px" fill="#444444">
+    <text x="344" y="104" text-anchor="middle">&#171;uses&#187;</text>
+    <text x="408" y="424" text-anchor="middle">&#171;creates&#187;</text>
+    <text x="700" y="424" text-anchor="middle">&#171;creates&#187;</text>
+  </g>
+
+  <path d="M760 420 H1060 L1080 440 V496 H760 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1060 420 V440 H1080" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="774" y="442" style="font-size:11px;font-weight:600" fill="#111111">note</text>
+  <text x="774" y="462" style="font-size:11px" fill="#111111">opts.mock picks the implementation.</text>
+  <text x="774" y="480" style="font-size:11px" fill="#111111">The app only ever holds ListingsApi.</text>
+</svg>
+</div>
+
+<!--
+STRATEGY
+
+The listings SDK is the clean example. One interface, ListingsApi, with
+eighteen operations. Two classes implement it. ListingsClient makes the
+real HTTP calls with the user's bearer token. MockListingsClient keeps
+everything in memory but mirrors the server's rules, including the status
+transitions and the idempotency replay.
+
+createListingsClient is the factory. It takes an options object, looks at
+opts.mock, and hands back the interface. Nothing downstream knows which
+object it is holding, so switching the whole frontend between a real
+backend and a fake one is one boolean.
+
+That is what let us build and demo the frontend before the listings
+service existed.
+
+If asked where else: the notification email templates are a
+type-to-renderer map, which is the same idea keyed by event type instead
+of by a flag, and the Go service passes Approve, Reject and Suspend into
+one shared transition handler as functions.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Repository
+
+<div class="text-base mt-2" style="color:#00000099">Services hold business rules, repositories hold queries</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 520" fill="none">
+  <defs>
+    <marker id="dp2-dep" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="550" y1="84" x2="550" y2="128" marker-end="url(#dp2-dep)"/>
+    <line x1="430" y1="242" x2="195" y2="288" marker-end="url(#dp2-dep)"/>
+    <line x1="550" y1="242" x2="550" y2="288" marker-end="url(#dp2-dep)"/>
+    <line x1="670" y1="242" x2="905" y2="288" marker-end="url(#dp2-dep)"/>
+    <line x1="175" y1="384" x2="425" y2="438" marker-end="url(#dp2-dep)"/>
+    <line x1="550" y1="384" x2="550" y2="438" marker-end="url(#dp2-dep)"/>
+    <line x1="925" y1="384" x2="675" y2="438" marker-end="url(#dp2-dep)"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="410" y="24" width="280" height="60"/>
+    <rect x="380" y="130" width="340" height="112"/>
+    <rect x="50" y="290" width="250" height="94"/>
+    <rect x="425" y="290" width="250" height="94"/>
+    <rect x="800" y="290" width="250" height="94"/>
+    <rect x="400" y="440" width="300" height="60"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="380" y1="166" x2="720" y2="166"/>
+    <line x1="50" y1="326" x2="300" y2="326"/>
+    <line x1="425" y1="326" x2="675" y2="326"/>
+    <line x1="800" y1="326" x2="1050" y2="326"/>
+  </g>
+
+  <g text-anchor="middle" fill="#111111">
+    <text x="550" y="50" style="font-size:11px;font-style:italic">&#171;controller&#187;</text>
+    <text x="550" y="71" style="font-size:14px;font-weight:600">RequestsController</text>
+    <text x="550" y="156" style="font-size:14px;font-weight:600">RequestsService</text>
+    <text x="175" y="316" style="font-size:13.5px;font-weight:600">RequestsRepository</text>
+    <text x="550" y="316" style="font-size:13.5px;font-weight:600">IdempotencyRepository</text>
+    <text x="925" y="316" style="font-size:13.5px;font-weight:600">AuditRepository</text>
+    <text x="550" y="466" style="font-size:11px;font-style:italic">&#171;database&#187;</text>
+    <text x="550" y="487" style="font-size:13.5px;font-weight:600">PostgreSQL via Drizzle</text>
+  </g>
+
+  <g style="font-size:11.5px" fill="#111111">
+    <text x="394" y="188">+ create(dto, user)</text>
+    <text x="394" y="206">+ decide(id, dto, user)</text>
+    <text x="394" y="224">+ verifyPickupCode(id, dto, user)</text>
+    <text x="64" y="350">+ reserveListingForClaim()</text>
+    <text x="64" y="370">+ updateStatus()</text>
+    <text x="439" y="350">+ claimSlot()</text>
+    <text x="439" y="370">+ complete()</text>
+    <text x="814" y="350">+ record()</text>
+    <text x="814" y="370">+ findMany()</text>
+  </g>
+
+  <path d="M40 24 H340 L360 44 V100 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M340 24 V44 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="54" y="46" style="font-size:11px;font-weight:600" fill="#111111">note</text>
+  <text x="54" y="66" style="font-size:11px" fill="#111111">No SQL above this line. Unit tests swap</text>
+  <text x="54" y="84" style="font-size:11px" fill="#111111">the repositories for in-memory fakes.</text>
+</svg>
+</div>
+
+<!--
+REPOSITORY
+
+Three layers. The controller does HTTP: parse, validate the DTO, run the
+guards. The service does business rules: transition validity, who is
+allowed, what the relist policy says. The repositories do queries, and
+nothing else.
+
+The payoff is the middle layer. RequestsService is where all the
+interesting logic lives, and it has no SQL in it, so its tests construct
+it with fake repositories and run in milliseconds with no database.
+
+One repository per concern rather than one giant data layer:
+RequestsRepository owns claims, IdempotencyRepository owns the key table,
+AuditRepository owns the append-only log. The service composes them, and
+passes a transaction handle down when several have to commit together.
+
+The Go profile service does the same thing with its store package.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Observer
+
+<div class="text-base mt-2" style="color:#00000099">Publish and forget; the queue is the only coupling</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440" fill="none">
+  <defs>
+    <marker id="dp3-dep" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="220" y1="86" x2="276" y2="176" marker-end="url(#dp3-dep)"/>
+    <line x1="220" y1="154" x2="276" y2="182" marker-end="url(#dp3-dep)"/>
+    <line x1="220" y1="222" x2="276" y2="192" marker-end="url(#dp3-dep)"/>
+    <line x1="220" y1="290" x2="276" y2="200" marker-end="url(#dp3-dep)"/>
+    <line x1="482" y1="185" x2="546" y2="185" marker-end="url(#dp3-dep)"/>
+    <line x1="702" y1="185" x2="766" y2="185" marker-end="url(#dp3-dep)"/>
+    <line x1="850" y1="227" x2="730" y2="316" marker-end="url(#dp3-dep)"/>
+    <line x1="910" y1="227" x2="960" y2="316" marker-end="url(#dp3-dep)"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="30" y="60" width="190" height="52"/>
+    <rect x="30" y="128" width="190" height="52"/>
+    <rect x="30" y="196" width="190" height="52"/>
+    <rect x="30" y="264" width="190" height="52"/>
+    <rect x="280" y="145" width="200" height="80"/>
+    <rect x="550" y="155" width="150" height="60"/>
+    <rect x="770" y="145" width="220" height="80"/>
+    <rect x="600" y="318" width="230" height="60"/>
+    <rect x="870" y="318" width="190" height="60"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="280" y1="182" x2="480" y2="182"/>
+    <line x1="770" y1="182" x2="990" y2="182"/>
+  </g>
+
+  <g text-anchor="middle" fill="#111111">
+    <text x="125" y="91" style="font-size:12.5px;font-weight:600">RequestsService</text>
+    <text x="125" y="159" style="font-size:12.5px;font-weight:600">ListingExpiryService</text>
+    <text x="125" y="227" style="font-size:12.5px;font-weight:600">PickupReminderService</text>
+    <text x="125" y="295" style="font-size:12.5px;font-weight:600">Profile API (Go)</text>
+    <text x="380" y="170" style="font-size:13.5px;font-weight:600">NotificationsPublisher</text>
+    <text x="625" y="180" style="font-size:11px;font-style:italic">&#171;queue&#187;</text>
+    <text x="625" y="201" style="font-size:14px;font-weight:600">Amazon SQS</text>
+    <text x="880" y="170" style="font-size:13.5px;font-weight:600">SqsConsumerService</text>
+    <text x="715" y="344" style="font-size:11px;font-style:italic">&#171;in-app feed&#187;</text>
+    <text x="715" y="365" style="font-size:13px;font-weight:600">NotificationsRepository</text>
+    <text x="965" y="344" style="font-size:11px;font-style:italic">&#171;email&#187;</text>
+    <text x="965" y="365" style="font-size:13px;font-weight:600">MailerService</text>
+  </g>
+
+  <g style="font-size:11.5px" fill="#111111">
+    <text x="294" y="204">+ publish(type, to, payload)</text>
+    <text x="784" y="204">+ process(message)</text>
+  </g>
+
+  <g style="font-size:10.5px" fill="#444444" text-anchor="middle">
+    <text x="514" y="177">&#171;publish&#187;</text>
+    <text x="734" y="177">&#171;consume&#187;</text>
+  </g>
+
+  <path d="M30 348 H400 L420 368 V424 H30 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M400 348 V368 H420" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="44" y="370" style="font-size:11px;font-weight:600" fill="#111111">note</text>
+  <text x="44" y="390" style="font-size:11px" fill="#111111">The two services never import each other.</text>
+  <text x="44" y="408" style="font-size:11px" fill="#111111">Publishing is best effort and post-commit.</text>
+</svg>
+</div>
+
+<!--
+OBSERVER
+
+Four publishers on the left, one consumer on the right, and nothing in
+between except the queue. When a claim is created, cancelled or
+completed, the listings service drops an event and moves on. The Go
+profile service does the same for organisation approval and welcome
+emails.
+
+The notification service long-polls the queue, renders the template for
+that event type, writes the in-app feed row and sends the email. Those
+two deliveries are tracked separately, so a bounced email does not lose
+the in-app notification.
+
+Two things worth saying. Publishing happens after the database commit and
+is deliberately best effort: a failed publish logs and moves on rather
+than rolling back a claim that genuinely happened. And a message that
+keeps failing goes to a dead letter queue rather than blocking the
+others.
+
+This is how we added the entire notification service without touching the
+claim flow.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Chain of responsibility
+
+<div class="text-base mt-2" style="color:#00000099">Every request walks the guard chain before a handler sees it</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 400" fill="none">
+  <defs>
+    <marker id="dp4-impl" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="dp4-dep" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+
+  <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="6 4">
+    <line x1="305" y1="168" x2="452" y2="112" marker-end="url(#dp4-impl)"/>
+    <line x1="530" y1="168" x2="530" y2="112" marker-end="url(#dp4-impl)"/>
+    <line x1="765" y1="168" x2="618" y2="112" marker-end="url(#dp4-impl)"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="172" y1="210" x2="211" y2="210" marker-end="url(#dp4-dep)"/>
+    <line x1="397" y1="210" x2="436" y2="210" marker-end="url(#dp4-dep)"/>
+    <line x1="622" y1="210" x2="661" y2="210" marker-end="url(#dp4-dep)"/>
+    <line x1="867" y1="210" x2="906" y2="210" marker-end="url(#dp4-dep)"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2" stroke-dasharray="5 4">
+    <line x1="305" y1="252" x2="448" y2="316" marker-end="url(#dp4-dep)"/>
+    <line x1="530" y1="252" x2="542" y2="316" marker-end="url(#dp4-dep)"/>
+    <line x1="765" y1="252" x2="652" y2="316" marker-end="url(#dp4-dep)"/>
+  </g>
+
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="400" y="20" width="260" height="90"/>
+    <rect x="20" y="185" width="150" height="50"/>
+    <rect x="215" y="170" width="180" height="82"/>
+    <rect x="440" y="170" width="180" height="82"/>
+    <rect x="665" y="170" width="200" height="82"/>
+    <rect x="908" y="185" width="172" height="50"/>
+    <rect x="430" y="318" width="240" height="56"/>
+  </g>
+
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="400" y1="72" x2="660" y2="72"/>
+    <line x1="215" y1="208" x2="395" y2="208"/>
+    <line x1="440" y1="208" x2="620" y2="208"/>
+    <line x1="665" y1="208" x2="865" y2="208"/>
+  </g>
+
+  <g text-anchor="middle" fill="#111111">
+    <text x="530" y="44" style="font-size:11px;font-style:italic">&#171;interface&#187;</text>
+    <text x="530" y="64" style="font-size:15px;font-weight:700">CanActivate</text>
+    <text x="95" y="215" style="font-size:12.5px;font-weight:600">HTTP request</text>
+    <text x="305" y="196" style="font-size:13.5px;font-weight:600">JwtAuthGuard</text>
+    <text x="530" y="196" style="font-size:13.5px;font-weight:600">ThrottlerGuard</text>
+    <text x="765" y="196" style="font-size:13.5px;font-weight:600">OrgMembershipGuard</text>
+    <text x="994" y="207" style="font-size:11px;font-style:italic">&#171;handler&#187;</text>
+    <text x="994" y="226" style="font-size:12.5px;font-weight:600">create()</text>
+    <text x="550" y="342" style="font-size:11px;font-style:italic">&#171;rejected&#187;</text>
+    <text x="550" y="363" style="font-size:13px;font-weight:600">Problem+JSON response</text>
+  </g>
+
+  <text x="414" y="94" style="font-size:11.5px" fill="#111111">+ canActivate(context) : boolean</text>
+
+  <g text-anchor="middle" style="font-size:10.5px;font-style:italic" fill="#444444">
+    <text x="305" y="232">verifies the bearer token</text>
+    <text x="530" y="232">rate limits per caller</text>
+    <text x="765" y="232">org approved, user active</text>
+  </g>
+
+  <g style="font-size:10.5px" fill="#444444">
+    <text x="330" y="296">401</text>
+    <text x="500" y="296">429</text>
+    <text x="712" y="296">403</text>
+  </g>
+</svg>
+</div>
+
+<!--
+CHAIN OF RESPONSIBILITY
+
+This one the main deck never names, but it is the pattern doing the most
+work. Every request walks the same chain, and any link can stop it.
+
+JwtAuthGuard runs first and globally: no valid bearer token, 401, and
+nothing downstream executes. ThrottlerGuard runs second, deliberately
+after the auth guard because it keys its rate limit on the caller the
+auth guard resolved. Then the route-level guard, which varies by
+endpoint: OrgMembershipGuard for anything that writes, the admin guard
+for the audit log.
+
+They all implement the same CanActivate interface, which is what makes
+them composable. The controller method is never reached unless every link
+returns true, so the handler itself contains no authorisation code at
+all.
+
+If asked about ordering: it is explicit, not accidental. The comment in
+app.module.ts says why the throttler must come second.
+-->
+
+---
+layout: section
+class: flex flex-col justify-center text-center
+---
+
+<div class="text-xs dgm-wide" style="color:#00000066">Appendix</div>
+
+<div class="text-5xl font-extrabold leading-tight mt-6">
+Data <span class="accent">model</span>
+</div>
+
+<div class="text-sm mt-10" style="color:#00000066">
+Nine tables across two databases
+</div>
+
+<!--
+DATA MODEL SECTION MARKER
+
+One entity relationship overview, then every table with its columns. Two
+databases: listings and profile share one, notifications owns its own.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# Entity relationships
+
+<div class="text-base mt-2" style="color:#00000099">Nine tables; primary and foreign keys only</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 540" fill="none">
+  <defs>
+    <marker id="erd-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="erd-one" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="40" y="40" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="86" x2="260" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="150.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="150.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">organisations</text>
+  <text x="49" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="98" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="251" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="40" y="140" width="220" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="186" x2="260" y2="186" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="150.0" y="157" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="150.0" y="177" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">users</text>
+  <text x="49" y="198" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="198" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="251" y="198" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="49" y="215" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="74" y="215" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="251" y="215" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="40" y="262" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="308" x2="260" y2="308" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="150.0" y="279" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="150.0" y="299" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">login_restrictions</text>
+  <text x="49" y="320" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="320" style="font-size:10.5px" fill="#111111">username</text>
+  <text x="251" y="320" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <rect x="400" y="40" width="240" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="400" y1="86" x2="640" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="520.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="520.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listings</text>
+  <text x="409" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="434" y="98" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="631" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="115" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="115" style="font-size:10.5px" fill="#111111">donor_org_id</text>
+  <text x="631" y="115" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="132" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="132" style="font-size:10.5px" fill="#111111">created_by</text>
+  <text x="631" y="132" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="400" y="200" width="240" height="120" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="400" y1="246" x2="640" y2="246" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="520.0" y="217" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="520.0" y="237" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">requests</text>
+  <text x="409" y="258" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="434" y="258" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="631" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="275" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="275" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="631" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="292" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="292" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="631" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="309" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="309" style="font-size:10.5px" fill="#111111">claimed_by</text>
+  <text x="631" y="309" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="400" y="372" width="240" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="400" y1="418" x2="640" y2="418" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="520.0" y="389" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="520.0" y="409" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">audit_log</text>
+  <text x="409" y="430" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="434" y="430" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="631" y="430" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="447" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="447" style="font-size:10.5px" fill="#111111">user_id</text>
+  <text x="631" y="447" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="409" y="464" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="434" y="464" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="631" y="464" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="780" y="40" width="250" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="780" y1="86" x2="1030" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="905.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="905.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listing_images</text>
+  <text x="789" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="814" y="98" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1021" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="789" y="115" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="814" y="115" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="1021" y="115" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="780" y="200" width="250" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="780" y1="246" x2="1030" y2="246" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="905.0" y="217" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="905.0" y="237" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">request_idempotency_keys</text>
+  <text x="789" y="258" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="814" y="258" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1021" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="789" y="275" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="814" y="275" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="1021" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="789" y="292" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="814" y="292" style="font-size:10.5px" fill="#111111">claim_id</text>
+  <text x="1021" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="780" y="372" width="250" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="780" y1="418" x2="1030" y2="418" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="905.0" y="389" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">notifications db</text>
+  <text x="905.0" y="409" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">notifications</text>
+  <text x="789" y="430" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="814" y="430" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1021" y="430" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <line x1="150" y1="92" x2="150" y2="138" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <line x1="262" y1="66" x2="398" y2="70" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="330" y="52" text-anchor="middle" style="font-size:9.5px" fill="#444444">donor_org_id</text>
+  <line x1="262" y1="158" x2="398" y2="104" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="330" y="148" text-anchor="middle" style="font-size:9.5px" fill="#444444">created_by</text>
+  <line x1="262" y1="82" x2="398" y2="222" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="345" y="175" text-anchor="middle" style="font-size:9.5px" fill="#444444">rescue_org_id</text>
+  <line x1="262" y1="186" x2="398" y2="250" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="318" y="232" text-anchor="middle" style="font-size:9.5px" fill="#444444">claimed_by</text>
+  <line x1="520" y1="131" x2="520" y2="198" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="566" y="168" text-anchor="middle" style="font-size:9.5px" fill="#444444">listing_id</text>
+  <line x1="262" y1="200" x2="398" y2="398" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="305" y="300" text-anchor="middle" style="font-size:9.5px" fill="#444444">user_id</text>
+  <line x1="642" y1="74" x2="778" y2="74" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="710" y="62" text-anchor="middle" style="font-size:9.5px" fill="#444444">listing_id</text>
+  <line x1="642" y1="248" x2="778" y2="248" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="710" y="236" text-anchor="middle" style="font-size:9.5px" fill="#444444">claim_id</text>
+  <path d="M40 352 H342 L360 370 V433 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M342 352 V370 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="52" y="371" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="52" y="390" style="font-size:10.5px" fill="#111111">login_restrictions keys on username, not a FK.</text>
+  <text x="52" y="407" style="font-size:10.5px" fill="#111111">requests also references users via cancelled_by,</text>
+  <text x="52" y="424" style="font-size:10.5px" fill="#111111">verified_by, code_generated_by and no_show_by.</text>
+  <path d="M780 462 H1012 L1030 480 V526 H780 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1012 462 V480 H1030" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="792" y="481" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="792" y="500" style="font-size:10.5px" fill="#111111">Separate database. No joins</text>
+  <text x="792" y="517" style="font-size:10.5px" fill="#111111">to the tables on the left.</text>
+</svg>
+</div>
+
+<!--
+ENTITY RELATIONSHIPS
+
+Nine tables. Everything on this slide except notifications lives in one
+physical Postgres database, which matters: the foreign keys between
+listings and profile are real constraints, not conventions, so the
+database refuses a claim from an organisation that does not exist.
+
+Ownership is still split. The profile service migrates organisations,
+users and login_restrictions in Go; the listings service migrates the
+rest with Drizzle, and deliberately excludes the profile tables from its
+schema scan so it can never alter them.
+
+notifications is the exception. Its own database, its own role, no
+foreign key to anything here, because a delivery record never needs to
+join a listing. recipient_user_id is a Cognito sub, stored as text.
+
+The one-to-many from listings to requests is constrained further than the
+diagram shows: a partial unique index allows at most one active claim per
+listing. That is the line that enforces first come first served.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# listings &amp; listing_images
+
+<div class="text-base mt-2" style="color:#00000099">The donated lot and its photos</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440" fill="none">
+  <defs>
+    <marker id="erd2-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="erd2-one" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="40" y="30" width="300" height="392" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="76" x2="340" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="190.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service</text>
+  <text x="190.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listings</text>
+  <text x="49" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="331" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="49" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="74" y="105" style="font-size:10.5px" fill="#111111">donor_org_id</text>
+  <text x="331" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="49" y="122" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="74" y="122" style="font-size:10.5px" fill="#111111">created_by</text>
+  <text x="331" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="74" y="139" style="font-size:10.5px" fill="#111111">category</text>
+  <text x="331" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">listing_category</text>
+  <text x="74" y="156" style="font-size:10.5px" fill="#111111">description</text>
+  <text x="331" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="173" style="font-size:10.5px" fill="#111111">quantity</text>
+  <text x="331" y="173" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">numeric(10,2)</text>
+  <text x="74" y="190" style="font-size:10.5px" fill="#111111">unit</text>
+  <text x="331" y="190" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="207" style="font-size:10.5px" fill="#111111">allergens</text>
+  <text x="331" y="207" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text array</text>
+  <text x="74" y="224" style="font-size:10.5px" fill="#111111">handling_instructions</text>
+  <text x="331" y="224" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="241" style="font-size:10.5px" fill="#111111">use_by</text>
+  <text x="331" y="241" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="258" style="font-size:10.5px" fill="#111111">pickup_location</text>
+  <text x="331" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="275" style="font-size:10.5px" fill="#111111">pickup_window_start</text>
+  <text x="331" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="292" style="font-size:10.5px" fill="#111111">pickup_window_end</text>
+  <text x="331" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="309" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="331" y="309" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">listing_status</text>
+  <text x="74" y="326" style="font-size:10.5px" fill="#111111">version</text>
+  <text x="331" y="326" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">integer</text>
+  <text x="74" y="343" style="font-size:10.5px" fill="#111111">cancelled_reason</text>
+  <text x="331" y="343" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="360" style="font-size:10.5px" fill="#111111">published_at</text>
+  <text x="331" y="360" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="377" style="font-size:10.5px" fill="#111111">deleted_at</text>
+  <text x="331" y="377" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="394" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="331" y="394" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="411" style="font-size:10.5px" fill="#111111">updated_at</text>
+  <text x="331" y="411" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="470" y="30" width="290" height="137" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="470" y1="76" x2="760" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="615.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service</text>
+  <text x="615.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listing_images</text>
+  <text x="479" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="504" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="751" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="479" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="504" y="105" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="751" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid  on delete cascade</text>
+  <text x="504" y="122" style="font-size:10.5px" fill="#111111">s3_key</text>
+  <text x="751" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="504" y="139" style="font-size:10.5px" fill="#111111">position</text>
+  <text x="751" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">integer</text>
+  <text x="504" y="156" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="751" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <line x1="342" y1="70" x2="468" y2="70" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd2-one)" marker-end="url(#erd2-many)"/>
+  <text x="405" y="58" text-anchor="middle" style="font-size:9.5px" fill="#444444">1 .. many</text>
+  <path d="M470 190 H742 L760 208 V271 H470 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M742 190 V208 H760" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="482" y="209" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="482" y="228" style="font-size:10.5px" fill="#111111">unique (listing_id, position)</text>
+  <text x="482" y="245" style="font-size:10.5px" fill="#111111">Key only, never a URL, so the bucket</text>
+  <text x="482" y="262" style="font-size:10.5px" fill="#111111">or CDN can change without a migration.</text>
+  <path d="M800 30 H1052 L1070 48 V145 H800 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1052 30 V48 H1070" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="812" y="49" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="812" y="68" style="font-size:10.5px" fill="#111111">CHECK constraints</text>
+  <text x="812" y="85" style="font-size:10.5px" fill="#111111">pickup_window_end &gt; start</text>
+  <text x="812" y="102" style="font-size:10.5px" fill="#111111">quantity &gt;= 0</text>
+  <text x="812" y="119" style="font-size:10.5px" fill="#111111">draft has no published_at</text>
+  <text x="812" y="136" style="font-size:10.5px" fill="#111111">available implies every field set</text>
+  <path d="M800 210 H1052 L1070 228 V291 H800 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1052 210 V228 H1070" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="812" y="229" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="812" y="248" style="font-size:10.5px" fill="#111111">deleted_at is a soft delete.</text>
+  <text x="812" y="265" style="font-size:10.5px" fill="#111111">Every read path filters it out,</text>
+  <text x="812" y="282" style="font-size:10.5px" fill="#111111">so history survives a delete.</text>
+  <path d="M800 350 H1052 L1070 368 V414 H800 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1052 350 V368 H1070" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="812" y="369" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="812" y="388" style="font-size:10.5px" fill="#111111">version drives optimistic</text>
+  <text x="812" y="405" style="font-size:10.5px" fill="#111111">locking on update.</text>
+</svg>
+</div>
+
+<!--
+LISTINGS & LISTING_IMAGES
+
+Most columns are nullable on purpose. A donor can save a draft with two
+fields filled in, so the schema cannot require the rest. What stops a
+half-finished listing going live is the available_listing_is_complete
+check constraint, which only applies once status becomes available. The
+service validates the same rule; the constraint is the backstop for
+anything that reaches the table another way.
+
+allergens is the exception, not null with an empty array default, because
+an empty array is itself the "not declared yet" state. There is no
+separate null to represent.
+
+Soft delete rather than a real delete: deleted_at set, every read path
+filters it, and the row plus its audit history stays. version is the
+optimistic lock, bumped on every update, so two donors editing the same
+listing cannot silently overwrite each other.
+
+listing_images stores the S3 key only. A bucket, region or CDN domain
+change is then a config change, not a data migration.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# requests
+
+<div class="text-base mt-2" style="color:#00000099">One claim on one listing, start to finish</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 500" fill="none">
+  <defs>
+    <marker id="erd3-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="erd3-one" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="30" y="24" width="310" height="290" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="30" y1="70" x2="340" y2="70" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="185.0" y="41" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service  (1 of 2)</text>
+  <text x="185.0" y="61" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">requests</text>
+  <text x="39" y="82" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="64" y="82" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="331" y="82" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="39" y="99" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="99" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="331" y="99" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="39" y="116" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="116" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="331" y="116" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="39" y="133" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="133" style="font-size:10.5px" fill="#111111">claimed_by</text>
+  <text x="331" y="133" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="64" y="150" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="331" y="150" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">request_status</text>
+  <text x="64" y="167" style="font-size:10.5px" fill="#111111">requested_quantity</text>
+  <text x="331" y="167" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">numeric(10,2)</text>
+  <text x="64" y="184" style="font-size:10.5px" fill="#111111">requested_at</text>
+  <text x="331" y="184" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="64" y="201" style="font-size:10.5px" fill="#111111">cancelled_at</text>
+  <text x="331" y="201" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="64" y="218" style="font-size:10.5px" fill="#111111">cancellation_reason</text>
+  <text x="331" y="218" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="39" y="235" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="235" style="font-size:10.5px" fill="#111111">cancelled_by</text>
+  <text x="331" y="235" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="39" y="252" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="252" style="font-size:10.5px" fill="#111111">cancelled_by_org_id</text>
+  <text x="331" y="252" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="64" y="269" style="font-size:10.5px" fill="#111111">pickup_code</text>
+  <text x="331" y="269" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="64" y="286" style="font-size:10.5px" fill="#111111">pickup_code_hash</text>
+  <text x="331" y="286" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="64" y="303" style="font-size:10.5px" fill="#111111">code_expires_at</text>
+  <text x="331" y="303" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="360" y="24" width="320" height="290" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="360" y1="70" x2="680" y2="70" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="520.0" y="41" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service  (2 of 2)</text>
+  <text x="520.0" y="61" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">requests</text>
+  <text x="369" y="82" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="394" y="82" style="font-size:10.5px" fill="#111111">code_generated_by</text>
+  <text x="671" y="82" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="394" y="99" style="font-size:10.5px" fill="#111111">pickup_code_generated_at</text>
+  <text x="671" y="99" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="116" style="font-size:10.5px" fill="#111111">pickup_code_attempts</text>
+  <text x="671" y="116" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">integer</text>
+  <text x="369" y="133" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="394" y="133" style="font-size:10.5px" fill="#111111">verified_by</text>
+  <text x="671" y="133" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="394" y="150" style="font-size:10.5px" fill="#111111">collected_quantity</text>
+  <text x="671" y="150" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">numeric(10,2)</text>
+  <text x="394" y="167" style="font-size:10.5px" fill="#111111">collected_at</text>
+  <text x="671" y="167" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="184" style="font-size:10.5px" fill="#111111">no_show_at</text>
+  <text x="671" y="184" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="201" style="font-size:10.5px" fill="#111111">no_show_reason</text>
+  <text x="671" y="201" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="369" y="218" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="394" y="218" style="font-size:10.5px" fill="#111111">no_show_by</text>
+  <text x="671" y="218" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="369" y="235" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="394" y="235" style="font-size:10.5px" fill="#111111">no_show_by_org_id</text>
+  <text x="671" y="235" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="394" y="252" style="font-size:10.5px" fill="#111111">pickup_open_reminder_sent_at</text>
+  <text x="671" y="252" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="269" style="font-size:10.5px" fill="#111111">pickup_close_reminder_sent_at</text>
+  <text x="671" y="269" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="286" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="671" y="286" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="394" y="303" style="font-size:10.5px" fill="#111111">updated_at</text>
+  <text x="671" y="303" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="730" y="24" width="330" height="205" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="730" y1="70" x2="1060" y2="70" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="895.0" y="41" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service</text>
+  <text x="895.0" y="61" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">request_idempotency_keys</text>
+  <text x="739" y="82" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="764" y="82" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1051" y="82" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="739" y="99" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="764" y="99" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="1051" y="99" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="764" y="116" style="font-size:10.5px" fill="#111111">idempotency_key</text>
+  <text x="1051" y="116" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="764" y="133" style="font-size:10.5px" fill="#111111">request_fingerprint</text>
+  <text x="1051" y="133" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text  sha256</text>
+  <text x="764" y="150" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="1051" y="150" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">idempotency_status</text>
+  <text x="739" y="167" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="764" y="167" style="font-size:10.5px" fill="#111111">claim_id</text>
+  <text x="1051" y="167" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="764" y="184" style="font-size:10.5px" fill="#111111">response_snapshot</text>
+  <text x="1051" y="184" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">jsonb</text>
+  <text x="764" y="201" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="1051" y="201" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="764" y="218" style="font-size:10.5px" fill="#111111">expires_at</text>
+  <text x="1051" y="218" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <line x1="682" y1="60" x2="728" y2="60" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd3-one)" marker-end="url(#erd3-many)"/>
+  <path d="M730 240 H1042 L1060 258 V338 H730 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1042 240 V258 H1060" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="742" y="259" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="742" y="278" style="font-size:10.5px" fill="#111111">unique (rescue_org_id, idempotency_key)</text>
+  <text x="742" y="295" style="font-size:10.5px" fill="#111111">unique (listing_id) where status = 'active'</text>
+  <text x="742" y="312" style="font-size:10.5px" fill="#111111">That partial index is what makes claiming</text>
+  <text x="742" y="329" style="font-size:10.5px" fill="#111111">first come first served.</text>
+  <path d="M730 370 H1042 L1060 388 V451 H730 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1042 370 V388 H1060" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="742" y="389" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="742" y="408" style="font-size:10.5px" fill="#111111">pickup_code is stored in clear so the</text>
+  <text x="742" y="425" style="font-size:10.5px" fill="#111111">partner can be shown it again; the hash</text>
+  <text x="742" y="442" style="font-size:10.5px" fill="#111111">backs the verify. Neither is serialised.</text>
+</svg>
+</div>
+
+<!--
+REQUESTS
+
+The widest table in the system, split across two columns here. It is one
+row per claim, and it carries the whole life of that claim rather than
+spreading it over several tables.
+
+Four groups. The claim itself at the top: which listing, which rescue
+org, who clicked, how much. Then cancellation. Then the pickup code block
+with its hash, expiry and attempt counter. Then the outcome, collected or
+no-show, each recording the user and the org that reported it. The two
+reminder timestamps at the end are markers so a one-shot reminder is sent
+once, not every ten minutes.
+
+Two unique indexes do the real work. One active claim per listing is a
+partial index, so ending a claim frees the listing with no application
+code. One idempotency key per rescue org makes a retried claim replay
+instead of double booking.
+
+pickup_code is stored in the clear alongside its hash. That is
+deliberate: the partner needs to see it again after a reload, and the
+hash is what the constant-time verify compares. Neither column is ever
+serialised to a response.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# organisations, users &amp; login_restrictions
+
+<div class="text-base mt-2" style="color:#00000099">Owned and migrated by the Go profile service</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440" fill="none">
+  <defs>
+    <marker id="erd4-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="erd4-one" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="40" y="30" width="310" height="239" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="76" x2="350" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="195.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile service</text>
+  <text x="195.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">organisations</text>
+  <text x="49" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="341" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="49" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">UK</text>
+  <text x="74" y="105" style="font-size:10.5px" fill="#111111">name</text>
+  <text x="341" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="122" style="font-size:10.5px" fill="#111111">type</text>
+  <text x="341" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">org_type</text>
+  <text x="74" y="139" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="341" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">org_status</text>
+  <text x="49" y="156" style="font-size:8.5px;font-weight:700" fill="#444444">UK</text>
+  <text x="74" y="156" style="font-size:10.5px" fill="#111111">domain</text>
+  <text x="341" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text  partial</text>
+  <text x="74" y="173" style="font-size:10.5px" fill="#111111">description</text>
+  <text x="341" y="173" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="190" style="font-size:10.5px" fill="#111111">contact_email</text>
+  <text x="341" y="190" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="207" style="font-size:10.5px" fill="#111111">contact_phone</text>
+  <text x="341" y="207" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="224" style="font-size:10.5px" fill="#111111">address</text>
+  <text x="341" y="224" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="241" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="341" y="241" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="74" y="258" style="font-size:10.5px" fill="#111111">updated_at</text>
+  <text x="341" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="430" y="30" width="310" height="205" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="430" y1="76" x2="740" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="585.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile service</text>
+  <text x="585.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">users</text>
+  <text x="439" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="464" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="731" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="439" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">UK</text>
+  <text x="464" y="105" style="font-size:10.5px" fill="#111111">cognito_sub</text>
+  <text x="731" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="122" style="font-size:10.5px" fill="#111111">email</text>
+  <text x="731" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="139" style="font-size:10.5px" fill="#111111">name</text>
+  <text x="731" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="439" y="156" style="font-size:8.5px;font-weight:700" fill="#444444">UK</text>
+  <text x="464" y="156" style="font-size:10.5px" fill="#111111">username</text>
+  <text x="731" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text  lower, partial</text>
+  <text x="439" y="173" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="464" y="173" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="731" y="173" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid  nullable</text>
+  <text x="464" y="190" style="font-size:10.5px" fill="#111111">is_admin</text>
+  <text x="731" y="190" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">boolean</text>
+  <text x="464" y="207" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="731" y="207" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="224" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="731" y="224" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="430" y="260" width="310" height="120" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="430" y1="306" x2="740" y2="306" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="585.0" y="277" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile service</text>
+  <text x="585.0" y="297" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">login_restrictions</text>
+  <text x="439" y="318" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="464" y="318" style="font-size:10.5px" fill="#111111">username</text>
+  <text x="731" y="318" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="335" style="font-size:10.5px" fill="#111111">failed_count</text>
+  <text x="731" y="335" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">integer</text>
+  <text x="464" y="352" style="font-size:10.5px" fill="#111111">locked_until</text>
+  <text x="731" y="352" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="464" y="369" style="font-size:10.5px" fill="#111111">updated_at</text>
+  <text x="731" y="369" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <line x1="352" y1="70" x2="428" y2="70" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd4-one)" marker-end="url(#erd4-many)"/>
+  <text x="390" y="58" text-anchor="middle" style="font-size:9.5px" fill="#444444">org_id</text>
+  <path d="M790 30 H1047 L1065 48 V162 H790 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1047 30 V48 H1065" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="802" y="49" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="802" y="68" style="font-size:10.5px" fill="#111111">org_type</text>
+  <text x="802" y="85" style="font-size:10.5px" fill="#111111">donor | rescue_partner</text>
+  <text x="802" y="102" style="font-size:10.5px" fill="#111111"></text>
+  <text x="802" y="119" style="font-size:10.5px" fill="#111111">org_status</text>
+  <text x="802" y="136" style="font-size:10.5px" fill="#111111">pending | approved</text>
+  <text x="802" y="153" style="font-size:10.5px" fill="#111111">rejected | suspended</text>
+  <path d="M790 230 H1047 L1065 248 V311 H790 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1047 230 V248 H1065" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="802" y="249" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="802" y="268" style="font-size:10.5px" fill="#111111">No FK from login_restrictions.</text>
+  <text x="802" y="285" style="font-size:10.5px" fill="#111111">A lockout has to work for a</text>
+  <text x="802" y="302" style="font-size:10.5px" fill="#111111">username with no user row.</text>
+  <path d="M40 300 H332 L350 318 V364 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M332 300 V318 H350" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="52" y="319" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="52" y="338" style="font-size:10.5px" fill="#111111">org_id is nullable: platform</text>
+  <text x="52" y="355" style="font-size:10.5px" fill="#111111">admins belong to no organisation.</text>
+</svg>
+</div>
+
+<!--
+PROFILE TABLES
+
+Three tables, and every interesting rule is an index rather than
+application code.
+
+organisations.name is unique outright. domain is unique too, but
+partially: the index only covers rows where domain is non-empty, so any
+number of organisations can have no claimed domain while no two can claim
+the same one. That is what makes signup able to find your organisation
+from your email address.
+
+users.cognito_sub is the link to the identity provider and is unique.
+username has a unique index on lower(username), again partial, so
+usernames are case-insensitively unique without forcing everyone to have
+one. org_id is nullable because a platform administrator belongs to no
+organisation, which is exactly why the listings guards treat "no org" and
+"admin" as different cases.
+
+login_restrictions deliberately has no foreign key. It is keyed on the
+username string, because the whole point is to lock out repeated failed
+attempts against a username that may not correspond to any user row.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# audit_log &amp; notifications
+
+<div class="text-base mt-2" style="color:#00000099">The append-only trail and the delivery record</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 440" fill="none">
+  <defs>
+    <marker id="erd5-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+    </marker>
+    <marker id="erd5-one" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="40" y="30" width="320" height="222" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="40" y1="76" x2="360" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="200.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings service</text>
+  <text x="200.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">audit_log</text>
+  <text x="49" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="74" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="351" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="49" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="74" y="105" style="font-size:10.5px" fill="#111111">user_id</text>
+  <text x="351" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid  nullable</text>
+  <text x="49" y="122" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="74" y="122" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="351" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid  nullable</text>
+  <text x="74" y="139" style="font-size:10.5px" fill="#111111">action</text>
+  <text x="351" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="156" style="font-size:10.5px" fill="#111111">entity_type</text>
+  <text x="351" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="173" style="font-size:10.5px" fill="#111111">entity_id</text>
+  <text x="351" y="173" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid  nullable</text>
+  <text x="74" y="190" style="font-size:10.5px" fill="#111111">subject</text>
+  <text x="351" y="190" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="207" style="font-size:10.5px" fill="#111111">reason</text>
+  <text x="351" y="207" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="74" y="224" style="font-size:10.5px" fill="#111111">metadata</text>
+  <text x="351" y="224" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">jsonb</text>
+  <text x="74" y="241" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="351" y="241" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <rect x="430" y="30" width="320" height="273" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="430" y1="76" x2="750" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="590.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">notifications database</text>
+  <text x="590.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">notifications</text>
+  <text x="439" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="464" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="741" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="464" y="105" style="font-size:10.5px" fill="#111111">recipient_email</text>
+  <text x="741" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="122" style="font-size:10.5px" fill="#111111">recipient_user_id</text>
+  <text x="741" y="122" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text  cognito sub</text>
+  <text x="464" y="139" style="font-size:10.5px" fill="#111111">type</text>
+  <text x="741" y="139" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">notification_type</text>
+  <text x="464" y="156" style="font-size:10.5px" fill="#111111">channel</text>
+  <text x="741" y="156" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">notification_channel</text>
+  <text x="464" y="173" style="font-size:10.5px" fill="#111111">payload</text>
+  <text x="741" y="173" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">jsonb</text>
+  <text x="464" y="190" style="font-size:10.5px" fill="#111111">status</text>
+  <text x="741" y="190" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">notification_status</text>
+  <text x="464" y="207" style="font-size:10.5px" fill="#111111">failure_reason</text>
+  <text x="741" y="207" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="224" style="font-size:10.5px" fill="#111111">event_id</text>
+  <text x="741" y="224" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="241" style="font-size:10.5px" fill="#111111">body</text>
+  <text x="741" y="241" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <text x="464" y="258" style="font-size:10.5px" fill="#111111">read_at</text>
+  <text x="741" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="464" y="275" style="font-size:10.5px" fill="#111111">deleted_at</text>
+  <text x="741" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <text x="464" y="292" style="font-size:10.5px" fill="#111111">created_at</text>
+  <text x="741" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">timestamptz</text>
+  <path d="M40 268 H342 L360 286 V383 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M342 268 V286 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="52" y="287" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="52" y="306" style="font-size:10.5px" fill="#111111">Append only. A trigger rejects</text>
+  <text x="52" y="323" style="font-size:10.5px" fill="#111111">every UPDATE and DELETE.</text>
+  <text x="52" y="340" style="font-size:10.5px" fill="#111111">Both services insert here, so a</text>
+  <text x="52" y="357" style="font-size:10.5px" fill="#111111">status change and its audit row</text>
+  <text x="52" y="374" style="font-size:10.5px" fill="#111111">commit in one transaction.</text>
+  <path d="M800 30 H1047 L1065 48 V145 H800 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1047 30 V48 H1065" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="812" y="49" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="812" y="68" style="font-size:10.5px" fill="#111111">notification_channel</text>
+  <text x="812" y="85" style="font-size:10.5px" fill="#111111">email | in_app</text>
+  <text x="812" y="102" style="font-size:10.5px" fill="#111111"></text>
+  <text x="812" y="119" style="font-size:10.5px" fill="#111111">notification_status</text>
+  <text x="812" y="136" style="font-size:10.5px" fill="#111111">sent | failed</text>
+  <path d="M800 190 H1047 L1065 208 V322 H800 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1047 190 V208 H1065" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="812" y="209" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="812" y="228" style="font-size:10.5px" fill="#111111">Two partial unique indexes on</text>
+  <text x="812" y="245" style="font-size:10.5px" fill="#111111">event_id dedupe delivery: one</text>
+  <text x="812" y="262" style="font-size:10.5px" fill="#111111">email and one in-app row per</text>
+  <text x="812" y="279" style="font-size:10.5px" fill="#111111">event per recipient, so a</text>
+  <text x="812" y="296" style="font-size:10.5px" fill="#111111">redelivered message cannot</text>
+  <text x="812" y="313" style="font-size:10.5px" fill="#111111">send twice.</text>
+</svg>
+</div>
+
+<!--
+AUDIT LOG & NOTIFICATIONS
+
+audit_log is append only, and that is enforced by a database trigger that
+rejects every update and delete, not by convention. Both services write
+to it, which is the reason it sits in the shared database: an
+organisation status change and its audit row commit in the same
+transaction, so there is no window where one exists without the other.
+
+Three columns are nullable for a reason. user_id is null for system
+actions like the expiry sweep. entity_id is null when the subject has no
+row to point at, a failed login against a username that does not exist,
+and subject carries the raw identifier instead.
+
+notifications is the one table in its own database. One row per delivery
+attempt, not per event, so an email and an in-app notification for the
+same event are two rows distinguished by channel.
+
+event_id is what makes redelivery safe. Two partial unique indexes allow
+exactly one sent email and one in-app row per event per recipient, so if
+SQS delivers the same message twice the second insert loses. That is
+deduplication in the schema rather than in the consumer.
+-->
+

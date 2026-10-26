@@ -99,6 +99,30 @@ html.dark .slidev-layout h3 {
   font-weight: 500;
 }
 
+/* UML appendix slides render on white so the diagrams drop straight into a
+   written report. The column layout and figure sizing live here rather than
+   in utility classes, which the PNG/PDF export does not generate. */
+.slidev-layout.uml-slide,
+html.dark .slidev-layout.uml-slide {
+  background: #ffffff !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.uml-figure {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.uml-figure svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+
 /* Presenter view — shrink the speaker-notes text by ~1px so longer notes fit
    without scrolling. Targets Slidev's notes pane (.slidev-note), which renders
    the markdown inside each slide's <!-- --> comment. Presenter UI only; does
