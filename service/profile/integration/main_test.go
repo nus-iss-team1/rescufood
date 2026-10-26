@@ -2,7 +2,7 @@
 
 // Package integration holds database-backed tests for service/profile.
 // They run only under `go test -tags=integration ./integration/...` and
-// share one throwaway Postgres started by TestMain.
+// share one Postgres provided externally via DATABASE_URL.
 package integration
 
 import (
@@ -19,8 +19,6 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/testcontainers/testcontainers-go"
-	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	profiledb "github.com/nus-iss-team1/rescufood/service/profile/db"
 	"github.com/nus-iss-team1/rescufood/service/profile/internal/domain"
@@ -32,23 +30,14 @@ var testPool *pgxpool.Pool
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	container, err := tcpostgres.Run(ctx, "postgres:17-alpine",
-		tcpostgres.WithDatabase("profile"),
-		tcpostgres.WithUsername("profile"),
-		tcpostgres.WithPassword("profile"),
-		tcpostgres.BasicWaitStrategies(),
-	)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "start postgres:", err)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		fmt.Fprintln(os.Stderr, "DATABASE_URL is not set")
 		os.Exit(1)
 	}
 
-	dsn, err := container.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "connection string:", err)
-		os.Exit(1)
-	}
-	if err := runMigrations(dsn); err != nil {
+	var err error
+	if err = runMigrations(dsn); err != nil {
 		fmt.Fprintln(os.Stderr, "migrate:", err)
 		os.Exit(1)
 	}
@@ -64,7 +53,6 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	testPool.Close()
-	_ = testcontainers.TerminateContainer(container)
 	os.Exit(code)
 }
 
