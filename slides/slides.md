@@ -2283,7 +2283,7 @@ class: flex flex-col uml-slide
   <g text-anchor="middle" style="font-size:11px" fill="#111111">
     <text x="250" y="89">POST /requests/{id}/pickup-code</text>
     <text x="780" y="123">assert claiming partner</text>
-    <text x="780" y="157">store code hash, set expiry</text>
+    <text x="780" y="157">store code + hash, set expiry</text>
     <text x="250" y="191">201 { code }</text>
     <text x="258" y="225">show the 6-digit code</text>
     <text x="520" y="259">POST /requests/{id}/verify</text>
@@ -2307,10 +2307,13 @@ Two endpoints, two different callers, and the code enforces which is
 which. Only the rescue partner that holds the claim can mint the code;
 only the donor on that listing can verify it.
 
-The code is stored hashed and never returned on a GET. Asking for it
-again returns the same live code rather than a new one, so a reload or a
-second device does not strand the partner with a code the donor cannot
-accept.
+The code is stored in plain text alongside its hash. Verification only
+ever compares against the hash; the plain copy exists so asking for the
+code again returns the same live code rather than a new one, and a reload
+or a second device does not strand the partner with a code the donor
+cannot accept. It is stripped from every claim response, so only the
+pickup-code endpoint returns it, and it is cleared once the claim
+completes.
 
 Verification is the only path that completes a claim and flips the
 listing to collected, and it does both in one transaction. Resubmitting a
@@ -2332,7 +2335,7 @@ class: flex flex-col uml-slide
 <div class="text-base mt-2" style="color:#00000099">The asynchronous notification path, end to end</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 520"  fill="none">
+<svg viewBox="0 0 1100 610"  fill="none">
   <defs>
     <marker id="s3-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
@@ -2356,17 +2359,18 @@ class: flex flex-col uml-slide
     <text x="985" y="39">Email provider</text>
   </g>
   <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
-    <line x1="110" y1="54" x2="110" y2="505"/>
-    <line x1="330" y1="54" x2="330" y2="505"/>
-    <line x1="550" y1="54" x2="550" y2="505"/>
-    <line x1="770" y1="54" x2="770" y2="505"/>
-    <line x1="985" y1="54" x2="985" y2="505"/>
+    <line x1="110" y1="54" x2="110" y2="600"/>
+    <line x1="330" y1="54" x2="330" y2="600"/>
+    <line x1="550" y1="54" x2="550" y2="600"/>
+    <line x1="770" y1="54" x2="770" y2="600"/>
+    <line x1="985" y1="54" x2="985" y2="600"/>
   </g>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
     <rect x="105" y="96" width="10" height="186"/>
     <rect x="325" y="96" width="10" height="186"/>
     <rect x="545" y="248" width="10" height="112"/>
-    <rect x="765" y="316" width="10" height="174"/>
+    <rect x="545" y="570" width="10" height="16"/>
+    <rect x="765" y="316" width="10" height="266"/>
     <rect x="980" y="446" width="10" height="38"/>
   </g>
   <g stroke="#1a1a1a" stroke-width="1.2">
@@ -2380,6 +2384,8 @@ class: flex flex-col uml-slide
     <path d="M775 380 H815 V416 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
     <line x1="775" y1="446" x2="978" y2="446" marker-end="url(#s3-call)"/>
     <line x1="980" y1="480" x2="777" y2="480" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <path d="M775 510 H815 V546 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="765" y1="576" x2="557" y2="576" marker-end="url(#s3-call)"/>
   </g>
   <g style="font-size:11px" fill="#111111">
     <text x="220" y="89" text-anchor="middle">POST /admin/orgs/{id}/approve</text>
@@ -2389,9 +2395,11 @@ class: flex flex-col uml-slide
     <text x="220" y="275" text-anchor="middle">200 OK</text>
     <text x="660" y="309" text-anchor="middle">long poll</text>
     <text x="660" y="343" text-anchor="middle">org_approved</text>
-    <text x="823" y="384">write in-app notification</text>
+    <text x="823" y="384">check not already emailed</text>
     <text x="877" y="439" text-anchor="middle">send approval email</text>
     <text x="877" y="473" text-anchor="middle">accepted</text>
+    <text x="823" y="514">record delivery as sent</text>
+    <text x="660" y="569" text-anchor="middle">delete message</text>
   </g>
 </svg>
 </div>
@@ -2406,10 +2414,16 @@ write the new status and the audit entry, publish one message, return 200.
 The admin console is not waiting on an inbox.
 
 The right half is the notifications service, which long-polls the queue
-on its own schedule. It writes the in-app feed row first, then sends the
-email. Those are separately tracked: a bounced email does not lose the
-in-app notification, and a permanent delivery failure is recorded rather
-than retried forever.
+on its own schedule. An approval is email only: the organisation's contact
+address need not belong to a platform user, so there is no in-app row. It
+checks the event has not already been emailed, sends, records the outcome,
+and only then deletes the message, so a crash part-way through means a
+retry rather than a lost email. A permanent delivery failure is recorded
+rather than retried forever.
+
+Events addressed to a user, such as claim created, also get an in-app row
+written before the email. The two are tracked separately, so a bounced
+email does not lose the in-app notification.
 
 This is the same path every notification takes - claim created, claim
 cancelled, pickup reminder, pickup completed, listing expired. Only the
@@ -2844,7 +2858,7 @@ class: flex flex-col uml-slide
 <div class="text-base mt-2" style="color:#00000099">Nine tables; primary and foreign keys only</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 540" fill="none">
+<svg viewBox="0 0 1320 490" fill="none">
   <defs>
     <marker id="erd-many" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="11" markerHeight="11" orient="auto">
       <path d="M0 6 L12 0 M0 6 L12 6 M0 6 L12 12" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
@@ -2853,130 +2867,135 @@ class: flex flex-col uml-slide
       <path d="M6 1 V11" fill="none" stroke="#1a1a1a" stroke-width="1.4"/>
     </marker>
   </defs>
-  <rect x="40" y="40" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="40" y1="86" x2="260" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="150.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
-  <text x="150.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">organisations</text>
-  <text x="49" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="74" y="98" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="251" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="40" y="140" width="220" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="40" y1="186" x2="260" y2="186" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="150.0" y="157" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
-  <text x="150.0" y="177" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">users</text>
-  <text x="49" y="198" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="74" y="198" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="251" y="198" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="49" y="215" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="74" y="215" style="font-size:10.5px" fill="#111111">org_id</text>
-  <text x="251" y="215" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="40" y="262" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="40" y1="308" x2="260" y2="308" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="150.0" y="279" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
-  <text x="150.0" y="299" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">login_restrictions</text>
-  <text x="49" y="320" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="74" y="320" style="font-size:10.5px" fill="#111111">username</text>
-  <text x="251" y="320" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
-  <rect x="400" y="40" width="240" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="400" y1="86" x2="640" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="520.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
-  <text x="520.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listings</text>
-  <text x="409" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="434" y="98" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="631" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="115" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="115" style="font-size:10.5px" fill="#111111">donor_org_id</text>
-  <text x="631" y="115" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="132" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="132" style="font-size:10.5px" fill="#111111">created_by</text>
-  <text x="631" y="132" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="400" y="200" width="240" height="120" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="400" y1="246" x2="640" y2="246" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="520.0" y="217" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
-  <text x="520.0" y="237" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">requests</text>
-  <text x="409" y="258" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="434" y="258" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="631" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="275" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="275" style="font-size:10.5px" fill="#111111">listing_id</text>
-  <text x="631" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="292" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="292" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
-  <text x="631" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="309" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="309" style="font-size:10.5px" fill="#111111">claimed_by</text>
-  <text x="631" y="309" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="400" y="372" width="240" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="400" y1="418" x2="640" y2="418" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="520.0" y="389" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
-  <text x="520.0" y="409" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">audit_log</text>
-  <text x="409" y="430" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="434" y="430" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="631" y="430" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="447" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="447" style="font-size:10.5px" fill="#111111">user_id</text>
-  <text x="631" y="447" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="409" y="464" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="434" y="464" style="font-size:10.5px" fill="#111111">org_id</text>
-  <text x="631" y="464" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="780" y="40" width="250" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="780" y1="86" x2="1030" y2="86" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="905.0" y="57" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
-  <text x="905.0" y="77" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listing_images</text>
-  <text x="789" y="98" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="814" y="98" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="1021" y="98" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="789" y="115" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="814" y="115" style="font-size:10.5px" fill="#111111">listing_id</text>
-  <text x="1021" y="115" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="780" y="200" width="250" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="780" y1="246" x2="1030" y2="246" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="905.0" y="217" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
-  <text x="905.0" y="237" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">request_idempotency_keys</text>
-  <text x="789" y="258" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="814" y="258" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="1021" y="258" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="789" y="275" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="814" y="275" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
-  <text x="1021" y="275" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <text x="789" y="292" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
-  <text x="814" y="292" style="font-size:10.5px" fill="#111111">claim_id</text>
-  <text x="1021" y="292" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <rect x="780" y="372" width="250" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <line x1="780" y1="418" x2="1030" y2="418" stroke="#1a1a1a" stroke-width="1.2"/>
-  <text x="905.0" y="389" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">notifications db</text>
-  <text x="905.0" y="409" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">notifications</text>
-  <text x="789" y="430" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
-  <text x="814" y="430" style="font-size:10.5px" fill="#111111">id</text>
-  <text x="1021" y="430" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
-  <line x1="150" y1="92" x2="150" y2="138" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <line x1="262" y1="66" x2="398" y2="70" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="330" y="52" text-anchor="middle" style="font-size:9.5px" fill="#444444">donor_org_id</text>
-  <line x1="262" y1="158" x2="398" y2="104" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="330" y="148" text-anchor="middle" style="font-size:9.5px" fill="#444444">created_by</text>
-  <line x1="262" y1="82" x2="398" y2="222" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="345" y="175" text-anchor="middle" style="font-size:9.5px" fill="#444444">rescue_org_id</text>
-  <line x1="262" y1="186" x2="398" y2="250" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="318" y="232" text-anchor="middle" style="font-size:9.5px" fill="#444444">claimed_by</text>
-  <line x1="520" y1="131" x2="520" y2="198" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="566" y="168" text-anchor="middle" style="font-size:9.5px" fill="#444444">listing_id</text>
-  <line x1="262" y1="200" x2="398" y2="398" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="305" y="300" text-anchor="middle" style="font-size:9.5px" fill="#444444">user_id</text>
-  <line x1="642" y1="74" x2="778" y2="74" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="710" y="62" text-anchor="middle" style="font-size:9.5px" fill="#444444">listing_id</text>
-  <line x1="642" y1="248" x2="778" y2="248" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
-  <text x="710" y="236" text-anchor="middle" style="font-size:9.5px" fill="#444444">claim_id</text>
-  <path d="M40 352 H342 L360 370 V433 H40 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
-  <path d="M342 352 V370 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
-  <text x="52" y="371" style="font-size:10px;font-weight:700" fill="#111111">note</text>
-  <text x="52" y="390" style="font-size:10.5px" fill="#111111">login_restrictions keys on username, not a FK.</text>
-  <text x="52" y="407" style="font-size:10.5px" fill="#111111">requests also references users via cancelled_by,</text>
-  <text x="52" y="424" style="font-size:10.5px" fill="#111111">verified_by, code_generated_by and no_show_by.</text>
-  <path d="M780 462 H1012 L1030 480 V526 H780 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
-  <path d="M1012 462 V480 H1030" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
-  <text x="792" y="481" style="font-size:10px;font-weight:700" fill="#111111">note</text>
-  <text x="792" y="500" style="font-size:10.5px" fill="#111111">Separate database. No joins</text>
-  <text x="792" y="517" style="font-size:10.5px" fill="#111111">to the tables on the left.</text>
+  <rect x="550" y="30" width="220" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="550" y1="76" x2="770" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="660.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="660.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">users</text>
+  <text x="559" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="584" y="88" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="761" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="559" y="105" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="584" y="105" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="761" y="105" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="900" y="30" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="900" y1="76" x2="1120" y2="76" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="1010.0" y="47" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="1010.0" y="67" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">login_restrictions</text>
+  <text x="909" y="88" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="934" y="88" style="font-size:10.5px" fill="#111111">username</text>
+  <text x="1111" y="88" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">text</text>
+  <rect x="30" y="210" width="190" height="86" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="30" y1="256" x2="220" y2="256" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="125.0" y="227" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="125.0" y="247" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listing_images</text>
+  <text x="39" y="268" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="64" y="268" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="211" y="268" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="39" y="285" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="64" y="285" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="211" y="285" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="290" y="210" width="210" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="290" y1="256" x2="500" y2="256" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="395.0" y="227" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="395.0" y="247" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">listings</text>
+  <text x="299" y="268" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="324" y="268" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="491" y="268" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="299" y="285" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="324" y="285" style="font-size:10.5px" fill="#111111">donor_org_id</text>
+  <text x="491" y="285" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="299" y="302" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="324" y="302" style="font-size:10.5px" fill="#111111">created_by</text>
+  <text x="491" y="302" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="560" y="210" width="200" height="120" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="560" y1="256" x2="760" y2="256" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="660.0" y="227" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="660.0" y="247" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">requests</text>
+  <text x="569" y="268" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="594" y="268" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="751" y="268" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="569" y="285" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="594" y="285" style="font-size:10.5px" fill="#111111">listing_id</text>
+  <text x="751" y="285" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="569" y="302" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="594" y="302" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="751" y="302" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="569" y="319" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="594" y="319" style="font-size:10.5px" fill="#111111">claimed_by</text>
+  <text x="751" y="319" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="830" y="210" width="230" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="830" y1="256" x2="1060" y2="256" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="945.0" y="227" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="945.0" y="247" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">request_idempotency_keys</text>
+  <text x="839" y="268" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="864" y="268" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1051" y="268" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="839" y="285" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="864" y="285" style="font-size:10.5px" fill="#111111">rescue_org_id</text>
+  <text x="1051" y="285" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="839" y="302" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="864" y="302" style="font-size:10.5px" fill="#111111">claim_id</text>
+  <text x="1051" y="302" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="1110" y="210" width="180" height="103" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="1110" y1="256" x2="1290" y2="256" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="1200.0" y="227" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">listings</text>
+  <text x="1200.0" y="247" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">audit_log</text>
+  <text x="1119" y="268" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="1144" y="268" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1281" y="268" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="1119" y="285" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="1144" y="285" style="font-size:10.5px" fill="#111111">user_id</text>
+  <text x="1281" y="285" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <text x="1119" y="302" style="font-size:8.5px;font-weight:700" fill="#444444">FK</text>
+  <text x="1144" y="302" style="font-size:10.5px" fill="#111111">org_id</text>
+  <text x="1281" y="302" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="550" y="400" width="220" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="550" y1="446" x2="770" y2="446" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="660.0" y="417" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">profile</text>
+  <text x="660.0" y="437" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">organisations</text>
+  <text x="559" y="458" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="584" y="458" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="761" y="458" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <rect x="900" y="400" width="200" height="69" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <line x1="900" y1="446" x2="1100" y2="446" stroke="#1a1a1a" stroke-width="1.2"/>
+  <text x="1000.0" y="417" text-anchor="middle" style="font-size:9.5px;font-style:italic" fill="#444444">notifications db</text>
+  <text x="1000.0" y="437" text-anchor="middle" style="font-size:13px;font-weight:700" fill="#111111">notifications</text>
+  <text x="909" y="458" style="font-size:8.5px;font-weight:700" fill="#444444">PK</text>
+  <text x="934" y="458" style="font-size:10.5px" fill="#111111">id</text>
+  <text x="1091" y="458" text-anchor="end" style="font-size:9px;font-style:italic" fill="#555555">uuid</text>
+  <path d="M548 434 H12 V50 H548" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="290" y="44" text-anchor="middle" style="font-size:9.5px" fill="#444444">org_id</text>
+  <line x1="590" y1="398" x2="440" y2="315" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="500" y="368" text-anchor="end" style="font-size:9.5px" fill="#444444">donor_org_id</text>
+  <line x1="680" y1="398" x2="680" y2="332" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="686" y="372" text-anchor="start" style="font-size:9.5px" fill="#444444">rescue_org_id</text>
+  <line x1="720" y1="398" x2="900" y2="315" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="832" y="358" text-anchor="start" style="font-size:9.5px" fill="#444444">rescue_org_id</text>
+  <line x1="755" y1="398" x2="1160" y2="315" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="1036" y="352" text-anchor="start" style="font-size:9.5px" fill="#444444">org_id</text>
+  <line x1="590" y1="118" x2="440" y2="208" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="505" y="158" text-anchor="end" style="font-size:9.5px" fill="#444444">created_by</text>
+  <line x1="612" y1="118" x2="612" y2="208" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="606" y="168" text-anchor="end" style="font-size:9.5px" fill="#444444">claimed_by</text>
+  <line x1="740" y1="118" x2="1150" y2="208" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="925" y="150" text-anchor="start" style="font-size:9.5px" fill="#444444">user_id</text>
+  <line x1="288" y1="245" x2="222" y2="245" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="255" y="237" text-anchor="middle" style="font-size:9.5px" fill="#444444">listing_id</text>
+  <line x1="762" y1="245" x2="828" y2="245" stroke="#1a1a1a" stroke-width="1.1" marker-start="url(#erd-one)" marker-end="url(#erd-many)"/>
+  <text x="795" y="237" text-anchor="middle" style="font-size:9.5px" fill="#444444">claim_id</text>
+  <line x1="772" y1="60" x2="898" y2="60" stroke="#1a1a1a" stroke-width="1.1" stroke-dasharray="5 4"/>
+  <text x="835" y="52" text-anchor="middle" style="font-size:9.5px" fill="#444444">username</text>
+  <path d="M30 75 H342 L360 93 V156 H30 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M342 75 V93 H360" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="42" y="94" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="42" y="113" style="font-size:10.5px" fill="#111111">login_restrictions keys on username, not a FK.</text>
+  <text x="42" y="130" style="font-size:10.5px" fill="#111111">requests also references users via cancelled_by,</text>
+  <text x="42" y="147" style="font-size:10.5px" fill="#111111">verified_by, code_generated_by and no_show_by.</text>
+  <path d="M1120 400 H1292 L1310 418 V464 H1120 Z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M1292 400 V418 H1310" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="1132" y="419" style="font-size:10px;font-weight:700" fill="#111111">note</text>
+  <text x="1132" y="438" style="font-size:10.5px" fill="#111111">Separate database. No joins</text>
+  <text x="1132" y="455" style="font-size:10.5px" fill="#111111">to the other tables.</text>
 </svg>
 </div>
 
