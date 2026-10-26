@@ -141,12 +141,13 @@ successful rows.
 | Command | What it does |
 |---|---|
 | `npm test` | Unit tests |
-| `npm run test:integration` | Repository, HTTP and `SqsConsumerService.process` tests against a throwaway Postgres (needs Docker) |
+| `npm run test:integration` | Repository, HTTP and `SqsConsumerService.process` tests against an externally-provided Postgres (`DATABASE_URL`) |
 
 `npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
-starts a real Postgres with [testcontainers](https://node.testcontainers.org/)
-and applies this service's migrations directly as SQL - the schema is
-self-contained, so no other service's migrations are needed. The JWT guard
+runs against a Postgres provided externally via `DATABASE_URL` (a local
+instance, or the CI `services:` container) and applies this service's
+migrations directly as SQL - the schema is self-contained, so no other
+service's migrations are needed. The JWT guard
 is stubbed (a header carries the Cognito sub); the repository, controller and
 SQS consumer run for real, the mailer is a spy. CI runs it as a separate
 `integration` job in

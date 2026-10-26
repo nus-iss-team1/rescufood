@@ -40,9 +40,9 @@ with the branch selected.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, SAST, DAST (ZAP baseline) |
-| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (testcontainers Postgres; runs unit + integration together for a combined coverage report in the job summary) |
-| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
-| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (testcontainers Postgres + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
+| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
+| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
+| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
 | `platform-build.yml` | Push to `develop`, `qa` or `main` touching `web/**`, manual | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
 | `profile-build.yml` | Push to `develop`, `qa` or `main` touching `service/profile/**`, manual | SAST → build & push `.../profile` → roll the `profile` ECS service |
 | `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | SAST → build & push `.../listings` → roll the `listings` ECS service |

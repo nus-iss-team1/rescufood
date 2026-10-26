@@ -184,9 +184,9 @@ npm run db:migrate    # apply migrations (local DATABASE_URL)
 ### Integration tests
 
 `npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
-runs the repositories and the HTTP layer against a real Postgres that
-[testcontainers](https://node.testcontainers.org/) starts and throws away,
-so it needs a working Docker daemon. `test/integration/support/migrate.ts`
+runs the repositories and the HTTP layer against a Postgres provided
+externally via `DATABASE_URL` (a local instance, or the CI `services:`
+container). `test/integration/support/migrate.ts`
 applies `service/profile`'s migrations and then this service's, directly as
 SQL — no Go toolchain or sibling `node_modules` required. The JWT guard is
 stubbed (a header carries the Cognito sub); the org-membership guards,
