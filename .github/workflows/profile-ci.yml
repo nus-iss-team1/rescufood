@@ -93,7 +93,7 @@ jobs:
 
       # Runs the unit + integration tests against the Postgres service
       # container (provided via DATABASE_URL) and writes a coverage table to
-      # the job summary. Report-only.
+      # the job summary, then fails if coverage is below COVERAGE_MIN (80%).
       - name: Test & coverage
         # postgres:// (not postgresql://) so runMigrations' scheme rewrite to
         # pgx5:// fires; pgxpool accepts this form too.
@@ -117,3 +117,19 @@ jobs:
       semgrep-configs: p/default p/secrets p/golang
       # Flip to true once the existing findings are triaged.
       fail-on-findings: false
+
+  # Always runs so branch protection has a check that reports even when the
+  # path filter skips everything above. Required on develop.
+  checks:
+    name: Profile checks
+    if: always()
+    needs: [test, integration, sast]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if anything above failed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "upstream: $results"
+          case "$results" in
+            *failure*|*cancelled*) exit 1 ;;
+          esac

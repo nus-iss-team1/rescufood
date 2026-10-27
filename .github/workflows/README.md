@@ -66,8 +66,8 @@ plus job summary (DAST).
 
 Each backend service's `integration` job runs its unit and integration suites
 with coverage and posts a merged unit+integration table to the run's **job
-summary**. It is **report-only** — a drop is visible on the PR but does not
-fail the build.
+summary**, then fails if coverage is below **80%**. Override the threshold
+with `COVERAGE_MIN`, or set `COVERAGE_MIN=0` to measure without blocking.
 
 The same commands run locally (they need Docker):
 
@@ -77,7 +77,6 @@ The same commands run locally (they need Docker):
 - profile: `bash scripts/coverage.sh` (`go test -tags=integration ./...` once,
   so `-coverpkg` attributes store coverage from the `integration` package)
 
-To make it blocking, add a threshold check to those scripts.
 
 `coverage-badges.yml` runs the same three commands after a merge to
 `develop`, then writes one shields.io endpoint per service to the

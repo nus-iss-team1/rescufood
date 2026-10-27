@@ -50,11 +50,19 @@ try {
 process.stdout.write('\nCoverage (unit + integration)\n\n' + table + '\n');
 
 // Single number for the README badge; see .github/workflows/coverage-badges.yml.
-writeFileSync('coverage-pct.txt', `${map.getCoverageSummary().statements.pct}\n`);
+const pct = map.getCoverageSummary().statements.pct;
+writeFileSync('coverage-pct.txt', `${pct}\n`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   appendFileSync(
     process.env.GITHUB_STEP_SUMMARY,
     `### Coverage (unit + integration)\n\n\`\`\`\n${table}\`\`\`\n`,
   );
+}
+
+// Quality gate. Override with COVERAGE_MIN=0 to measure without blocking.
+const min = Number(process.env.COVERAGE_MIN ?? 80);
+if (pct < min) {
+  console.error(`\ncoverage ${pct}% is below the ${min}% minimum`);
+  process.exit(1);
 }

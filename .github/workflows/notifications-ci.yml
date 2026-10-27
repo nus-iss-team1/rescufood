@@ -92,8 +92,8 @@ jobs:
 
       # Runs the unit + integration suites against the Postgres service
       # container (provided via DATABASE_URL) and writes a merged coverage
-      # table to the job summary. Report-only - it fails on a test failure,
-      # never on low coverage.
+      # table to the job summary. Fails on a test failure, or if coverage is
+      # below COVERAGE_MIN (80%).
       - name: Test & coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable
@@ -112,3 +112,19 @@ jobs:
       codeql-languages: '["javascript-typescript"]'
       semgrep-configs: p/default p/secrets p/nodejs
       fail-on-findings: false
+
+  # Always runs so branch protection has a check that reports even when the
+  # path filter skips everything above. Required on develop.
+  checks:
+    name: Notifications checks
+    if: always()
+    needs: [test, integration, sast]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if anything above failed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "upstream: $results"
+          case "$results" in
+            *failure*|*cancelled*) exit 1 ;;
+          esac
