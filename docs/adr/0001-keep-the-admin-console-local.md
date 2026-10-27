@@ -2,7 +2,7 @@
 
 Status: accepted, 2026-08-06
 
-## Context
+## Rationale
 
 Deploying the console would add a Fargate task, a target group, an ALB
 rule and its own pipelines, and Vite bakes `VITE_*` values at build
