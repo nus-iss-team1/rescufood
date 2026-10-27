@@ -24,26 +24,6 @@ jobs:
     permissions:
       contents: write
 
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: profile
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - "5432:5432"
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
-
-    # listings and profile share the `profile` database; notifications has
-    # its own, created by the step below.
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -59,14 +39,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Create the notifications database
-        run: |
-          until pg_isready -h localhost -U postgres; do sleep 1; done
-          psql "$DATABASE_URL" -c 'CREATE DATABASE notifications' || true
-        env:
-          PGPASSWORD: postgres
-
-      # Each script writes coverage-pct.txt next to itself.
+      # Each script writes coverage-pct.txt next to itself. Testcontainers
+      # starts its own Postgres, so no service container is needed here.
       - name: Profile coverage
         working-directory: service/profile
         run: bash scripts/coverage.sh
@@ -77,8 +51,6 @@ jobs:
 
       - name: Notifications coverage
         working-directory: service/notifications
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable
         run: npm ci && npm run test:coverage
 
       - name: Build badge endpoints
