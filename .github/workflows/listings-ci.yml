@@ -116,3 +116,19 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
         run: npm run test:coverage
+
+  # Always runs so branch protection has a check that reports even when the
+  # path filter skips everything above. Required on develop.
+  checks:
+    name: Listings checks
+    if: always()
+    needs: [test, integration, sast]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if anything above failed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "upstream: $results"
+          case "$results" in
+            *failure*|*cancelled*) exit 1 ;;
+          esac
