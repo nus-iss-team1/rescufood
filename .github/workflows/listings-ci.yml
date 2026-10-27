@@ -8,7 +8,7 @@ on:
       # The integration suite applies these too.
       - "service/profile/db/migrations/**"
       - ".github/workflows/listings-ci.yml"
-      - ".github/workflows/reusable-sast.yml"
+      - ".github/workflows/reusable-security-scans.yml"
   workflow_dispatch:
 
 concurrency:
@@ -51,9 +51,9 @@ jobs:
       - name: Build
         run: npm run build
 
-  sast:
-    name: SAST
-    uses: ./.github/workflows/reusable-sast.yml
+  security:
+    name: Security scans
+    uses: ./.github/workflows/reusable-security-scans.yml
     permissions:
       contents: read
       security-events: write
@@ -122,7 +122,7 @@ jobs:
   checks:
     name: Listings checks
     if: always()
-    needs: [test, integration, sast]
+    needs: [test, integration, security]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if anything above failed

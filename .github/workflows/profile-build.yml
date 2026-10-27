@@ -18,9 +18,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}/profile
 
 jobs:
-  sast:
-    name: SAST
-    uses: ./.github/workflows/reusable-sast.yml
+  security:
+    name: Security scans
+    uses: ./.github/workflows/reusable-security-scans.yml
     permissions:
       contents: read
       security-events: write
@@ -35,7 +35,7 @@ jobs:
       fail-on-findings: false
 
   build-and-push:
-    needs: sast
+    needs: security
     runs-on: ubuntu-latest
     permissions:
       contents: read

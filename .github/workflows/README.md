@@ -39,17 +39,17 @@ with the branch selected.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, SAST, DAST (ZAP baseline) |
-| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
-| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
-| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, SAST, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
-| `platform-build.yml` | Push to `develop`, `qa` or `main` touching `web/**`, manual | SAST → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
-| `profile-build.yml` | Push to `develop`, `qa` or `main` touching `service/profile/**`, manual | SAST → build & push `.../profile` → roll the `profile` ECS service |
-| `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | SAST → build & push `.../listings` → roll the `listings` ECS service |
-| `notifications-build.yml` | Push to `develop`, `qa` or `main` touching `service/notifications/**`, manual | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
+| `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, security scans, DAST (ZAP baseline) |
+| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
+| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
+| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
+| `platform-build.yml` | Push to `develop`, `qa` or `main` touching `web/**`, manual | Security scans → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
+| `profile-build.yml` | Push to `develop`, `qa` or `main` touching `service/profile/**`, manual | Security scans → build & push `.../profile` → roll the `profile` ECS service |
+| `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | Security scans → build & push `.../listings` → roll the `listings` ECS service |
+| `notifications-build.yml` | Push to `develop`, `qa` or `main` touching `service/notifications/**`, manual | Security scans → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
 | `e2e-test.yml` | After **Build & Push Platform Image** completes on `develop` or `qa`, or manual | Playwright e2e against that environment. Post-deploy smoke check — never blocks anything |
 | `coverage-badges.yml` | Push to `develop` touching `service/**`, manual | Runs all three backend coverage commands and publishes a shields.io endpoint per service to the orphan `badges` branch |
-| `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
+| `reusable-security-scans.yml` | `workflow_call` | CodeQL and Semgrep (SAST), Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
 The build workflows tag images `<branch>`, `<branch>-<sha>` and — on `develop`
@@ -59,7 +59,7 @@ circuit breaker rolls it back. **CloudFormation is not touched** — infra
 stacks are deployed by hand
 (see [`infrastructure/README.md`](../../infrastructure/README.md)).
 
-Findings land in **Security → Code scanning** (SAST) and in the run's artifacts
+Findings land in **Security → Code scanning** and in the run's artifacts
 plus job summary (DAST).
 
 ## Coverage
@@ -113,7 +113,7 @@ them and completes pickups, so pointing it at prod would write test data
 into the live site. Only `dev` and `qa` need its `BASE_URL` and test
 accounts.
 
-## reusable-sast.yml
+## reusable-security-scans.yml
 
 Three independent jobs, each uploading SARIF under its own category so each
 component's alerts stay separate.
@@ -164,7 +164,7 @@ Secret container env goes through the `runtime-env-secrets` secret, same format.
 
 Copy an existing pair, e.g. `notifications-ci.yml` + `notifications-build.yml`,
 and change the `paths:` filters, `working-directory`, image name, ECS
-`SERVICE`, and the SAST `component` / `semgrep-configs` (`p/nodejs` for a
+`SERVICE`, and the security-scan `component` / `semgrep-configs` (`p/nodejs` for a
 NestJS service, `p/golang` + `codeql-build-mode: autobuild` for Go). A service
 whose API is worth scanning can call `reusable-dast.yml` with
 `scan-type: api` and `api-definition-path` pointed at its OpenAPI document.

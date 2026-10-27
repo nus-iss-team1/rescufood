@@ -1,4 +1,4 @@
-name: Reusable SAST
+name: Reusable security scans
 
 # Static analysis for one component: CodeQL, Semgrep, and Trivy (dependencies,
 # secrets, IaC/Dockerfile misconfiguration). Results go to GitHub code scanning.
@@ -152,7 +152,7 @@ jobs:
           category: semgrep-${{ inputs.component }}
 
   trivy:
-    name: Trivy (${{ inputs.component }})
+    name: Trivy deps, secrets, IaC (${{ inputs.component }})
     if: inputs.run-trivy
     runs-on: ubuntu-latest
     timeout-minutes: 20
