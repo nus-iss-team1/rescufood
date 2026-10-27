@@ -42,7 +42,7 @@ jobs:
     # listings and profile share the `profile` database; notifications has
     # its own, created by the step below.
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/profile?sslmode=disable
 
     steps:
       - name: Checkout
@@ -78,7 +78,7 @@ jobs:
       - name: Notifications coverage
         working-directory: service/notifications
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/notifications?sslmode=disable
         run: npm ci && npm run test:coverage
 
       - name: Build badge endpoints
