@@ -1,6 +1,11 @@
 # Publishes one shields.io endpoint per backend service to the `badges`
 # branch, which the README reads. Runs after a merge to develop, so a badge
 # always reflects develop rather than whatever a pull request happened to do.
+#
+# One job per service, each mirroring that service's own integration job:
+# its own Postgres, its own database name, its own DATABASE_URL. They must
+# not share a database - listings applies profile's migrations, so a shared
+# one fails on the second service to run.
 name: Coverage badges
 
 on:
@@ -11,19 +16,18 @@ on:
       - ".github/workflows/coverage-badges.yml"
   workflow_dispatch: {}
 
-# One publish at a time: three jobs pushing to the same branch would race.
 concurrency:
   group: coverage-badges
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Measure and publish
+  profile:
+    name: Profile coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    permissions:
-      contents: write
-
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: service/profile
     services:
       postgres:
         image: postgres:17-alpine
@@ -38,54 +42,116 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
-
-    # listings and profile share the `profile` database; notifications has
-    # its own, created by the step below.
-    env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/profile?sslmode=disable
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: service/profile/go.mod
           cache-dependency-path: service/profile/go.sum
+      - name: Coverage
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/profile?sslmode=disable
+        run: bash scripts/coverage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pct-profile
+          path: service/profile/coverage-pct.txt
 
-      - name: Set up Node
-        uses: actions/setup-node@v7
+  listings:
+    name: Listings coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: service/listings
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: profile
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
-
-      - name: Create the notifications database
-        run: |
-          until pg_isready -h localhost -U postgres; do sleep 1; done
-          psql "$DATABASE_URL" -c 'CREATE DATABASE notifications' || true
+          cache: npm
+          cache-dependency-path: service/listings/package-lock.json
+      - run: npm ci
+      - name: Coverage
         env:
-          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
+        run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pct-listings
+          path: service/listings/coverage-pct.txt
 
-      # Each script writes coverage-pct.txt next to itself.
-      - name: Profile coverage
-        working-directory: service/profile
-        run: bash scripts/coverage.sh
-
-      - name: Listings coverage
-        working-directory: service/listings
-        run: npm ci && npm run test:coverage
-
-      - name: Notifications coverage
+  notifications:
+    name: Notifications coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
         working-directory: service/notifications
+    services:
+      postgres:
+        image: postgres:17-alpine
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/notifications?sslmode=disable
-        run: npm ci && npm run test:coverage
+          POSTGRES_DB: notifications
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: service/notifications/package-lock.json
+      - run: npm ci
+      - name: Coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable
+        run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pct-notifications
+          path: service/notifications/coverage-pct.txt
+
+  publish:
+    name: Publish badges
+    needs: [profile, listings, notifications]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: pct
+          pattern: pct-*
 
       - name: Build badge endpoints
         run: |
           mkdir -p badge-out
           for svc in profile listings notifications; do
-            pct=$(cat "service/$svc/coverage-pct.txt")
+            pct=$(cat "pct/pct-$svc/coverage-pct.txt")
             colour=$(awk -v p="$pct" 'BEGIN {
               if (p < 50)      print "red"
               else if (p < 70) print "orange"
@@ -109,9 +175,9 @@ jobs:
             git checkout --orphan badges
             git rm -rf --cached . >/dev/null 2>&1 || true
           fi
-          find . -maxdepth 1 ! -name . ! -name .git ! -name badge-out -exec rm -rf {} +
+          find . -maxdepth 1 ! -name . ! -name .git ! -name badge-out ! -name pct -exec rm -rf {} +
           mv badge-out/*.json .
-          rmdir badge-out
+          rm -rf badge-out pct
           git add -A
           git diff --staged --quiet && echo "no change" && exit 0
           git commit -m "chore(badges): refresh coverage from ${GITHUB_SHA::7}"
