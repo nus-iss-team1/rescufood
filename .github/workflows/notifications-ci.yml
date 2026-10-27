@@ -6,7 +6,7 @@ on:
     paths:
       - "service/notifications/**"
       - ".github/workflows/notifications-ci.yml"
-      - ".github/workflows/reusable-sast.yml"
+      - ".github/workflows/reusable-security-scans.yml"
   workflow_dispatch:
 
 concurrency:
@@ -99,9 +99,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable
         run: npm run test:coverage
 
-  sast:
-    name: SAST
-    uses: ./.github/workflows/reusable-sast.yml
+  security:
+    name: Security scans
+    uses: ./.github/workflows/reusable-security-scans.yml
     permissions:
       contents: read
       security-events: write
@@ -118,7 +118,7 @@ jobs:
   checks:
     name: Notifications checks
     if: always()
-    needs: [test, integration, sast]
+    needs: [test, integration, security]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if anything above failed
