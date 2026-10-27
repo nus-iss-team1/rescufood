@@ -17,3 +17,6 @@ infrastructure/cloudformation/secrets
 # Python cache
 __pycache__/
 *.pyc
+
+# Written by the coverage scripts for the README badges.
+coverage-pct.txt

@@ -4,7 +4,7 @@
 //
 //   node scripts/coverage-summary.mjs <unit.json> <integration.json>
 
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import libCoverage from 'istanbul-lib-coverage';
 import { createContext } from 'istanbul-lib-report';
 import reports from 'istanbul-reports';
@@ -48,6 +48,9 @@ try {
 }
 
 process.stdout.write('\nCoverage (unit + integration)\n\n' + table + '\n');
+
+// Single number for the README badge; see .github/workflows/coverage-badges.yml.
+writeFileSync('coverage-pct.txt', `${map.getCoverageSummary().statements.pct}\n`);
 
 if (process.env.GITHUB_STEP_SUMMARY) {
   appendFileSync(

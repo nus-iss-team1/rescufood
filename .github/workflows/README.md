@@ -48,6 +48,7 @@ with the branch selected.
 | `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | SAST → build & push `.../listings` → roll the `listings` ECS service |
 | `notifications-build.yml` | Push to `develop`, `qa` or `main` touching `service/notifications/**`, manual | SAST → build & push `.../notifications` → roll the `notification` ECS service (skipped with a warning if that service isn't deployed) |
 | `e2e-test.yml` | After **Build & Push Platform Image** completes on `develop` or `qa`, or manual | Playwright e2e against that environment. Post-deploy smoke check — never blocks anything |
+| `coverage-badges.yml` | Push to `develop` touching `service/**`, manual | Runs all three backend coverage commands and publishes a shields.io endpoint per service to the orphan `badges` branch |
 | `reusable-sast.yml` | `workflow_call` | CodeQL, Semgrep, Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
@@ -77,6 +78,11 @@ The same commands run locally (they need Docker):
   so `-coverpkg` attributes store coverage from the `integration` package)
 
 To make it blocking, add a threshold check to those scripts.
+
+`coverage-badges.yml` runs the same three commands after a merge to
+`develop`, then writes one shields.io endpoint per service to the
+orphan `badges` branch, which the root README reads. It never runs on a
+pull request, so a badge always reflects `develop`.
 
 ## GitHub Environments
 
