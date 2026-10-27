@@ -39,7 +39,7 @@ with the branch selected.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, security scans, DAST (ZAP baseline) |
+| `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, unit tests with an 80% coverage gate, security scans, DAST (ZAP baseline) |
 | `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
 | `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
 | `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
@@ -77,6 +77,12 @@ The same commands run locally (they need Docker):
 - profile: `bash scripts/coverage.sh` (`go test -tags=integration ./...` once,
   so `-coverpkg` attributes store coverage from the `integration` package)
 
+The platform's `Lint, type-check & unit test` job runs `npm run test:coverage`
+(Vitest), which fails below **80%** statement coverage, the same metric as
+the backend services. The percentage counts the
+logic layer only, server actions and `src/lib`; pages, components and route
+handlers are left to the Playwright e2e suite. The threshold and the excluded
+paths live in `web/platform/vitest.config.mts`.
 
 `coverage-badges.yml` runs the same three commands after a merge to
 `develop`, then writes one shields.io endpoint per service to the
