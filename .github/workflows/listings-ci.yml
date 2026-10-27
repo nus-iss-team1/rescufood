@@ -1,14 +1,10 @@
 name: Listings CI
 
 on:
+  # Every PR, so the required `checks` job always reports. Whether the jobs
+  # below run is decided by `changes`, not by a trigger path filter.
   pull_request:
     branches: [develop]
-    paths:
-      - "service/listings/**"
-      # The integration suite applies these too.
-      - "service/profile/db/migrations/**"
-      - ".github/workflows/listings-ci.yml"
-      - ".github/workflows/reusable-security-scans.yml"
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +12,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The PR merge commit and its first parent, the base branch.
+          fetch-depth: 2
+
+      - name: Diff against the base branch
+        id: diff
+        env:
+          PATHS: >-
+            service/listings/
+            service/profile/db/migrations/
+            .github/workflows/listings-ci.yml
+            .github/workflows/reusable-security-scans.yml
+        # The integration suite applies profile's migrations too. Manual runs
+        # have no base to compare with, so they run everything; so does any
+        # git error, since only a clean "no diff" skips.
+        run: |
+          read -ra paths <<< "$PATHS"
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+            && git diff --quiet HEAD^1 HEAD -- "${paths[@]}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
     name: Lint, test & build
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -53,6 +86,8 @@ jobs:
 
   security:
     name: Security scans
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     uses: ./.github/workflows/reusable-security-scans.yml
     permissions:
       contents: read
@@ -117,12 +152,13 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/profile?sslmode=disable
         run: npm run test:coverage
 
-  # Always runs so branch protection has a check that reports even when the
-  # path filter skips everything above. Required on develop.
+  # Always runs so branch protection has a check that reports even when
+  # `changes` skips everything above. Required on develop. Skipped jobs
+  # pass; `changes` is listed so a failure there can't pass as a skip.
   checks:
     name: Listings checks
     if: always()
-    needs: [test, integration, security]
+    needs: [changes, test, integration, security]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if anything above failed
