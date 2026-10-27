@@ -20,6 +20,9 @@ out=$(printf '%s\n  %s\n  %-22s %7s' "$packages" "----------------------------" 
 
 printf '\nCoverage (unit + integration)\n\n%s\n' "$out"
 
+# Single number for the README badge; see .github/workflows/coverage-badges.yml.
+printf '%s\n' "${total%%\%}" > coverage-pct.txt
+
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   printf '### Coverage (unit + integration)\n\n```\n%s\n```\n' "$out" \
     >> "$GITHUB_STEP_SUMMARY"

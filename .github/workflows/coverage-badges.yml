@@ -1,0 +1,90 @@
+# Publishes one shields.io endpoint per backend service to the `badges`
+# branch, which the README reads. Runs after a merge to develop, so a badge
+# always reflects develop rather than whatever a pull request happened to do.
+name: Coverage badges
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "service/**"
+      - ".github/workflows/coverage-badges.yml"
+  workflow_dispatch: {}
+
+# One publish at a time: three jobs pushing to the same branch would race.
+concurrency:
+  group: coverage-badges
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Measure and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: service/profile/go.mod
+          cache-dependency-path: service/profile/go.sum
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Each script writes coverage-pct.txt next to itself. Testcontainers
+      # starts its own Postgres, so no service container is needed here.
+      - name: Profile coverage
+        working-directory: service/profile
+        run: bash scripts/coverage.sh
+
+      - name: Listings coverage
+        working-directory: service/listings
+        run: npm ci && npm run test:coverage
+
+      - name: Notifications coverage
+        working-directory: service/notifications
+        run: npm ci && npm run test:coverage
+
+      - name: Build badge endpoints
+        run: |
+          mkdir -p badge-out
+          for svc in profile listings notifications; do
+            pct=$(cat "service/$svc/coverage-pct.txt")
+            colour=$(awk -v p="$pct" 'BEGIN {
+              if (p < 50)      print "red"
+              else if (p < 70) print "orange"
+              else if (p < 80) print "yellow"
+              else if (p < 90) print "green"
+              else             print "brightgreen"
+            }')
+            printf '{"schemaVersion":1,"label":"%s coverage","message":"%s%%","color":"%s"}\n' \
+              "$svc" "$pct" "$colour" > "badge-out/$svc.json"
+          done
+          cat badge-out/*.json
+
+      - name: Publish to the badges branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin badges --depth=1 || true
+          if git show-ref --quiet refs/remotes/origin/badges; then
+            git checkout -B badges origin/badges
+          else
+            git checkout --orphan badges
+            git rm -rf --cached . >/dev/null 2>&1 || true
+          fi
+          find . -maxdepth 1 ! -name . ! -name .git ! -name badge-out -exec rm -rf {} +
+          mv badge-out/*.json .
+          rmdir badge-out
+          git add -A
+          git diff --staged --quiet && echo "no change" && exit 0
+          git commit -m "chore(badges): refresh coverage from ${GITHUB_SHA::7}"
+          git push origin badges

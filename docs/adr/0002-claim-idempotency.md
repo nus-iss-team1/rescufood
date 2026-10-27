@@ -2,7 +2,7 @@
 
 Status: accepted, 2026-08-30
 
-## Context
+## Rationale
 
 `POST /api/requests` creates a first-come-first-served claim: it reserves
 the whole listing for the caller's org in one transaction. Network or

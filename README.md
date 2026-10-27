@@ -5,6 +5,10 @@ It ensures time-sensitive surplus food is discovered, claimed, and tracked seaml
 
 A NUS-ISS Team 1 project.
 
+[![profile coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/nus-iss-team1/rescufood/badges/profile.json)](.github/workflows/coverage-badges.yml)
+[![listings coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/nus-iss-team1/rescufood/badges/listings.json)](.github/workflows/coverage-badges.yml)
+[![notifications coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/nus-iss-team1/rescufood/badges/notifications.json)](.github/workflows/coverage-badges.yml)
+
 ## Repository layout
 
 | Folder                                              | What's in it                                                                  |
