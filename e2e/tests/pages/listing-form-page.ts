@@ -20,6 +20,21 @@ export class ListingFormPage {
 
   async publish(fields: ListingFields) {
     await this.fill(fields);
+    await this.submitPublish();
+  }
+
+  /** Publishes with the pickup window already open, so a donor can report a
+   * no-show against the claim straight away. The form defaults the window to
+   * start an hour out (see create-listing-form), which leaves the donor's
+   * "Report No-Show" button disabled until it opens; this backdates the
+   * start to earlier today before publishing. */
+  async publishWithOpenPickupWindow(fields: ListingFields) {
+    await this.fill(fields);
+    await this.backdatePickupWindowStart();
+    await this.submitPublish();
+  }
+
+  private async submitPublish() {
     await this.submit(
       'Publish listing',
       'Your listing is live. Rescue partners can request it until the pickup window closes.',
@@ -27,6 +42,47 @@ export class ListingFormPage {
     await expect(
       this.page.getByRole('link', { name: 'Post another' }),
     ).toBeVisible();
+  }
+
+  /** Lowers the pickup-window "From" time to earlier today, leaving the date
+   * (today, as the form defaults it) and the "Until" time untouched so the
+   * window is already open but not yet closed. The time pickers are
+   * 5-minute dropdowns, so the target is kept comfortably in the past. */
+  private async backdatePickupWindowStart() {
+    const now = new Date();
+    // ~90 minutes ago, clamped to stay on today so the (already-selected)
+    // date stays correct without touching the calendar.
+    const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+    const target = Math.max(5, minutesSinceMidnight - 90);
+    const hour24 = Math.floor(target / 60);
+    // Snap down to the dropdown's 5-minute grid so the value can be picked
+    // and stays <= the computed time (still in the past).
+    const minute = Math.floor((target % 60) / 5) * 5;
+
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+    // Scope to the start field's own dropdowns (ids are prefixed with the
+    // field name) so the untouched "Until" selects aren't matched.
+    await this.selectOption('pickupWindowStart-hour', String(hour12));
+    await this.selectOption(
+      'pickupWindowStart-minute',
+      String(minute).padStart(2, '0'),
+    );
+    await this.selectOption('pickupWindowStart-period', period);
+  }
+
+  /** Picks an option in a base-ui Select identified by its trigger id. */
+  private async selectOption(triggerId: string, optionName: string) {
+    const trigger = this.page.locator(`#${triggerId}`);
+    const option = this.page.getByRole('option', { name: optionName, exact: true });
+    // Opening the dropdown is harmless, so a click lost to hydration can be
+    // retried until the option list appears.
+    await expect(async () => {
+      await trigger.click();
+      await expect(option).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 20_000 });
+    await option.click();
   }
 
   async saveDraft(fields: ListingFields) {

@@ -1,33 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { Pool } from 'pg';
-
-// Project-local file global-setup writes the container's connection string to.
-export const DATABASE_URL_FILE = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'node_modules',
-  '.cache',
-  'notifications-integration-db-url',
-);
-
-// globalThis key holding the container handle for teardown.
-export const CONTAINER_GLOBAL = '__notificationsIntegrationPg__';
 
 let pool: Pool | undefined;
 
 export function databaseUrl(): string {
-  return process.env.DATABASE_URL ?? readFileSync(DATABASE_URL_FILE, 'utf8');
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL is not set');
+  }
+  return url;
 }
 
 // Shared pool for test setup and assertions.
 export function testPool(): Pool {
   if (!pool) {
     pool = new Pool({ connectionString: databaseUrl() });
-    // Swallow the 'error' event pg emits when the container stops.
+    // Swallow the 'error' event pg emits if the server goes away.
     pool.on('error', () => {});
   }
   return pool;

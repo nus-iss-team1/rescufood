@@ -1104,7 +1104,7 @@ class: flex flex-col
 
   <polygon points="269.7,152 450.3,152 529,267 191,267" fill="rgba(31,107,69,0.22)" stroke="#1f6b45" stroke-linejoin="round"/>
   <text x="360" y="205" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Integration</text>
-  <text x="360" y="227" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">Testcontainers &middot; real PostgreSQL</text>
+  <text x="360" y="227" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">CI services Postgres &middot; real PostgreSQL</text>
 
   <polygon points="182.8,279 537.2,279 620,400 100,400" fill="rgba(31,107,69,0.07)" stroke="#1f6b45" stroke-linejoin="round"/>
   <text x="360" y="336" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Unit</text>
@@ -1444,7 +1444,7 @@ class: flex flex-col
   </div>
   <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Docker images in <b>GHCR</b>, tagged by branch + commit SHA</span></div>
   <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every running task traces back to an <b>exact commit</b></span></div>
-  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Integration tests hit a <b>real Postgres</b> via Testcontainers</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Integration tests hit a <b>real Postgres</b> from a CI services container</span></div>
 </div>
 
 </div>
@@ -1467,8 +1467,8 @@ On the artifact side: our build artifacts are Docker images, published to
 the GitHub Container Registry and tagged by branch and commit SHA, so every
 running task traces back to an exact commit - that's what makes a rollback
 just redeploying a known tag. And our integration tests aren't mocked; they
-spin up a real PostgreSQL through Testcontainers, so the data layer is
-exercised for real on every PR.
+run against a real PostgreSQL provided by a CI services container, so the
+data layer is exercised for real on every PR.
 -->
 
 ---
@@ -1576,8 +1576,8 @@ class: flex flex-col
 CI
 
 Our CI runs on every pull request into develop. We lint, type-check,
-unit test and run integration tests against a real PostgreSQL via
-Testcontainers, then run three SAST scanners, each covering a different
+unit test and run integration tests against a real PostgreSQL provided by a
+CI services container, then run three SAST scanners, each covering a different
 class of problem:
 
 On a pull request, we run the fast checks - lint, type-check, unit and
