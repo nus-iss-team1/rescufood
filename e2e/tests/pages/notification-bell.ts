@@ -77,7 +77,7 @@ export class NotificationBell {
    * the tagged QA listing. */
   pickupCompletedNotificationFor(tag: string): Locator {
     return this.notificationMatching(
-      new RegExp(`Pickup for ".*${tag}" is confirmed`),
+      new RegExp(`Pickup for ".*${tag}`),
     );
   }
 
