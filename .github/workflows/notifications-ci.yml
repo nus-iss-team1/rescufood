@@ -92,8 +92,8 @@ jobs:
 
       # Runs the unit + integration suites against the Postgres service
       # container (provided via DATABASE_URL) and writes a merged coverage
-      # table to the job summary. Report-only - it fails on a test failure,
-      # never on low coverage.
+      # table to the job summary. Fails on a test failure, or if coverage is
+      # below COVERAGE_MIN (80%).
       - name: Test & coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/notifications?sslmode=disable

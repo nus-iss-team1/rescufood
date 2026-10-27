@@ -93,7 +93,7 @@ jobs:
 
       # Runs the unit + integration tests against the Postgres service
       # container (provided via DATABASE_URL) and writes a coverage table to
-      # the job summary. Report-only.
+      # the job summary, then fails if coverage is below COVERAGE_MIN (80%).
       - name: Test & coverage
         # postgres:// (not postgresql://) so runMigrations' scheme rewrite to
         # pgx5:// fires; pgxpool accepts this form too.

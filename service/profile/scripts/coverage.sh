@@ -27,3 +27,11 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   printf '### Coverage (unit + integration)\n\n```\n%s\n```\n' "$out" \
     >> "$GITHUB_STEP_SUMMARY"
 fi
+
+# Quality gate. Override with COVERAGE_MIN=0 to measure without blocking.
+pct=${total%%\%}
+min=${COVERAGE_MIN:-80}
+if awk -v p="$pct" -v m="$min" 'BEGIN { exit (p < m) ? 0 : 1 }'; then
+  printf '\ncoverage %s%% is below the %s%% minimum\n' "$pct" "$min" >&2
+  exit 1
+fi
