@@ -5,6 +5,30 @@ It ensures time-sensitive surplus food is discovered, claimed, and tracked seaml
 
 A NUS-ISS Team 1 project.
 
+## Stack
+
+Two languages, split by component. Go for the identity service, TypeScript
+everywhere else.
+
+| Layer | Component | Language | Framework |
+| --- | --- | --- | --- |
+| Frontend | `web/platform` | TypeScript | Next.js 16, React 19, Tailwind 4 |
+| Frontend | `web/admin-console` | TypeScript | React 19, Vite 8 |
+| Backend | `service/profile` | Go 1.26 | chi |
+| Backend | `service/listings` | TypeScript | NestJS 11, Drizzle ORM |
+| Backend | `service/notifications` | TypeScript | NestJS 11, Drizzle ORM |
+
+Shared TypeScript packages in `web/sdk` (typed API clients) and `web/ui`
+(components) are compiled into both frontends.
+
+| Concern | Choice |
+| --- | --- |
+| Database | PostgreSQL 17 |
+| Identity | Amazon Cognito |
+| Messaging | Amazon SQS |
+| Infrastructure | AWS CloudFormation, ECS Fargate |
+| Tests | Go test, Jest, Vitest, Playwright |
+
 ## Repository layout
 
 | Folder                                              | What's in it                                                                  |
