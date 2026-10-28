@@ -4,3 +4,9 @@
 # Alert ids: https://www.zaproxy.org/docs/alerts/
 10035	IGNORE	Strict-Transport-Security - ephemeral scan target is plain HTTP, TLS terminates at the ALB
 10202	IGNORE	Anti-CSRF tokens - forms are Next.js server actions, which reject cross-origin requests by Origin check
+10020	FAIL	Anti-clickjacking - X-Frame-Options: DENY is set in next.config.ts (#139)
+10021	FAIL	X-Content-Type-Options - nosniff is set in next.config.ts (#139)
+10037	FAIL	X-Powered-By - poweredByHeader: false in next.config.ts (#139)
+10063	FAIL	Permissions-Policy - set in next.config.ts (#139)
+# 90004 (COOP/CORP/COEP) stays WARN: COEP is deliberately not sent, so FAIL would always trip.
+# 10038 (CSP) stays WARN until a CSP is added.

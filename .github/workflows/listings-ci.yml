@@ -98,8 +98,9 @@ jobs:
       working-directory: service/listings
       codeql-languages: '["javascript-typescript"]'
       semgrep-configs: p/default p/secrets p/nodejs
-      # Flip to true once the existing findings are triaged.
-      fail-on-findings: false
+      # Blocks on Semgrep ERROR and Trivy CRITICAL (fixable only); the rest is
+      # reported to code scanning without blocking.
+      fail-on-findings: true
 
   integration:
     name: Integration test

@@ -144,7 +144,8 @@ component's alerts stay separate.
 | `semgrep-configs` | `p/default p/secrets` | Space-separated rulesets — services add `p/nodejs` / `p/golang` |
 | `semgrep-version` | `1.171.0` | Tag of `semgrep/semgrep` |
 | `trivy-severity` | `CRITICAL,HIGH` | Severities reported |
-| `fail-on-findings` | `false` | Fail the job on Semgrep/Trivy findings |
+| `trivy-fail-severity` | `CRITICAL` | Severities that fail the job when `fail-on-findings` is set |
+| `fail-on-findings` | `false` | Fail the job on Semgrep ERROR findings and Trivy findings at `trivy-fail-severity` (unfixed vulnerabilities are ignored) |
 
 CodeQL is scoped with a `paths:` config, which applies to interpreted languages
 only. For a compiled component, use `source-root` instead.
@@ -185,9 +186,13 @@ whose API is worth scanning can call `reusable-dast.yml` with
 
 ## Making the scans blocking
 
-Every caller currently passes `fail-on-findings: false`, so scans report without
-blocking. To enforce:
+The `*-ci.yml` callers pass `fail-on-findings: true`, so a PR fails on:
 
-1. Clear or accept the open code scanning alerts.
-2. Set `fail-on-findings: true` in the caller.
-3. For DAST, mark the alerts to enforce as `FAIL` in `.github/zap/rules.tsv`.
+- a Semgrep ERROR-level finding (WARNING and INFO are reported only),
+- a Trivy finding at `CRITICAL` that has a fix available (`HIGH` is reported only),
+- a ZAP alert marked `FAIL` in `.github/zap/rules.tsv` (platform DAST).
+
+The `*-build.yml` callers keep `fail-on-findings: false`, so a newly published
+CVE can't stop a deploy. CodeQL is not gated by this input; blocking on CodeQL
+alerts needs a code scanning rule in the repository's branch protection, which
+an admin sets.

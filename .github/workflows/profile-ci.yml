@@ -150,8 +150,9 @@ jobs:
       # Go is compiled: CodeQL builds the module to analyse it.
       codeql-build-mode: autobuild
       semgrep-configs: p/default p/secrets p/golang
-      # Flip to true once the existing findings are triaged.
-      fail-on-findings: false
+      # Blocks on Semgrep ERROR and Trivy CRITICAL (fixable only); the rest is
+      # reported to code scanning without blocking.
+      fail-on-findings: true
 
   # Always runs so branch protection has a check that reports even when
   # `changes` skips everything above. Required on develop. Skipped jobs
