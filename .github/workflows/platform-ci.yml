@@ -118,8 +118,9 @@ jobs:
       working-directory: web
       codeql-paths: web/platform
       codeql-languages: '["javascript-typescript"]'
-      # Flip to true once the existing dependency findings are triaged.
-      fail-on-findings: false
+      # Blocks on Semgrep ERROR and Trivy CRITICAL (fixable only); the rest is
+      # reported to code scanning without blocking.
+      fail-on-findings: true
 
   dast:
     name: DAST
@@ -137,7 +138,8 @@ jobs:
       scan-path: /
       # Empty on pull requests, where only the passive scan makes sense.
       scan-type: ${{ inputs.scan-type || 'baseline' }}
-      fail-on-findings: false
+      # Blocks on alerts marked FAIL in .github/zap/rules.tsv.
+      fail-on-findings: true
       # Cognito variables are left unset, so the app renders sign-in as disabled.
       runtime-env: |
         AUTH_SECRET=dast-throwaway-secret-not-used-outside-ci

@@ -67,8 +67,15 @@ on:
         required: false
         default: CRITICAL,HIGH
         type: string
+      trivy-fail-severity:
+        description: Severities that fail the Trivy job when fail-on-findings is set. Keep it within trivy-severity.
+        required: false
+        default: CRITICAL
+        type: string
       fail-on-findings:
-        description: Fail the job when Semgrep or Trivy report findings. Findings are always uploaded either way.
+        description: >-
+          Fail the job on Semgrep ERROR-level findings and on Trivy findings at
+          trivy-fail-severity. Everything is uploaded to code scanning either way.
         required: false
         default: false
         type: boolean
@@ -125,7 +132,6 @@ jobs:
           CONFIGS: ${{ inputs.semgrep-configs }}
           TARGET: ${{ inputs.working-directory }}
           IMAGE: semgrep/semgrep:${{ inputs.semgrep-version }}
-          FAIL_ON_FINDINGS: ${{ inputs.fail-on-findings }}
           SARIF: semgrep-${{ inputs.component }}.sarif
         run: |
           set -euo pipefail
@@ -134,9 +140,6 @@ jobs:
           for config in "${configs[@]}"; do
             args+=("--config=$config")
           done
-          if [ "$FAIL_ON_FINDINGS" = "true" ]; then
-            args+=(--error)
-          fi
           # Mount the repository root so SARIF paths stay repository-relative.
           docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src "$IMAGE" \
             semgrep scan "${args[@]}" \
@@ -150,6 +153,27 @@ jobs:
         with:
           sarif_file: semgrep-${{ inputs.component }}.sarif
           category: semgrep-${{ inputs.component }}
+
+      # Gate on ERROR only. WARNING and INFO findings stay in code scanning
+      # without blocking.
+      - name: Fail on ERROR-level findings
+        if: inputs.fail-on-findings
+        env:
+          SARIF: semgrep-${{ inputs.component }}.sarif
+        run: |
+          set -euo pipefail
+          # A result's level falls back to its rule's default level.
+          errors=$(jq -r '.runs[]
+            | ((.tool.driver.rules // []) | map({key: .id, value: (.defaultConfiguration.level // "warning")}) | from_entries) as $level
+            | .results[]?
+            | select((.level // $level[.ruleId]) == "error")
+            | "\(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) \(.ruleId)"' "$SARIF")
+          if [ -n "$errors" ]; then
+            echo "Semgrep ERROR-level findings:"
+            echo "$errors"
+            exit 1
+          fi
+          echo "No Semgrep ERROR-level findings."
 
   trivy:
     name: Trivy deps, secrets, IaC (${{ inputs.component }})
@@ -175,7 +199,6 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-${{ inputs.component }}.sarif
-          exit-code: ${{ inputs.fail-on-findings && '1' || '0' }}
 
       - name: Rewrite Trivy paths as repository-relative
         if: always() && inputs.working-directory != '.' && hashFiles(format('trivy-{0}.sarif', inputs.component)) != ''
@@ -195,3 +218,18 @@ jobs:
         with:
           sarif_file: trivy-${{ inputs.component }}.sarif
           category: trivy-${{ inputs.component }}
+
+      # Second pass so the gate can be stricter than the report: HIGH stays
+      # visible in code scanning, only trivy-fail-severity blocks. The table
+      # goes to the job log.
+      - name: Fail on findings at trivy-fail-severity
+        if: inputs.fail-on-findings
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.working-directory }}
+          scanners: vuln,secret,misconfig
+          severity: ${{ inputs.trivy-fail-severity }}
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
