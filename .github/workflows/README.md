@@ -39,7 +39,7 @@ with the branch selected.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, unit tests with an 80% coverage gate, security scans, DAST (ZAP baseline) |
+| `platform-ci.yml` | Every PR to `develop` (jobs skip unless `web/platform/**`, `web/sdk/**`, `web/ui/**` or the ZAP config changed), manual | Lint + type-check, unit tests with an 80% coverage gate, security scans, DAST (ZAP baseline) |
 | `profile-ci.yml` | Every PR to `develop` (jobs skip unless `service/profile/**` changed), manual | `gofmt` check, `go vet`, `go test -race`, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
 | `listings-ci.yml` | Every PR to `develop` (jobs skip unless `service/listings/**` or `service/profile/db/migrations/**` changed), manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
 | `notifications-ci.yml` | Every PR to `develop` (jobs skip unless `service/notifications/**` changed), manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
@@ -52,9 +52,10 @@ with the branch selected.
 | `reusable-security-scans.yml` | `workflow_call` | CodeQL and Semgrep (SAST), Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
 
-The three backend CI workflows start on every PR, so their `Profile checks`,
-`Listings checks` and `Notifications checks` jobs, which are required on
-`develop`, always report. A `changes` job decides whether the rest runs: a
+The CI workflows start on every PR, so their `Platform checks`,
+`Profile checks`, `Listings checks` and `Notifications checks` jobs always
+report. Each fails if any job in its workflow failed, so these four are the
+checks to require on `develop`. A `changes` job decides whether the rest runs: a
 path filter on the trigger would stop the whole workflow, leaving the
 required check pending forever on PRs that don't touch that service.
 
@@ -88,7 +89,8 @@ The platform's `Lint, type-check & unit test` job runs `npm run test:coverage`
 the backend services. The percentage counts the
 logic layer only, server actions and `src/lib`; pages, components and route
 handlers are left to the Playwright e2e suite. The threshold and the excluded
-paths live in `web/platform/vitest.config.mts`.
+paths live in `web/platform/vitest.config.mts`. It blocks merges through
+`Platform checks` once that check is required on `develop`.
 
 `coverage-badges.yml` runs the same three commands after a merge to
 `develop`, then writes one shields.io endpoint per service to the

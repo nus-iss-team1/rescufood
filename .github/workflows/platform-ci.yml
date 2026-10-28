@@ -1,16 +1,10 @@
 name: Platform CI
 
 on:
+  # Every PR, so the required `checks` job always reports. Whether the jobs
+  # below run is decided by `changes`, not by a trigger path filter.
   pull_request:
     branches: [develop]
-    paths:
-      - "web/platform/**"
-      - "web/sdk/**"
-      - "web/ui/**"
-      - ".github/workflows/platform-ci.yml"
-      - ".github/workflows/reusable-security-scans.yml"
-      - ".github/workflows/reusable-dast.yml"
-      - ".github/zap/**"
   workflow_dispatch:
     inputs:
       scan-type:
@@ -25,8 +19,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The PR merge commit and its first parent, the base branch.
+          fetch-depth: 2
+
+      - name: Diff against the base branch
+        id: diff
+        env:
+          PATHS: >-
+            web/platform/
+            web/sdk/
+            web/ui/
+            .github/workflows/platform-ci.yml
+            .github/workflows/reusable-security-scans.yml
+            .github/workflows/reusable-dast.yml
+            .github/zap/
+        # Manual runs have no base to compare with, so they run everything;
+        # so does any git error, since only a clean "no diff" skips.
+        run: |
+          read -ra paths <<< "$PATHS"
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+            && git diff --quiet HEAD^1 HEAD -- "${paths[@]}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     name: Lint, type-check & unit test
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -71,6 +104,8 @@ jobs:
 
   security:
     name: Security scans
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     uses: ./.github/workflows/reusable-security-scans.yml
     permissions:
       contents: read
@@ -88,6 +123,8 @@ jobs:
 
   dast:
     name: DAST
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
     uses: ./.github/workflows/reusable-dast.yml
     permissions:
       contents: read
@@ -107,3 +144,20 @@ jobs:
         AUTH_URL=http://localhost:3000
         AUTH_TRUST_HOST=true
         NEXT_TELEMETRY_DISABLED=1
+
+  # Always runs so branch protection has a check that reports even when
+  # `changes` skips everything above. Skipped jobs pass; `changes` is listed
+  # so a failure there can't pass as a skip.
+  checks:
+    name: Platform checks
+    if: always()
+    needs: [changes, quality, security, dast]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if anything above failed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "upstream: $results"
+          case "$results" in
+            *failure*|*cancelled*) exit 1 ;;
+          esac
