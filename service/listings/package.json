@@ -97,7 +97,7 @@
     "testEnvironment": "node"
   },
   "overrides": {
-    "multer": "2.3.0",
+    "multer": "2.5.0",
     "qs": "6.16.0"
   }
 }
