@@ -40,9 +40,9 @@ with the branch selected.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `platform-ci.yml` | PR to `develop` touching `web/**`, manual | Lint + type-check, security scans, DAST (ZAP baseline) |
-| `profile-ci.yml` | PR to `develop` touching `service/profile/**`, manual | `gofmt` check, `go vet`, `go test -race`, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
-| `listings-ci.yml` | PR to `develop` touching `service/listings/**` or `service/profile/db/migrations/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
-| `notifications-ci.yml` | PR to `develop` touching `service/notifications/**`, manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
+| `profile-ci.yml` | Every PR to `develop` (jobs skip unless `service/profile/**` changed), manual | `gofmt` check, `go vet`, `go test -race`, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL`; runs unit + integration together for a combined coverage report in the job summary) |
+| `listings-ci.yml` | Every PR to `develop` (jobs skip unless `service/listings/**` or `service/profile/db/migrations/**` changed), manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + profile/listings migrations; posts a combined unit+integration coverage report to the job summary) |
+| `notifications-ci.yml` | Every PR to `develop` (jobs skip unless `service/notifications/**` changed), manual | Lint, unit test, build, security scans, plus an integration job (Postgres from a CI `services:` container via `DATABASE_URL` + notifications migrations; posts a combined unit+integration coverage report to the job summary) |
 | `platform-build.yml` | Push to `develop`, `qa` or `main` touching `web/**`, manual | Security scans → build & push `ghcr.io/<repo>/frontend` → roll the `web-platform` ECS service |
 | `profile-build.yml` | Push to `develop`, `qa` or `main` touching `service/profile/**`, manual | Security scans → build & push `.../profile` → roll the `profile` ECS service |
 | `listings-build.yml` | Push to `develop`, `qa` or `main` touching `service/listings/**`, manual | Security scans → build & push `.../listings` → roll the `listings` ECS service |
@@ -51,6 +51,12 @@ with the branch selected.
 | `coverage-badges.yml` | Push to `develop` touching `service/**`, manual | Runs all three backend coverage commands and publishes a shields.io endpoint per service to the orphan `badges` branch |
 | `reusable-security-scans.yml` | `workflow_call` | CodeQL and Semgrep (SAST), Trivy (dependencies, secrets, IaC/Dockerfile) |
 | `reusable-dast.yml` | `workflow_call` | OWASP ZAP against a container the job starts, or a deployed URL |
+
+The three backend CI workflows start on every PR, so their `Profile checks`,
+`Listings checks` and `Notifications checks` jobs, which are required on
+`develop`, always report. A `changes` job decides whether the rest runs: a
+path filter on the trigger would stop the whole workflow, leaving the
+required check pending forever on PRs that don't touch that service.
 
 The build workflows tag images `<branch>`, `<branch>-<sha>` and — on `develop`
 only — `latest`, then `aws ecs update-service --force-new-deployment` (the
