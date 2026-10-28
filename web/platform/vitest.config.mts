@@ -44,16 +44,30 @@ export default defineConfig({
       AUTH_COGNITO_ID: "test-client-id",
       AUTH_COGNITO_SECRET: "test-client-secret",
     },
+    // Unit coverage measures the logic layer: server actions and lib.
+    // Everything excluded below is UI or wiring that the Playwright e2e
+    // suite exercises through the browser instead.
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/**/*.spec.{ts,tsx}",
-        "src/app/layout.tsx",
-        "src/app/api/auth/[...nextauth]/route.ts",
+        // Pages, layouts and error boundaries: rendering, tested end to end
+        "src/app/**/*.tsx",
+        // Route handlers: thin HTTP wrappers over lib, which is counted
+        "src/app/**/route.ts",
+        // UI components: rendering, tested end to end
+        "src/components/**",
+        // UI-only hooks (viewport size), no business logic
+        "src/hooks/**",
+        // NextAuth configuration: needs real Cognito, covered by the e2e sign-in
+        "src/auth.ts",
         "src/lib/utils.ts", // shadcn/ui boilerplate (cn helper), not app code
       ],
+      // Fails the run below this, which blocks the platform CI job.
+      // Statements, the same metric the backend services gate on.
+      thresholds: { statements: 80 },
     },
     server: {
       // @rescufood/ui and @base-ui/react are otherwise externalized to
