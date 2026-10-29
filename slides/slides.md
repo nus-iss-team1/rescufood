@@ -1099,11 +1099,12 @@ class: flex flex-col
   <text x="40" y="424" style="font-size:11px" fill="#5a5a5a" class="font-mono">faster &middot; more &middot; more precise</text>
 
   <polygon points="360,20 442.1,140 277.9,140" fill="#1f6b45" stroke="#1f6b45" stroke-linejoin="round"/>
-  <text x="360" y="110" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#ffffff">E2E</text>
-  <text x="360" y="129" text-anchor="middle" style="font-size:10.5px" fill="#ffffff" class="font-mono">Playwright</text>
+  <text x="360" y="107" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#ffffff">E2E</text>
+  <text x="360" y="124" text-anchor="middle" style="font-size:10.5px" fill="#ffffff" class="font-mono">Playwright</text>
+  <text x="360" y="137" text-anchor="middle" style="font-size:9px" fill="#ffffff" class="font-mono">true integration</text>
 
   <polygon points="269.7,152 450.3,152 529,267 191,267" fill="rgba(31,107,69,0.22)" stroke="#1f6b45" stroke-linejoin="round"/>
-  <text x="360" y="205" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Integration</text>
+  <text x="360" y="205" text-anchor="middle" style="font-size:17px;font-weight:700" fill="#111111">Component</text>
   <text x="360" y="227" text-anchor="middle" style="font-size:11px" fill="#5a5a5a" class="font-mono">CI services Postgres &middot; real PostgreSQL</text>
 
   <polygon points="182.8,279 537.2,279 620,400 100,400" fill="rgba(31,107,69,0.07)" stroke="#1f6b45" stroke-linejoin="round"/>
@@ -1116,7 +1117,7 @@ class: flex flex-col
 
   <path d="M 492 210 L 652 210" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
   <text x="664" y="205" style="font-size:15px;font-weight:600" fill="#111111">About 230 tests on a real database</text>
-  <text x="664" y="225" style="font-size:12px" fill="#5a5a5a">Throwaway container, real migrations</text>
+  <text x="664" y="225" style="font-size:12px" fill="#5a5a5a">Real Postgres, real migrations, one service in isolation</text>
 
   <path d="M 586 340 L 652 340" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="3 4"/>
   <text x="664" y="335" style="font-size:15px;font-weight:600" fill="#111111">Over 800 tests (239 frontend)</text>
@@ -1134,12 +1135,17 @@ TESTING STRATEGY
 We structured our testing as a pyramid, because tests get slower and
 more expensive the higher you go. Unit tests are cheap and fast: the
 listings service runs its whole unit suite in about thirteen seconds, so
-backend unit tests run on every pull request. Integration tests are
-fewer and slower. Each run starts a throwaway PostgreSQL container,
-applies the real migrations once, and resets the tables between tests,
-so we test real SQL, not mocks. That takes under a minute per service.
-The numbers follow the shape: over eight hundred unit tests, about two
-hundred and thirty integration tests, and fifty-two end-to-end.
+backend unit tests run on every pull request. Component tests are
+fewer and slower. Each service runs its own code against a real
+PostgreSQL - a local instance in development, a CI services container on
+a pull request - applying the real migrations and resetting the tables
+between tests, so we test real SQL, not mocks. That takes under a minute
+per service. These exercise one service in isolation, so they are
+component tests rather than true integration tests; the integration
+tests proper are the Playwright suite, which drives the deployed
+application end to end. The numbers follow the shape: over eight hundred
+unit tests, about two hundred and thirty component tests, and fifty-two
+end-to-end.
 -->
 
 ---
@@ -1444,7 +1450,7 @@ class: flex flex-col
   </div>
   <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Docker images in <b>GHCR</b>, tagged by branch + commit SHA</span></div>
   <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Every running task traces back to an <b>exact commit</b></span></div>
-  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Integration tests hit a <b>real Postgres</b> from a CI services container</span></div>
+  <div class="flex items-start text-sm" style="gap:0.5rem"><span style="color:#1f6b45">&bull;</span><span>Component tests hit a <b>real Postgres</b> from a CI services container</span></div>
 </div>
 
 </div>
@@ -1466,9 +1472,10 @@ pipeline, which keeps builds fast and independent.
 On the artifact side: our build artifacts are Docker images, published to
 the GitHub Container Registry and tagged by branch and commit SHA, so every
 running task traces back to an exact commit - that's what makes a rollback
-just redeploying a known tag. And our integration tests aren't mocked; they
+just redeploying a known tag. And our component tests aren't mocked; they
 run against a real PostgreSQL provided by a CI services container, so the
-data layer is exercised for real on every PR.
+data layer is exercised for real on every PR. The true integration tests
+are the Playwright suite that drives the deployed app end to end.
 -->
 
 ---
@@ -1516,7 +1523,7 @@ class: flex flex-col
     <path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/>
     <path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>
   </g>
-  <text x="372" y="187" style="font-size:11.5px;font-weight:600" fill="#111111">Integration tests</text>
+  <text x="372" y="187" style="font-size:11.5px;font-weight:600" fill="#111111">Component tests</text>
 
   <rect x="320" y="256" width="230" height="40" rx="10" fill="#ffffff" stroke="#0000002a"/>
   <g transform="translate(344,266)" stroke="#1f6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1576,12 +1583,12 @@ class: flex flex-col
 CI
 
 Our CI runs on every pull request into develop. We lint, type-check,
-unit test and run integration tests against a real PostgreSQL provided by a
+unit test and run component tests against a real PostgreSQL provided by a
 CI services container, then run three SAST scanners, each covering a different
 class of problem:
 
 On a pull request, we run the fast checks - lint, type-check, unit and
-integration tests - then three security scanners, each for a different class
+component tests - then three security scanners, each for a different class
 of problem. Two are SAST: CodeQL for deep data-flow analysis, and Semgrep for
 fast pattern-matching on insecure idioms and hardcoded secrets. The third is
 Trivy, which scans outward - known CVEs in dependencies, leaked secrets, and

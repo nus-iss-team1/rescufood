@@ -141,7 +141,7 @@ successful rows.
 | Command | What it does |
 |---|---|
 | `npm test` | Unit tests |
-| `npm run test:integration` | Repository, HTTP and `SqsConsumerService.process` tests against an externally-provided Postgres (`DATABASE_URL`) |
+| `npm run test:integration` | Component tests — repository, HTTP and `SqsConsumerService.process` tests against a real, externally-provided Postgres (`DATABASE_URL`) |
 
 `npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
 runs against a Postgres provided externally via `DATABASE_URL` (a local
@@ -152,3 +152,11 @@ is stubbed (a header carries the Cognito sub); the repository, controller and
 SQS consumer run for real, the mailer is a spy. CI runs it as a separate
 `integration` job in
 [`notifications-ci.yml`](../../.github/workflows/notifications-ci.yml).
+
+Despite the `test:integration` name, these are **component tests**: they
+exercise this one service's own code against a real database with external
+dependencies stubbed, rather than crossing service boundaries. The Team
+reclassified them from "integration tests" after the project presentation;
+the true integration tests now run through Playwright (see
+[`e2e/`](../../e2e/README.md)) against a deployed environment. The npm script
+keeps its current name for now, with the rename to follow as later cleanup.

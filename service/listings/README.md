@@ -181,12 +181,18 @@ npm run db:generate   # generate a migration from schema changes
 npm run db:migrate    # apply migrations (local DATABASE_URL)
 ```
 
-### Integration tests
+### Component tests
 
 `npm run test:integration` (`test/integration/`, `*.integration-spec.ts`)
 runs the repositories and the HTTP layer against a Postgres provided
 externally via `DATABASE_URL` (a local instance, or the CI `services:`
-container). `test/integration/support/migrate.ts`
+container). These were previously called integration tests; the Team
+reclassified them as **component tests** because they exercise this one
+service's own code against a real database with external dependencies
+stubbed, rather than crossing service boundaries. The true integration
+tests now run through Playwright (see [`e2e/`](../../e2e/README.md)), against
+a deployed environment. The npm script keeps its `test:integration` name for
+now; the rename is cleanup still to follow. `test/integration/support/migrate.ts`
 applies `service/profile`'s migrations and then this service's, directly as
 SQL — no Go toolchain or sibling `node_modules` required. The JWT guard is
 stubbed (a header carries the Cognito sub); the org-membership guards,
@@ -209,8 +215,8 @@ folder, since migrations never run from inside the container.
 | `npm run start:prod` | Run the compiled build |
 | `npm run lint` | ESLint (`--fix`) |
 | `npm test` | Unit tests |
-| `npm run test:e2e` | End-to-end tests |
-| `npm run test:integration` | Repository + HTTP tests against a throwaway Postgres (needs Docker) |
+| `npm run test:e2e` | NestJS in-process end-to-end / integration tests — boot the full app and drive it over HTTP |
+| `npm run test:integration` | Component tests — repository + HTTP tests against a real Postgres provided via `DATABASE_URL` (a local instance, or the CI `services:` container) |
 
 ## Docker
 
