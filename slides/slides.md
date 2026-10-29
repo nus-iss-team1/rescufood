@@ -1750,65 +1750,58 @@ Use cases <span class="accent">in detail</span>
 </div>
 
 <div class="text-sm mt-10" style="color:#00000066">
-Backup slides for Q&amp;A
+Seven groups &middot; backup slides for Q&amp;A
 </div>
 
 <!--
 APPENDIX MARKER
 
 Don't present these. They are here for questions about scope: the full
-actor-by-actor breakdown behind the one-slide use case diagram in section
-two, then three sequence diagrams for the flows people ask about. All
-drawn on white so they can be lifted straight into the report.
+breakdown behind the one-slide use case diagram in section two, split into
+the same seven groups the report uses, then three sequence diagrams for the
+flows people ask about. All drawn on white so they can be lifted straight
+into the report.
+
+The grouping is by feature area rather than by actor, which is why an actor
+can appear on more than one of these slides. Each group matches one pair of
+analysis and design class diagrams in the separate diagrams deck.
 -->
 
 ---
 class: flex flex-col uml-slide
 ---
 
-# Onboarding &amp; administration
+# 01 &middot; Onboarding &amp; access
 
-<div class="text-base mt-2" style="color:#00000099">Getting an organisation and its members onto the platform</div>
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">Everything a caller without a session can do, plus account self-service</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 440"  fill="none">
+<svg viewBox="0 0 1100 470" fill="none">
   <g stroke="#1a1a1a" stroke-width="1.1">
-    <line x1="158" y1="220" x2="325" y2="48"/>
-    <line x1="158" y1="220" x2="325" y2="134"/>
-    <line x1="158" y1="220" x2="325" y2="220"/>
-    <line x1="158" y1="220" x2="325" y2="306"/>
-    <line x1="158" y1="220" x2="325" y2="392"/>
-    <line x1="942" y1="220" x2="785" y2="48"/>
-    <line x1="942" y1="220" x2="785" y2="134"/>
-    <line x1="942" y1="220" x2="785" y2="220"/>
-    <line x1="942" y1="220" x2="785" y2="306"/>
-    <line x1="942" y1="220" x2="785" y2="392"/>
+    <line x1="168" y1="215" x2="390" y2="40"/>
+    <line x1="168" y1="215" x2="390" y2="110"/>
+    <line x1="168" y1="215" x2="390" y2="180"/>
+    <line x1="168" y1="215" x2="390" y2="250"/>
+    <line x1="168" y1="215" x2="390" y2="320"/>
+    <line x1="932" y1="390" x2="710" y2="390"/>
   </g>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
-    <ellipse cx="430" cy="48" rx="105" ry="28"/>
-    <ellipse cx="430" cy="134" rx="105" ry="28"/>
-    <ellipse cx="430" cy="220" rx="105" ry="28"/>
-    <ellipse cx="430" cy="306" rx="105" ry="28"/>
-    <ellipse cx="430" cy="392" rx="105" ry="28"/>
-    <ellipse cx="680" cy="48" rx="105" ry="28"/>
-    <ellipse cx="680" cy="134" rx="105" ry="28"/>
-    <ellipse cx="680" cy="220" rx="105" ry="28"/>
-    <ellipse cx="680" cy="306" rx="105" ry="28"/>
-    <ellipse cx="680" cy="392" rx="105" ry="28"/>
+    <ellipse cx="550" cy="40" rx="160" ry="26"/>
+    <ellipse cx="550" cy="110" rx="160" ry="26"/>
+    <ellipse cx="550" cy="180" rx="160" ry="26"/>
+    <ellipse cx="550" cy="250" rx="160" ry="26"/>
+    <ellipse cx="550" cy="320" rx="160" ry="26"/>
+    <ellipse cx="550" cy="390" rx="160" ry="26"/>
   </g>
   <g text-anchor="middle" style="font-size:13px" fill="#111111">
-    <text x="430" y="53">Register organisation</text>
-    <text x="430" y="139">Look up org by domain</text>
-    <text x="430" y="225">Sign up &amp; verify email</text>
-    <text x="430" y="311">Sign in</text>
-    <text x="430" y="397">Reset password</text>
-    <text x="680" y="53">Approve organisation</text>
-    <text x="680" y="139">Reject or suspend org</text>
-    <text x="680" y="225">Suspend or reactivate user</text>
-    <text x="680" y="311">Unlock a locked account</text>
-    <text x="680" y="397">Read the audit log</text>
+    <text x="550" y="45">Register organisation</text>
+    <text x="550" y="115">Look up org by domain</text>
+    <text x="550" y="185">Sign up &amp; verify email</text>
+    <text x="550" y="255">Sign in</text>
+    <text x="550" y="325">Reset password</text>
+    <text x="550" y="395">View profile, change password</text>
   </g>
-  <g transform="translate(140,220)">
+  <g transform="translate(150,215)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
       <line x1="0" y1="-17" x2="0" y2="12"/>
@@ -1818,7 +1811,71 @@ class: flex flex-col uml-slide
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Guest</text>
   </g>
-  <g transform="translate(960,220)">
+  <g transform="translate(950,390)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Member</text>
+  </g>
+</svg>
+</div>
+
+<!--
+01 ONBOARDING & ACCESS
+
+Everything the Guest reaches is public. You do not need an account to
+register an organisation, and that is deliberate: the first person from a
+charity has nowhere to sign in to yet. Registration takes the org details,
+signup looks the org up by email domain, and the two are joined when the
+user is provisioned on first sign-in.
+
+Sign in and reset password sit here rather than with administration because
+the caller has no session when they make them. Lockout is tracked against
+the username that was typed, not against an account, which is exactly why
+it belongs on the unauthenticated side.
+
+The one use case on the right needs a session, so its actor is a Member
+rather than a Guest. There is no org-admin role anywhere in this diagram:
+the profile service has two roles, platform administrator and member, and
+whoever registers the org is just its first member.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 02 &middot; Platform administration
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">The only privileged role, working through a separate console</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 460" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="318" y1="220" x2="525" y2="40"/>
+    <line x1="318" y1="220" x2="525" y2="130"/>
+    <line x1="318" y1="220" x2="525" y2="220"/>
+    <line x1="318" y1="220" x2="525" y2="310"/>
+    <line x1="318" y1="220" x2="525" y2="400"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="700" cy="40" rx="175" ry="30"/>
+    <ellipse cx="700" cy="130" rx="175" ry="30"/>
+    <ellipse cx="700" cy="220" rx="175" ry="30"/>
+    <ellipse cx="700" cy="310" rx="175" ry="30"/>
+    <ellipse cx="700" cy="400" rx="175" ry="30"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px" fill="#111111">
+    <text x="700" y="45">Approve organisation</text>
+    <text x="700" y="135">Reject or suspend org</text>
+    <text x="700" y="225">Suspend or reactivate user</text>
+    <text x="700" y="315">Unlock a locked account</text>
+    <text x="700" y="405">Read the audit log</text>
+  </g>
+  <g transform="translate(300,220)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
       <line x1="0" y1="-17" x2="0" y2="12"/>
@@ -1832,75 +1889,69 @@ class: flex flex-col uml-slide
 </div>
 
 <!--
-ONBOARDING & ADMINISTRATION
+02 PLATFORM ADMINISTRATION
 
-Everything on the left is public. You do not need an account to register an
-organisation - that is deliberate, because the first person from a charity
-has nowhere to sign in to yet. Registration takes the org details, signup
-looks the org up by the email domain, and the two are joined when the user
-is provisioned.
+One actor, five use cases, and it is the only privileged role in the
+system. It works through the admin console, which runs locally rather than
+hosted, because its only users are us.
 
-There is no org-admin role in the system. The profile service has exactly
-two roles: platform administrator and member. Whoever registers the org is
-just the first member of it.
+Approve organisation is the gate for the whole platform. Until an admin
+approves the organisation nobody from it can sign up, post or claim: the
+listings service rejects them at the guard. Reject, suspend, user
+suspension and unlock are the rest of the state-changing surface.
 
-Approve organisation is the gate. Until a platform admin approves the
-organisation, nobody from it can post or claim anything - the listings
-service rejects them at the guard. Reject, suspend, user suspension and
-unlock are the rest of the admin surface, and every one of them requires a
-reason that lands in the audit log.
+Four of the five change state and every one of those requires a reason
+that lands in the audit log, written in the same transaction as the change
+itself. The fifth, reading the audit log, is the only administrative use
+case that changes nothing, which is why it is the only one with no reason
+attached.
+
+If asked how the admin surface is protected: the token has to carry an
+admin claim, not merely be valid. Authentication is not authorisation.
 -->
 
 ---
 class: flex flex-col uml-slide
 ---
 
-# Donor &amp; rescue partner
+# 03 &middot; Listing &amp; discovery
 
-<div class="text-base mt-2" style="color:#00000099">What each role can do on its own</div>
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">The listing lifecycle, and finding what is available</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 480"  fill="none">
+<svg viewBox="0 0 1100 490" fill="none">
   <g stroke="#1a1a1a" stroke-width="1.1">
-    <line x1="158" y1="236" x2="325" y2="38"/>
-    <line x1="158" y1="236" x2="325" y2="104"/>
-    <line x1="158" y1="236" x2="325" y2="170"/>
-    <line x1="158" y1="236" x2="325" y2="236"/>
-    <line x1="158" y1="236" x2="325" y2="302"/>
-    <line x1="158" y1="236" x2="325" y2="368"/>
-    <line x1="158" y1="236" x2="325" y2="434"/>
-    <line x1="942" y1="236" x2="785" y2="137"/>
-    <line x1="942" y1="236" x2="785" y2="203"/>
-    <line x1="942" y1="236" x2="785" y2="269"/>
-    <line x1="942" y1="236" x2="785" y2="335"/>
+    <line x1="158" y1="200" x2="310" y2="40"/>
+    <line x1="158" y1="200" x2="310" y2="108"/>
+    <line x1="158" y1="200" x2="310" y2="176"/>
+    <line x1="158" y1="200" x2="310" y2="244"/>
+    <line x1="158" y1="200" x2="310" y2="312"/>
+    <line x1="942" y1="200" x2="800" y2="142"/>
+    <line x1="942" y1="200" x2="800" y2="210"/>
+    <line x1="150" y1="240" x2="415" y2="440"/>
+    <line x1="950" y1="240" x2="695" y2="440"/>
   </g>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
-    <ellipse cx="430" cy="38" rx="105" ry="24"/>
-    <ellipse cx="430" cy="104" rx="105" ry="24"/>
-    <ellipse cx="430" cy="170" rx="105" ry="24"/>
-    <ellipse cx="430" cy="236" rx="105" ry="24"/>
-    <ellipse cx="430" cy="302" rx="105" ry="24"/>
-    <ellipse cx="430" cy="368" rx="105" ry="24"/>
-    <ellipse cx="430" cy="434" rx="105" ry="24"/>
-    <ellipse cx="680" cy="137" rx="105" ry="24"/>
-    <ellipse cx="680" cy="203" rx="105" ry="24"/>
-    <ellipse cx="680" cy="269" rx="105" ry="24"/>
-    <ellipse cx="680" cy="335" rx="105" ry="24"/>
+    <ellipse cx="420" cy="40" rx="110" ry="25"/>
+    <ellipse cx="420" cy="108" rx="110" ry="25"/>
+    <ellipse cx="420" cy="176" rx="110" ry="25"/>
+    <ellipse cx="420" cy="244" rx="110" ry="25"/>
+    <ellipse cx="420" cy="312" rx="110" ry="25"/>
+    <ellipse cx="690" cy="142" rx="110" ry="25"/>
+    <ellipse cx="690" cy="210" rx="110" ry="25"/>
+    <ellipse cx="555" cy="440" rx="140" ry="25"/>
   </g>
   <g text-anchor="middle" style="font-size:12.5px" fill="#111111">
-    <text x="430" y="43">Create a listing</text>
-    <text x="430" y="109">Publish a listing</text>
-    <text x="430" y="175">Edit a listing</text>
-    <text x="430" y="241">Cancel a listing</text>
-    <text x="430" y="307">Delete a draft listing</text>
-    <text x="430" y="373">Look up claim by code</text>
-    <text x="430" y="439">Verify the pickup code</text>
-    <text x="680" y="142">Browse listings</text>
-    <text x="680" y="208">View listing detail</text>
-    <text x="680" y="274">Claim a listing</text>
-    <text x="680" y="340">Generate pickup code</text>
+    <text x="420" y="45">Create a listing</text>
+    <text x="420" y="113">Publish a listing</text>
+    <text x="420" y="181">Edit a listing</text>
+    <text x="420" y="249">Cancel a listing</text>
+    <text x="420" y="317">Delete a draft listing</text>
+    <text x="690" y="147">Browse listings</text>
+    <text x="690" y="215">View listing detail</text>
+    <text x="555" y="445">View reports &amp; statistics</text>
   </g>
-  <g transform="translate(140,236)">
+  <g transform="translate(140,200)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
       <line x1="0" y1="-17" x2="0" y2="12"/>
@@ -1910,7 +1961,7 @@ class: flex flex-col uml-slide
     </g>
     <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
   </g>
-  <g transform="translate(960,236)">
+  <g transform="translate(960,200)">
     <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
       <circle cx="0" cy="-28" r="11"/>
       <line x1="0" y1="-17" x2="0" y2="12"/>
@@ -1924,179 +1975,330 @@ class: flex flex-col uml-slide
 </div>
 
 <!--
-DONOR & RESCUE PARTNER
+03 LISTING & DISCOVERY
 
-These are the use cases only one side can reach. Nothing here is shared.
+The donor side, top to bottom, is the listing lifecycle: create it as a
+draft, publish it, edit it, cancel it. Delete is draft-only. Once a listing
+has a claim against it the delete returns a 409, because the audit trail
+has to survive.
 
-Donor side, top to bottom, is the listing lifecycle: create as a draft,
-publish it, edit it, cancel it. Delete is draft-only - once a listing has
-a claim against it the delete returns a 409, because the audit trail has
-to survive.
+Publishing is the interesting transition rather than creating. A draft can
+be saved half-filled; it only becomes available when category, description,
+quantity, unit, allergens, use-by, location and pickup window are all
+present. That check lives in one pure function and is also backed by a
+database constraint.
 
-The last two on the donor side are the handover. The donor types the
-six-digit code the partner shows them, or looks the claim up by the code
-if they are not sure which one it belongs to. Verify is the only call that
-completes a claim and marks the listing collected.
+The rescue partner side is read-only. Browse applies the filters, view
+opens one listing. Nothing here reserves anything, which is the point of
+splitting discovery from claiming.
 
-Rescue partner side: browse, open a listing, claim it, and generate the
-pickup code. Claim is first come first served, one claim for the whole
-listing, idempotency key on the request so a retry replays rather than
-double-books.
-
-The split matters because the code enforces it. Only the claiming partner
-can generate the code and only the donor can verify it, so neither side
-can complete a handover on its own.
+The one at the bottom is reachable by both, because each side sees its own
+numbers: a donor sees what they rescued, a partner sees what they
+collected.
 -->
 
 ---
 class: flex flex-col uml-slide
 ---
 
-# Shared by both parties
+# 04 &middot; Claim creation
 
-<div class="text-base mt-2" style="color:#00000099">Either side of a claim can do these</div>
-
-<div class="uml-figure">
-<svg viewBox="0 0 1100 440"  fill="none">
-  <g stroke="#1a1a1a" stroke-width="1.1">
-    <line x1="158" y1="220" x2="423" y2="40"/>
-    <line x1="158" y1="220" x2="423" y2="112"/>
-    <line x1="158" y1="220" x2="423" y2="184"/>
-    <line x1="158" y1="220" x2="423" y2="256"/>
-    <line x1="158" y1="220" x2="423" y2="328"/>
-    <line x1="158" y1="220" x2="423" y2="400"/>
-    <line x1="942" y1="220" x2="687" y2="40"/>
-    <line x1="942" y1="220" x2="687" y2="112"/>
-    <line x1="942" y1="220" x2="687" y2="184"/>
-    <line x1="942" y1="220" x2="687" y2="256"/>
-    <line x1="942" y1="220" x2="687" y2="328"/>
-    <line x1="942" y1="220" x2="687" y2="400"/>
-  </g>
-  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
-    <ellipse cx="555" cy="40" rx="132" ry="26"/>
-    <ellipse cx="555" cy="112" rx="132" ry="26"/>
-    <ellipse cx="555" cy="184" rx="132" ry="26"/>
-    <ellipse cx="555" cy="256" rx="132" ry="26"/>
-    <ellipse cx="555" cy="328" rx="132" ry="26"/>
-    <ellipse cx="555" cy="400" rx="132" ry="26"/>
-  </g>
-  <g text-anchor="middle" style="font-size:13px" fill="#111111">
-    <text x="555" y="45">Cancel a claim</text>
-    <text x="555" y="117">Report a no-show</text>
-    <text x="555" y="189">View claims they are party to</text>
-    <text x="555" y="261">View reports &amp; statistics</text>
-    <text x="555" y="333">Read &amp; clear notifications</text>
-    <text x="555" y="405">View profile, change password</text>
-  </g>
-  <g transform="translate(140,220)">
-    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
-      <circle cx="0" cy="-28" r="11"/>
-      <line x1="0" y1="-17" x2="0" y2="12"/>
-      <line x1="-16" y1="-6" x2="16" y2="-6"/>
-      <line x1="0" y1="12" x2="-13" y2="33"/>
-      <line x1="0" y1="12" x2="13" y2="33"/>
-    </g>
-    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
-  </g>
-  <g transform="translate(960,220)">
-    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
-      <circle cx="0" cy="-28" r="11"/>
-      <line x1="0" y1="-17" x2="0" y2="12"/>
-      <line x1="-16" y1="-6" x2="16" y2="-6"/>
-      <line x1="0" y1="12" x2="-13" y2="33"/>
-      <line x1="0" y1="12" x2="13" y2="33"/>
-    </g>
-    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
-  </g>
-</svg>
-</div>
-
-<!--
-SHARED BY BOTH PARTIES
-
-Six use cases where the system does not care which side you are on, only
-that you are a party to the claim.
-
-Cancel a claim and report a no-show are the interesting ones. Cancelling
-is symmetric on purpose: the partner's van breaks down, or the donor's
-kitchen needs the tray back, and either way the listing has to come out of
-reserved. What happens next depends on the relist policy - if there is
-still enough of the pickup window left the listing reopens as available,
-otherwise it goes straight to expired.
-
-No-show is the same shape but time-gated. You cannot report one before the
-pickup window has even opened. In practice the donor reports the partner,
-but the API does not hard-code that, and the record stores who reported it
-and from which org.
-
-The rest is read-only or personal: claims you are party to, the reports
-page, the notification feed, and your own profile. Reports and claims are
-both scoped - you only ever see rows your organisation touched. Admins are
-the exception and see everything.
--->
-
----
-class: flex flex-col uml-slide
----
-
-# Scheduled jobs
-
-<div class="text-base mt-2" style="color:#00000099">The system acting without a user</div>
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">Reserving a listing, and the housekeeping behind it</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 340"  fill="none">
+<svg viewBox="0 0 1100 375" fill="none">
   <g stroke="#1a1a1a" stroke-width="1.1">
-    <line x1="240" y1="170" x2="405" y2="60"/>
-    <line x1="240" y1="170" x2="405" y2="170"/>
-    <line x1="240" y1="170" x2="405" y2="280"/>
-    <line x1="705" y1="60" x2="880" y2="158"/>
-    <line x1="705" y1="170" x2="880" y2="176"/>
+    <line x1="168" y1="80" x2="390" y2="60"/>
+    <line x1="168" y1="80" x2="390" y2="170"/>
+    <line x1="168" y1="230" x2="390" y2="170"/>
+    <line x1="880" y1="300" x2="720" y2="300"/>
   </g>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
-    <ellipse cx="555" cy="60" rx="150" ry="38"/>
-    <ellipse cx="555" cy="170" rx="150" ry="38"/>
-    <ellipse cx="555" cy="280" rx="150" ry="38"/>
+    <ellipse cx="555" cy="60" rx="165" ry="30"/>
+    <ellipse cx="555" cy="170" rx="165" ry="30"/>
+    <ellipse cx="555" cy="300" rx="165" ry="30"/>
   </g>
   <g text-anchor="middle" fill="#111111">
-    <text x="555" y="57" style="font-size:13px">Expire listings past the window</text>
-    <text x="555" y="76" style="font-size:10px;font-style:italic" fill="#444444">every minute</text>
-    <text x="555" y="167" style="font-size:13px">Send pickup reminders</text>
-    <text x="555" y="186" style="font-size:10px;font-style:italic" fill="#444444">every 10 minutes</text>
-    <text x="555" y="277" style="font-size:13px">Prune idempotency keys</text>
-    <text x="555" y="296" style="font-size:10px;font-style:italic" fill="#444444">hourly</text>
+    <text x="555" y="65" style="font-size:13px">Claim a listing</text>
+    <text x="555" y="175" style="font-size:13px">View claims they are party to</text>
+    <text x="555" y="297" style="font-size:13px">Prune idempotency keys</text>
+    <text x="555" y="316" style="font-size:10px;font-style:italic" fill="#444444">hourly</text>
   </g>
-  <rect x="60" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <text x="150" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
-  <text x="150" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
-  <rect x="880" y="134" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
-  <text x="970" y="162" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;external&#187;</text>
-  <text x="970" y="183" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Email provider</text>
+  <g transform="translate(150,80)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
+  </g>
+  <g transform="translate(150,230)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
+  </g>
+  <rect x="880" y="264" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="970" y="292" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
+  <text x="970" y="313" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
 </svg>
 </div>
 
 <!--
-SCHEDULED JOBS
+04 CLAIM CREATION
 
-The question people ask about the first use case diagram is who moves a
-listing to expired when nobody touches it. The answer is that the system
-is an actor too, which is why Scheduler is drawn as a «system» actor
-rather than a stick figure.
+Only one actor can claim. Claiming is first come first served, one claim
+for the whole listing, and the request carries an idempotency key so a
+retry replays the original answer rather than double-booking.
 
-Three cron jobs, all in the listings service. Expiry runs every minute and
-sweeps listings whose pickup window has closed. Pickup reminders run every
-ten minutes and fire twice per claim: once before the window opens, once
-when it is about to close. Idempotency key pruning runs hourly and is pure
-housekeeping - it drops claim keys past their retention window so a
-long-dead key eventually becomes new again.
+Three mechanisms sit behind that single ellipse, and they are the part
+worth defending. An idempotency key scoped to the rescue organisation, a
+conditional update that reserves the listing only while it is still
+available, and a partial unique index that allows at most one active claim
+per listing. They cover three different failure modes: a repeated request,
+two simultaneous requests, and anything that bypasses the service.
 
-The links on the right are the notification path. Expiry and reminders
-both publish to the queue, the notifications service consumes it and fans
-out to email and the in-app feed. Pruning notifies nobody, which is why it
-has no association.
+Viewing claims is reachable by both sides, because a claim has two parties
+and each can see the ones they are in. Neither can see anyone else's.
 
-Worth saying out loud: because these run on a schedule rather than on a
-request, they are the hardest part of the system to test, and they are
-also why the reports page can show an expired listing nobody ever opened.
+The scheduler is here because the idempotency keys it prunes belong to this
+use case. Keys are kept for seven days, then dropped, so the table does not
+grow forever. It notifies nobody, which is why it has no other association.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 05 &middot; Claim termination
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">How a claim ends, by either party or by the clock</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 375" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="168" y1="115" x2="390" y2="60"/>
+    <line x1="168" y1="115" x2="390" y2="170"/>
+    <line x1="932" y1="115" x2="720" y2="60"/>
+    <line x1="932" y1="115" x2="720" y2="170"/>
+    <line x1="240" y1="300" x2="390" y2="300"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="555" cy="60" rx="165" ry="30"/>
+    <ellipse cx="555" cy="170" rx="165" ry="30"/>
+    <ellipse cx="555" cy="300" rx="165" ry="30"/>
+  </g>
+  <g text-anchor="middle" fill="#111111">
+    <text x="555" y="65" style="font-size:13px">Cancel a claim</text>
+    <text x="555" y="175" style="font-size:13px">Report a no-show</text>
+    <text x="555" y="297" style="font-size:13px">Expire listings past the window</text>
+    <text x="555" y="316" style="font-size:10px;font-style:italic" fill="#444444">every minute</text>
+  </g>
+  <g transform="translate(150,115)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
+  </g>
+  <g transform="translate(950,115)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
+  </g>
+  <rect x="60" y="264" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="150" y="292" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
+  <text x="150" y="313" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
+</svg>
+</div>
+
+<!--
+05 CLAIM TERMINATION
+
+A claim starts Active and ends in one of four permanent states: Completed,
+Cancelled, No-show or Expired. This diagram covers three of the four routes
+out. Completed is the handover, which is the next slide.
+
+Cancel and no-show are both reachable by both parties, which is why the
+same two ellipses connect left and right. What stops abuse is not the
+diagram but the check behind it: a claim knows its claiming organisation
+and, through its listing, its donor organisation, and anyone who is not one
+of those two gets a 403 rather than a confusing 404. A no-show can only be
+reported once the pickup window has actually opened.
+
+Cancelling is not the end of the story for the food. If the claim is
+cancelled early enough the listing goes back to Available and someone else
+can claim it. If it is cancelled too late for anyone to collect, the
+listing expires instead. That cut-off is a single injected policy function.
+
+The scheduler is the third way out and the reason the system has no
+permanently stuck claims. If both parties simply walk away, the sweep closes
+the claim and the listing once the window has passed.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 06 &middot; Collection &amp; handover
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">The two-sided confirmation that completes a claim</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 430" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="168" y1="120" x2="390" y2="55"/>
+    <line x1="932" y1="195" x2="720" y2="150"/>
+    <line x1="932" y1="195" x2="720" y2="245"/>
+    <line x1="240" y1="365" x2="390" y2="365"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="555" cy="55" rx="165" ry="30"/>
+    <ellipse cx="555" cy="150" rx="165" ry="30"/>
+    <ellipse cx="555" cy="245" rx="165" ry="30"/>
+    <ellipse cx="555" cy="365" rx="165" ry="30"/>
+  </g>
+  <g text-anchor="middle" fill="#111111">
+    <text x="555" y="60" style="font-size:13px">Generate pickup code</text>
+    <text x="555" y="155" style="font-size:13px">Look up claim by code</text>
+    <text x="555" y="250" style="font-size:13px">Verify the pickup code</text>
+    <text x="555" y="362" style="font-size:13px">Send pickup reminders</text>
+    <text x="555" y="381" style="font-size:10px;font-style:italic" fill="#444444">every 10 minutes</text>
+  </g>
+  <g transform="translate(150,120)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Rescue partner</text>
+  </g>
+  <g transform="translate(950,195)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Donor</text>
+  </g>
+  <rect x="60" y="329" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="150" y="357" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
+  <text x="150" y="378" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Scheduler</text>
+</svg>
+</div>
+
+<!--
+06 COLLECTION & HANDOVER
+
+This is the only two-sided confirmation in the system, and the split is
+enforced in code. Only the claiming partner can generate the code, only the
+donor can verify it, so neither side can complete a handover on its own.
+
+The partner generates a six-digit code and shows it in person. Generating
+is safe to repeat: while a code is still live you get the same one back, so
+reloading the screen does not invalidate what you have already shown.
+
+Look up by code exists because a donor can have several claims open in the
+same pickup window and may not know which one the code belongs to. It
+resolves only against that donor's own listings.
+
+Verify is the only call that completes a claim and marks the listing
+collected, and it does both in one transaction. The code is compared
+against a stored hash in constant time. Three wrong attempts void it, and
+the partner then waits out a sixty second cooldown before a replacement can
+be minted, which is what stops a voided code being replaced in a loop.
+
+Reminders are on a timer and fire twice per claim, once before the window
+opens and once as it is about to close.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 07 &middot; Notification
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">One feed, two channels, and nobody waiting on it</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 350" fill="none">
+  <g stroke="#1a1a1a" stroke-width="1.1">
+    <line x1="168" y1="60" x2="380" y2="60"/>
+    <line x1="240" y1="225" x2="380" y2="170"/>
+    <line x1="240" y1="225" x2="380" y2="280"/>
+    <line x1="870" y1="280" x2="730" y2="280"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <ellipse cx="555" cy="60" rx="175" ry="30"/>
+    <ellipse cx="555" cy="170" rx="175" ry="30"/>
+    <ellipse cx="555" cy="280" rx="175" ry="30"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px" fill="#111111">
+    <text x="555" y="65">Read &amp; clear notifications</text>
+    <text x="555" y="175">Deliver an in-app notification</text>
+    <text x="555" y="285">Deliver an email notification</text>
+  </g>
+  <g transform="translate(150,60)">
+    <g stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="0" cy="-28" r="11"/>
+      <line x1="0" y1="-17" x2="0" y2="12"/>
+      <line x1="-16" y1="-6" x2="16" y2="-6"/>
+      <line x1="0" y1="12" x2="-13" y2="33"/>
+      <line x1="0" y1="12" x2="13" y2="33"/>
+    </g>
+    <text x="0" y="54" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Platform user</text>
+  </g>
+  <rect x="60" y="189" width="180" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="150" y="217" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;system&#187;</text>
+  <text x="150" y="238" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Notifications</text>
+  <rect x="870" y="244" width="190" height="72" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4"/>
+  <text x="965" y="272" text-anchor="middle" style="font-size:11px" fill="#444444">&#171;external&#187;</text>
+  <text x="965" y="293" text-anchor="middle" style="font-size:14px;font-weight:600" fill="#111111">Email provider</text>
+</svg>
+</div>
+
+<!--
+07 NOTIFICATION
+
+Notifications are the one feature that is not request and response, and the
+diagram is drawn to show it. Only the top ellipse has a human actor. The
+other two are the system acting on an event that has already been
+committed somewhere else.
+
+The flow is: a service commits its transaction, publishes an event to the
+queue, and returns immediately. The notifications service long-polls the
+queue, picks the message up on its own schedule, writes the in-app row and
+then forwards to the email provider. The user who triggered it never waited
+for any of that.
+
+Delivery is tracked per event and per channel, so a redelivered message is
+skipped rather than sent twice, and a failed email does not remove the
+in-app alert the user has already been shown. A temporary failure is left
+on the queue to be retried; a permanent one is recorded and the message
+dropped, so it does not cycle forever. Whatever exhausts its attempts lands
+in the dead-letter queue, where a CloudWatch alarm picks it up.
+
+The honest caveat: events are published after commit, not through an
+outbox. If the queue is unavailable at that exact moment the notification
+is lost. We took that over a rolled-back claim.
 -->
 
 ---
@@ -2111,22 +2313,360 @@ Sequence <span class="accent">diagrams</span>
 </div>
 
 <div class="text-sm mt-10" style="color:#00000066">
-Three flows worth tracing end to end
+One per use case, traced end to end
 </div>
 
 <!--
 SEQUENCE SECTION MARKER
 
-Three diagrams: claiming a listing (the only place two users collide),
-the pickup handover (the only two-sided confirmation), and organisation
-approval (the whole asynchronous notification path in one picture).
+Seven diagrams, numbered to match the seven use case groups before them,
+so each group now has a use case diagram here and a pair of analysis and
+design class diagrams in the separate diagrams deck.
+
+If you only have time for a few: 04 is the only place two users collide,
+06 is the only two-sided confirmation, and 07 is the whole asynchronous
+delivery path in one picture.
 -->
 
 ---
 class: flex flex-col uml-slide
 ---
 
-# Claiming a listing
+# 01 &middot; Onboarding &amp; access
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">Register, wait for approval, then sign up and get attached to the org</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 612" fill="none">
+  <defs>
+    <marker id="s4-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s4-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="160" height="40"/>
+    <rect x="240" y="14" width="160" height="40"/>
+    <rect x="460" y="14" width="160" height="40"/>
+    <rect x="680" y="14" width="160" height="40"/>
+    <rect x="900" y="14" width="160" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="105" y="39">Guest</text>
+    <text x="320" y="39">Web app</text>
+    <text x="540" y="39">Cognito</text>
+    <text x="760" y="39">Profile API</text>
+    <text x="980" y="39">Database</text>
+  </g>
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="105" y1="54" x2="105" y2="596"/>
+    <line x1="320" y1="54" x2="320" y2="596"/>
+    <line x1="540" y1="54" x2="540" y2="596"/>
+    <line x1="760" y1="54" x2="760" y2="596"/>
+    <line x1="980" y1="54" x2="980" y2="596"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="100" y="96" width="10" height="112"/>
+    <rect x="100" y="266" width="10" height="316"/>
+    <rect x="315" y="96" width="10" height="112"/>
+    <rect x="315" y="266" width="10" height="316"/>
+    <rect x="535" y="368" width="10" height="112"/>
+    <rect x="755" y="130" width="10" height="78"/>
+    <rect x="755" y="300" width="10" height="44"/>
+    <rect x="755" y="504" width="10" height="78"/>
+    <rect x="975" y="164" width="10" height="20"/>
+    <rect x="975" y="538" width="10" height="20"/>
+  </g>
+  <line x1="25" y1="237" x2="1075" y2="237" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3 5" opacity="0.45"/>
+  <text x="550" y="231" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">after a platform administrator approves the organisation</text>
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="110" y1="96" x2="313" y2="96" marker-end="url(#s4-call)"/>
+    <line x1="325" y1="130" x2="753" y2="130" marker-end="url(#s4-call)"/>
+    <line x1="765" y1="164" x2="973" y2="164" marker-end="url(#s4-call)"/>
+    <line x1="755" y1="198" x2="327" y2="198" stroke-dasharray="5 4" marker-end="url(#s4-ret)"/>
+    <line x1="110" y1="266" x2="313" y2="266" marker-end="url(#s4-call)"/>
+    <line x1="325" y1="300" x2="753" y2="300" marker-end="url(#s4-call)"/>
+    <line x1="755" y1="334" x2="327" y2="334" stroke-dasharray="5 4" marker-end="url(#s4-ret)"/>
+    <line x1="325" y1="368" x2="533" y2="368" marker-end="url(#s4-call)"/>
+    <line x1="535" y1="402" x2="327" y2="402" stroke-dasharray="5 4" marker-end="url(#s4-ret)"/>
+    <line x1="325" y1="436" x2="533" y2="436" marker-end="url(#s4-call)"/>
+    <line x1="535" y1="470" x2="327" y2="470" stroke-dasharray="5 4" marker-end="url(#s4-ret)"/>
+    <line x1="325" y1="504" x2="753" y2="504" marker-end="url(#s4-call)"/>
+    <line x1="765" y1="538" x2="973" y2="538" marker-end="url(#s4-call)"/>
+    <line x1="755" y1="572" x2="327" y2="572" stroke-dasharray="5 4" marker-end="url(#s4-ret)"/>
+  </g>
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="212" y="89">register organisation</text>
+    <text x="640" y="123">POST /orgs/register</text>
+    <text x="869" y="157">insert org, status pending</text>
+    <text x="640" y="191">201 Created, awaiting review</text>
+    <text x="212" y="259">sign up with work email</text>
+    <text x="640" y="293">GET /orgs/lookup?domain=</text>
+    <text x="640" y="327">approved, signup may proceed</text>
+    <text x="429" y="361">signUp + confirm code</text>
+    <text x="429" y="395">account confirmed</text>
+    <text x="429" y="429">initiateAuth</text>
+    <text x="429" y="463">JWT with sub and claims</text>
+    <text x="640" y="497">GET /me with bearer token</text>
+    <text x="869" y="531">upsert user, attach to org</text>
+    <text x="640" y="565">200 profile</text>
+  </g>
+</svg>
+</div>
+
+<!--
+01 ONBOARDING & ACCESS
+
+Two phases separated by a human decision, which is why the divider is in
+the middle of the diagram.
+
+Above it: a guest registers the organisation and gets a pending record. No
+account exists yet, and deliberately so, because the first person from a
+charity has nowhere to sign in to. Nothing else can happen until an admin
+approves it.
+
+Below it: the signup path. The domain lookup comes first and is the gate.
+If the organisation is not there, or is there but not approved, signup
+stops before an account is ever created. That is why an unapproved
+organisation has no members at all rather than members who cannot act.
+
+Cognito owns the credential from that point: the password, the
+verification code, the reset. The profile service never sees any of them.
+What it does own is the part Cognito cannot know about, which is the
+organisation.
+
+The last three messages are where the two systems join. The first call to
+/me arrives with the Cognito subject in the token, the service upserts the
+user row and resolves the organisation from the email domain. That
+attachment happens once and is never reassigned, so every later sign-in
+simply finds the row that is already there.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 02 &middot; Platform administration
+
+<div class="text-base mt-2" style="color:#00000099">The asynchronous notification path, end to end</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 610"  fill="none">
+  <defs>
+    <marker id="s3-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s3-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="170" height="40"/>
+    <rect x="245" y="14" width="170" height="40"/>
+    <rect x="465" y="14" width="170" height="40"/>
+    <rect x="685" y="14" width="170" height="40"/>
+    <rect x="900" y="14" width="170" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="110" y="39">Platform admin</text>
+    <text x="330" y="39">Profile API</text>
+    <text x="550" y="39">Queue</text>
+    <text x="770" y="39">Notifications</text>
+    <text x="985" y="39">Email provider</text>
+  </g>
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="110" y1="54" x2="110" y2="600"/>
+    <line x1="330" y1="54" x2="330" y2="600"/>
+    <line x1="550" y1="54" x2="550" y2="600"/>
+    <line x1="770" y1="54" x2="770" y2="600"/>
+    <line x1="985" y1="54" x2="985" y2="600"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="105" y="96" width="10" height="186"/>
+    <rect x="325" y="96" width="10" height="186"/>
+    <rect x="545" y="248" width="10" height="112"/>
+    <rect x="545" y="570" width="10" height="16"/>
+    <rect x="765" y="316" width="10" height="266"/>
+    <rect x="980" y="446" width="10" height="38"/>
+  </g>
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="115" y1="96" x2="323" y2="96" marker-end="url(#s3-call)"/>
+    <path d="M335 126 H375 V162 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <path d="M335 182 H375 V218 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="335" y1="248" x2="543" y2="248" marker-end="url(#s3-call)"/>
+    <line x1="325" y1="282" x2="117" y2="282" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <line x1="765" y1="316" x2="557" y2="316" marker-end="url(#s3-call)"/>
+    <line x1="555" y1="350" x2="763" y2="350" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <path d="M775 380 H815 V416 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="775" y1="446" x2="978" y2="446" marker-end="url(#s3-call)"/>
+    <line x1="980" y1="480" x2="777" y2="480" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
+    <path d="M775 510 H815 V546 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
+    <line x1="765" y1="576" x2="557" y2="576" marker-end="url(#s3-call)"/>
+  </g>
+  <g style="font-size:11px" fill="#111111">
+    <text x="220" y="89" text-anchor="middle">POST /admin/orgs/{id}/approve</text>
+    <text x="383" y="130">validate transition</text>
+    <text x="383" y="186">update status + audit entry</text>
+    <text x="440" y="241" text-anchor="middle">publish org_approved</text>
+    <text x="220" y="275" text-anchor="middle">200 OK</text>
+    <text x="660" y="309" text-anchor="middle">long poll</text>
+    <text x="660" y="343" text-anchor="middle">org_approved</text>
+    <text x="823" y="384">check not already emailed</text>
+    <text x="877" y="439" text-anchor="middle">send approval email</text>
+    <text x="877" y="473" text-anchor="middle">accepted</text>
+    <text x="823" y="514">record delivery as sent</text>
+    <text x="660" y="569" text-anchor="middle">delete message</text>
+  </g>
+</svg>
+</div>
+
+<!--
+APPROVING AN ORGANISATION
+
+One admin click, and the whole asynchronous path falls out of it.
+
+Everything the admin waits for is the left half: validate the transition,
+write the new status and the audit entry, publish one message, return 200.
+The admin console is not waiting on an inbox.
+
+The right half is the notifications service, which long-polls the queue
+on its own schedule. An approval is email only: the organisation's contact
+address need not belong to a platform user, so there is no in-app row. It
+checks the event has not already been emailed, sends, records the outcome,
+and only then deletes the message, so a crash part-way through means a
+retry rather than a lost email. A permanent delivery failure is recorded
+rather than retried forever.
+
+Events addressed to a user, such as claim created, also get an in-app row
+written before the email. The two are tracked separately, so a bounced
+email does not lose the in-app notification.
+
+This is the same path every notification takes - claim created, claim
+cancelled, pickup reminder, pickup completed, listing expired. Only the
+publisher at the left end changes. That is why the listings service and
+the profile service can both notify without knowing anything about email.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 03 &middot; Listing &amp; discovery
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">Draft, images straight to S3, then the guarded publish</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 614" fill="none">
+  <defs>
+    <marker id="s5-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s5-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="160" height="40"/>
+    <rect x="240" y="14" width="160" height="40"/>
+    <rect x="460" y="14" width="160" height="40"/>
+    <rect x="680" y="14" width="160" height="40"/>
+    <rect x="900" y="14" width="160" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="105" y="39">Donor</text>
+    <text x="320" y="39">Web app</text>
+    <text x="540" y="39">Listings API</text>
+    <text x="760" y="39">Database</text>
+    <text x="980" y="39">S3</text>
+  </g>
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="105" y1="54" x2="105" y2="598"/>
+    <line x1="320" y1="54" x2="320" y2="598"/>
+    <line x1="540" y1="54" x2="540" y2="598"/>
+    <line x1="760" y1="54" x2="760" y2="598"/>
+    <line x1="980" y1="54" x2="980" y2="598"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="100" y="96" width="10" height="494"/>
+    <rect x="315" y="96" width="10" height="494"/>
+    <rect x="535" y="130" width="10" height="424"/>
+    <rect x="755" y="164" width="10" height="20"/>
+    <rect x="755" y="466" width="10" height="50"/>
+    <rect x="975" y="266" width="10" height="20"/>
+    <rect x="975" y="334" width="10" height="20"/>
+  </g>
+  <rect x="515" y="424" width="290" height="100" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M515 424 h104 v12 l-10 10 h-94 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="521" y="440" style="font-size:10px;font-weight:600" fill="#111111">optimistic lock</text>
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="110" y1="96" x2="313" y2="96" marker-end="url(#s5-call)"/>
+    <line x1="325" y1="130" x2="533" y2="130" marker-end="url(#s5-call)"/>
+    <line x1="545" y1="164" x2="753" y2="164" marker-end="url(#s5-call)"/>
+    <line x1="535" y1="198" x2="327" y2="198" stroke-dasharray="5 4" marker-end="url(#s5-ret)"/>
+    <line x1="325" y1="232" x2="533" y2="232" marker-end="url(#s5-call)"/>
+    <line x1="545" y1="266" x2="973" y2="266" marker-end="url(#s5-call)"/>
+    <line x1="535" y1="300" x2="327" y2="300" stroke-dasharray="5 4" marker-end="url(#s5-ret)"/>
+    <line x1="325" y1="334" x2="973" y2="334" marker-end="url(#s5-call)"/>
+    <line x1="110" y1="368" x2="313" y2="368" marker-end="url(#s5-call)"/>
+    <line x1="325" y1="402" x2="533" y2="402" marker-end="url(#s5-call)"/>
+    <line x1="545" y1="466" x2="753" y2="466" marker-end="url(#s5-call)"/>
+    <line x1="755" y1="500" x2="547" y2="500" stroke-dasharray="5 4" marker-end="url(#s5-ret)"/>
+    <line x1="535" y1="540" x2="327" y2="540" stroke-dasharray="5 4" marker-end="url(#s5-ret)"/>
+    <line x1="315" y1="574" x2="112" y2="574" stroke-dasharray="5 4" marker-end="url(#s5-ret)"/>
+  </g>
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="212" y="89">create listing</text>
+    <text x="429" y="123">POST /listings, saved as draft</text>
+    <text x="650" y="157">insert draft row</text>
+    <text x="429" y="191">201 draft</text>
+    <text x="429" y="225">POST /listings/:id/images</text>
+    <text x="870" y="259">presign PUT</text>
+    <text x="429" y="293">upload URL</text>
+    <text x="650" y="327">PUT image bytes, never through the API</text>
+    <text x="212" y="361">publish</text>
+    <text x="429" y="395">PATCH /listings/:id + version</text>
+    <text x="650" y="459">UPDATE where draft and version = n</text>
+    <text x="650" y="493">1 row, else 409 Conflict</text>
+    <text x="429" y="533">200 available</text>
+    <text x="212" y="567">listing is live</text>
+  </g>
+</svg>
+</div>
+
+<!--
+03 LISTING & DISCOVERY
+
+Three things in this flow are worth pointing at.
+
+The first is that creating and publishing are different operations. A
+draft can be saved half-filled, which is what makes the form usable. The
+completeness check runs at the publish transition instead: category,
+description, quantity, unit, allergens, use-by, location and pickup
+window all have to be present before the status can become available, and
+a database constraint backs the same rule.
+
+The second is the image path. The API hands back a presigned S3 URL and
+the browser uploads straight to the bucket, so image bytes never pass
+through the service at all. Only the resulting object key is recorded.
+That keeps a slow upload from occupying a request thread.
+
+The third is the guarded UPDATE at the bottom. Every edit carries the row
+version, and the update only matches while that version is still current.
+Two tabs, or two people from the same organisation, cannot overwrite each
+other: the second one matches zero rows and gets a 409 rather than
+silently winning.
+
+Discovery is not drawn because it is the boring half: browse applies the
+filters, view opens one listing, and neither reserves anything.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 04 &middot; Claim creation
 
 <div class="text-base mt-2" style="color:#00000099">First come first served, idempotent per rescue org</div>
 
@@ -2230,7 +2770,125 @@ a claim that genuinely happened.
 class: flex flex-col uml-slide
 ---
 
-# The pickup handover
+# 05 &middot; Claim termination
+
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">Cancelling, and what happens when nobody cancels anything</div>
+
+<div class="uml-figure">
+<svg viewBox="0 0 1100 610" fill="none">
+  <defs>
+    <marker id="s6-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
+    </marker>
+    <marker id="s6-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
+    </marker>
+  </defs>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
+    <rect x="25" y="14" width="160" height="40"/>
+    <rect x="240" y="14" width="160" height="40"/>
+    <rect x="460" y="14" width="160" height="40"/>
+    <rect x="680" y="14" width="160" height="40"/>
+    <rect x="900" y="14" width="160" height="40"/>
+  </g>
+  <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
+    <text x="105" y="39">Donor or partner</text>
+    <text x="320" y="39">Web app</text>
+    <text x="540" y="39">Listings API</text>
+    <text x="760" y="39">Database</text>
+    <text x="980" y="39">Queue</text>
+  </g>
+  <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
+    <line x1="105" y1="54" x2="105" y2="594"/>
+    <line x1="320" y1="54" x2="320" y2="594"/>
+    <line x1="540" y1="54" x2="540" y2="594"/>
+    <line x1="760" y1="54" x2="760" y2="594"/>
+    <line x1="980" y1="54" x2="980" y2="594"/>
+  </g>
+  <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
+    <rect x="100" y="96" width="10" height="354"/>
+    <rect x="315" y="96" width="10" height="354"/>
+    <rect x="535" y="130" width="10" height="286"/>
+    <rect x="535" y="502" width="10" height="84"/>
+    <rect x="755" y="164" width="10" height="50"/>
+    <rect x="755" y="258" width="10" height="84"/>
+    <rect x="755" y="536" width="10" height="20"/>
+    <rect x="975" y="366" width="10" height="16"/>
+    <rect x="975" y="570" width="10" height="16"/>
+  </g>
+  <rect x="515" y="216" width="290" height="124" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M515 216 h78 v12 l-10 10 h-68 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="521" y="232" style="font-size:10px;font-weight:600" fill="#111111">transaction</text>
+  <line x1="25" y1="468" x2="1075" y2="468" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3 5" opacity="0.45"/>
+  <text x="550" y="462" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">or neither party ever acts</text>
+  <g stroke="#1a1a1a" stroke-width="1.2">
+    <line x1="110" y1="96" x2="313" y2="96" marker-end="url(#s6-call)"/>
+    <line x1="325" y1="130" x2="533" y2="130" marker-end="url(#s6-call)"/>
+    <line x1="545" y1="164" x2="753" y2="164" marker-end="url(#s6-call)"/>
+    <line x1="755" y1="198" x2="547" y2="198" stroke-dasharray="5 4" marker-end="url(#s6-ret)"/>
+    <line x1="545" y1="258" x2="753" y2="258" marker-end="url(#s6-call)"/>
+    <line x1="545" y1="292" x2="753" y2="292" marker-end="url(#s6-call)"/>
+    <line x1="755" y1="326" x2="547" y2="326" stroke-dasharray="5 4" marker-end="url(#s6-ret)"/>
+    <line x1="545" y1="366" x2="973" y2="366" marker-end="url(#s6-call)"/>
+    <line x1="535" y1="400" x2="327" y2="400" stroke-dasharray="5 4" marker-end="url(#s6-ret)"/>
+    <line x1="315" y1="434" x2="112" y2="434" stroke-dasharray="5 4" marker-end="url(#s6-ret)"/>
+    <line x1="475" y1="502" x2="533" y2="502" marker-end="url(#s6-call)"/>
+    <line x1="545" y1="536" x2="753" y2="536" marker-end="url(#s6-call)"/>
+    <line x1="545" y1="570" x2="973" y2="570" marker-end="url(#s6-call)"/>
+  </g>
+  <circle cx="470" cy="502" r="5" fill="#1a1a1a"/>
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="212" y="89">cancel claim, with a reason</text>
+    <text x="429" y="123">PATCH /requests/:id</text>
+    <text x="650" y="157">load claim and listing</text>
+    <text x="650" y="191">party? transition legal?</text>
+    <text x="650" y="251">claim to cancelled, write audit entry</text>
+    <text x="650" y="285">reopen listing, or expire if too late</text>
+    <text x="650" y="319">committed</text>
+    <text x="870" y="359">publish claim_cancelled</text>
+    <text x="429" y="393">200 cancelled</text>
+    <text x="212" y="427">listing is back on the board</text>
+    <text x="430" y="495">timer, every minute</text>
+    <text x="650" y="529">expire claims past their window</text>
+    <text x="870" y="563">publish listing_expired</text>
+  </g>
+</svg>
+</div>
+
+<!--
+05 CLAIM TERMINATION
+
+The top half is a cancellation, and the two checks before the transaction
+are the ones that matter. Is this caller actually a party to the claim,
+resolved against both the claiming organisation and the donor
+organisation on the listing, and is the transition legal from the status
+the claim is currently in. A third party gets a 403, and a claim that has
+already reached a terminal state cannot be revived.
+
+Inside the transaction there are two writes, not one. Ending the claim is
+only half the outcome: the listing that was reserved has to go somewhere.
+Cancelled early enough and it returns to Available so someone else can
+rescue the food, which is the entire point of the platform. Cancelled too
+late for anyone to collect and it expires instead. Where that line falls
+is a single injected policy function rather than a comparison buried in
+the service.
+
+The notification is published after the commit, not inside it, which is
+the trade-off we took everywhere: a lost email beats a rolled-back
+cancellation.
+
+The bottom half is the case nobody triggers. The filled circle is a found
+message, UML's notation for something arriving from outside the diagram,
+and here it is the timer. Without it a claim both parties walked away
+from would sit Active forever, holding food that nobody is going to
+collect.
+-->
+
+---
+class: flex flex-col uml-slide
+---
+
+# 06 &middot; Collection &amp; handover
 
 <div class="text-base mt-2" style="color:#00000099">Neither side can complete it alone</div>
 
@@ -2330,105 +2988,121 @@ rate limits.
 class: flex flex-col uml-slide
 ---
 
-# Approving an organisation
+# 07 &middot; Notification
 
-<div class="text-base mt-2" style="color:#00000099">The asynchronous notification path, end to end</div>
+<div style="font-size:1rem;margin-top:0.5rem;color:#3a3a3a">The consumer side: long poll, duplicate guard, two channels</div>
 
 <div class="uml-figure">
-<svg viewBox="0 0 1100 610"  fill="none">
+<svg viewBox="0 0 1100 604" fill="none">
   <defs>
-    <marker id="s3-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <marker id="s7-call" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/>
     </marker>
-    <marker id="s3-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <marker id="s7-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10" fill="none" stroke="#1a1a1a" stroke-width="1.3"/>
     </marker>
   </defs>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4">
-    <rect x="25" y="14" width="170" height="40"/>
-    <rect x="245" y="14" width="170" height="40"/>
-    <rect x="465" y="14" width="170" height="40"/>
-    <rect x="685" y="14" width="170" height="40"/>
-    <rect x="900" y="14" width="170" height="40"/>
+    <rect x="25" y="14" width="160" height="40"/>
+    <rect x="240" y="14" width="160" height="40"/>
+    <rect x="460" y="14" width="160" height="40"/>
+    <rect x="680" y="14" width="160" height="40"/>
+    <rect x="900" y="14" width="160" height="40"/>
   </g>
   <g text-anchor="middle" style="font-size:13px;font-weight:600" fill="#111111">
-    <text x="110" y="39">Platform admin</text>
-    <text x="330" y="39">Profile API</text>
-    <text x="550" y="39">Queue</text>
-    <text x="770" y="39">Notifications</text>
-    <text x="985" y="39">Email provider</text>
+    <text x="105" y="39">Queue</text>
+    <text x="320" y="39">Notifications</text>
+    <text x="540" y="39">Database</text>
+    <text x="760" y="39">Email provider</text>
+    <text x="980" y="39">Platform user</text>
   </g>
   <g stroke="#1a1a1a" stroke-width="1" stroke-dasharray="5 5">
-    <line x1="110" y1="54" x2="110" y2="600"/>
-    <line x1="330" y1="54" x2="330" y2="600"/>
-    <line x1="550" y1="54" x2="550" y2="600"/>
-    <line x1="770" y1="54" x2="770" y2="600"/>
-    <line x1="985" y1="54" x2="985" y2="600"/>
+    <line x1="105" y1="54" x2="105" y2="588"/>
+    <line x1="320" y1="54" x2="320" y2="588"/>
+    <line x1="540" y1="54" x2="540" y2="588"/>
+    <line x1="760" y1="54" x2="760" y2="588"/>
+    <line x1="980" y1="54" x2="980" y2="588"/>
   </g>
   <g fill="#ffffff" stroke="#1a1a1a" stroke-width="1.2">
-    <rect x="105" y="96" width="10" height="186"/>
-    <rect x="325" y="96" width="10" height="186"/>
-    <rect x="545" y="248" width="10" height="112"/>
-    <rect x="545" y="570" width="10" height="16"/>
-    <rect x="765" y="316" width="10" height="266"/>
-    <rect x="980" y="446" width="10" height="38"/>
+    <rect x="100" y="96" width="10" height="50"/>
+    <rect x="100" y="428" width="10" height="16"/>
+    <rect x="315" y="96" width="10" height="348"/>
+    <rect x="315" y="496" width="10" height="84"/>
+    <rect x="535" y="164" width="10" height="50"/>
+    <rect x="535" y="258" width="10" height="54"/>
+    <rect x="535" y="394" width="10" height="16"/>
+    <rect x="535" y="530" width="10" height="16"/>
+    <rect x="755" y="326" width="10" height="50"/>
+    <rect x="975" y="496" width="10" height="84"/>
   </g>
+  <rect x="295" y="216" width="290" height="196" stroke="#1a1a1a" stroke-width="1.1"/>
+  <path d="M295 216 h92 v12 l-10 10 h-82 z" fill="#ffffff" stroke="#1a1a1a" stroke-width="1.1"/>
+  <text x="301" y="232" style="font-size:10px;font-weight:600" fill="#111111">per channel</text>
+  <line x1="25" y1="462" x2="1075" y2="462" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3 5" opacity="0.45"/>
+  <text x="550" y="456" text-anchor="middle" style="font-size:10px;font-style:italic" fill="#444444">separately, whenever the user opens the app</text>
   <g stroke="#1a1a1a" stroke-width="1.2">
-    <line x1="115" y1="96" x2="323" y2="96" marker-end="url(#s3-call)"/>
-    <path d="M335 126 H375 V162 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
-    <path d="M335 182 H375 V218 H337" stroke-width="1.2" marker-end="url(#s3-call)"/>
-    <line x1="335" y1="248" x2="543" y2="248" marker-end="url(#s3-call)"/>
-    <line x1="325" y1="282" x2="117" y2="282" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
-    <line x1="765" y1="316" x2="557" y2="316" marker-end="url(#s3-call)"/>
-    <line x1="555" y1="350" x2="763" y2="350" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
-    <path d="M775 380 H815 V416 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
-    <line x1="775" y1="446" x2="978" y2="446" marker-end="url(#s3-call)"/>
-    <line x1="980" y1="480" x2="777" y2="480" stroke-dasharray="5 4" marker-end="url(#s3-ret)"/>
-    <path d="M775 510 H815 V546 H777" stroke-width="1.2" marker-end="url(#s3-call)"/>
-    <line x1="765" y1="576" x2="557" y2="576" marker-end="url(#s3-call)"/>
+    <line x1="313" y1="96" x2="112" y2="96" marker-end="url(#s7-call)"/>
+    <line x1="110" y1="130" x2="313" y2="130" stroke-dasharray="5 4" marker-end="url(#s7-ret)"/>
+    <line x1="325" y1="164" x2="533" y2="164" marker-end="url(#s7-call)"/>
+    <line x1="535" y1="198" x2="327" y2="198" stroke-dasharray="5 4" marker-end="url(#s7-ret)"/>
+    <line x1="325" y1="258" x2="533" y2="258" marker-end="url(#s7-call)"/>
+    <line x1="325" y1="292" x2="533" y2="292" marker-end="url(#s7-call)"/>
+    <line x1="325" y1="326" x2="753" y2="326" marker-end="url(#s7-call)"/>
+    <line x1="755" y1="360" x2="327" y2="360" stroke-dasharray="5 4" marker-end="url(#s7-ret)"/>
+    <line x1="325" y1="394" x2="533" y2="394" marker-end="url(#s7-call)"/>
+    <line x1="313" y1="428" x2="112" y2="428" marker-end="url(#s7-call)"/>
+    <line x1="973" y1="496" x2="327" y2="496" marker-end="url(#s7-call)"/>
+    <line x1="325" y1="530" x2="533" y2="530" marker-end="url(#s7-call)"/>
+    <line x1="325" y1="564" x2="973" y2="564" stroke-dasharray="5 4" marker-end="url(#s7-ret)"/>
   </g>
-  <g style="font-size:11px" fill="#111111">
-    <text x="220" y="89" text-anchor="middle">POST /admin/orgs/{id}/approve</text>
-    <text x="383" y="130">validate transition</text>
-    <text x="383" y="186">update status + audit entry</text>
-    <text x="440" y="241" text-anchor="middle">publish org_approved</text>
-    <text x="220" y="275" text-anchor="middle">200 OK</text>
-    <text x="660" y="309" text-anchor="middle">long poll</text>
-    <text x="660" y="343" text-anchor="middle">org_approved</text>
-    <text x="823" y="384">check not already emailed</text>
-    <text x="877" y="439" text-anchor="middle">send approval email</text>
-    <text x="877" y="473" text-anchor="middle">accepted</text>
-    <text x="823" y="514">record delivery as sent</text>
-    <text x="660" y="569" text-anchor="middle">delete message</text>
+  <g text-anchor="middle" style="font-size:11px" fill="#111111">
+    <text x="212" y="89">long poll for messages</text>
+    <text x="212" y="123">claim_created</text>
+    <text x="429" y="157">already delivered on this channel?</text>
+    <text x="429" y="191">not yet</text>
+    <text x="429" y="251">insert in-app notification</text>
+    <text x="429" y="285">record delivery: in_app</text>
+    <text x="650" y="319">send(to, subject, body)</text>
+    <text x="650" y="353">accepted, or a permanent failure</text>
+    <text x="429" y="387">record delivery: email, outcome</text>
+    <text x="212" y="421">delete message</text>
+    <text x="870" y="489">GET /notifications</text>
+    <text x="429" y="523">list the in-app feed</text>
+    <text x="870" y="557">200 feed + unread count</text>
   </g>
 </svg>
 </div>
 
 <!--
-APPROVING AN ORGANISATION
+07 NOTIFICATION
 
-One admin click, and the whole asynchronous path falls out of it.
+This is the half of the notification path the organisation-approval
+diagram glosses over. Nobody is waiting on any of it: the service that
+published the event returned its 200 long before the first message here.
 
-Everything the admin waits for is the left half: validate the transition,
-write the new status and the audit entry, publish one message, return 200.
-The admin console is not waiting on an inbox.
+The consumer long-polls rather than being pushed, which is why there is no
+inbound call at the top. It asks the queue and waits.
 
-The right half is the notifications service, which long-polls the queue
-on its own schedule. An approval is email only: the organisation's contact
-address need not belong to a platform user, so there is no in-app row. It
-checks the event has not already been emailed, sends, records the outcome,
-and only then deletes the message, so a crash part-way through means a
-retry rather than a lost email. A permanent delivery failure is recorded
-rather than retried forever.
+The duplicate guard is the first thing it does with a message, and it is
+what makes at-least-once delivery safe. SQS can hand the same message over
+twice, so the service asks whether this event has already been delivered
+on this channel before it sends anything. A repeat is skipped rather than
+resent, and a unique key on the table is the backstop underneath.
 
-Events addressed to a user, such as claim created, also get an in-app row
-written before the email. The two are tracked separately, so a bounced
-email does not lose the in-app notification.
+Both channels are recorded separately, which is the reason for the
+fragment box. The in-app row is written before the email is attempted, so
+a mail relay that is down does not take away the alert the user can
+already see in the app.
 
-This is the same path every notification takes - claim created, claim
-cancelled, pickup reminder, pickup completed, listing expired. Only the
-publisher at the left end changes. That is why the listings service and
-the profile service can both notify without knowing anything about email.
+The outcome of the email send decides what happens to the message. A
+temporary failure is left on the queue and retried. A permanent one, a
+malformed recipient for instance, is recorded with its outcome and the
+message deleted, so something that can never succeed does not cycle until
+it falls into the dead-letter queue. What does exhaust its attempts lands
+there, and a CloudWatch alarm picks it up.
+
+The bottom of the diagram is the ordinary request and response half: the
+web app reads the same rows the consumer wrote.
 -->
 
 ---
