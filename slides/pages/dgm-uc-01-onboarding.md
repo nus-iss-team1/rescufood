@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 01: ONBOARDING AND ACCESS
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -99,6 +99,29 @@ at all rather than members who cannot act.
 class: flex flex-col dgm-page
 ---
 
+# Onboarding and access: analysis sequence
+
+<div class="dgm-sub">Signing up as a member: the organisation gate comes before any account exists.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/01-onboarding-and-access-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: ONBOARDING AND ACCESS, ANALYSIS SEQUENCE
+
+The analysis sequence traces signing up. SignUpView passes the email address
+to AccountProvisioning, which asks the matching Organisation whether it may
+accept members. If no organisation matches, or it is not yet approved,
+sign-up stops before any account exists. Otherwise the Guest verifies the
+email address, and AccountProvisioning creates the User and attaches it to
+the organisation.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Onboarding and access: design model
 
 <div class="dgm-sub">Where the credential lives, and what the profile service actually owns.</div>
@@ -166,4 +189,30 @@ attachment permanent without any explicit guard.
 
 The three repositories follow the same rule as the rest of the system: they
 hold the SQL and nothing else, and the domain types hold the rules.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Onboarding and access: design sequence
+
+<div class="dgm-sub">signUpAction, the Cognito adapter and the profile service, from lookup to first sign-in.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/01-onboarding-and-access-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: ONBOARDING AND ACCESS, DESIGN SEQUENCE
+
+The design sequence shows how sign-up is split between the web app, Amazon
+Cognito and the profile service. signUpAction first calls the profile
+service's public lookup route, which reads the organisation by domain and
+returns whether it is registered and approved. Only then does it call the
+Cognito adapter, which sends the SignUpCommand with the secret hash, and
+later the ConfirmSignUpCommand with the emailed code. The user row does not
+exist until the first authenticated request: auth.Middleware verifies the
+token and calls UpsertBySub, which inserts the user and attaches the
+organisation matching the email domain.
 -->

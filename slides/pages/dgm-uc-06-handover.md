@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 06: COLLECTION AND HANDOVER
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -97,6 +97,29 @@ the listing collected, so the two can never disagree.
 class: flex flex-col dgm-page
 ---
 
+# Collection and handover: analysis sequence
+
+<div class="dgm-sub">Verifying a pickup code: three attempts, then the handover completes.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/06-collection-and-handover-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: COLLECTION AND HANDOVER, ANALYSIS SEQUENCE
+
+The analysis sequence traces the donor verifying a pickup code.
+PickupVerification confirms that the donor owns the listing, then asks the
+PickupCode whether it is still live and whether the presented code matches.
+A wrong or expired code counts as a failed attempt, and the third failure
+voids the code. A matching code completes the handover: the Claim is
+completed and the Listing marked collected.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Collection and handover: design model
 
 <div class="dgm-sub">Pickup code generation, lookup and verification in the listings service.</div>
@@ -157,4 +180,30 @@ from a new session, and the third failure voids the code.
 
 As everywhere else in the service, the notification is published after the
 transaction has committed.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Collection and handover: design sequence
+
+<div class="dgm-sub">RequestsService.verifyPickupCode: failed attempts persisted, success in one transaction.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/06-collection-and-handover-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: COLLECTION AND HANDOVER, DESIGN SEQUENCE
+
+The design sequence follows RequestsService.verifyPickupCode. After loading
+the claim and listing and checking that the caller is the donor, the service
+compares the code with pickupCodeMatches, which treats an expired code as no
+match. A failed attempt is persisted with incrementPickupCodeAttempts; on
+the third, the code is cleared, a PickupCodeExhausted audit event is
+recorded, and the caller receives 400. A matching code completes the claim,
+marks the listing collected if nothing else is outstanding, and records the
+audit events in one transaction. pickupCompleted is published after the
+commit.
 -->

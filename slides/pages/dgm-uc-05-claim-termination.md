@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 05: CLAIM TERMINATION
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -98,6 +98,28 @@ Active forever and holding food hostage.
 class: flex flex-col dgm-page
 ---
 
+# Claim termination: analysis sequence
+
+<div class="dgm-sub">Cancelling a claim: party check, then the listing is reopened or expired.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/05-claim-termination-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: CLAIM TERMINATION, ANALYSIS SEQUENCE
+
+The analysis sequence traces a Rescue Partner cancelling a claim.
+ClaimTermination checks that the caller is a party to the claim and that the
+claim can still be cancelled. ListingReinstatement then settles the listing:
+it is reopened if there is still time for someone else to rescue the food,
+and expired if not. Finally the Claim records who cancelled it and why.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Claim termination: design model
 
 <div class="dgm-sub">One decide method for three outcomes, plus the sweeps that need no user at all.</div>
@@ -167,4 +189,29 @@ repository: the sweeps legitimately bypass them.
 
 As everywhere else in the service, notifications are published after the
 transaction has committed.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Claim termination: design sequence
+
+<div class="dgm-sub">RequestsService.decide for a cancellation.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/05-claim-termination-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: CLAIM TERMINATION, DESIGN SEQUENCE
+
+The design sequence follows RequestsService.decide for a cancellation. It
+loads the claim and its listing, checks that the transition from active to
+cancelled is valid and that the caller is a party, and asks
+relistBlockedReason whether it is too late to relist. One transaction then
+expires or reopens the listing, updates the claim only if it is still active
+(409 otherwise), and records the audit events. claimEnded is published after
+the commit, and the response tells the caller whether the listing was
+relisted.
 -->

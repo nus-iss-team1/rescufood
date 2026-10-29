@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 03: LISTING AND DISCOVERY
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -95,6 +95,29 @@ URL that is eventually served to a browser.
 class: flex flex-col dgm-page
 ---
 
+# Listing and discovery: analysis sequence
+
+<div class="dgm-sub">Publishing a draft: ownership, completeness, then a version-checked transition.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/03-listing-and-discovery-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: LISTING AND DISCOVERY, ANALYSIS SEQUENCE
+
+The analysis sequence traces publishing a draft. ListingPublication checks
+that the donor owns the listing, then asks the Listing whether the move to
+available is legal and whether it is complete enough to publish. An
+incomplete draft is refused with the missing fields. A complete one is
+transitioned only if its version is still current; otherwise the donor is
+asked to reload.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Listing and discovery: design model
 
 <div class="dgm-sub">The listings service classes behind the publish and browse routes.</div>
@@ -163,4 +186,30 @@ the loser gets a 409 rather than silent data loss.
 The image path is deliberately separate. ListingImageUploadService hands the
 browser a presigned S3 URL so that image bytes never pass through the service
 at all, and only the resulting object key is recorded.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Listing and discovery: design sequence
+
+<div class="dgm-sub">ListingsService.update with status available: four pure-function checks, one transaction.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/03-listing-and-discovery-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: LISTING AND DISCOVERY, DESIGN SEQUENCE
+
+The design sequence shows publication as an update that sets the status to
+available. The guard chain validates the token and organisation membership
+before ListingsController.update is reached. ListingsService loads the
+listing and applies four pure-function checks: assertCanModify,
+assertListingIsEditable, assertValidStatusTransition and
+validateForPublication. Any publication error returns 400 with the list of
+missing fields. Otherwise one transaction runs updateWithVersion, where a
+stale version matches no rows and returns 409, and records the
+listing.published audit event.
 -->

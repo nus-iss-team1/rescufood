@@ -5,8 +5,9 @@ One PNG per slide, exported from `slides/diagrams.md`. Regenerate with
 so keep nothing else in here.
 
 The deck is grouped by use case. Each group opens with a divider naming its
-actors and the use cases it covers, then carries two figures: an analysis
-model and a design model. The report prose for each figure is in the speaker
+actors and the use cases it covers, then carries four figures: the analysis
+model and its sequence, then the design model and its sequence. The report
+prose for each figure is in the speaker
 notes of the matching slide. Run `npm run dev:diagrams` and press `p` for
 presenter view, or read the `<!-- ... -->` block under the slide in `pages/`.
 
@@ -22,17 +23,20 @@ presenter view, or read the `<!-- ... -->` block under the slide in `pages/`.
 | 6    | Package diagram, listings-service          |
 | 7    | Package diagram, profile and notifications |
 
-## Part 2, use cases, section 3.3
+## Part 2, use cases, section 3.5
 
-| Use case                   | Divider | Analysis | Design | Section |
-|----------------------------|---------|----------|--------|---------|
-| 01 Onboarding and access   | 8       | 9        | 10     | 3.3.2   |
-| 02 Platform administration | 11      | 12       | 13     | 3.3.2   |
-| 03 Listing and discovery   | 14      | 15       | 16     | 3.2.2   |
-| 04 Claim creation          | 17      | 18       | 19     | 3.2.3   |
-| 05 Claim termination       | 20      | 21       | 22     | 3.2.3   |
-| 06 Collection and handover | 23      | 24       | 25     | 3.2.4   |
-| 07 Notification            | 26      | 27       | 28     | 3.2.5   |
+| Use case                   | Divider | Analysis | Analysis seq | Design | Design seq | Section |
+|----------------------------|---------|----------|--------------|--------|------------|---------|
+| 01 Onboarding and access   | 8       | 9        | 10           | 11     | 12         | 3.5.2   |
+| 02 Platform administration | 13      | 14       | 15           | 16     | 17         | 3.5.3   |
+| 03 Listing and discovery   | 18      | 19       | 20           | 21     | 22         | 3.5.4   |
+| 04 Claim creation          | 23      | 24       | 25           | 26     | 27         | 3.5.5   |
+| 05 Claim termination       | 28      | 29       | 30           | 31     | 32         | 3.5.6   |
+| 06 Collection and handover | 33      | 34       | 35           | 36     | 37         | 3.5.7   |
+| 07 Notification            | 38      | 39       | 40           | 41     | 42         | 3.5.8   |
+
+The sequence slides show pre-rendered PNGs from `slides/public/sequences/`
+rather than inline drawings, because they are generated outside the deck.
 
 Source files, one per use case:
 

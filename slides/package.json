@@ -13,7 +13,8 @@
     "export:pptx": "slidev export --format pptx --with-clicks --output deliverables/rescufood.pptx",
     "dev:diagrams": "slidev diagrams.md --open",
     "build:diagrams": "slidev build diagrams.md --out dist/diagrams",
-    "export:diagrams": "slidev export diagrams.md --format png --output deliverables/diagrams"
+    "export:diagrams": "slidev export diagrams.md --format png --output deliverables/diagrams",
+    "build:sequences": "node scripts/sequences/render.mjs"
   },
   "dependencies": {
     "@slidev/cli": "^52.19.1",

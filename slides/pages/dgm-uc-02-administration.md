@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 02: PLATFORM ADMINISTRATION
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -98,6 +98,29 @@ always answer not just what happened but why.
 class: flex flex-col dgm-page
 ---
 
+# Platform administration: analysis sequence
+
+<div class="dgm-sub">Approving an organisation: the entity decides, the control records why.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/02-platform-administration-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: PLATFORM ADMINISTRATION, ANALYSIS SEQUENCE
+
+The analysis sequence traces approving an organisation. The administrator
+gives a reason on the review screen, and OrgStatusTransition asks the
+Organisation to approve itself. The Organisation refuses unless it is
+pending or suspended. When the transition is allowed, the control applies
+the new status, records an AuditEntry with the reason, and notifies the
+organisation's contact.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Platform administration: design model
 
 <div class="dgm-sub">One shared transition handler, and the transaction that makes the reason mandatory.</div>
@@ -170,4 +193,28 @@ and the message published afterwards, which is the trade-off recorded for the
 whole system: if the queue is unavailable at that moment the email is lost,
 which we accepted because a missing email is a lesser failure than a
 rolled-back approval.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Platform administration: design sequence
+
+<div class="dgm-sub">transitionOrg and store.Store.SetOrgStatus: status and audit in one transaction.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/02-platform-administration-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: PLATFORM ADMINISTRATION, DESIGN SEQUENCE
+
+The design sequence follows the request through the profile service.
+Middleware verifies the Cognito token and requireAdmin rejects a non-admin
+with 403. transitionOrg requires a non-empty reason, loads the organisation
+and calls domain.Organisation.Approve, which returns ErrInvalidTransition
+(409) for an illegal move. store.Store.SetOrgStatus then updates the status
+and records the audit event in one transaction. SendOrgApproved is published
+only after the commit, so the administrator does not wait for the email.
 -->

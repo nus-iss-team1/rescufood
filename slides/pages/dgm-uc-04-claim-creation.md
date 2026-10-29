@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 04: CLAIM CREATION
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -98,6 +98,30 @@ an outbox.
 class: flex flex-col dgm-page
 ---
 
+# Claim creation: analysis sequence
+
+<div class="dgm-sub">Claiming a listing: replay a retry, check eligibility, then reserve.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/04-claim-creation-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: CLAIM CREATION, ANALYSIS SEQUENCE
+
+The analysis sequence traces claiming a listing. ClaimCreation first asks
+whether this idempotency key has been seen before; a repeated request
+receives its original claim, or a conflict if the key was reused for
+different content. A new request passes the eligibility checks and then asks
+the Listing to reserve itself. Only one competing partner can succeed; the
+other is told the listing has already been claimed. The successful path
+creates the Claim and completes the idempotency record.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Claim creation: design model
 
 <div class="dgm-sub">Three complementary controls, implemented in RequestsService.create.</div>
@@ -168,4 +192,30 @@ a replay.
 
 The publisher sits outside the transaction. The claim is committed first and
 the notification published afterwards.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Claim creation: design sequence
+
+<div class="dgm-sub">RequestsService.create in the order the code runs.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/04-claim-creation-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: CLAIM CREATION, DESIGN SEQUENCE
+
+The design sequence follows RequestsService.create in the order the code
+runs. It fingerprints the request and looks up the idempotency key before
+reading the listing. It then checks that the listing is available and its
+pickup window open (400 otherwise), and that the caller belongs to an
+active, approved rescue partner (403 otherwise). claimSlot reserves the key,
+and one transaction reserves the listing, creates the claim, records the
+audit event and completes the idempotency record. claimCreated is published
+after the commit; if the transaction fails, the slot is released so the
+client can retry.
 -->

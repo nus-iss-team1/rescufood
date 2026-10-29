@@ -272,6 +272,14 @@ html.dark .slidev-layout.uml-slide {
   max-height: 100%;
 }
 
+/* Sequence diagrams are pre-rendered PNGs in public/sequences/, shown as
+   images; contain keeps a tall diagram whole inside the figure area. */
+.slidev-layout.dgm-page .dgm-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 /* Presenter view — shrink the speaker-notes text by ~1px so longer notes fit
    without scrolling. Targets Slidev's notes pane (.slidev-note), which renders
    the markdown inside each slide's <!-- --> comment. Presenter UI only; does

@@ -13,9 +13,9 @@ class: dgm-centre
 <!--
 USE CASE 07: NOTIFICATION
 
-Two figures follow: the analysis model, which says what the system must
-contain to support these use cases, and the design model, which says how it
-was built.
+Four figures follow: the analysis model and its sequence, which say what the
+system must contain to support these use cases, then the design model and its
+sequence, which say how it was built.
 -->
 
 ---
@@ -106,6 +106,31 @@ CloudWatch alarm surfaces them.
 class: flex flex-col dgm-page
 ---
 
+# Notification: analysis sequence
+
+<div class="dgm-sub">Delivering one message: in-app first, email once, delete unless temporary.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/07-notification-analysis.png" alt="analysis sequence diagram" />
+</div>
+
+<!--
+FIGURE: NOTIFICATION, ANALYSIS SEQUENCE
+
+The analysis sequence traces delivering one message. NotificationDelivery
+consumes the message from the EventQueue and reads its type, recipient,
+payload and event key. If the recipient is a platform user, it renders and
+stores an InAppNotification unless one already exists for that event. It
+then checks the DeliveryRecord to see whether the email has already been
+sent, and if not renders it, sends it through the EmailChannel and records
+the outcome. The message is deleted unless the failure was temporary, in
+which case it stays on the queue for retry.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
 # Notification: design model
 
 <div class="dgm-sub">Two producers, one queue, one consumer with two delivery channels.</div>
@@ -177,4 +202,31 @@ silently sending an empty email.
 NotificationsController is the other half: it serves the feed, the unread count
 and the read and delete actions to the platform web app, reading the same rows
 the consumer writes.
+-->
+
+---
+class: flex flex-col dgm-page
+---
+
+# Notification: design sequence
+
+<div class="dgm-sub">SqsConsumerService: poll, validate, deliver in-app, deliver email, delete.</div>
+
+<div class="dgm-figure">
+<img src="/sequences/07-notification-design.png" alt="design sequence diagram" />
+</div>
+
+<!--
+FIGURE: NOTIFICATION, DESIGN SEQUENCE
+
+The design sequence follows SqsConsumerService. poll long-polls the queue
+for up to 20 seconds and passes each message to process, which validates it
+against NotificationMessageDto; an invalid message is a permanent failure.
+deliverInApp renders the in-app text and calls createInApp, where a
+duplicate event is skipped by the table's unique key. deliverEmail asks
+alreadyDelivered for the email channel, then renders the email, calls
+MailerService.send and records the outcome. Finally, handle deletes the
+message unless the outcome was a temporary failure, which leaves it on the
+queue to be retried and, after repeated failures, moved to the dead-letter
+queue.
 -->
