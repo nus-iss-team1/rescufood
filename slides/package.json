@@ -10,7 +10,10 @@
     "dev": "slidev --open",
     "export": "slidev export",
     "preexport:pptx": "node scripts/fix-svg.mjs",
-    "export:pptx": "slidev export --format pptx --with-clicks --output deliverables/rescufood.pptx"
+    "export:pptx": "slidev export --format pptx --with-clicks --output deliverables/rescufood.pptx",
+    "dev:diagrams": "slidev diagrams.md --open",
+    "build:diagrams": "slidev build diagrams.md --out dist/diagrams",
+    "export:diagrams": "slidev export diagrams.md --format png --output deliverables/diagrams"
   },
   "dependencies": {
     "@slidev/cli": "^52.19.1",
